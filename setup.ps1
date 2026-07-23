@@ -13,8 +13,13 @@ foreach ($d in "org","vlm","object","face","gan","code") {
 
 Write-Host "=== [1/6] python packages ===" -ForegroundColor Cyan
 pip install openvino openvino-genai fastapi "uvicorn[standard]" `
-    ultralytics opencv-python pillow numpy easyocr pyzbar python-multipart
+    ultralytics opencv-python pillow numpy easyocr python-multipart
 pip install "optimum[openvino]" nncf torchvision
+# pyzbar: 1D 바코드 전용(선택). QR은 OpenCV 디코더로 동작하므로 실패해도 무방.
+# Windows에서 pyzbar를 쓰려면 VC++ 2013 재배포 패키지(x64)가 필요하다.
+pip install pyzbar
+if ($LASTEXITCODE -ne 0) { Write-Host "pyzbar skipped (QR은 OpenCV로 동작)" -ForegroundColor Yellow }
+$global:LASTEXITCODE = 0
 
 Write-Host "=== [2/6] VLM: Qwen2.5-VL-3B INT4 export ===" -ForegroundColor Cyan
 $vlmDir = Join-Path $MODELS "vlm\qwen2.5-vl-3b-int4"

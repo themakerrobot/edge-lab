@@ -10,10 +10,12 @@ MODELS="$BASE/models"
 mkdir -p "$MODELS"/{org,vlm,object,face,gan,code}
 
 echo "=== [1/6] packages ==="
-sudo apt-get update -qq && sudo apt-get install -y -qq libzbar0 wget
+sudo apt-get update -qq && sudo apt-get install -y -qq wget
 pip install openvino openvino-genai fastapi "uvicorn[standard]" \
-    ultralytics opencv-python pillow numpy easyocr pyzbar python-multipart
+    ultralytics opencv-python pillow numpy easyocr python-multipart
 pip install "optimum[openvino]" nncf torchvision
+# pyzbar: 1D 바코드 전용(선택). QR은 OpenCV 디코더로 동작한다.
+sudo apt-get install -y -qq libzbar0 && pip install pyzbar || echo "pyzbar skipped"
 
 echo "=== [2/6] VLM: Qwen2.5-VL-3B INT4 export ==="
 rm -rf "$MODELS/vlm/qwen2.5-vl-3b-int4"
