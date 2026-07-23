@@ -30,3 +30,5 @@ runs/
 .idea/
 Thumbs.db
 .DS_Store
+
+image_temp/
