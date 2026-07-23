@@ -100,6 +100,10 @@ foreach ($f in "AnimeGANv3_Hayao_36.onnx","AnimeGANv3_Shinkai_37.onnx") {
 Invoke-WebRequest -Uri "https://github.com/danielgatis/rembg/releases/download/v0.0.0/u2net.onnx" `
   -OutFile (Join-Path $ganDir "u2net.onnx")
 
+Write-Host "=== [5.5/6] local fonts ===" -ForegroundColor Cyan
+python fonts_download.py
+if ($LASTEXITCODE -ne 0) { throw "font download failed" }
+
 Write-Host "=== [6/6] easyocr + offline check ===" -ForegroundColor Cyan
 @'
 import easyocr

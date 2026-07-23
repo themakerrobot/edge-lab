@@ -91,6 +91,9 @@ done
 wget -q --show-progress -O "$MODELS/gan/u2net.onnx" \
   "https://github.com/danielgatis/rembg/releases/download/v0.0.0/u2net.onnx"
 
+echo "=== [5.5/6] local fonts ==="
+python fonts_download.py
+
 echo "=== [6/6] easyocr + offline check ==="
 python - <<'PY'
 import easyocr
