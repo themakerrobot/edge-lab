@@ -4,9 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>컴퓨터 비전 실습</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
+  <link href="/fonts/fonts.css" rel="stylesheet">
   <style>
     /* ===== 디자인 토큰 : "학습지" (줄노트 + 시험지 머리표 + 빨간펜) ===== */
     :root {
@@ -108,6 +106,41 @@
     #fullscreenButton:hover { background: var(--paper); }
     #fullscreenButton svg { width: 15px; height: 15px; }
 
+    /* ===== 시스템 상태바 (온디바이스 콘솔) ===== */
+    .sysbar {
+      flex: 0 0 auto;
+      display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px;
+      background: #1b1c22;
+      border: 1.5px solid #0f1014;
+      border-radius: var(--r);
+      padding: 7px 14px;
+      font-family: "Menlo", "Consolas", ui-monospace, monospace;
+      font-size: .76rem; letter-spacing: .02em;
+      color: #cfd2da;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+    }
+    .sysbar .brand { color: #8f95a3; }
+    .sysbar .brand b { color: #eaecf1; font-weight: 700; letter-spacing: .08em; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #24262e; border: 1px solid #33363f; border-radius: 999px;
+      padding: 2px 10px; color: #b9bec9;
+    }
+    .chip .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #3d424e; box-shadow: 0 0 0 0 rgba(0,0,0,0);
+    }
+    .chip.on { color: #eaecf1; border-color: #3f7d55; }
+    .chip.on .dot { background: #46d17f; box-shadow: 0 0 7px rgba(70,209,127,.75); }
+    .chip.busy { border-color: #7d6a3f; color: #f2d99a; }
+    .chip.busy .dot { background: #e8b13d; box-shadow: 0 0 7px rgba(232,177,61,.75); animation: blink 1s infinite; }
+    @keyframes blink { 50% { opacity: .35; } }
+    .sysbar .sep { color: #464a55; }
+    .sysbar .meter { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+    .sysbar .meter .k { color: #8f95a3; }
+    .sysbar .meter .v { color: #46d17f; font-variant-numeric: tabular-nums; }
+    @media (prefers-reduced-motion: reduce) { .chip.busy .dot { animation: none; } }
+
     /* ===== 문항 공통 ===== */
     .qnum {
       display: inline-flex; align-items: center; justify-content: center;
@@ -167,10 +200,49 @@
     #mainRunButton:hover { background: var(--pen-blue-d); border-color: var(--pen-blue-d); }
     #mainRunButton:disabled { background: #b9b7ac; border-color: #b9b7ac; cursor: wait; }
 
+    /* 라이브 토글 */
+    .live-toggle {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: .88rem; color: var(--ink-2); white-space: nowrap;
+      border: 1.5px solid var(--line); border-radius: var(--r);
+      padding: 6px 11px; cursor: pointer; background: #fff;
+    }
+    .live-toggle input { width: 15px; height: 15px; cursor: pointer; }
+    .live-toggle.on { border-color: var(--pen-red); color: var(--pen-red); font-weight: 700; }
+    .live-toggle.off { opacity: .45; cursor: not-allowed; }
+
+    /* 결과 도구 (저장) */
+    .result-tools { flex: 0 0 auto; display: flex; gap: 8px; margin-top: 10px; }
+    .result-tools button {
+      background: #fff; border: 1.5px solid var(--line); color: var(--ink-2);
+      font-size: .85rem; padding: 4px 14px; cursor: pointer; border-radius: var(--r);
+    }
+    .result-tools button:hover { border-color: var(--pen-blue); color: var(--pen-blue-d); }
+
+    /* 기록 스트립 */
+    .history { flex: 0 0 auto; margin-top: 12px; }
+    .history .h-title {
+      font-family: "Gowun Batang", serif; font-weight: 700; font-size: .88rem;
+      color: var(--ink-2); margin-bottom: 6px;
+    }
+    .history .strip { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+    .history .item {
+      flex: 0 0 auto; width: 92px; cursor: pointer;
+      border: 1.5px solid var(--line); border-radius: var(--r); padding: 4px;
+      background: #fff;
+    }
+    .history .item:hover { border-color: var(--pen-blue); }
+    .history .item img { width: 100%; height: 62px; object-fit: cover; border-radius: 3px; display: block; }
+    .history .item .cap {
+      font-size: .68rem; color: var(--ink-2); margin-top: 3px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
     /* ===== 답안 영역 (좌우) ===== */
     .main-container {
       flex: 1 1 auto; min-height: 0;
       display: flex; gap: 12px;
+      width: 100%; max-width: 2200px; margin: 0 auto;
     }
     .panel {
       flex: 1 1 0; min-width: 0;
@@ -186,16 +258,22 @@
       padding: 11px 16px;
       border-bottom: 1.5px dashed var(--line);
     }
-    .panel-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 16px; }
+    .panel-body {
+      flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 16px;
+      display: flex; flex-direction: column;   /* 남는 세로 공간을 자식이 채우도록 */
+    }
 
     .tab-content { display: none; }
-    .tab-content.active { display: block; }
+    .tab-content.active {
+      display: flex; flex-direction: column;
+      flex: 1 1 auto; min-height: 0;
+    }
 
     /* 붙임 상자 (업로드) — "사진을 붙이세요" */
     .upload-container {
       border: 2px dashed #b3b0a2;
       border-radius: var(--r);
-      min-height: 280px;
+      flex: 1 1 auto; min-height: 240px;
       display: flex; align-items: center; justify-content: center; text-align: center;
       color: var(--ink-2); cursor: pointer;
       background: #fdfcf8;
@@ -204,30 +282,42 @@
     }
     .upload-container:hover { border-color: var(--pen-blue); color: var(--ink); background: #f7f8ff; }
     .upload-container .hint { font-size: .8rem; margin-top: 6px; color: #a3a094; }
-    #uploadPreview { max-width: 100%; height: auto; display: none; border-radius: 3px; }
+    #uploadPreview {
+      max-width: 100%; max-height: 100%; height: auto;
+      object-fit: contain; display: none; border-radius: 3px;
+    }
 
     .webcam-container {
       border: 1.5px solid var(--line);
       border-radius: var(--r);
-      min-height: 280px;
+      flex: 1 1 auto; min-height: 240px; min-width: 0;
       display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: center;
       background: #fdfcf8; padding: 14px;
     }
-    #webcamVideo { width: 320px; max-width: 100%; height: auto; background: #222; border-radius: 3px; }
-    #webcamCanvas { display: none; border-radius: 3px; }
+    #webcamVideo, #webcamCanvas {
+      width: auto; max-width: 100%; max-height: 100%;
+      min-width: 260px; flex: 0 1 auto;
+      object-fit: contain; background: #222; border-radius: 3px;
+    }
+    #webcamCanvas { display: none; background: #fff; }
 
     .sketch-container {
       border: 1.5px solid var(--line);
       border-radius: var(--r);
-      display: flex; flex-direction: column; align-items: center;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      flex: 1 1 auto; min-height: 0;
       background: #fdfcf8; padding: 14px;
     }
-    #sketchCanvas { background: #fff; border: 1px solid var(--line); max-width: 100%; height: auto; touch-action: none; border-radius: 3px; }
+    #sketchCanvas {
+      background: #fff; border: 1px solid var(--line);
+      max-width: 100%; max-height: 100%; height: auto;
+      touch-action: none; border-radius: 3px;
+    }
     .sketch-controls { margin-top: 12px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
     .sketch-controls input[type="color"] { padding: 2px; width: 42px; height: 34px; cursor: pointer; }
     .sketch-controls input[type="range"] { cursor: pointer; }
 
-    .button-row { margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap; }
+    .button-row { margin-top: 12px; flex: 0 0 auto; display: flex; gap: 10px; flex-wrap: wrap; }
     .btn-line {
       background: #fff; border: 1.5px solid var(--line-d); color: var(--ink);
       font-weight: 600; padding: 7px 18px; cursor: pointer; border-radius: var(--r);
@@ -241,10 +331,15 @@
       border-radius: 3px;
       background: #fff;
       padding: 12px;
-      display: inline-block;
+      display: flex; align-items: center; justify-content: center;
+      flex: 1 1 auto; min-height: 200px;
       max-width: 100%;
     }
-    #resultCanvas { max-width: 100%; height: auto; display: block; }
+    #resultCanvas {
+      max-width: 100%; max-height: 100%;
+      width: auto; height: auto;
+      object-fit: contain; display: block;
+    }
 
     /* 확인 도장 — 실행 완료 시에만 */
     #stampMark {
@@ -300,6 +395,7 @@
     /* 풀이 (쉬운 결과) */
     .easy-answer {
       display: none;
+      flex: 0 0 auto;
       margin-top: 14px;
       border-left: 4px solid var(--pen-blue);
       background: #f5f7ff;
@@ -321,7 +417,7 @@
     #easyText b { color: var(--pen-blue-d); }
 
     /* 연습장 (JSON) — 접이식 */
-    .scratchpad { margin-top: 18px; }
+    .scratchpad { margin-top: 18px; flex: 0 0 auto; }
     .scratchpad summary {
       cursor: pointer; list-style: none;
       display: flex; align-items: center; gap: 8px;
@@ -365,7 +461,9 @@
     @media (max-width: 860px) {
       body { overflow: auto; height: auto; min-height: 100dvh; }
       .main-container { flex-direction: column; min-height: 0; }
-      .panel-body { overflow: visible; }
+      .panel-body { overflow: visible; display: block; }
+      .tab-content.active { display: block; }
+      .upload-container, .webcam-container, .sketch-container, .result-frame { min-height: 260px; }
       .header { flex-direction: column; }
       .header > div { border-right: none; border-bottom: 1px solid var(--line-d); }
       .header > div:last-child { border-bottom: none; }
@@ -379,21 +477,8 @@
   <!-- 시험지 머리표 -->
   <div class="header">
     <div class="h-subject">
-      <span class="eyebrow">인공지능 · 컴퓨터 비전</span>
-      <span class="title">컴퓨터 비전 실습</span>
-    </div>
-    <div class="h-fill">
-      <div class="fill-row"><span class="k">날짜 :</span><span class="v" id="clockDisplay"></span></div>
-      <div class="fill-row"><span class="k">지역 :</span><span class="v" id="regionDisplay"></span></div>
-    </div>
-    <div class="h-env">
-      <span class="k">서버</span>
-      <select id="envSelect">
-        <option value="local">local</option>
-        <option value="ops">ops</option>
-        <option value="stg">stg</option>
-        <option value="dev">dev</option>
-      </select>
+      <span class="eyebrow">인공지능 · 컴퓨터 비전 · 인터넷 없이 내 컴퓨터에서 실행돼요</span>
+      <span class="title">컴퓨터 비전 실습 <span style="font-size:.85rem;color:var(--pen-red);vertical-align:middle;">(On-Device)</span></span>
     </div>
     <div class="h-tools">
       <select id="lessonSelect" title="차시 선택"></select>
@@ -402,6 +487,24 @@
         <span id="fsLabel">전체화면</span>
       </button>
     </div>
+  </div>
+
+  <!-- 시스템 상태바 -->
+  <div class="sysbar" id="sysbar">
+    <span class="brand"><b>VAPI-OD</b> · on-device vision runtime</span>
+    <span class="sep">|</span>
+    <span class="chip" id="chipCPU"><span class="dot"></span>CPU</span>
+    <span class="chip" id="chipGPU"><span class="dot"></span>GPU</span>
+    <span class="chip" id="chipNPU"><span class="dot"></span>NPU</span>
+    <span class="sep">|</span>
+    <span id="sysModels">models —</span>
+    <span class="sep">|</span>
+    <span id="sysNet">NETWORK: OFFLINE</span>
+    <span class="meter">
+      <span><span class="k">last</span> <span class="v" id="sysElapsed">--</span></span>
+      <span><span class="k">exec</span> <span class="v" id="sysDevice">--</span></span>
+      <span><span class="k">runs</span> <span class="v" id="sysRuns">0</span></span>
+    </span>
   </div>
 
   <!-- 문항 1 : 모델 고르기 -->
@@ -439,7 +542,10 @@
     <div class="promptWrapper">
       <label class="field-label" for="promptInput">프롬프트</label>
       <input type="text" id="promptInput" value="-" />
-      <button id="mainRunButton"><span id="runLabel">실행</span></button>
+      <label class="live-toggle" id="liveToggle" title="웹캠에서 계속 인식합니다 (빠른 모델만)">
+        <input type="checkbox" id="liveCheck"> 라이브
+      </label>
+      <button id="mainRunButton" title="스페이스바로도 실행할 수 있어요"><span id="runLabel">실행</span></button>
     </div>
   </div>
 
@@ -507,6 +613,16 @@
           <div id="easyText"></div>
         </div>
 
+        <div class="result-tools">
+          <button id="saveResultButton">결과 이미지 저장</button>
+          <button id="clearHistoryButton">기록 지우기</button>
+        </div>
+
+        <div class="history" id="historyBox" style="display:none;">
+          <div class="h-title">실행 기록 — 눌러서 다시 보기</div>
+          <div class="strip" id="historyStrip"></div>
+        </div>
+
         <details class="scratchpad">
           <summary>상세보기 — 결과 데이터(JSON)</summary>
           <div class="pad-tools">
@@ -524,13 +640,7 @@
      * vapi-od: local(same-origin) 모드 추가, gan 변환 4종 재구성, 캡션 제거
      ****************************************************/
 
-    const HOST_OPTIONS = {
-      "local": "",
-      "dev": "http://0.0.0.0:57711",
-      "stg": "https://s-vapi.circul.us",
-      "ops": "https://o-vapi.circul.us"
-    };
-    let HOST = HOST_OPTIONS["local"];
+    const HOST = "";  // 온디바이스: 같은 서버(same-origin) 고정
 
     const SERVICE_LIST = {
       "얼굴 특성": { "api": "face/face_attribute", "params": {}, "tooltip": "얼굴의 안경, 콧수염, 턱수염, 모자를 인식합니다." },
@@ -573,8 +683,40 @@
       [0,1],[0,2],[1,3],[2,4],[5,6],[5,7],[5,11],[6,8],[6,12],
       [7,9],[8,10],[11,12],[11,13],[12,14],[13,15],[14,16]
     ];
-    const envSelect = document.getElementById('envSelect');
     const apiDocLink = document.getElementById('apiDocLink');
+
+    /* ----- 시스템 상태바 ----- */
+    let runCount = 0;
+    const sysEl = {
+      cpu: document.getElementById('chipCPU'), gpu: document.getElementById('chipGPU'),
+      npu: document.getElementById('chipNPU'), models: document.getElementById('sysModels'),
+      net: document.getElementById('sysNet'), elapsed: document.getElementById('sysElapsed'),
+      device: document.getElementById('sysDevice'), runs: document.getElementById('sysRuns'),
+    };
+    (async function initSystem() {
+      try {
+        const info = await (await fetch('/system')).json();
+        (info.devices || []).forEach(d => {
+          const el = sysEl[d.toLowerCase()];
+          if (el) el.classList.add('on');
+        });
+        const m = info.models || {};
+        sysEl.models.textContent =
+          `VLM ${m.vlm} · YOLO ${m.detect}+custom${m.custom} · FACE ${m.face} · TRANSFORM ${m.transform}`;
+        sysEl.net.textContent = 'NETWORK: OFFLINE  ·  OV ' + (info.runtime && info.runtime.openvino || '');
+      } catch (e) {
+        sysEl.models.textContent = 'models: 연결 대기';
+      }
+    })();
+    function sysBusy(on) {
+      document.querySelectorAll('.chip.on').forEach(c => c.classList.toggle('busy', on));
+    }
+    function sysReport(res, ms) {
+      runCount++;
+      sysEl.runs.textContent = runCount;
+      sysEl.elapsed.textContent = (res && res.elapsed_ms ? res.elapsed_ms : ms) + ' ms';
+      sysEl.device.textContent = (res && res.device) || '--';
+    }
 
     /* ----- 미션 모드 (차시) : ?lesson=슬러그, ?lesson=list 는 목록 ----- */
     const LESSON_LIST = {
@@ -610,34 +752,6 @@
     const LESSON_INDEX_MODE = _lessonSlug === 'list';
     let missionCount = 0;
 
-    /* ----- 현재 시간 (날짜란) ----- */
-    const clockDisplay = document.getElementById('clockDisplay');
-    const WEEKDAYS = ['일','월','화','수','목','금','토'];
-    function updateClock() {
-      const now = new Date();
-      const pad = n => String(n).padStart(2, '0');
-      clockDisplay.innerText =
-        `${now.getFullYear()}. ${pad(now.getMonth()+1)}. ${pad(now.getDate())}. (${WEEKDAYS[now.getDay()]}) ${pad(now.getHours())}:${pad(now.getMinutes())}`;
-    }
-    updateClock();
-    setInterval(updateClock, 1000);
-
-    /* ----- IP 기반 지역 (지역란) ----- */
-    (async function showRegion() {
-      try {
-        const res = await fetch('https://ipwho.is/');
-        const info = await res.json();
-        if (info && info.success) {
-          const parts = [...new Set([info.region, info.city].filter(Boolean))];
-          if (parts.length) {
-            document.getElementById('regionDisplay').innerText = parts.join(' ');
-          }
-        }
-      } catch (e) {
-        console.log("지역 조회 실패:", e);
-      }
-    })();
-
     /* ----- 전체화면 버튼 ----- */
     const fullscreenButton = document.getElementById('fullscreenButton');
     const fsLabel = document.getElementById('fsLabel');
@@ -654,23 +768,6 @@
       fsLabel.innerText = document.fullscreenElement ? '전체화면 종료' : '전체화면';
     });
 
-    window.onload = function() {
-      const hostname = window.location.hostname;
-      if (hostname === 's-vapi.circul.us') {
-        envSelect.value = 'stg';
-      } else if (hostname === 'o-vapi.circul.us') {
-        envSelect.value = 'ops';
-      } else {
-        envSelect.value = 'local';
-      }
-      envSelect.dispatchEvent(new Event('change'));
-    };
-
-    envSelect.addEventListener('change', function() {
-      const env = this.value;
-      HOST = HOST_OPTIONS[env];
-      apiDocLink.href = env === 'local' ? '/docs' : HOST + "/guide";
-    });
     apiDocLink.href = '/docs';
 
     const modelSelect = document.getElementById('modelSelect');
@@ -694,7 +791,7 @@
       option.text = key;
       modelSelect.appendChild(option);
     }
-    modelSelect.value = LESSON ? LESSON.models[0] : "사물 인식";
+    modelSelect.value = LESSON ? LESSON.models[0] : "이미지 설명";
     guide.value = SERVICE_LIST[modelSelect.value].tooltip;
     modelSelect.dispatchEvent(new Event('change')); // 프롬프트 기본값 반영
 
@@ -752,7 +849,6 @@
       document.getElementById('missionBox').style.display = 'flex';
       document.getElementById('missionText').innerText = LESSON.mission;
       // 학생에게 불필요한 요소 숨김
-      document.querySelector('.h-env').style.display = 'none';
       document.getElementById('apiDocLink').style.display = 'none';
       if (LESSON.models.length === 1) document.getElementById('modelField').style.display = 'none';
       // 탭 잠금
@@ -1151,6 +1247,8 @@
         if (LESSON) { missionCount++; updateProgress(); }
       }
       showEasy(res);
+      sysReport(res, 0);
+      if (!liveRunning && res.result === 'ok') setTimeout(() => pushHistory(res), 60);
       resultJSON.innerText = JSON.stringify(res, null, 2);
 
       if (
@@ -1307,6 +1405,13 @@
         imageBlob = await new Promise(resolve => imageSource.toBlob(resolve, 'image/jpeg'));
       }
       else if (imageSource instanceof HTMLImageElement) {
+        // 이미지가 아직 디코딩 전이면 0x0 캔버스가 되어 첫 실행이 실패함 → 로드 대기
+        if (!imageSource.complete || !imageSource.naturalWidth) {
+          await new Promise((resolve, reject) => {
+            imageSource.onload = resolve;
+            imageSource.onerror = reject;
+          });
+        }
         const offCanvas = document.createElement('canvas');
         offCanvas.width = imageSource.naturalWidth;
         offCanvas.height = imageSource.naturalHeight;
@@ -1342,6 +1447,7 @@
       const resultJSON = document.getElementById('resultJSON');
 
       mainRunButton.disabled = true;
+      sysBusy(true);
       runLabel.innerText = '실행 중...';
       resultJSON.innerText = '';
       hideStamp();
@@ -1385,8 +1491,149 @@
 
       await Promise.all([runProcess, minimumWait]);
 
+      sysBusy(false);
       mainRunButton.disabled = false;
       runLabel.innerText = '실행';
+    });
+
+    /* ----- 결과 이미지 저장 ----- */
+    document.getElementById('saveResultButton').addEventListener('click', function() {
+      const canvas = document.getElementById('resultCanvas');
+      if (!canvas.width || !canvas.height) { alert("먼저 실행해 주세요."); return; }
+      const a = document.createElement('a');
+      const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+      a.download = `vapi-${modelSelect.value}-${stamp}.png`;
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    });
+
+    /* ----- 실행 기록 스트립 ----- */
+    const historyBox = document.getElementById('historyBox');
+    const historyStrip = document.getElementById('historyStrip');
+    const history = [];
+    function pushHistory(res) {
+      const canvas = document.getElementById('resultCanvas');
+      if (!canvas.width) return;
+      const thumb = document.createElement('canvas');
+      thumb.width = 184; thumb.height = 124;
+      thumb.getContext('2d').drawImage(canvas, 0, 0, thumb.width, thumb.height);
+      const entry = {
+        img: thumb.toDataURL('image/jpeg', 0.7),
+        full: canvas.toDataURL('image/jpeg', 0.85),
+        text: easyText.innerText.slice(0, 40),
+        json: JSON.stringify(res, null, 2),
+        model: modelSelect.value,
+      };
+      history.unshift(entry);
+      if (history.length > 8) history.pop();
+      renderHistory();
+    }
+    function renderHistory() {
+      historyBox.style.display = history.length ? 'block' : 'none';
+      historyStrip.innerHTML = '';
+      history.forEach((h, i) => {
+        const el = document.createElement('div');
+        el.className = 'item';
+        el.innerHTML = `<img src="${h.img}" alt=""><div class="cap">${esc(h.model)}</div>`;
+        el.title = h.text;
+        el.addEventListener('click', () => {
+          const canvas = document.getElementById('resultCanvas');
+          const ctx = canvas.getContext('2d');
+          const im = new Image();
+          im.onload = () => {
+            canvas.width = im.width; canvas.height = im.height;
+            ctx.drawImage(im, 0, 0);
+          };
+          im.src = h.full;
+          easyText.innerHTML = esc(h.text);
+          easyAnswer.classList.add('show');
+          document.getElementById('resultJSON').innerText = h.json;
+        });
+        historyStrip.appendChild(el);
+      });
+    }
+    document.getElementById('clearHistoryButton').addEventListener('click', function() {
+      history.length = 0;
+      renderHistory();
+    });
+
+    /* ----- 라이브 모드 (웹캠 연속 인식) — 빠른 모델만 ----- */
+    const LIVE_OK = new Set([
+      "얼굴 인식","얼굴 분석","얼굴 감정 분석","얼굴 나이/성별 분석","얼굴 방향 인식","마스크 인식",
+      "사물 인식","사람 포즈 인식","가위바위보 인식","불 인식","공 인식","숫자 인식",
+      "낙상 인식","안전모 인식","박스 인식","QR코드 인식"
+    ]);
+    const liveToggle = document.getElementById('liveToggle');
+    const liveCheck = document.getElementById('liveCheck');
+    let liveRunning = false;
+
+    function updateLiveAvailability() {
+      // 모델만 보고 판단한다. 웹캠 탭이 아니면 체크 시 자동으로 전환한다.
+      const ok = LIVE_OK.has(modelSelect.value);
+      liveCheck.disabled = !ok;
+      liveToggle.classList.toggle('off', !ok);
+      liveToggle.title = ok
+        ? "웹캠으로 계속 인식합니다 (체크하면 웹캠 탭으로 전환)"
+        : "이 모델은 응답이 길어 라이브를 지원하지 않아요 (얼굴·사물·포즈 계열에서 사용)";
+      if (!ok && liveCheck.checked) { liveCheck.checked = false; stopLive(); }
+    }
+    modelSelect.addEventListener('change', updateLiveAvailability);
+    tabButtons.forEach(b => b.addEventListener('click', updateLiveAvailability));
+
+    async function liveLoop() {
+      while (liveRunning) {
+        const ctx = webcamCanvas.getContext('2d');
+        ctx.drawImage(webcamVideo, 0, 0, webcamCanvas.width, webcamCanvas.height);
+        webcamCanvas.style.display = 'block';
+        try {
+          await handleRun(modelSelect.value, document.getElementById('promptInput').value, webcamCanvas);
+        } catch (e) { console.error(e); }
+        await new Promise(r => setTimeout(r, 400));
+      }
+    }
+    function startLive() {
+      if (liveRunning) return;
+      liveRunning = true;
+      liveToggle.classList.add('on');
+      document.getElementById('runLabel').innerText = '라이브 중';
+      document.getElementById('mainRunButton').disabled = true;
+      sysBusy(true);
+      liveLoop();
+    }
+    function stopLive() {
+      liveRunning = false;
+      liveToggle.classList.remove('on');
+      document.getElementById('runLabel').innerText = '실행';
+      document.getElementById('mainRunButton').disabled = false;
+      sysBusy(false);
+    }
+    liveCheck.addEventListener('change', async function() {
+      if (!this.checked) { stopLive(); return; }
+      // 웹캠 탭이 아니면 자동 전환
+      if (document.querySelector('.tab-content.active').id !== 'webcam') {
+        const btn = document.querySelector('.tabButton[data-tab="webcam"]');
+        if (btn && btn.style.display !== 'none') btn.click();
+      }
+      // 웹캠 영상이 준비될 때까지 잠깐 대기
+      for (let i = 0; i < 30 && !webcamVideo.videoWidth; i++) {
+        await new Promise(r => setTimeout(r, 100));
+      }
+      if (!webcamVideo.videoWidth) {
+        alert("웹캠을 사용할 수 없어요. 카메라 권한을 확인해 주세요.");
+        this.checked = false;
+        return;
+      }
+      startLive();
+    });
+    updateLiveAvailability();
+
+    /* ----- 스페이스바로 실행 ----- */
+    document.addEventListener('keydown', function(e) {
+      if (e.code !== 'Space' || liveRunning) return;
+      const t = e.target.tagName;
+      if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA' || t === 'BUTTON') return;
+      e.preventDefault();
+      document.getElementById('mainRunButton').click();
     });
 
     document.getElementById('copyJsonButton').addEventListener('click', function() {

@@ -87,9 +87,9 @@ COCO_KO = [
 
 class ObjectEngine:
     def __init__(self):
-        self.det = Yolo(MODELS / "object/yolo11m_openvino_model")
-        self.pose = Yolo(MODELS / "object/yolo11m-pose_openvino_model")
-        self.seg = Yolo(MODELS / "object/yolo11m-seg_openvino_model")
+        self.det = Yolo(MODELS / "object/yolo11m_openvino_model", task="detect")
+        self.pose = Yolo(MODELS / "object/yolo11m-pose_openvino_model", task="pose")
+        self.seg = Yolo(MODELS / "object/yolo11m-seg_openvino_model", task="segment")
         self.image_size = 800
 
     @staticmethod
@@ -147,12 +147,13 @@ class ObjectEngine:
 
 class CustomEngine:
     MODES = ["fire", "fall", "ball", "rps", "number", "helmet", "box"]
+    TASKS = {"box": "segment"}  # box-11s는 seg 모델 (boxes만 사용)
 
     def __init__(self):
         self.models = {}
         for m in self.MODES:
-            # box-11s는 seg 모델이지만 detect처럼 boxes만 사용
-            self.models[m] = Yolo(MODELS / f"object/{m}-11s_openvino_model")
+            self.models[m] = Yolo(MODELS / f"object/{m}-11s_openvino_model",
+                                  task=self.TASKS.get(m, "detect"))
 
     def predict(self, mode, image_path):
         if mode not in self.models:
@@ -380,18 +381,53 @@ class CodeEngine:
         self.lock = threading.Lock()
 
     def ocr(self, image_path):
+        # easyocr의 경로(str) 입력 분기가 일부 Windows 환경에서 grey를 3채널로
+        # 만들어 "too many values to unpack (expected 2)" 를 유발함 →
+        # 직접 2D 그레이스케일 ndarray로 변환해 전달하면 해당 분기를 우회함
+        img = cv2.imread(image_path)
+        if img is None:
+            raise ValueError("invalid image")
+        grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         with self.lock:
-            return self.reader.readtext(image_path)
+            return self.reader.readtext(grey)
 
     @staticmethod
     def barcode(image_path):
-        from pyzbar import pyzbar
+        """QR 우선: OpenCV 디코더(외부 DLL 불필요) → 실패 시 pyzbar(1D 바코드 지원).
+        pyzbar는 Windows에서 VC++ 2013 재배포 패키지를 요구하므로 보조로만 사용."""
         image = cv2.imread(image_path)
+        if image is None:
+            raise ValueError("invalid image")
         res = []
-        for code in pyzbar.decode(image):
-            x, y, bw, bh = code.rect
-            res.append({"type": code.type, "data": code.data.decode("utf-8", "ignore"),
-                        "box": [int(x), int(y), int(x + bw), int(y + bh)]})
+
+        # 1) OpenCV QRCodeDetector (의존성 없음)
+        try:
+            det = cv2.QRCodeDetector()
+            ok, texts, pts, _ = det.detectAndDecodeMulti(image)
+            if ok and pts is not None:
+                for text, quad in zip(texts, pts):
+                    if not text:
+                        continue
+                    xs, ys = quad[:, 0], quad[:, 1]
+                    res.append({"type": "QRCODE", "data": text,
+                                "box": [int(xs.min()), int(ys.min()),
+                                        int(xs.max()), int(ys.max())]})
+        except Exception as ex:
+            print("[barcode] opencv decoder failed:", ex)
+
+        if res:
+            return res
+
+        # 2) pyzbar (QR 외 바코드 / OpenCV가 못 읽은 경우)
+        try:
+            from pyzbar import pyzbar
+            for code in pyzbar.decode(image):
+                x, y, bw, bh = code.rect
+                res.append({"type": code.type,
+                            "data": code.data.decode("utf-8", "ignore"),
+                            "box": [int(x), int(y), int(x + bw), int(y + bh)]})
+        except Exception as ex:
+            print("[barcode] pyzbar unavailable:", ex)
         return res
 
 
@@ -420,7 +456,7 @@ class VlmEngine:
 
 # ---------------------------------------------------------------- 로딩
 class Engines:
-    def __init__(self):
+    def __init__(self, warmup=True):
         print(f"[engines] devices={core.available_devices} face={DEV_FACE} gan={DEV_GAN} vlm={DEV_VLM}")
         self.object = ObjectEngine()
         self.custom = CustomEngine()
@@ -429,3 +465,31 @@ class Engines:
         self.code = CodeEngine()
         self.vlm = VlmEngine()
         print("[engines] all models loaded")
+        if warmup:
+            self.warmup()
+
+    def warmup(self):
+        """첫 클릭 지연 제거: 각 모델을 더미 이미지로 1회 실행해 미리 컴파일한다."""
+        dummy = np.full((640, 640, 3), 127, np.uint8)
+        face = np.full((224, 224, 3), 127, np.uint8)
+        steps = [
+            ("yolo", lambda: (self.object.det(dummy), self.object.pose(dummy),
+                              self.object.seg(dummy))),
+            ("custom", lambda: [m(dummy, imgsz=224 if k == "mask" else 640)
+                                for k, m in self.custom.models.items()]),
+            ("face", lambda: (self.face.detect.predict(dummy),
+                              self.face.age_gender.predict(face),
+                              self.face.emotion.predict(face),
+                              self.face.head_pose.predict(face),
+                              self.face.mask.predict(face))),
+            ("gan", lambda: (self.gan.cartoon.predict(face), self.gan.style.predict(face),
+                             self.gan.bgremove.predict(face), self.gan.sr.predict(face))),
+            ("vlm", lambda: self.vlm.generate(face, "hi", 1)),
+        ]
+        for name, fn in steps:
+            try:
+                fn()
+                print(f"[warmup] {name} ready")
+            except Exception as ex:
+                print(f"[warmup] {name} skipped: {ex}")
+        print("[engines] warmup done")

@@ -2,6 +2,7 @@
 # vapi-od : 단일 FastAPI 서버 (기존 circulus-vapi 5개 서버 통합, 온디바이스)
 # 응답 스키마는 기존 서버와 동일: {"type": <service_name>, "result": "ok"|"fail", "data": ...}
 import os
+import time
 import uuid
 from contextlib import asynccontextmanager
 
@@ -22,12 +23,37 @@ os.makedirs(IMAGE_DIR, exist_ok=True)
 
 eng = None
 
+# 서비스 → 실행 디바이스 (HUD 표시용, engines의 배정과 동일)
+DEVICE_OF = {}
+
+
+def build_device_map():
+    import engines as E
+    vlm = {"caption", "caption_place_e", "caption_time_e", "caption_weather_e",
+           "caption_question_e", "caption_tag_e", "vlm_inference_e",
+           "object_cls_e", "face_attribute"}
+    gan = {"cartoon", "sketch", "portrait", "sr"}
+    face = {"face_detect_e", "face_analyze_e", "face_analyze", "face_emotion_e",
+            "face_age_gender_e", "face_pose_e"}
+    for k in vlm:
+        DEVICE_OF[k] = E.DEV_VLM
+    for k in gan:
+        DEVICE_OF[k] = E.DEV_GAN
+    for k in face:
+        DEVICE_OF[k] = E.DEV_FACE
+    for k in ("object_search_e", "object_search", "object_pose_e", "object_seg_e",
+              "object_custom_e", "mask_detect"):
+        DEVICE_OF[k] = "CPU"
+    for k in ("ocr", "barcode"):
+        DEVICE_OF[k] = "CPU"
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global eng
     import engines
     eng = engines.Engines()
+    build_device_map()
     print(f"! vapi-od listening on {HOST}:{PORT}")
     yield
 
@@ -58,11 +84,17 @@ def service(name):
 
         async def wrapper(request: Request, uploadFile: UploadFile = File(...), **kw):
             path = save_upload(uploadFile, name)
+            t0 = time.perf_counter()
             try:
                 data = fn(path, **kw)
-                return {"type": name, "result": "ok", "data": data}
+                return {"type": name, "result": "ok", "data": data,
+                        "elapsed_ms": int((time.perf_counter() - t0) * 1000),
+                        "device": DEVICE_OF.get(name, "CPU")}
             except Exception as ex:
-                return {"type": name, "result": "fail", "data": "Inference error:" + str(ex)}
+                import traceback
+                traceback.print_exc()
+                return {"type": name, "result": "fail", "data": "Inference error:" + str(ex),
+                        "elapsed_ms": int((time.perf_counter() - t0) * 1000)}
             finally:
                 if os.path.exists(path):
                     os.remove(path)
@@ -371,6 +403,26 @@ async def index():
 async def monitor():
     from engines import core
     return {"devices": core.available_devices}
+
+
+@app.get("/system")
+async def system():
+    """온디바이스 상태 요약 (프론트 상단 HUD용)."""
+    import engines as E
+    import openvino as ov
+    return {
+        "ready": eng is not None,
+        "devices": E.core.available_devices,
+        "assign": {"vlm": E.DEV_VLM, "vision": E.DEV_GAN, "face": E.DEV_FACE, "code": "CPU"},
+        "models": {
+            "vlm": "Qwen2.5-VL-3B INT4",
+            "detect": "YOLO11m (+pose/seg)",
+            "custom": len(eng.custom.models) if eng else 0,
+            "face": 5, "transform": 4, "ocr": "easyocr ko/en",
+        },
+        "runtime": {"openvino": ov.get_version().split("-")[0], "port": PORT},
+        "offline": True,
+    }
 
 
 if __name__ == "__main__":
