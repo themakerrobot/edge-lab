@@ -1,0 +1,32 @@
+# models / weights (HF로 관리, git에 올리지 않음)
+models/
+*.pt
+*.onnx
+*.xml
+*.bin
+*.hdf5
+*.pkl
+*.7z
+*.zip
+
+# python
+venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+
+# caches
+.cache/
+.EasyOCR/
+runs/
+
+# env / secrets
+.env
+*.token
+
+# os / editor
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
