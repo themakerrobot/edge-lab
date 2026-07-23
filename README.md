@@ -17,15 +17,16 @@ python check.py                                       # fail = 0 이어야 함
 ```
 변환이 모두 성공하면 `models/org/`는 자동 삭제된다.
 
-### B. 변환본 내려받기 (배포용, 몇 분)
+### B. 변환본 내려받기 (배포용, 몇 분) — 원클릭
+pt 원본은 필요 없다. 변환 완료본을 HF에서 받는다 (private repo — Read 권한 토큰 필요).
 ```
-python -m venv venv && venv\Scripts\activate
-pip install openvino openvino-genai fastapi "uvicorn[standard]" ultralytics ^
-    opencv-python pillow numpy easyocr python-multipart huggingface_hub
-hf download leeyunjai/vapi-od --local-dir models --exclude "models.7z"
-python fonts_download.py     # 폰트가 repo에 커밋돼 있으면 생략
-python check.py
+git clone https://github.com/themakerrobot/vapi-od.git
+cd vapi-od
+powershell -ExecutionPolicy Bypass -File setup_deploy.ps1 -Token hf_xxxx
+run.bat
 ```
+토큰은 `-Token` 인자 또는 `HF_TOKEN` 환경변수로 전달한다 (스크립트에 토큰을 심지 않는다).
+미리 `hf auth login`을 해둔 기기라면 토큰 없이 실행해도 된다.
 
 ## 실행
 ```
