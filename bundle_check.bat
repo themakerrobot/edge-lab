@@ -18,6 +18,7 @@ set HF_HUB_OFFLINE=1
 set TRANSFORMERS_OFFLINE=1
 set YOLO_OFFLINE=1
 set YOLO_CONFIG_DIR=%~dp0.ultralytics
+set VAPI_NO_BROWSER=1
 
 echo.
 echo === [1/4] 파이썬 / 패키지 ===

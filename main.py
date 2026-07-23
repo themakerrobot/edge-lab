@@ -23,6 +23,27 @@ os.makedirs(IMAGE_DIR, exist_ok=True)
 
 eng = None
 
+
+def open_browser():
+    """모델 로딩이 끝난 뒤 기본 브라우저로 화면을 연다.
+    끄고 싶으면 환경변수 VAPI_NO_BROWSER=1 로 실행한다."""
+    if os.environ.get("VAPI_NO_BROWSER"):
+        return
+    import threading
+    import webbrowser
+
+    url = f"http://localhost:{PORT}"
+
+    def _open():
+        time.sleep(1.0)  # uvicorn 소켓 바인딩 여유
+        try:
+            webbrowser.open(url)
+        except Exception as ex:
+            print("[browser] 자동 실행 실패:", ex, "→ 직접 접속:", url)
+
+    threading.Thread(target=_open, daemon=True).start()
+
+
 # 서비스 → 실행 디바이스 (HUD 표시용, engines의 배정과 동일)
 DEVICE_OF = {}
 
@@ -55,6 +76,7 @@ async def lifespan(app: FastAPI):
     eng = engines.Engines()
     build_device_map()
     print(f"! vapi-od listening on {HOST}:{PORT}")
+    open_browser()
     yield
 
 

@@ -80,8 +80,7 @@ REM 번들 실행기
   echo set TRANSFORMERS_OFFLINE=1
   echo set YOLO_OFFLINE=1
   echo set YOLO_CONFIG_DIR=%%~dp0.ultralytics
-  echo echo vapi-od 시작 중... 모델 로딩에 1~2분 걸립니다.
-  echo start "" http://localhost:57711
+  echo echo vapi-od 시작 중... 모델 로딩이 끝나면 브라우저가 자동으로 열립니다 ^^^(1~2분^^^).
   echo python\python.exe main.py
   echo pause
 )
