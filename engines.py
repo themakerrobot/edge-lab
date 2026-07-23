@@ -351,14 +351,23 @@ class SuperRes:
         self.lock = threading.Lock()
 
     def predict(self, bgr):
-        small = cv2.resize(bgr, (480, 270)).transpose(2, 0, 1)[None].astype(np.float32)
-        cubic = cv2.resize(bgr, (1920, 1080), interpolation=cv2.INTER_CUBIC)
+        """모델 입력이 480x270 고정이므로 비율 유지 letterbox 후, 출력에서 패딩을 잘라낸다."""
+        h, w = bgr.shape[:2]
+        scale = min(480 / w, 270 / h)
+        nw, nh = max(1, int(w * scale)), max(1, int(h * scale))
+        resized = cv2.resize(bgr, (nw, nh))
+        canvas = cv2.copyMakeBorder(resized, 0, 270 - nh, 0, 480 - nw,
+                                    cv2.BORDER_REPLICATE)
+        small = canvas.transpose(2, 0, 1)[None].astype(np.float32)
+        cubic = cv2.resize(canvas, (1920, 1080), interpolation=cv2.INTER_CUBIC)
         cubic = cubic.transpose(2, 0, 1)[None].astype(np.float32)
         feed = {self.inputs[0].any_name: small, self.inputs[1].any_name: cubic}
         with self.lock:
             out = list(self.compiled(feed).values())[0]
         out = np.squeeze(out).transpose(1, 2, 0)
-        return (out * 255).clip(0, 255).astype(np.uint8)
+        out = (out * 255).clip(0, 255).astype(np.uint8)
+        out = out[: nh * 4, : nw * 4]                 # 패딩 제거 → 원본 비율 복원
+        return cv2.resize(out, (w * 4, h * 4))        # 정확히 4x 크기로 정합
 
 
 class GanEngine:
