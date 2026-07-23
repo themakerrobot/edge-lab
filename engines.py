@@ -457,9 +457,14 @@ class VlmEngine:
         return ov.Tensor(rgb[None].astype(np.uint8))
 
     def generate(self, bgr, prompt, max_new_tokens=128):
+        import openvino_genai as og
+        cfg = og.GenerationConfig()
+        cfg.max_new_tokens = max_new_tokens
+        cfg.repetition_penalty = 1.15  # 3B 소형 모델의 문장 반복 루프 억제
+        cfg.do_sample = False
         with self.lock:
             out = self.pipe.generate(prompt, image=self._tensor(bgr),
-                                     max_new_tokens=max_new_tokens)
+                                     generation_config=cfg)
         return str(out).strip()
 
 
