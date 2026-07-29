@@ -263,8 +263,9 @@ class HeadPose(OVModel):
             roll = float(np.squeeze(_out(req, "angle_r_fc")))
         # 기존 headpose_inference 와 동일한 방향 판정/라디안 응답 유지
         pitch_r, yaw_r, roll_r = pitch * pi / 180, -(yaw * pi / 180), roll * pi / 180
+        # adas-0001은 pitch 부호가 기존 모델과 반대 → 위를 보면 T가 되도록 부호 반전
         x3 = sin(yaw_r)
-        y3 = -cos(yaw_r) * sin(pitch_r)
+        y3 = cos(yaw_r) * sin(pitch_r)
         res = ("R" if x3 > 0.15 else ("L" if x3 < -0.15 else "C"))
         res += ("B" if y3 > 0.15 else ("T" if y3 < -0.15 else "C"))
         return {"direction": res, "pitch": pitch_r, "yaw": yaw_r, "roll": roll_r}
