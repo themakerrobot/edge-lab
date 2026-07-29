@@ -33,8 +33,7 @@ if ($LASTEXITCODE -ne 0) { throw "package install failed" }
 & $PY -m pip install pyzbar 2>$null | Out-Null   # optional (1D barcodes)
 
 Write-Host "=== [3/5] models from HF ===" -ForegroundColor Cyan
-& $PY -m huggingface_hub.commands.huggingface_cli download leeyunjai/vapi-od `
-    --local-dir models --exclude "models.7z"
+& "venv\Scripts\hf.exe" download leeyunjai/vapi-od --local-dir models --exclude "models.7z"
 if ($LASTEXITCODE -ne 0) { throw "model download failed (check token / network)" }
 
 Write-Host "=== [4/5] fonts ===" -ForegroundColor Cyan
