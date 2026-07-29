@@ -85,6 +85,8 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True,
                    allow_methods=["*"], allow_headers=["*"])
 os.makedirs("view_project/fonts", exist_ok=True)
 app.mount("/fonts", StaticFiles(directory="view_project/fonts"), name="fonts")
+if os.path.isdir("view_project/blockly"):
+    app.mount("/blockly", StaticFiles(directory="view_project/blockly"), name="blockly")
 
 
 # ---------------------------------------------------------------- 공통
@@ -418,6 +420,12 @@ def code_barcode(path):
 @app.get("/", response_class=HTMLResponse)
 async def index():
     with open("view_project/index.html", encoding="utf-8") as f:
+        return f.read()
+
+
+@app.get("/blocks", response_class=HTMLResponse)
+async def blocks():
+    with open("view_project/blocks.html", encoding="utf-8") as f:
         return f.read()
 
 
