@@ -18,6 +18,7 @@ set HF_HUB_OFFLINE=1
 set TRANSFORMERS_OFFLINE=1
 set YOLO_OFFLINE=1
 set YOLO_CONFIG_DIR=%~dp0.ultralytics
+if not exist "%~dp0.ultralytics" mkdir "%~dp0.ultralytics"
 set VAPI_NO_BROWSER=1
 
 echo.

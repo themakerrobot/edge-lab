@@ -65,7 +65,10 @@ python -m pip install --target %BUILD%\pylib pyzbar >nul 2>&1
 
 echo.
 echo === [5/7] copy sources and models ===
-copy /y main.py engines.py prompts.py check.py smoke_test.py README.md %BUILD%\ >nul
+for %%F in (main.py engines.py prompts.py check.py smoke_test.py README.md) do (
+  copy /y %%F %BUILD%\ >nul
+  if errorlevel 1 (echo [ERROR] copy failed: %%F & exit /b 1)
+)
 copy /y bundle_check.bat %BUILD%\ >nul
 xcopy /e /i /q /y view_project %BUILD%\view_project >nul
 echo   copying models\ (several GB, takes a few minutes) ...
@@ -81,6 +84,7 @@ REM bundle launcher (ASCII only, CRLF via echo)
   echo set TRANSFORMERS_OFFLINE=1
   echo set YOLO_OFFLINE=1
   echo set YOLO_CONFIG_DIR=%%~dp0.ultralytics
+  echo if not exist "%%~dp0.ultralytics" mkdir "%%~dp0.ultralytics"
   echo echo Starting vapi-od ... browser opens automatically when ready ^(1-2 min^).
   echo python\python.exe main.py
   echo pause
@@ -89,6 +93,9 @@ REM bundle launcher (ASCII only, CRLF via echo)
 
 echo.
 echo === [6/7] verify bundled python ===
+for %%F in (main.py engines.py prompts.py check.py smoke_test.py run.bat bundle_check.bat) do (
+  if not exist %BUILD%\%%F (echo [ERROR] missing in bundle: %%F & exit /b 1)
+)
 %BUILD%\python\python.exe -c "import openvino,cv2,numpy;print('  import OK  openvino',openvino.__version__.split('-')[0])"
 if errorlevel 1 (echo [ERROR] import failed inside bundle & exit /b 1)
 
