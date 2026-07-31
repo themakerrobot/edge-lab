@@ -851,7 +851,9 @@
     async showImage(u) {
       if (!u) return;
       await swapShot(u);                        // 디코딩 후 교체 → 깜빡임 없음
-      octx.clearRect(0, 0, overlay.width, overlay.height);
+      // 방금 인식한 그 사진을 다시 보여주는 경우엔 박스를 지우지 않는다.
+      // (인식하고 박스 그리기 → 사진 보여주기 순서에서 박스가 깜빡이는 원인)
+      if (u !== AI.lastImg) octx.clearRect(0, 0, overlay.width, overlay.height);
     },
     async drawBoxes() {
       if (!AI.lastImg || !AI.lastDim) { log(t("m_needDetect")); return; }
