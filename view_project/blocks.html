@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI 블록 코딩</title>
+  <title id="txtTitleTag">AI 블록 코딩</title>
   <link href="/fonts/fonts.css" rel="stylesheet">
   <style>
     :root {
@@ -26,6 +26,34 @@
       border: 1.5px solid var(--line); border-radius: var(--r); padding: 7px 14px; cursor: pointer;
     }
     button:hover { border-color: var(--pen-blue); }
+
+    /* 디바이스 HUD */
+    .devbar {
+      display: flex; align-items: center; gap: 6px 12px; flex-wrap: wrap;
+      background: #1b1c22; border: 1.5px solid #0f1014; border-radius: 6px;
+      padding: 6px 12px; margin-bottom: 8px;
+      font-family: "Menlo", "Consolas", ui-monospace, monospace;
+      font-size: .74rem; letter-spacing: .02em; color: #cfd2da;
+    }
+    .devbar .brand { color: #8f95a3; }
+    .devbar .brand b { color: #eaecf1; letter-spacing: .08em; }
+    .devbar .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #24262e; border: 1px solid #33363f; border-radius: 999px;
+      padding: 2px 10px; color: #6f7480;
+    }
+    .devbar .chip .dot { width: 7px; height: 7px; border-radius: 50%; background: #3d424e; }
+    .devbar .chip.on { color: #b9bec9; border-color: #3f7d55; }
+    .devbar .chip.on .dot { background: #46d17f; box-shadow: 0 0 7px rgba(70,209,127,.75); }
+    .devbar .chip.busy { border-color: #7d6a3f; color: #f2d99a; }
+    .devbar .chip.busy .dot { background: #e8b13d; animation: devblink 1s infinite; }
+    .devbar .chip .st { color: #6f7480; font-variant-numeric: tabular-nums; }
+    .devbar .chip.on .st { color: #8f95a3; }
+    @keyframes devblink { 50% { opacity: .35; } }
+    @media (prefers-reduced-motion: reduce) { .devbar .chip.busy .dot { animation: none; } }
+    .devbar .meter { margin-left: auto; display: flex; gap: 12px; }
+    .devbar .meter .k { color: #8f95a3; }
+    .devbar .meter .v { color: #46d17f; font-variant-numeric: tabular-nums; }
 
     .header {
       flex: 0 0 auto; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
@@ -88,6 +116,7 @@
       max-height: 120px; overflow-y: auto; color: #3a3a42; white-space: pre-wrap;
     }
     #logBox:empty::before { content: "실행하면 진행 상황이 여기에 적혀요."; color: #a3a094; }
+    html[lang="en"] #logBox:empty::before { content: "Run your blocks and progress shows up here."; }
     details.codeview { flex: 0 0 auto; }
     details.codeview summary { cursor: pointer; font-family: "Gowun Batang", serif; font-weight: 700; font-size: .9rem; color: var(--ink-2); }
     details.codeview pre {
@@ -104,15 +133,16 @@
 <body>
   <div class="header">
     <div class="h-title">
-      <span class="eyebrow">인공지능 · 컴퓨터 비전 · 인터넷 없이 내 컴퓨터에서 실행돼요</span>
-      <span class="title">AI 블록 코딩 <span class="od">(On-Device)</span></span>
+      <span class="eyebrow" id="txtEyebrow">인공지능 · 컴퓨터 비전 · 인터넷 없이 내 컴퓨터에서 실행돼요</span>
+      <span class="title"><span id="txtTitle">AI 블록 코딩</span> <span class="od">(On-Device)</span></span>
     </div>
     <div class="h-tools">
       <a class="back" href="/" style="
         display:inline-flex;align-items:center;gap:7px;background:#fff;
         border:1.5px solid var(--line-d);color:var(--ink);font-weight:600;
         padding:8px 14px;border-radius:var(--r);text-decoration:none;font-size:.95rem;">
-        &#9998; 체험 실습</a>
+        &#9998; <span id="txtBack">체험 실습</span></a>
+      <button id="langButton" title="한국어 / English">EN</button>
       <button id="saveButton">저장</button>
       <button id="loadButton">불러오기</button>
       <input type="file" id="loadFile" accept=".json" style="display:none">
@@ -121,14 +151,26 @@
     </div>
   </div>
 
+  <div class="devbar" id="devbar">
+    <span class="brand"><b>VAPI-OD</b> · on-device</span>
+    <span class="chip" id="chipCPU"><span class="dot"></span>CPU<span class="st" id="stCPU"></span></span>
+    <span class="chip" id="chipGPU"><span class="dot"></span>GPU<span class="st" id="stGPU"></span></span>
+    <span class="chip" id="chipNPU"><span class="dot"></span>NPU<span class="st" id="stNPU"></span></span>
+    <span class="meter">
+      <span><span class="k">last</span> <span class="v" id="devLast">--</span></span>
+      <span><span class="k">exec</span> <span class="v" id="devExec">--</span></span>
+      <span><span class="k">calls</span> <span class="v" id="devCalls">0</span></span>
+    </span>
+  </div>
+
   <div class="main">
     <div class="work">
-      <div class="panel-head">블록을 조립해요</div>
+      <div class="panel-head" id="txtWorkHead">블록을 조립해요</div>
       <div id="blocklyDiv"></div>
     </div>
 
     <div class="stage-panel">
-      <div class="panel-head">무대</div>
+      <div class="panel-head" id="txtStageHead">무대</div>
       <div class="stage-body">
         <div class="stage" id="stage">
           <video id="cam" autoplay playsinline muted></video>
@@ -144,7 +186,7 @@
         </div>
         <div id="logBox"></div>
         <details class="codeview">
-          <summary>만들어진 코드 보기 (JavaScript)</summary>
+          <summary id="txtCodeView">만들어진 코드 보기 (JavaScript)</summary>
           <pre id="codeView"></pre>
         </details>
       </div>
@@ -154,7 +196,10 @@
   <script src="/blockly/blockly_compressed.js"></script>
   <script src="/blockly/blocks_compressed.js"></script>
   <script src="/blockly/javascript_compressed.js"></script>
+  <script src="/blockly/msg/en.js"></script>
+  <script>window.MSG_EN = Object.assign({}, Blockly.Msg);</script>
   <script src="/blockly/msg/ko.js"></script>
+  <script>window.MSG_KO = Object.assign({}, Blockly.Msg);</script>
   <script>
   "use strict";
   /**********************************************************************
@@ -164,98 +209,223 @@
   const G = javascript.javascriptGenerator;
   const Order = javascript.Order;
 
-  /* ---------------- 한글 라벨 매핑 ---------------- */
+  /* ---------------- 한/영 사전 ---------------- */
+  let LANG = "ko";
+  try { LANG = localStorage.getItem("vapiLang") || "ko"; } catch (e) {}
+
+  const I18N = {
+    ko: {
+      titleTag: "AI 블록 코딩", title: "AI 블록 코딩",
+      eyebrow: "인공지능 · 컴퓨터 비전 · 인터넷 없이 내 컴퓨터에서 실행돼요",
+      back: "체험 실습", save: "저장", load: "불러오기", stop: "정지", run: "실행 ▶",
+      running: "실행 중...", langBtn: "EN",
+      workHead: "블록을 조립해요", stageHead: "무대",
+      upload: "사진 올리기", uploadHint: "「업로드한 사진」 블록에서 사용돼요",
+      uploadReady: "사진이 준비됐어요",
+      codeView: "만들어진 코드 보기 (JavaScript)",
+
+      cat_input: "입력", cat_vision: "AI 인식", cat_lang: "AI 언어·변환", cat_stage: "무대",
+      cat_loop: "반복", cat_logic: "판단", cat_math: "계산", cat_text: "글자",
+      cat_list: "리스트", cat_var: "변수",
+
+      b_capture: "웹캠에서 사진 찍기", b_capture_tip: "웹캠 화면을 한 장 찍어서 사진으로 돌려줘요.",
+      b_upload: "업로드한 사진", b_upload_tip: "무대의 [사진 올리기]로 올린 사진이에요.",
+      b_detect_draw: "%1 에서 %2 인식하고 박스 그리기",
+      b_detect_draw_tip: "인식해서 찾은 위치에 박스를 그려요. 같은 사진이면 결과가 겹쳐 쌓여요.",
+      b_detect_one: "%1 에서 %2 인식하기",
+      b_detect_one_tip: "가장 확실한 것 하나의 이름을 알려줘요. 없으면 '없음'.",
+      b_objects: "%1 에서 사물 모두 찾기", b_objects_tip: "찾은 사물 이름들의 리스트를 돌려줘요.",
+      b_face: "%1 얼굴의 %2", b_face_tip: "첫 번째 얼굴의 정보를 알려줘요. 나이는 숫자예요.",
+      b_face_count: "%1 에서 얼굴 개수",
+      b_ocr: "%1 의 글자 읽기", b_qr: "%1 의 QR 읽기",
+      b_ask: "%1 에게 %2 물어보기", b_ask_tip: "사진을 보고 질문에 답해요. (몇 초 걸려요)",
+      b_guess: "%1 의 %2 추측하기",
+      b_transform: "%1 을(를) %2 로 바꾸기",
+      b_transform_tip: "바뀐 사진을 돌려줘요. 다른 AI 블록에 다시 넣을 수도 있어요.",
+      b_beats: "%1 이(가) %2 을(를) 이기면", b_beats_tip: "가위바위보 승패를 판단해요.",
+      b_random_rps: "가위·바위·보 중 랜덤",
+      b_say: "%1 말하기", b_say_tip: "소리 내어 읽고 말풍선으로 보여줘요.",
+      b_show_text: "%1 크게 보여주기", b_show_image: "사진 %1 보여주기",
+      b_boxes: "인식 결과 박스 그리기", b_boxes_tip: "마지막 인식에서 찾은 위치에 박스를 그려요.",
+      b_clear: "무대 지우기", b_wait: "%1 초 기다리기",
+      b_exec: "실행하기 %1", b_exec_tip: "값 블록을 결과 없이 실행만 해요.",
+
+      o_face: "얼굴", o_objects: "사물", o_ocr: "글자", o_qr: "QR", o_rps: "가위바위보",
+      o_fire: "불", o_ball: "공", o_number: "숫자", o_fall: "낙상", o_helmet: "안전모", o_box: "박스",
+      o_emotion: "감정", o_age: "나이", o_gender: "성별", o_dir: "방향",
+      o_place: "장소", o_time: "시간", o_weather: "날씨", o_tag: "태그",
+      o_cartoon: "만화", o_sketch: "감성 그림", o_portrait: "배경 제거", o_sr: "화질 개선",
+
+      sh_question: "무엇이 보이나요?", sh_hello: "안녕!", sh_win: "이겼다!",
+
+      r_none: "없음", r_front: "정면", r_ageSuffix: "살", r_face: "얼굴",
+      m_noCam: "웹캠을 사용할 수 없어요 (사진 올리기로 진행 가능)",
+      m_noImage: "사진이 없어요 (사진 블록을 연결하세요)",
+      m_aiError: "AI 오류: ", m_fail: "실패",
+      m_camNotReady: "웹캠이 준비되지 않았어요",
+      m_needUpload: "먼저 무대에서 [사진 올리기]를 해주세요",
+      m_tooManyAI: "AI를 너무 많이 불렀어요 (한 번 실행에 %1번까지)",
+      m_tooManyLoop: "반복이 너무 많아요 (5000회 초과)",
+      m_say: "말하기: ", m_show: "보여주기: ",
+      m_needDetect: "먼저 인식 블록을 실행하세요.",
+      m_noBlocks: "(블록이 없어요)", m_assembleFirst: "블록을 먼저 조립해 주세요.",
+      m_start: "실행 시작", m_done: "실행 완료", m_stopped: "정지했어요.", m_error: "오류: ",
+      m_loaded: "불러오기 완료: ", m_readFail: "파일을 읽을 수 없어요: ",
+      tts: "ko-KR",
+    },
+    en: {
+      titleTag: "AI Block Coding", title: "AI Block Coding",
+      eyebrow: "AI · computer vision · runs on this computer, no internet needed",
+      back: "Playground", save: "Save", load: "Load", stop: "Stop", run: "Run ▶",
+      running: "Running...", langBtn: "한국어",
+      workHead: "Build your blocks", stageHead: "Stage",
+      upload: "Upload photo", uploadHint: "Used by the “uploaded photo” block",
+      uploadReady: "Photo ready",
+      codeView: "See the generated code (JavaScript)",
+
+      cat_input: "Input", cat_vision: "AI Vision", cat_lang: "AI Language", cat_stage: "Stage",
+      cat_loop: "Loops", cat_logic: "Logic", cat_math: "Math", cat_text: "Text",
+      cat_list: "Lists", cat_var: "Variables",
+
+      b_capture: "take a photo with the webcam", b_capture_tip: "Grabs one frame from the webcam.",
+      b_upload: "uploaded photo", b_upload_tip: "The photo you added with [Upload photo].",
+      b_detect_draw: "detect %2 in %1 and draw boxes",
+      b_detect_draw_tip: "Draws a box where each result was found. Boxes stack on the same photo.",
+      b_detect_one: "detect %2 in %1",
+      b_detect_one_tip: "Returns the name of the most confident result, or 'none'.",
+      b_objects: "find every object in %1", b_objects_tip: "Returns a list of object names.",
+      b_face: "%2 of the face in %1", b_face_tip: "Info about the first face. Age is a number.",
+      b_face_count: "number of faces in %1",
+      b_ocr: "read the text in %1", b_qr: "read the QR code in %1",
+      b_ask: "ask %1 about %2", b_ask_tip: "Answers a question about the photo. (takes a few seconds)",
+      b_guess: "guess the %2 of %1",
+      b_transform: "turn %1 into %2",
+      b_transform_tip: "Returns the changed photo. You can feed it into another AI block.",
+      b_beats: "%1 beats %2", b_beats_tip: "Decides a rock-paper-scissors round.",
+      b_random_rps: "random rock, paper or scissors",
+      b_say: "say %1", b_say_tip: "Reads it aloud and shows a speech bubble.",
+      b_show_text: "show %1 in big letters", b_show_image: "show photo %1",
+      b_boxes: "draw detection boxes", b_boxes_tip: "Draws boxes from the latest detection.",
+      b_clear: "clear the stage", b_wait: "wait %1 seconds",
+      b_exec: "run %1", b_exec_tip: "Runs a value block without using its result.",
+
+      o_face: "faces", o_objects: "objects", o_ocr: "text", o_qr: "QR", o_rps: "rock-paper-scissors",
+      o_fire: "fire", o_ball: "ball", o_number: "numbers", o_fall: "a fall", o_helmet: "helmets", o_box: "boxes",
+      o_emotion: "emotion", o_age: "age", o_gender: "gender", o_dir: "direction",
+      o_place: "place", o_time: "time of day", o_weather: "weather", o_tag: "tags",
+      o_cartoon: "a cartoon", o_sketch: "a sketch", o_portrait: "no background", o_sr: "higher quality",
+
+      sh_question: "What do you see?", sh_hello: "Hi!", sh_win: "I won!",
+
+      r_none: "none", r_front: "front", r_ageSuffix: "", r_face: "face",
+      m_noCam: "No webcam available (you can still upload a photo)",
+      m_noImage: "No photo (connect a photo block)",
+      m_aiError: "AI error: ", m_fail: "failed",
+      m_camNotReady: "The webcam is not ready yet",
+      m_needUpload: "Use [Upload photo] on the stage first",
+      m_tooManyAI: "Too many AI calls (limit is %1 per run)",
+      m_tooManyLoop: "Too many loops (over 5000)",
+      m_say: "say: ", m_show: "show: ",
+      m_needDetect: "Run a detection block first.",
+      m_noBlocks: "(no blocks yet)", m_assembleFirst: "Build some blocks first.",
+      m_start: "started", m_done: "finished", m_stopped: "stopped.", m_error: "error: ",
+      m_loaded: "loaded: ", m_readFail: "Could not read the file: ",
+      tts: "en-US",
+    },
+  };
+  const t = k => (I18N[LANG] && I18N[LANG][k] !== undefined) ? I18N[LANG][k] : I18N.ko[k];
+
+  /* ---------------- 결과 라벨 매핑 (언어별) ---------------- */
   const KMAP = {
     scissors: "가위", scissor: "가위", rock: "바위", paper: "보",
     fire: "불", smoke: "연기", helmet: "안전모", face: "얼굴", box: "박스",
     fall: "낙상", fallen: "낙상", person: "사람",
   };
-  const ko = n => KMAP[n] || n;
-  const DIR_KO = { L: "왼쪽", R: "오른쪽", T: "위", B: "아래", C: "" };
-  const TIME_KO = { morning: "아침", afternoon: "낮", evening: "저녁", night: "밤", unknown: "모름" };
-  const WEATHER_KO = { sunny: "맑음", cloudy: "흐림", rainy: "비", snow: "눈", unknown: "모름" };
+  const ko = n => (LANG === "en" ? n : (KMAP[n] || n));
+  const DIRS = {
+    ko: { L: "왼쪽", R: "오른쪽", T: "위", B: "아래", C: "" },
+    en: { L: "left", R: "right", T: "up", B: "down", C: "" },
+  };
+  const TIMES = {
+    ko: { morning: "아침", afternoon: "낮", evening: "저녁", night: "밤", unknown: "모름" },
+    en: { morning: "morning", afternoon: "afternoon", evening: "evening", night: "night", unknown: "unknown" },
+  };
+  const WEATHERS = {
+    ko: { sunny: "맑음", cloudy: "흐림", rainy: "비", snow: "눈", unknown: "모름" },
+    en: { sunny: "sunny", cloudy: "cloudy", rainy: "rainy", snow: "snow", unknown: "unknown" },
+  };
+  const RPS = { ko: ["가위", "바위", "보"], en: ["scissors", "rock", "paper"] };
+  const DIR_KO = new Proxy({}, { get: (_, k) => DIRS[LANG][k] });
+  const TIME_KO = new Proxy({}, { get: (_, k) => TIMES[LANG][k] });
+  const WEATHER_KO = new Proxy({}, { get: (_, k) => WEATHERS[LANG][k] });
 
   /* ---------------- 커스텀 블록 정의 ---------------- */
   const C_INPUT = 200, C_AI = 220, C_VLM = 260, C_JUDGE = 40, C_STAGE = 20;
-  Blockly.defineBlocksWithJsonArray([
-    // 입력
-    { type: "ai_capture", message0: "웹캠에서 사진 찍기", output: "String", colour: C_INPUT,
-      tooltip: "웹캠 화면을 한 장 찍어서 사진으로 돌려줘요." },
-    { type: "ai_upload", message0: "업로드한 사진", output: "String", colour: C_INPUT,
-      tooltip: "무대의 [사진 올리기]로 올린 사진이에요." },
-    // AI 인식
-    { type: "ai_detect_draw", message0: "%1 에서 %2 인식하고 박스 그리기",
-      previousStatement: null, nextStatement: null, colour: C_AI,
-      args0: [ { type: "input_value", name: "IMG", check: "String" },
-        { type: "field_dropdown", name: "MODE", options: [
-          ["얼굴","face"],["사물","objects"],["글자","ocr"],["QR","qr"],
-          ["가위바위보","rps"],["불","fire"],["공","ball"],["숫자","number"],
-          ["낙상","fall"],["안전모","helmet"],["박스","box"] ] } ],
-      tooltip: "인식해서 찾은 위치에 박스를 그려요. 같은 사진이면 결과가 겹쳐 쌓여요." },
-    { type: "ai_detect_one", message0: "%1 에서 %2 인식하기", output: "String", colour: C_AI,
-      args0: [ { type: "input_value", name: "IMG", check: "String" },
-        { type: "field_dropdown", name: "MODE", options: [
-          ["가위바위보","rps"],["불","fire"],["공","ball"],["숫자","number"],
-          ["낙상","fall"],["안전모","helmet"],["박스","box"] ] } ],
-      tooltip: "가장 확실한 것 하나의 이름을 알려줘요. 없으면 '없음'." },
-    { type: "ai_objects", message0: "%1 에서 사물 모두 찾기", output: "Array", colour: C_AI,
-      args0: [ { type: "input_value", name: "IMG", check: "String" } ],
-      tooltip: "찾은 사물 이름들의 리스트를 돌려줘요." },
-    { type: "ai_face", message0: "%1 얼굴의 %2", output: null, colour: C_AI,
-      args0: [ { type: "input_value", name: "IMG", check: "String" },
-        { type: "field_dropdown", name: "WHAT", options: [
-          ["감정","emotion"],["나이","age"],["성별","gender"],["방향","dir"] ] } ],
-      tooltip: "첫 번째 얼굴의 정보를 알려줘요. 나이는 숫자예요." },
-    { type: "ai_face_count", message0: "%1 에서 얼굴 개수", output: "Number", colour: C_AI,
-      args0: [ { type: "input_value", name: "IMG", check: "String" } ] },
-    { type: "ai_ocr", message0: "%1 의 글자 읽기", output: "String", colour: C_AI,
-      args0: [ { type: "input_value", name: "IMG", check: "String" } ] },
-    { type: "ai_qr", message0: "%1 의 QR 읽기", output: "String", colour: C_AI,
-      args0: [ { type: "input_value", name: "IMG", check: "String" } ] },
-    // AI 언어/변환
-    { type: "ai_ask", message0: "%1 에게 %2 물어보기", output: "String", colour: C_VLM,
-      args0: [ { type: "input_value", name: "IMG", check: "String" },
-               { type: "input_value", name: "Q", check: "String" } ],
-      tooltip: "사진을 보고 질문에 답해요. (몇 초 걸려요)" },
-    { type: "ai_guess", message0: "%1 의 %2 추측하기", output: "String", colour: C_VLM,
-      args0: [ { type: "input_value", name: "IMG", check: "String" },
-        { type: "field_dropdown", name: "KIND", options: [
-          ["장소","place"],["시간","time"],["날씨","weather"],["태그","tag"] ] } ] },
-    { type: "ai_transform", message0: "%1 을(를) %2 로 바꾸기", output: "String", colour: C_VLM,
-      args0: [ { type: "input_value", name: "IMG", check: "String" },
-        { type: "field_dropdown", name: "KIND", options: [
-          ["만화","cartoon"],["감성 그림","sketch"],["배경 제거","portrait"],["화질 개선","sr"] ] } ],
-      tooltip: "바뀐 사진을 돌려줘요. 다른 AI 블록에 다시 넣을 수도 있어요." },
-    // 판단 도우미
-    { type: "ai_beats", message0: "%1 이(가) %2 을(를) 이기면", output: "Boolean", colour: C_JUDGE,
-      args0: [ { type: "input_value", name: "A", check: "String" },
-               { type: "input_value", name: "B", check: "String" } ],
-      tooltip: "가위바위보 승패를 판단해요." },
-    { type: "ai_random_rps", message0: "가위·바위·보 중 랜덤", output: "String", colour: C_JUDGE },
-    // 무대
-    { type: "st_say", message0: "%1 말하기", previousStatement: null, nextStatement: null, colour: C_STAGE,
-      args0: [ { type: "input_value", name: "TEXT" } ], tooltip: "소리 내어 읽고 말풍선으로 보여줘요." },
-    { type: "st_show_text", message0: "%1 크게 보여주기", previousStatement: null, nextStatement: null, colour: C_STAGE,
-      args0: [ { type: "input_value", name: "TEXT" } ] },
-    { type: "st_show_image", message0: "사진 %1 보여주기", previousStatement: null, nextStatement: null, colour: C_STAGE,
-      args0: [ { type: "input_value", name: "IMG", check: "String" } ] },
-    { type: "st_boxes", message0: "인식 결과 박스 그리기", previousStatement: null, nextStatement: null, colour: C_STAGE,
-      tooltip: "마지막 인식에서 찾은 위치에 박스를 그려요." },
-    { type: "st_clear", message0: "무대 지우기", previousStatement: null, nextStatement: null, colour: C_STAGE },
-    { type: "st_wait", message0: "%1 초 기다리기", previousStatement: null, nextStatement: null, colour: C_STAGE,
-      args0: [ { type: "input_value", name: "SEC", check: "Number" } ] },
-    { type: "ai_detect_draw", message0: "%1 에서 %2 인식하고 박스 그리기",
-      previousStatement: null, nextStatement: null, colour: C_AI,
-      args0: [ { type: "input_value", name: "IMG", check: "String" },
-        { type: "field_dropdown", name: "MODE", options: [
-          ["얼굴","face"],["사물","objects"],["글자","ocr"],["QR","qr"],
-          ["가위바위보","rps"],["불","fire"],["공","ball"],["숫자","number"],
-          ["낙상","fall"],["안전모","helmet"],["박스","box"] ] } ],
-      tooltip: "인식하고 바로 박스를 그려요. 같은 사진이면 여러 인식이 겹쳐 그려져요." },
-    { type: "ai_exec", message0: "실행하기 %1", previousStatement: null, nextStatement: null, colour: C_JUDGE,
-      args0: [ { type: "input_value", name: "V" } ],
-      tooltip: "값 블록을 결과 없이 실행만 해요." },
-  ]);
+  const IMG = { type: "input_value", name: "IMG", check: "String" };
+  const opt = keys => keys.map(k => [t("o_" + k), k]);
+
+  function defineBlocks() {
+    Blockly.defineBlocksWithJsonArray([
+      // 입력
+      { type: "ai_capture", message0: t("b_capture"), output: "String", colour: C_INPUT,
+        tooltip: t("b_capture_tip") },
+      { type: "ai_upload", message0: t("b_upload"), output: "String", colour: C_INPUT,
+        tooltip: t("b_upload_tip") },
+      // AI 인식
+      { type: "ai_detect_draw", message0: t("b_detect_draw"),
+        previousStatement: null, nextStatement: null, colour: C_AI,
+        args0: [ IMG, { type: "field_dropdown", name: "MODE", options: opt(
+          ["face","objects","ocr","qr","rps","fire","ball","number","fall","helmet","box"]) } ],
+        tooltip: t("b_detect_draw_tip") },
+      { type: "ai_detect_one", message0: t("b_detect_one"), output: "String", colour: C_AI,
+        args0: [ IMG, { type: "field_dropdown", name: "MODE", options: opt(
+          ["rps","fire","ball","number","fall","helmet","box"]) } ],
+        tooltip: t("b_detect_one_tip") },
+      { type: "ai_objects", message0: t("b_objects"), output: "Array", colour: C_AI,
+        args0: [ IMG ], tooltip: t("b_objects_tip") },
+      { type: "ai_face", message0: t("b_face"), output: null, colour: C_AI,
+        args0: [ IMG, { type: "field_dropdown", name: "WHAT",
+          options: opt(["emotion","age","gender","dir"]) } ],
+        tooltip: t("b_face_tip") },
+      { type: "ai_face_count", message0: t("b_face_count"), output: "Number", colour: C_AI,
+        args0: [ IMG ] },
+      { type: "ai_ocr", message0: t("b_ocr"), output: "String", colour: C_AI, args0: [ IMG ] },
+      { type: "ai_qr", message0: t("b_qr"), output: "String", colour: C_AI, args0: [ IMG ] },
+      // AI 언어/변환
+      { type: "ai_ask", message0: t("b_ask"), output: "String", colour: C_VLM,
+        args0: [ IMG, { type: "input_value", name: "Q", check: "String" } ],
+        tooltip: t("b_ask_tip") },
+      { type: "ai_guess", message0: t("b_guess"), output: "String", colour: C_VLM,
+        args0: [ IMG, { type: "field_dropdown", name: "KIND",
+          options: opt(["place","time","weather","tag"]) } ] },
+      { type: "ai_transform", message0: t("b_transform"), output: "String", colour: C_VLM,
+        args0: [ IMG, { type: "field_dropdown", name: "KIND",
+          options: opt(["cartoon","sketch","portrait","sr"]) } ],
+        tooltip: t("b_transform_tip") },
+      // 판단 도우미
+      { type: "ai_beats", message0: t("b_beats"), output: "Boolean", colour: C_JUDGE,
+        args0: [ { type: "input_value", name: "A", check: "String" },
+                 { type: "input_value", name: "B", check: "String" } ],
+        tooltip: t("b_beats_tip") },
+      { type: "ai_random_rps", message0: t("b_random_rps"), output: "String", colour: C_JUDGE },
+      { type: "ai_exec", message0: t("b_exec"), previousStatement: null, nextStatement: null,
+        colour: C_JUDGE, args0: [ { type: "input_value", name: "V" } ], tooltip: t("b_exec_tip") },
+      // 무대
+      { type: "st_say", message0: t("b_say"), previousStatement: null, nextStatement: null,
+        colour: C_STAGE, args0: [ { type: "input_value", name: "TEXT" } ], tooltip: t("b_say_tip") },
+      { type: "st_show_text", message0: t("b_show_text"), previousStatement: null, nextStatement: null,
+        colour: C_STAGE, args0: [ { type: "input_value", name: "TEXT" } ] },
+      { type: "st_show_image", message0: t("b_show_image"), previousStatement: null, nextStatement: null,
+        colour: C_STAGE, args0: [ IMG ] },
+      { type: "st_boxes", message0: t("b_boxes"), previousStatement: null, nextStatement: null,
+        colour: C_STAGE, tooltip: t("b_boxes_tip") },
+      { type: "st_clear", message0: t("b_clear"), previousStatement: null, nextStatement: null,
+        colour: C_STAGE },
+      { type: "st_wait", message0: t("b_wait"), previousStatement: null, nextStatement: null,
+        colour: C_STAGE, args0: [ { type: "input_value", name: "SEC", check: "Number" } ] },
+    ]);
+  }
+  defineBlocks();
 
   /* ---------------- 코드 생성기 ---------------- */
   const V = (b, n, d) => G.valueToCode(b, n, Order.NONE) || d;
@@ -275,59 +445,104 @@
   G.forBlock["ai_random_rps"] = () => ["(AI.randomRps())", Order.ATOMIC];
   G.forBlock["st_say"]        = b => `await RT.say(${V(b,"TEXT","''")});\n`;
   G.forBlock["st_show_text"]  = b => `RT.showText(${V(b,"TEXT","''")});\n`;
-  G.forBlock["st_show_image"] = b => `RT.showImage(${V(b,"IMG","null")});\n`;
-  G.forBlock["st_boxes"]      = () => "RT.drawBoxes();\n";
+  G.forBlock["st_show_image"] = b => `await RT.showImage(${V(b,"IMG","null")});\n`;
+  G.forBlock["st_boxes"]      = () => "await RT.drawBoxes();\n";
   G.forBlock["st_clear"]      = () => "RT.clearStage();\n";
   G.forBlock["st_wait"]       = b => `await RT.wait(${V(b,"SEC","1")});\n`;
   G.forBlock["ai_detect_draw"]= b => `await AI.detectDraw(${V(b,"IMG","null")}, '${b.getFieldValue("MODE")}');\n`;
   G.forBlock["ai_exec"]       = b => `${V(b,"V","null")};\n`;
 
   /* ---------------- 툴박스 ---------------- */
-  const toolbox = { kind: "categoryToolbox", contents: [
-    { kind: "category", name: "입력", colour: C_INPUT, contents: [
-      { kind: "block", type: "ai_capture" }, { kind: "block", type: "ai_upload" } ] },
-    { kind: "category", name: "AI 인식", colour: C_AI, contents: [
-      { kind: "block", type: "ai_detect_draw" },
-      { kind: "block", type: "ai_detect_one" }, { kind: "block", type: "ai_objects" },
-      { kind: "block", type: "ai_face" }, { kind: "block", type: "ai_face_count" },
-      { kind: "block", type: "ai_ocr" }, { kind: "block", type: "ai_qr" } ] },
-    { kind: "category", name: "AI 언어·변환", colour: C_VLM, contents: [
-      { kind: "block", type: "ai_ask", inputs: { Q: { shadow: { type: "text", fields: { TEXT: "무엇이 보이나요?" } } } } },
-      { kind: "block", type: "ai_guess" }, { kind: "block", type: "ai_transform" } ] },
-    { kind: "category", name: "무대", colour: C_STAGE, contents: [
-      { kind: "block", type: "st_say", inputs: { TEXT: { shadow: { type: "text", fields: { TEXT: "안녕!" } } } } },
-      { kind: "block", type: "st_show_text", inputs: { TEXT: { shadow: { type: "text", fields: { TEXT: "이겼다!" } } } } },
-      { kind: "block", type: "st_show_image" }, { kind: "block", type: "st_boxes" },
-      { kind: "block", type: "st_clear" },
-      { kind: "block", type: "st_wait", inputs: { SEC: { shadow: { type: "math_number", fields: { NUM: 1 } } } } } ] },
-    { kind: "sep" },
-    { kind: "category", name: "반복", colour: 120, contents: [
-      { kind: "block", type: "controls_repeat_ext", inputs: { TIMES: { shadow: { type: "math_number", fields: { NUM: 5 } } } } },
-      { kind: "block", type: "controls_whileUntil" } ] },
-    { kind: "category", name: "판단", colour: C_JUDGE, contents: [
-      { kind: "block", type: "controls_if" }, { kind: "block", type: "logic_compare" },
-      { kind: "block", type: "logic_operation" }, { kind: "block", type: "logic_negate" },
-      { kind: "block", type: "logic_boolean" },
-      { kind: "block", type: "ai_beats" }, { kind: "block", type: "ai_random_rps" },
-      { kind: "block", type: "ai_exec" } ] },
-    { kind: "category", name: "계산", colour: 230, contents: [
-      { kind: "block", type: "math_number" }, { kind: "block", type: "math_arithmetic" },
-      { kind: "block", type: "math_random_int", inputs: {
-        FROM: { shadow: { type: "math_number", fields: { NUM: 1 } } },
-        TO: { shadow: { type: "math_number", fields: { NUM: 10 } } } } } ] },
-    { kind: "category", name: "글자", colour: 160, contents: [
-      { kind: "block", type: "text" }, { kind: "block", type: "text_join" } ] },
-    { kind: "category", name: "리스트", colour: 260, contents: [
-      { kind: "block", type: "lists_create_with" }, { kind: "block", type: "lists_length" },
-      { kind: "block", type: "lists_indexOf" } ] },
-    { kind: "category", name: "변수", custom: "VARIABLE", colour: 330 },
-  ] };
+  const txt = v => ({ shadow: { type: "text", fields: { TEXT: v } } });
+  const num = v => ({ shadow: { type: "math_number", fields: { NUM: v } } });
 
-  const ws = Blockly.inject("blocklyDiv", {
-    toolbox, trashcan: true, renderer: "zelos",
+  function buildToolbox() {
+    return { kind: "categoryToolbox", contents: [
+      { kind: "category", name: t("cat_input"), colour: C_INPUT, contents: [
+        { kind: "block", type: "ai_capture" }, { kind: "block", type: "ai_upload" } ] },
+      { kind: "category", name: t("cat_vision"), colour: C_AI, contents: [
+        { kind: "block", type: "ai_detect_draw" },
+        { kind: "block", type: "ai_detect_one" }, { kind: "block", type: "ai_objects" },
+        { kind: "block", type: "ai_face" }, { kind: "block", type: "ai_face_count" },
+        { kind: "block", type: "ai_ocr" }, { kind: "block", type: "ai_qr" } ] },
+      { kind: "category", name: t("cat_lang"), colour: C_VLM, contents: [
+        { kind: "block", type: "ai_ask", inputs: { Q: txt(t("sh_question")) } },
+        { kind: "block", type: "ai_guess" }, { kind: "block", type: "ai_transform" } ] },
+      { kind: "category", name: t("cat_stage"), colour: C_STAGE, contents: [
+        { kind: "block", type: "st_say", inputs: { TEXT: txt(t("sh_hello")) } },
+        { kind: "block", type: "st_show_text", inputs: { TEXT: txt(t("sh_win")) } },
+        { kind: "block", type: "st_show_image" }, { kind: "block", type: "st_boxes" },
+        { kind: "block", type: "st_clear" },
+        { kind: "block", type: "st_wait", inputs: { SEC: num(1) } } ] },
+      { kind: "sep" },
+      { kind: "category", name: t("cat_loop"), colour: 120, contents: [
+        { kind: "block", type: "controls_repeat_ext", inputs: { TIMES: num(5) } },
+        { kind: "block", type: "controls_whileUntil" } ] },
+      { kind: "category", name: t("cat_logic"), colour: C_JUDGE, contents: [
+        { kind: "block", type: "controls_if" }, { kind: "block", type: "logic_compare" },
+        { kind: "block", type: "logic_operation" }, { kind: "block", type: "logic_negate" },
+        { kind: "block", type: "logic_boolean" },
+        { kind: "block", type: "ai_beats" }, { kind: "block", type: "ai_random_rps" },
+        { kind: "block", type: "ai_exec" } ] },
+      { kind: "category", name: t("cat_math"), colour: 230, contents: [
+        { kind: "block", type: "math_number" }, { kind: "block", type: "math_arithmetic" },
+        { kind: "block", type: "math_random_int", inputs: { FROM: num(1), TO: num(10) } } ] },
+      { kind: "category", name: t("cat_text"), colour: 160, contents: [
+        { kind: "block", type: "text" }, { kind: "block", type: "text_join" } ] },
+      { kind: "category", name: t("cat_list"), colour: 260, contents: [
+        { kind: "block", type: "lists_create_with" }, { kind: "block", type: "lists_length" },
+        { kind: "block", type: "lists_indexOf" } ] },
+      { kind: "category", name: t("cat_var"), custom: "VARIABLE", colour: 330 },
+    ] };
+  }
+
+  const WS_OPTS = {
+    media: "/blockly/media/",              // 오프라인용 (휴지통·확대축소 아이콘, 효과음)
+    trashcan: true, renderer: "zelos",
     zoom: { controls: true, wheel: true, startScale: 0.9 },
     grid: { spacing: 24, length: 2, colour: "#e6e3d8", snap: true },
-  });
+  };
+
+  let ws = Blockly.inject("blocklyDiv", Object.assign({ toolbox: buildToolbox() }, WS_OPTS));
+
+  /* ---------------- 언어 전환 ---------------- */
+  function applyStaticText() {
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    document.documentElement.lang = LANG;
+    document.title = t("titleTag");
+    set("txtTitle", t("title"));        set("txtEyebrow", t("eyebrow"));
+    set("txtBack", t("back"));          set("saveButton", t("save"));
+    set("loadButton", t("load"));       set("stopButton", t("stop"));
+    set("runLabel", t("run"));          set("langButton", t("langBtn"));
+    set("txtWorkHead", t("workHead"));  set("txtStageHead", t("stageHead"));
+    set("uploadButton", t("upload"));   set("uploadHint", t("uploadHint"));
+    set("txtCodeView", t("codeView"));
+  }
+
+  function setLang(lang) {
+    if (lang === LANG) return;
+    LANG = lang;
+    try { localStorage.setItem("vapiLang", lang); } catch (e) {}
+
+    // Blockly 기본 메시지 교체
+    Object.assign(Blockly.Msg, lang === "en" ? window.MSG_EN : window.MSG_KO);
+
+    // 작업 내용 보존 -> 블록/툴박스 재정의 -> 복원
+    const state = Blockly.serialization.workspaces.save(ws);
+    ws.dispose();
+    defineBlocks();
+    ws = Blockly.inject("blocklyDiv", Object.assign({ toolbox: buildToolbox() }, WS_OPTS));
+    Blockly.serialization.workspaces.load(state, ws);
+
+    applyStaticText();
+  }
+
+  document.getElementById("langButton").addEventListener("click",
+    () => setLang(LANG === "ko" ? "en" : "ko"));
+
+  // 저장된 언어가 영어면 초기 진입 시 한 번 적용
+  if (LANG === "en") { const cur = LANG; LANG = "ko"; setLang(cur); }
+  else applyStaticText();
 
   /* ---------------- 무대 요소 ---------------- */
   const cam = document.getElementById("cam");
@@ -342,7 +557,7 @@
   if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
     navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } })
       .then(s => { cam.srcObject = s; })
-      .catch(() => log("웹캠을 사용할 수 없어요 (사진 올리기로 진행 가능)"));
+      .catch(() => log(t("m_noCam")));
   }
   function log(msg) {
     logBox.textContent += (logBox.textContent ? "\n" : "") + msg;
@@ -368,7 +583,7 @@
         c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
         uploadedURL = c.toDataURL("image/jpeg", 0.9);
         shotImg.src = uploadedURL; shotImg.style.display = "block";
-        document.getElementById("uploadHint").textContent = "사진이 준비됐어요 (" + f.name + ")";
+        document.getElementById("uploadHint").textContent = t("uploadReady") + " (" + f.name + ")";
       };
       im.src = e.target.result;
     };
@@ -382,6 +597,60 @@
     for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
     return new Blob([arr], { type: mime });
   }
+  // 무대 사진 교체: 새 그림을 먼저 디코딩한 뒤 바꾼다.
+  // 같은 그림이면 그대로 두어 불필요한 리페인트를 막는다.
+  let shownURL = null;
+  async function swapShot(url) {
+    if (shownURL === url && shotImg.style.display === "block") return;
+    const im = new Image();
+    im.src = url;
+    try {
+      if (im.decode) await im.decode();
+      else await new Promise(r => { im.onload = r; im.onerror = r; });
+    } catch (e) { /* 디코딩 실패해도 아래에서 그냥 교체 */ }
+    shotImg.src = url;
+    shotImg.style.display = "block";
+    shownURL = url;
+  }
+
+  /* ---------------- 디바이스 HUD ---------------- */
+  let DEVICE_OF = {};                       // 서비스명 -> 실행 디바이스 (서버 실측값)
+  const DEV_N = { CPU: 0, GPU: 0, NPU: 0 };
+  let devCalls = 0;
+  const chipOf = d => document.getElementById("chip" + String(d || "").toUpperCase());
+
+  (async function initDevbar() {
+    try {
+      const info = await (await fetch("/system")).json();
+      DEVICE_OF = info.device_of || {};
+      (info.devices || []).forEach(d => {
+        const el = chipOf(d);
+        if (el) el.classList.add("on");
+      });
+    } catch (e) { /* 오프라인 초기화 실패는 무시 */ }
+  })();
+
+  function devBusy(dev) {
+    document.querySelectorAll(".devbar .chip").forEach(c => c.classList.remove("busy"));
+    const el = chipOf(dev);
+    if (el) el.classList.add("busy");
+  }
+  function devIdle() {
+    document.querySelectorAll(".devbar .chip").forEach(c => c.classList.remove("busy"));
+  }
+  function devReport(dev, ms) {
+    dev = String(dev || "").toUpperCase();
+    devCalls++;
+    document.getElementById("devCalls").textContent = devCalls;
+    document.getElementById("devLast").textContent = ms + " ms";
+    document.getElementById("devExec").textContent = dev || "--";
+    if (DEV_N[dev] !== undefined) {
+      DEV_N[dev]++;
+      const st = document.getElementById("st" + dev);
+      if (st) st.textContent = " " + ms + "ms ×" + DEV_N[dev];
+    }
+  }
+
   async function dims(url) {
     return new Promise((res, rej) => {
       const im = new Image();
@@ -391,25 +660,30 @@
     });
   }
   async function post(path, imgURL, params) {
-    if (!imgURL) throw "사진이 없어요 (사진 블록을 연결하세요)";
+    if (!imgURL) throw t("m_noImage");
     await RT.aiGate();                       // 호출 상한 + 최소 간격 + 정지 확인
     AI.lastImg = imgURL;
     AI.lastDim = await dims(imgURL);
     let url = "/" + path;
-    if (params) url += "?" + new URLSearchParams(params).toString();
+    const qs = Object.assign({ lang: LANG }, params || {});   // 서버 VLM 응답 언어
+    url += "?" + new URLSearchParams(qs).toString();
     const fd = new FormData();
     fd.append("uploadFile", dataURLtoBlob(imgURL), "image.jpg");
+    devBusy(DEVICE_OF[path.split("/")[1]]);   // 호출 직전에 해당 칩만 점멸
     let res;
     try {
       res = await fetch(url, { method: "POST", body: fd,
                                signal: RT.abort ? RT.abort.signal : undefined });
     } catch (e) {
+      devIdle();
       if (e && e.name === "AbortError") throw "STOP";  // 정지 버튼이 fetch를 끊음
       throw e;
     }
+    devIdle();
     const j = await res.json();
-    if (j.result !== "ok") throw "AI 오류: " + (j.data || "실패");
+    if (j.result !== "ok") throw t("m_aiError") + (j.data || t("m_fail"));
     RT.lastElapsed = j.elapsed_ms || 0;
+    devReport(j.device, j.elapsed_ms || 0);   // 서버가 보고한 실제 실행 디바이스
     return j.data;
   }
 
@@ -434,22 +708,23 @@
       AI._boxImg = img;
     },
     async capture() {
-      if (!cam.videoWidth) throw "웹캠이 준비되지 않았어요";
+      if (!cam.videoWidth) throw t("m_camNotReady");
       const c = document.createElement("canvas");
       c.width = 640; c.height = 480;
       c.getContext("2d").drawImage(cam, 0, 0, 640, 480);
-      shotImg.style.display = "none";           // 웹캠 라이브 뷰 유지
+      // 사진 찍기는 값을 만드는 블록이다. 무대 표시는 바꾸지 않는다.
+      // (여기서 라이브뷰로 되돌리면 변환 결과 ↔ 웹캠이 번갈아 보여 깜빡인다)
       return c.toDataURL("image/jpeg", 0.85);
     },
     uploaded() {
-      if (!uploadedURL) throw "먼저 무대에서 [사진 올리기]를 해주세요";
+      if (!uploadedURL) throw t("m_needUpload");
       return uploadedURL;
     },
     async detectOne(img, mode) {
       const d = await post("object/object_custom_e", img, { detect_mode: mode });
       const objs = (d && d.object) || [];
       AI._setBoxes(img, objs.map(o => ({ box: o.box, label: ko(o.name) })), COLOR.custom);
-      return objs.length ? ko(objs[0].name) : "없음";
+      return objs.length ? ko(objs[0].name) : t("r_none");
     },
     async objects(img) {
       const d = await post("object/object_search_e", img);
@@ -461,19 +736,19 @@
       const d = await post("face/face_analyze_e", img);
       const pick = f => {                    // 질문한 항목의 값 (라벨/반환 공용)
         if (what === "emotion") return f.emotion;
-        if (what === "age") return f.age + "살";
+        if (what === "age") return f.age + t("r_ageSuffix");
         if (what === "gender") return f.gender;
         const dir = (f.pos && f.pos.direction) || "";
-        if (dir === "CC") return "정면";
-        return ((DIR_KO[dir[0]] || "") + " " + (DIR_KO[dir[1]] || "")).trim() || "정면";
+        if (dir === "CC") return t("r_front");
+        return ((DIR_KO[dir[0]] || "") + " " + (DIR_KO[dir[1]] || "")).trim() || t("r_front");
       };
-      if (!d.length) { AI._setBoxes(img, [], COLOR.face); return what === "age" ? 0 : "없음"; }
+      if (!d.length) { AI._setBoxes(img, [], COLOR.face); return what === "age" ? 0 : t("r_none"); }
       AI._setBoxes(img, d.map(f => ({ box: f.box, label: String(pick(f)) })), COLOR.face);
       return what === "age" ? d[0].age : pick(d[0]);
     },
     async faceCount(img) {
       const d = await post("face/face_detect_e", img);
-      AI._setBoxes(img, d.map(f => ({ box: f.box, label: "얼굴" })), COLOR.face);
+      AI._setBoxes(img, d.map(f => ({ box: f.box, label: t("r_face") })), COLOR.face);
       return d.length;
     },
     async ocr(img) {
@@ -516,7 +791,7 @@
       else if (mode === "ocr") await AI.ocr(img);
       else if (mode === "qr") await AI.qr(img);
       else await AI.detectOne(img, mode);
-      RT.drawBoxes();
+      await RT.drawBoxes();
     },
     async detectDraw(img, mode) {
       if (mode === "face") await AI.faceCount(img);
@@ -524,13 +799,14 @@
       else if (mode === "ocr") await AI.ocr(img);
       else if (mode === "qr") await AI.qr(img);
       else await AI.detectOne(img, mode);
-      RT.drawBoxes();
+      await RT.drawBoxes();
     },
     beats(a, b) {
-      const w = { "가위": "보", "바위": "가위", "보": "바위" };
+      const R = RPS[LANG];                       // [가위, 바위, 보]
+      const w = {}; w[R[0]] = R[2]; w[R[1]] = R[0]; w[R[2]] = R[1];
       return w[a] === b;
     },
-    randomRps() { return ["가위", "바위", "보"][Math.floor(Math.random() * 3)]; },
+    randomRps() { return RPS[LANG][Math.floor(Math.random() * 3)]; },
   };
 
   /* ---------------- 실행기 (RT) ---------------- */
@@ -541,7 +817,7 @@
     async aiGate() {
       if (RT.stopFlag) throw "STOP";
       if (++RT.aiCalls > RT.AI_CALL_LIMIT)
-        throw "AI를 너무 많이 불렀어요 (한 번 실행에 " + RT.AI_CALL_LIMIT + "번까지)";
+        throw t("m_tooManyAI").replace("%1", RT.AI_CALL_LIMIT);
       const gap = Date.now() - RT.lastAiAt;
       if (gap < RT.AI_MIN_GAP) await sleep(RT.AI_MIN_GAP - gap);  // 서버 연타 방지
       if (RT.stopFlag) throw "STOP";
@@ -554,16 +830,16 @@
     },
     loopTrap() {
       if (RT.stopFlag) throw "STOP";
-      if (++RT.iter > 5000) throw "반복이 너무 많아요 (5000회 초과)";
+      if (++RT.iter > 5000) throw t("m_tooManyLoop");
     },
     async say(text) {
       text = String(text);
       bubble.textContent = text; bubble.style.display = "block";
-      log("말하기: " + text);
+      log(t("m_say") + text);
       await new Promise(res => {
         try {
           const u = new SpeechSynthesisUtterance(text);
-          u.lang = "ko-KR";
+          u.lang = t("tts");
           u.onend = res; u.onerror = res;
           speechSynthesis.cancel();
           speechSynthesis.speak(u);
@@ -571,16 +847,16 @@
         } catch (e) { res(); }
       });
     },
-    showText(t) { bigText.textContent = String(t); log("보여주기: " + t); },
-    showImage(u) {
+    showText(v) { bigText.textContent = String(v); log(t("m_show") + v); },
+    async showImage(u) {
       if (!u) return;
-      shotImg.src = u; shotImg.style.display = "block";
+      await swapShot(u);                        // 디코딩 후 교체 → 깜빡임 없음
       octx.clearRect(0, 0, overlay.width, overlay.height);
     },
-    drawBoxes() {
-      if (!AI.lastImg || !AI.lastDim) { log("먼저 인식 블록을 실행하세요."); return; }
+    async drawBoxes() {
+      if (!AI.lastImg || !AI.lastDim) { log(t("m_needDetect")); return; }
       // 분석했던 그 프레임을 배경으로 표시 → 박스와 대상이 항상 일치
-      shotImg.src = AI.lastImg; shotImg.style.display = "block";
+      await swapShot(AI.lastImg);
       const { w, h } = AI.lastDim;
       overlay.width = w; overlay.height = h;        // 캔버스 좌표계 = 사진 좌표계
       const k = Math.max(1, w / 640);               // 사진 크기에 비례한 선/글자 굵기
@@ -604,6 +880,7 @@
       octx.clearRect(0, 0, overlay.width, overlay.height);
       bigText.textContent = ""; bubble.style.display = "none";
       shotImg.style.display = "none";
+      shownURL = null;
     },
     async wait(s) {
       const until = Date.now() + Number(s) * 1000;
@@ -630,22 +907,22 @@
     RT.abort = new AbortController();
     logBox.textContent = "";
     RT.clearStage();
-    runButton.disabled = true; runLabel.textContent = "실행 중...";
+    runButton.disabled = true; runLabel.textContent = t("running");
     let code = "";
     try {
       code = G.workspaceToCode(ws);
-      document.getElementById("codeView").textContent = code || "(블록이 없어요)";
-      if (!code.trim()) { log("블록을 먼저 조립해 주세요."); return; }
-      log("실행 시작");
+      document.getElementById("codeView").textContent = code || t("m_noBlocks");
+      if (!code.trim()) { log(t("m_assembleFirst")); return; }
+      log(t("m_start"));
       const fn = new AsyncFunction("AI", "RT", code);
       await fn(AI, RT);
-      log("실행 완료");
+      log(t("m_done"));
     } catch (e) {
-      if (e === "STOP") log("정지했어요.");
-      else { log("오류: " + e); console.error(e, "\n--- code ---\n" + code); }
+      if (e === "STOP") log(t("m_stopped"));
+      else { log(t("m_error") + e); console.error(e, "\n--- code ---\n" + code); }
     } finally {
       ws.highlightBlock(null);
-      runButton.disabled = false; runLabel.textContent = "실행 ▶";
+      runButton.disabled = false; runLabel.textContent = t("run");
     }
   });
   document.getElementById("stopButton").addEventListener("click", () => {
@@ -672,8 +949,8 @@
     rd.onload = e => {
       try {
         Blockly.serialization.workspaces.load(JSON.parse(e.target.result), ws);
-        log("불러오기 완료: " + f.name);
-      } catch (err) { alert("파일을 읽을 수 없어요: " + err); }
+        log(t("m_loaded") + f.name);
+      } catch (err) { alert(t("m_readFail") + err); }
     };
     rd.readAsText(f);
     this.value = "";

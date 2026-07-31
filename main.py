@@ -44,8 +44,28 @@ def open_browser():
     threading.Thread(target=_open, daemon=True).start()
 
 
-# 서비스 → 실행 디바이스 (HUD 표시용, engines의 배정과 동일)
+# 서비스 → 실행 디바이스 (HUD 표시용)
+# 배정값(DEV_*)이 아니라 **컴파일된 모델이 보고한 실제 실행 디바이스**를 쓴다.
 DEVICE_OF = {}
+
+
+def exec_device(obj, fallback="CPU"):
+    """OpenVINO 가 실제로 어디서 실행하는지 물어본다.
+    AUTO/HETERO 나 폴백이 일어나도 정확한 값이 나온다."""
+    for attr in ("compiled", "compiled_model", "model"):
+        c = getattr(obj, attr, None)
+        if c is None:
+            continue
+        try:
+            v = c.get_property("EXECUTION_DEVICES")
+        except Exception:
+            continue
+        if isinstance(v, (list, tuple)):
+            v = "+".join(str(x) for x in v)
+        v = str(v).strip()
+        if v:
+            return v.split(".")[0]        # "GPU.0" -> "GPU"
+    return fallback
 
 
 def build_device_map():
@@ -56,17 +76,26 @@ def build_device_map():
     gan = {"cartoon", "sketch", "portrait", "sr"}
     face = {"face_detect_e", "face_analyze_e", "face_analyze", "face_emotion_e",
             "face_age_gender_e", "face_pose_e"}
+    # 실측: 각 그룹의 대표 모델에게 직접 물어본다
+    dev_face = exec_device(eng.face.detect, E.DEV_FACE) if eng else E.DEV_FACE
+    dev_gan = exec_device(eng.gan.bgremove, E.DEV_GAN) if eng else E.DEV_GAN
+    dev_vlm = E.DEV_VLM          # GenAI 파이프라인은 속성 조회를 제공하지 않는다
+
     for k in vlm:
-        DEVICE_OF[k] = E.DEV_VLM
+        DEVICE_OF[k] = dev_vlm
     for k in gan:
-        DEVICE_OF[k] = E.DEV_GAN
+        DEVICE_OF[k] = dev_gan
     for k in face:
-        DEVICE_OF[k] = E.DEV_FACE
+        DEVICE_OF[k] = dev_face
     for k in ("object_search_e", "object_search", "object_pose_e", "object_seg_e",
               "object_custom_e", "mask_detect"):
         DEVICE_OF[k] = "CPU"
     for k in ("ocr", "barcode"):
         DEVICE_OF[k] = "CPU"
+
+    print(f"[devices] face={DEVICE_OF.get('face_analyze_e')} "
+          f"gan={DEVICE_OF.get('cartoon')} vlm={DEVICE_OF.get('caption')} "
+          f"yolo={DEVICE_OF.get('object_search_e')} code=CPU  (런타임 보고값)")
 
 
 @asynccontextmanager
@@ -189,8 +218,8 @@ async def object_custom_e(request: Request, uploadFile: UploadFile = File(...),
 
 @app.post("/object/object_cls_e", tags=["object"], summary="이미지 분류 (VLM)")
 @service("object_cls_e")
-def object_cls_e(path):
-    text = eng.vlm.generate(read_bgr(path), P.P_CLS, P.MAX_TOKENS["cls"])
+def object_cls_e(path, lang: str = "ko"):
+    text = eng.vlm.generate(read_bgr(path), P.p_cls(lang), P.MAX_TOKENS["cls"])
     return P.parse_cls(text)
 
 
@@ -293,12 +322,12 @@ def mask_detect(path):
 
 @app.post("/face/face_attribute", tags=["face"], summary="얼굴 속성 (VLM)")
 @service("face_attribute")
-def face_attribute(path):
+def face_attribute(path, lang: str = "ko"):
     image, items = _faces(path)
     out = []
     for item in items[:2]:  # VLM 호출 비용 고려 상위 2명
         x1, y1, x2, y2 = item["box"]
-        text = eng.vlm.generate(image[y1:y2, x1:x2], P.P_ATTR, P.MAX_TOKENS["attr"])
+        text = eng.vlm.generate(image[y1:y2, x1:x2], P.p_attr(lang), P.MAX_TOKENS["attr"])
         out.append(dict(P.parse_attr(text), **item))
     return out
 
@@ -306,51 +335,51 @@ def face_attribute(path):
 # ---------------------------------------------------------------- caption (VLM 통합)
 @app.post("/caption/caption", tags=["caption"], summary="이미지 캡션")
 @service("caption")
-def caption(path, mode: str = "enko"):
-    text = eng.vlm.generate(read_bgr(path), P.P_CAPTION, P.MAX_TOKENS["caption"])
+def caption(path, mode: str = "enko", lang: str = "ko"):
+    text = eng.vlm.generate(read_bgr(path), P.p_caption(lang), P.MAX_TOKENS["caption"])
     return P.parse_caption(text)
 
 
 @app.post("/caption/caption_place_e", tags=["caption"], summary="이미지 장소 인식")
 @service("caption_place_e")
-def caption_place_e(path):
-    text = eng.vlm.generate(read_bgr(path), P.P_PLACE, P.MAX_TOKENS["place"])
-    return P.parse_place(text)
+def caption_place_e(path, lang: str = "ko"):
+    text = eng.vlm.generate(read_bgr(path), P.p_place(lang), P.MAX_TOKENS["place"])
+    return P.parse_place(text, lang)
 
 
 @app.post("/caption/caption_time_e", tags=["caption"], summary="이미지 시간 인식")
 @service("caption_time_e")
-def caption_time_e(path):
-    text = eng.vlm.generate(read_bgr(path), P.P_TIME, P.MAX_TOKENS["time"])
+def caption_time_e(path, lang: str = "ko"):
+    text = eng.vlm.generate(read_bgr(path), P.p_time(lang), P.MAX_TOKENS["time"])
     return {"time": P.parse_choice(text, P.TIME_CHOICES)}
 
 
 @app.post("/caption/caption_weather_e", tags=["caption"], summary="이미지 날씨 인식")
 @service("caption_weather_e")
-def caption_weather_e(path):
-    text = eng.vlm.generate(read_bgr(path), P.P_WEATHER, P.MAX_TOKENS["weather"])
+def caption_weather_e(path, lang: str = "ko"):
+    text = eng.vlm.generate(read_bgr(path), P.p_weather(lang), P.MAX_TOKENS["weather"])
     return {"weather": P.parse_choice(text, P.WEATHER_CHOICES)}
 
 
 @app.post("/caption/caption_question_e", tags=["caption"], summary="이미지 질문")
 @service("caption_question_e")
-def caption_question_e(path, prompt: str = ""):
-    text = eng.vlm.generate(read_bgr(path), P.P_QUESTION.replace("{q}", prompt),
+def caption_question_e(path, prompt: str = "", lang: str = "ko"):
+    text = eng.vlm.generate(read_bgr(path), P.p_question(prompt, lang),
                             P.MAX_TOKENS["question"])
     return P.parse_question(text, prompt)
 
 
 @app.post("/caption/caption_tag_e", tags=["caption"], summary="이미지 태그")
 @service("caption_tag_e")
-def caption_tag_e(path):
-    text = eng.vlm.generate(read_bgr(path), P.P_TAG, P.MAX_TOKENS["tag"])
+def caption_tag_e(path, lang: str = "ko"):
+    text = eng.vlm.generate(read_bgr(path), P.p_tag(lang), P.MAX_TOKENS["tag"])
     return P.parse_tag(text)
 
 
 @app.post("/vlm/vlm_inference_e", tags=["vlm"], summary="이미지 설명 (자유 프롬프트)")
 @service("vlm_inference_e")
-def vlm_inference_e(path, prompt: str = ""):
-    answer = eng.vlm.generate(read_bgr(path), prompt or "이 이미지를 설명하세요.",
+def vlm_inference_e(path, prompt: str = "", lang: str = "ko"):
+    answer = eng.vlm.generate(read_bgr(path), prompt or P.p_free(lang),
                               P.MAX_TOKENS["free"])
     return {"answer": answer}
 
@@ -443,7 +472,12 @@ async def system():
     return {
         "ready": eng is not None,
         "devices": E.core.available_devices,
-        "assign": {"vlm": E.DEV_VLM, "vision": E.DEV_GAN, "face": E.DEV_FACE, "code": "CPU"},
+        "assign": {"vlm": DEVICE_OF.get("caption", E.DEV_VLM),
+                   "vision": DEVICE_OF.get("cartoon", E.DEV_GAN),
+                   "face": DEVICE_OF.get("face_analyze_e", E.DEV_FACE),
+                   "code": "CPU"},
+        "assign_requested": {"vlm": E.DEV_VLM, "vision": E.DEV_GAN, "face": E.DEV_FACE},
+        "device_of": DEVICE_OF,          # 서비스명 -> 실행 디바이스 (프론트 HUD용)
         "models": {
             "vlm": "Qwen2.5-VL-3B INT4",
             "detect": "YOLO11m (+pose/seg)",

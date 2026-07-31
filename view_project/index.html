@@ -132,6 +132,10 @@
     }
     .chip.on { color: #eaecf1; border-color: #3f7d55; }
     .chip.on .dot { background: #46d17f; box-shadow: 0 0 7px rgba(70,209,127,.75); }
+    .chip .st { color: #6f7480; font-variant-numeric: tabular-nums; }
+    .chip.on .st { color: #8f95a3; }
+    .chip.hit { border-color: #46d17f; }
+    .chip.hit .st { color: #46d17f; }
     .chip.busy { border-color: #7d6a3f; color: #f2d99a; }
     .chip.busy .dot { background: #e8b13d; box-shadow: 0 0 7px rgba(232,177,61,.75); animation: blink 1s infinite; }
     @keyframes blink { 50% { opacity: .35; } }
@@ -450,6 +454,7 @@
       color: #3a3a42;
     }
     .scratchpad pre:empty::before { content: "실행하면 결과 데이터가 여기에 적혀요."; color: #a3a094; }
+    html[lang="en"] .scratchpad pre:empty::before { content: "Run once and the result data shows up here."; }
 
     /* 스크롤바 */
     .panel-body::-webkit-scrollbar, .scratchpad pre::-webkit-scrollbar { width: 10px; }
@@ -477,15 +482,16 @@
   <!-- 시험지 머리표 -->
   <div class="header">
     <div class="h-subject">
-      <span class="eyebrow">인공지능 · 컴퓨터 비전 · 인터넷 없이 내 컴퓨터에서 실행돼요</span>
-      <span class="title">컴퓨터 비전 실습 <span style="font-size:.85rem;color:var(--pen-red);vertical-align:middle;">(On-Device)</span></span>
+      <span class="eyebrow" id="txtEyebrow">인공지능 · 컴퓨터 비전 · 인터넷 없이 내 컴퓨터에서 실행돼요</span>
+      <span class="title"><span id="txtTitle">컴퓨터 비전 실습</span> <span style="font-size:.85rem;color:var(--pen-red);vertical-align:middle;">(On-Device)</span></span>
     </div>
     <div class="h-tools">
       <a href="/blocks" id="blocksLink" title="AI 블록 코딩으로 이동" style="
         display:inline-flex;align-items:center;gap:7px;background:#fff;
         border:1.5px solid var(--line-d);color:var(--ink);font-weight:600;
         padding:8px 14px;border-radius:var(--r);text-decoration:none;font-size:.95rem;">
-        &#9632; 블록 코딩</a>
+        &#9632; <span id="txtBlocksLink">블록 코딩</span></a>
+      <button id="langButton" title="한국어 / English">EN</button>
       <select id="lessonSelect" title="차시 선택"></select>
       <button id="fullscreenButton" title="전체화면으로 보기">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V5a1 1 0 0 1 1-1h4M20 9V5a1 1 0 0 0-1-1h-4M4 15v4a1 1 0 0 0 1 1h4M20 15v4a1 1 0 0 1-1 1h-4"/></svg>
@@ -498,9 +504,9 @@
   <div class="sysbar" id="sysbar">
     <span class="brand"><b>VAPI-OD</b> · on-device vision runtime</span>
     <span class="sep">|</span>
-    <span class="chip" id="chipCPU"><span class="dot"></span>CPU</span>
-    <span class="chip" id="chipGPU"><span class="dot"></span>GPU</span>
-    <span class="chip" id="chipNPU"><span class="dot"></span>NPU</span>
+    <span class="chip" id="chipCPU"><span class="dot"></span>CPU<span class="st" id="stCPU"></span></span>
+    <span class="chip" id="chipGPU"><span class="dot"></span>GPU<span class="st" id="stGPU"></span></span>
+    <span class="chip" id="chipNPU"><span class="dot"></span>NPU<span class="st" id="stNPU"></span></span>
     <span class="sep">|</span>
     <span id="sysModels">models —</span>
     <span class="sep">|</span>
@@ -516,39 +522,39 @@
   <div class="subheader">
     <div class="q" id="q1">
       <span class="qnum">1</span>
-      <span class="qtext">모델을 골라요</span>
+      <span class="qtext" id="txtQ1">모델을 골라요</span>
     </div>
     <div class="q" id="missionBox" style="display:none;">
-      <span class="mission-label">미션</span>
+      <span class="mission-label" id="txtMissionLabel">미션</span>
       <span class="mission-text" id="missionText"></span>
     </div>
     <div class="field" id="modelField">
-      <label class="field-label" for="modelSelect">모델</label>
+      <label class="field-label" for="modelSelect" id="txtModelLabel">모델</label>
       <select id="modelSelect"></select>
     </div>
     <div class="field">
-      <label class="field-label" for="guide">가이드</label>
+      <label class="field-label" for="guide" id="txtGuideLabel">가이드</label>
       <input type="text" id="guide" readonly />
     </div>
-    <a id="apiDocLink" class="doc-link" href="#" target="_blank">API 문서</a>
+    <a id="apiDocLink" class="doc-link" href="#" target="_blank">API Docs</a>
   </div>
 
   <!-- 문항 2 : 이미지 넣고 실행 -->
   <div class="tab-prompt-row">
     <div class="q">
       <span class="qnum">2</span>
-      <span class="qtext">이미지를 넣고 실행해요</span>
+      <span class="qtext" id="txtQ2">이미지를 넣고 실행해요</span>
     </div>
     <div class="tabs">
-      <button class="tabButton active" data-tab="upload">이미지</button>
-      <button class="tabButton" data-tab="webcam">웹캠</button>
-      <button class="tabButton" data-tab="sketch">스케치북</button>
+      <button class="tabButton active" data-tab="upload" id="txtTabUpload">이미지</button>
+      <button class="tabButton" data-tab="webcam" id="txtTabWebcam">웹캠</button>
+      <button class="tabButton" data-tab="sketch" id="txtTabSketch">스케치북</button>
     </div>
     <div class="promptWrapper">
-      <label class="field-label" for="promptInput">프롬프트</label>
+      <label class="field-label" for="promptInput" id="txtPromptLabel">프롬프트</label>
       <input type="text" id="promptInput" value="-" />
       <label class="live-toggle" id="liveToggle" title="웹캠에서 계속 인식합니다 (빠른 모델만)">
-        <input type="checkbox" id="liveCheck"> 라이브
+        <input type="checkbox" id="liveCheck"> <span id="txtLive">라이브</span>
       </label>
       <button id="mainRunButton" title="스페이스바로도 실행할 수 있어요"><span id="runLabel">실행</span></button>
     </div>
@@ -559,14 +565,14 @@
     <!-- 왼쪽: 입력 -->
     <div class="panel">
       <div class="panel-head">
-        <span class="qtext" style="font-size:.95rem;">입력 이미지</span>
+        <span class="qtext" style="font-size:.95rem;" id="txtInputHead">입력 이미지</span>
       </div>
       <div class="panel-body">
         <div id="upload" class="tab-content active">
           <div class="upload-container" id="uploadPlaceholder">
             <div id="uploadText">
-              이 칸에 이미지를 붙여 보세요
-              <div class="hint">끌어놓기 또는 클릭해서 업로드</div>
+              <span id="txtUploadMain">이 칸에 이미지를 붙여 보세요</span>
+              <div class="hint" id="txtUploadHint">끌어놓기 또는 클릭해서 업로드</div>
             </div>
             <input type="file" id="fileInput" accept="image/*" style="display:none;">
             <img id="uploadPreview">
@@ -587,9 +593,9 @@
           <div class="sketch-container">
             <canvas id="sketchCanvas" width="640" height="480"></canvas>
             <div class="sketch-controls">
-              <label class="field-label" for="penColor">색상</label>
+              <label class="field-label" for="penColor" id="txtPenColor">색상</label>
               <input type="color" id="penColor" value="#000000">
-              <label class="field-label" for="penWidth">굵기</label>
+              <label class="field-label" for="penWidth" id="txtPenWidth">굵기</label>
               <input type="range" id="penWidth" min="1" max="10" value="5">
             </div>
           </div>
@@ -604,7 +610,7 @@
     <div class="panel">
       <div class="panel-head">
         <span class="qnum">3</span>
-        <span class="qtext">결과를 확인해요</span>
+        <span class="qtext" id="txtQ3">결과를 확인해요</span>
         <span id="missionProgress" style="display:none;"></span>
       </div>
       <div class="panel-body">
@@ -614,7 +620,7 @@
         </div>
 
         <div class="easy-answer" id="easyAnswer">
-          <span class="ea-label">풀이</span>
+          <span class="ea-label" id="txtEasyLabel">풀이</span>
           <div id="easyText"></div>
         </div>
 
@@ -624,12 +630,12 @@
         </div>
 
         <div class="history" id="historyBox" style="display:none;">
-          <div class="h-title">실행 기록 — 눌러서 다시 보기</div>
+          <div class="h-title" id="txtHistoryTitle">실행 기록 — 눌러서 다시 보기</div>
           <div class="strip" id="historyStrip"></div>
         </div>
 
         <details class="scratchpad">
-          <summary>상세보기 — 결과 데이터(JSON)</summary>
+          <summary id="txtDetails">상세보기 — 결과 데이터(JSON)</summary>
           <div class="pad-tools">
             <button id="copyJsonButton">복사</button>
           </div>
@@ -647,38 +653,110 @@
 
     const HOST = "";  // 온디바이스: 같은 서버(same-origin) 고정
 
-    const SERVICE_LIST = {
-      "얼굴 특성": { "api": "face/face_attribute", "params": {}, "tooltip": "얼굴의 안경, 콧수염, 턱수염, 모자를 인식합니다." },
-      "마스크 인식": { "api": "face/mask_detect", "params": {}, "tooltip": "얼굴의 마스크 착용 여부를 인식합니다." },
-      "얼굴 분석": { "api": "face/face_analyze_e", "params": {}, "tooltip": "얼굴의 나이/성별/감정/방향을 분석합니다." },
-      "얼굴 인식": { "api": "face/face_detect_e", "params": {}, "tooltip": "얼굴을 인식합니다." },
-      "얼굴 감정 분석": { "api": "face/face_emotion_e", "params": {}, "tooltip": "얼굴의 감정을 분석합니다." },
-      "얼굴 나이/성별 분석": { "api": "face/face_age_gender_e", "params": {}, "tooltip": "얼굴의 나이/성별을 분석합니다." },
-      "얼굴 방향 인식": { "api": "face/face_pose_e", "params": {}, "tooltip": "얼굴의 시선 방향을 인식합니다." },
-      "사물 인식": { "api": "object/object_search_e", "params": {}, "tooltip": "80가지 사물의 이름/위치를 인식합니다." },
-      "가위바위보 인식": { "api": "object/object_custom_e", "params": {"detect_mode":"rps"}, "tooltip": "가위바위보를 인식합니다." },
-      "불 인식": { "api": "object/object_custom_e", "params": {"detect_mode":"fire"}, "tooltip": "불, 연기를 인식합니다." },
-      "공 인식": { "api": "object/object_custom_e", "params": {"detect_mode":"ball"}, "tooltip": "공을 인식합니다.(빨강,노랑,초록)" },
-      "숫자 인식": { "api": "object/object_custom_e", "params": {"detect_mode":"number"}, "tooltip": "숫자, 연산자를 인식합니다." },
-      "낙상 인식": { "api": "object/object_custom_e", "params": {"detect_mode":"fall"}, "tooltip": "낙상을 인식합니다." },
-      "안전모 인식": { "api": "object/object_custom_e", "params": {"detect_mode":"helmet"}, "tooltip": "안전모 착용 여부를 인식합니다." },
-      "박스 인식": { "api": "object/object_custom_e", "params": {"detect_mode":"box"}, "tooltip": "박스를 인식합니다." },
-      "사람 포즈 인식": { "api": "object/object_pose_e", "params": {}, "tooltip": "인체의 17개 주요 포인트를 인식합니다." },
-      "이미지 분류": { "api": "object/object_cls_e", "params": {}, "tooltip": "이미지의 주제를 분류합니다." },
-      "사물 분할": { "api": "object/object_seg_e", "params": {}, "tooltip": "80가지 사물의 영역을 분할하여 표시합니다." },
-      "이미지 장소 인식": { "api": "caption/caption_place_e", "params": {}, "tooltip": "이미지에 대한 장소를 추측합니다." },
-      "이미지 시간 인식": { "api": "caption/caption_time_e", "params": {}, "tooltip": "이미지에 대한 시간대를 추측합니다." },
-      "이미지 날씨 인식": { "api": "caption/caption_weather_e", "params": {}, "tooltip": "이미지에 대한 날씨를 추측합니다." },
-      "이미지 질문": { "api": "caption/caption_question_e", "params": {}, "tooltip": "이미지에 대한 질문을 하고, 답변을 생성합니다." },
-      "이미지 태그": { "api": "caption/caption_tag_e", "params": {}, "tooltip": "이미지에 대한 태그를 생성합니다.(한/영)" },
-      "이미지 설명": { "api": "vlm/vlm_inference_e", "params": {}, "tooltip": "비전 언어 모델에 프롬프트를 입력하여, 이미지를 설명합니다." },
-      "이미지 변환(만화)": { "api": "gan/cartoon", "params": {}, "tooltip": "이미지를 만화 스타일로 변환합니다." },
-      "이미지 변환(감성)": { "api": "gan/sketch", "params": {}, "tooltip": "이미지를 감성적인 그림 스타일로 변환합니다." },
-      "배경 제거": { "api": "gan/portrait", "params": {}, "tooltip": "인물/사물만 남기고 배경을 제거합니다." },
-      "화질 개선(4배)": { "api": "gan/sr", "params": {}, "tooltip": "이미지 화질을 4배로 개선합니다." },
-      "글자 인식": { "api": "code/ocr", "params": {}, "tooltip": "이미지에서 문자/숫자를 인식합니다." },
-      "QR코드 인식": { "api": "code/barcode", "params": {}, "tooltip": "이미지에서 바코드를 인식합니다." }
+    /* ═════ 한/영 ═════ */
+    let LANG = "ko";
+    try { LANG = localStorage.getItem("vapiLang") || "ko"; } catch (e) {}
+    document.documentElement.lang = LANG;
+
+    const UI = {
+      ko: {
+        titleTag: "컴퓨터 비전 실습", title: "컴퓨터 비전 실습",
+        eyebrow: "인공지능 · 컴퓨터 비전 · 인터넷 없이 내 컴퓨터에서 실행돼요",
+        blocksLink: "블록 코딩", langBtn: "EN",
+        fs: "전체화면", fsExit: "전체화면 종료",
+        q1: "모델을 골라요", q2: "이미지를 넣고 실행해요", q3: "결과를 확인해요",
+        missionLabel: "미션", modelLabel: "모델", guideLabel: "가이드", promptLabel: "프롬프트",
+        tabUpload: "이미지", tabWebcam: "웹캠", tabSketch: "스케치북",
+        live: "라이브", run: "실행", running: "실행 중...", liveRun: "라이브 중",
+        inputHead: "입력 이미지",
+        uploadMain: "이 칸에 이미지를 붙여 보세요", uploadHint: "끌어놓기 또는 클릭해서 업로드",
+        capture: "캡쳐", penColor: "색상", penWidth: "굵기", clearSketch: "초기화",
+        stamp: "확인!", stampDone: "참 잘했어요", easyLabel: "풀이",
+        saveResult: "결과 이미지 저장", clearHistory: "기록 지우기",
+        historyTitle: "실행 기록 — 눌러서 다시 보기",
+        details: "상세보기 — 결과 데이터(JSON)", copy: "복사", copied: "복사됨!",
+        freeMode: "자유 모드", lessonListTitle: "차시 목록",
+        lessonOpt: (no, t) => `${no}차시 · ${t}`, lessonNo: no => `${no}차시`,
+        lessonEyebrow: no => `컴퓨터 비전 실습 · ${no}차시`,
+        challenge: "도전", complete: "완료!",
+        promptQ: "이미지를 설명해주세요.", promptVLM: "이미지를 30자 이내로 설명해주세요.",
+        modelsWait: "models: 연결 대기",
+        liveOkTip: "웹캠으로 계속 인식합니다 (체크하면 웹캠 탭으로 전환)",
+        liveNoTip: "이 모델은 응답이 길어 라이브를 지원하지 않아요 (얼굴·사물·포즈 계열에서 사용)",
+        aSelectImage: "이미지를 선택하세요.", aCapture: "웹캠 이미지를 캡쳐하세요.",
+        aRunFirst: "먼저 실행해 주세요.", aError: "오류가 발생했습니다. 콘솔을 확인해주세요.",
+        aNoWebcam: "웹캠을 사용할 수 없어요. 카메라 권한을 확인해 주세요.",
+        aCopyFail: "복사에 실패했습니다.",
+      },
+      en: {
+        titleTag: "Computer Vision Lab", title: "Computer Vision Lab",
+        eyebrow: "AI · computer vision · runs on this computer, no internet needed",
+        blocksLink: "Block Coding", langBtn: "한국어",
+        fs: "Fullscreen", fsExit: "Exit fullscreen",
+        q1: "Pick a model", q2: "Add an image and run", q3: "Check the result",
+        missionLabel: "Mission", modelLabel: "Model", guideLabel: "Guide", promptLabel: "Prompt",
+        tabUpload: "Image", tabWebcam: "Webcam", tabSketch: "Sketchbook",
+        live: "Live", run: "Run", running: "Running...", liveRun: "Live",
+        inputHead: "Input image",
+        uploadMain: "Drop an image here", uploadHint: "Drag & drop, or click to upload",
+        capture: "Capture", penColor: "Color", penWidth: "Width", clearSketch: "Clear",
+        stamp: "Done!", stampDone: "Great job!", easyLabel: "Answer",
+        saveResult: "Save result image", clearHistory: "Clear history",
+        historyTitle: "History — click to view again",
+        details: "Details — result data (JSON)", copy: "Copy", copied: "Copied!",
+        freeMode: "Free mode", lessonListTitle: "Lessons",
+        lessonOpt: (no, t) => `Lesson ${no} · ${t}`, lessonNo: no => `Lesson ${no}`,
+        lessonEyebrow: no => `Computer Vision Lab · Lesson ${no}`,
+        challenge: "Tries", complete: "Done!",
+        promptQ: "Describe this image.", promptVLM: "Describe this image in one short sentence.",
+        modelsWait: "models: waiting",
+        liveOkTip: "Keeps detecting from the webcam (checking switches to the webcam tab)",
+        liveNoTip: "This model is too slow for live mode (use face / object / pose models)",
+        aSelectImage: "Choose an image first.", aCapture: "Capture a webcam image first.",
+        aRunFirst: "Run something first.", aError: "Something went wrong. Check the console.",
+        aNoWebcam: "No webcam available. Check the camera permission.",
+        aCopyFail: "Copy failed.",
+      },
     };
+    const T = k => UI[LANG][k] !== undefined ? UI[LANG][k] : UI.ko[k];
+
+    const SERVICE_LIST = {
+      "얼굴 특성": { "api": "face/face_attribute", "params": {}, "tooltip": "얼굴의 안경, 콧수염, 턱수염, 모자를 인식합니다.", "en": "Face attributes", "tooltip_en": "Detects glasses, mustache, beard and hats on faces." },
+      "마스크 인식": { "api": "face/mask_detect", "params": {}, "tooltip": "얼굴의 마스크 착용 여부를 인식합니다.", "en": "Mask detection", "tooltip_en": "Checks whether each face is wearing a mask." },
+      "얼굴 분석": { "api": "face/face_analyze_e", "params": {}, "tooltip": "얼굴의 나이/성별/감정/방향을 분석합니다.", "en": "Face analysis", "tooltip_en": "Estimates age, gender, emotion and gaze direction." },
+      "얼굴 인식": { "api": "face/face_detect_e", "params": {}, "tooltip": "얼굴을 인식합니다.", "en": "Face detection", "tooltip_en": "Finds faces in the image." },
+      "얼굴 감정 분석": { "api": "face/face_emotion_e", "params": {}, "tooltip": "얼굴의 감정을 분석합니다.", "en": "Face emotion", "tooltip_en": "Reads the emotion on each face." },
+      "얼굴 나이/성별 분석": { "api": "face/face_age_gender_e", "params": {}, "tooltip": "얼굴의 나이/성별을 분석합니다.", "en": "Face age / gender", "tooltip_en": "Estimates each face's age and gender." },
+      "얼굴 방향 인식": { "api": "face/face_pose_e", "params": {}, "tooltip": "얼굴의 시선 방향을 인식합니다.", "en": "Face direction", "tooltip_en": "Detects which way each face is looking." },
+      "사물 인식": { "api": "object/object_search_e", "params": {}, "tooltip": "80가지 사물의 이름/위치를 인식합니다.", "en": "Object detection", "tooltip_en": "Finds 80 kinds of objects and where they are." },
+      "가위바위보 인식": { "api": "object/object_custom_e", "params": {"detect_mode":"rps"}, "tooltip": "가위바위보를 인식합니다.", "en": "Rock-paper-scissors", "tooltip_en": "Recognizes rock, paper and scissors hands." },
+      "불 인식": { "api": "object/object_custom_e", "params": {"detect_mode":"fire"}, "tooltip": "불, 연기를 인식합니다.", "en": "Fire detection", "tooltip_en": "Detects fire and smoke." },
+      "공 인식": { "api": "object/object_custom_e", "params": {"detect_mode":"ball"}, "tooltip": "공을 인식합니다.(빨강,노랑,초록)", "en": "Ball detection", "tooltip_en": "Detects balls (red, yellow, green)." },
+      "숫자 인식": { "api": "object/object_custom_e", "params": {"detect_mode":"number"}, "tooltip": "숫자, 연산자를 인식합니다.", "en": "Number detection", "tooltip_en": "Detects digits and math operators." },
+      "낙상 인식": { "api": "object/object_custom_e", "params": {"detect_mode":"fall"}, "tooltip": "낙상을 인식합니다.", "en": "Fall detection", "tooltip_en": "Detects a person falling down." },
+      "안전모 인식": { "api": "object/object_custom_e", "params": {"detect_mode":"helmet"}, "tooltip": "안전모 착용 여부를 인식합니다.", "en": "Helmet detection", "tooltip_en": "Checks whether a safety helmet is worn." },
+      "박스 인식": { "api": "object/object_custom_e", "params": {"detect_mode":"box"}, "tooltip": "박스를 인식합니다.", "en": "Box detection", "tooltip_en": "Detects boxes." },
+      "사람 포즈 인식": { "api": "object/object_pose_e", "params": {}, "tooltip": "인체의 17개 주요 포인트를 인식합니다.", "en": "Human pose", "tooltip_en": "Finds 17 key points of the human body." },
+      "이미지 분류": { "api": "object/object_cls_e", "params": {}, "tooltip": "이미지의 주제를 분류합니다.", "en": "Image classification", "tooltip_en": "Classifies what the image is about." },
+      "사물 분할": { "api": "object/object_seg_e", "params": {}, "tooltip": "80가지 사물의 영역을 분할하여 표시합니다.", "en": "Object segmentation", "tooltip_en": "Colors in the exact area of each object." },
+      "이미지 장소 인식": { "api": "caption/caption_place_e", "params": {}, "tooltip": "이미지에 대한 장소를 추측합니다.", "en": "Guess the place", "tooltip_en": "Guesses where the photo was taken." },
+      "이미지 시간 인식": { "api": "caption/caption_time_e", "params": {}, "tooltip": "이미지에 대한 시간대를 추측합니다.", "en": "Guess the time", "tooltip_en": "Guesses the time of day in the photo." },
+      "이미지 날씨 인식": { "api": "caption/caption_weather_e", "params": {}, "tooltip": "이미지에 대한 날씨를 추측합니다.", "en": "Guess the weather", "tooltip_en": "Guesses the weather in the photo." },
+      "이미지 질문": { "api": "caption/caption_question_e", "params": {}, "tooltip": "이미지에 대한 질문을 하고, 답변을 생성합니다.", "en": "Ask about the image", "tooltip_en": "Ask a question about the image and get an answer." },
+      "이미지 태그": { "api": "caption/caption_tag_e", "params": {}, "tooltip": "이미지에 대한 태그를 생성합니다.(한/영)", "en": "Image tags", "tooltip_en": "Creates tags for the image." },
+      "이미지 설명": { "api": "vlm/vlm_inference_e", "params": {}, "tooltip": "비전 언어 모델에 프롬프트를 입력하여, 이미지를 설명합니다.", "en": "Describe the image", "tooltip_en": "Describes the image with a vision-language model." },
+      "이미지 변환(만화)": { "api": "gan/cartoon", "params": {}, "tooltip": "이미지를 만화 스타일로 변환합니다.", "en": "Cartoon style", "tooltip_en": "Turns the image into a cartoon style." },
+      "이미지 변환(감성)": { "api": "gan/sketch", "params": {}, "tooltip": "이미지를 감성적인 그림 스타일로 변환합니다.", "en": "Artistic style", "tooltip_en": "Turns the image into an artistic drawing style." },
+      "배경 제거": { "api": "gan/portrait", "params": {}, "tooltip": "인물/사물만 남기고 배경을 제거합니다.", "en": "Remove background", "tooltip_en": "Keeps the subject and removes the background." },
+      "화질 개선(4배)": { "api": "gan/sr", "params": {}, "tooltip": "이미지 화질을 4배로 개선합니다.", "en": "Upscale (4x)", "tooltip_en": "Improves the image quality four times." },
+      "글자 인식": { "api": "code/ocr", "params": {}, "tooltip": "이미지에서 문자/숫자를 인식합니다.", "en": "Text recognition", "tooltip_en": "Reads letters and numbers in the image." },
+      "QR코드 인식": { "api": "code/barcode", "params": {}, "tooltip": "이미지에서 바코드를 인식합니다.", "en": "QR code", "tooltip_en": "Reads QR codes in the image." }
+    };
+
+    const mName = key => LANG === "en" ? (SERVICE_LIST[key].en || key) : key;
+    const mTip  = key => LANG === "en"
+      ? (SERVICE_LIST[key].tooltip_en || SERVICE_LIST[key].tooltip)
+      : SERVICE_LIST[key].tooltip;
 
     const SERIAL = "3efde152";
     const CLIENT_TYPE = "08f12867e7a16b1b9071ae92ca8b6e7e1698068f";
@@ -698,9 +776,16 @@
       net: document.getElementById('sysNet'), elapsed: document.getElementById('sysElapsed'),
       device: document.getElementById('sysDevice'), runs: document.getElementById('sysRuns'),
     };
+    /* 서비스명 -> 실행 디바이스 (서버가 런타임에서 읽은 실측값) */
+    let DEVICE_OF = {};
+    const DEV_STATS = { CPU:{n:0,ms:0}, GPU:{n:0,ms:0}, NPU:{n:0,ms:0} };
+    const svcName = model => (SERVICE_LIST[model].api.split('/')[1] || '');
+    const devOf = model => (DEVICE_OF[svcName(model)] || '').toUpperCase();
+
     (async function initSystem() {
       try {
         const info = await (await fetch('/system')).json();
+        DEVICE_OF = info.device_of || {};
         (info.devices || []).forEach(d => {
           const el = sysEl[d.toLowerCase()];
           if (el) el.classList.add('on');
@@ -710,48 +795,84 @@
           `VLM ${m.vlm} · YOLO ${m.detect}+custom${m.custom} · FACE ${m.face} · TRANSFORM ${m.transform}`;
         sysEl.net.textContent = 'NETWORK: OFFLINE  ·  OV ' + (info.runtime && info.runtime.openvino || '');
       } catch (e) {
-        sysEl.models.textContent = 'models: 연결 대기';
+        sysEl.models.textContent = T('modelsWait');
       }
     })();
-    function sysBusy(on) {
-      document.querySelectorAll('.chip.on').forEach(c => c.classList.toggle('busy', on));
+    /* 실행 중에는 '그 디바이스 칩만' 점멸시킨다.
+       세 칩이 전부 켜지면 어디서 도는지 구분이 안 된다. */
+    function sysBusy(on, dev) {
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('busy'));
+      if (!on) return;
+      const el = sysEl[(dev || '').toLowerCase()];
+      if (el) el.classList.add('busy');
+      else document.querySelectorAll('.chip.on').forEach(c => c.classList.add('busy'));
     }
     function sysReport(res, ms) {
       runCount++;
       sysEl.runs.textContent = runCount;
-      sysEl.elapsed.textContent = (res && res.elapsed_ms ? res.elapsed_ms : ms) + ' ms';
-      sysEl.device.textContent = (res && res.device) || '--';
+      const took = (res && res.elapsed_ms) ? res.elapsed_ms : ms;
+      sysEl.elapsed.textContent = took + ' ms';
+      const dev = ((res && res.device) || '').toUpperCase();
+      sysEl.device.textContent = dev || '--';
+
+      const st = DEV_STATS[dev];
+      if (st) {
+        st.n++; st.ms = took;
+        const el = document.getElementById('st' + dev);
+        if (el) el.textContent = ' ' + took + 'ms ×' + st.n;
+        const chip = sysEl[dev.toLowerCase()];
+        if (chip) {
+          chip.classList.add('hit');
+          setTimeout(() => chip.classList.remove('hit'), 600);
+        }
+      }
     }
 
     /* ----- 미션 모드 (차시) : ?lesson=슬러그, ?lesson=list 는 목록 ----- */
     const LESSON_LIST = {
       "rps":        { no:1,  title:"AI와 가위바위보",     models:["가위바위보 인식"], tabs:["webcam"], goal:3,
-                      mission:"웹캠에 손을 보여 주고, AI가 가위·바위·보를 맞히는지 3번 확인해 보세요." },
+                      mission:"웹캠에 손을 보여 주고, AI가 가위·바위·보를 맞히는지 3번 확인해 보세요.",
+                      title_en:"Rock, Paper, Scissors vs AI", mission_en:"Show your hand to the webcam and see if the AI gets rock, paper or scissors right, 3 times." },
       "emotion":    { no:2,  title:"표정을 읽는 AI",      models:["얼굴 감정 분석"], tabs:["webcam"], goal:5,
-                      mission:"서로 다른 표정을 5가지 지어 보고, AI가 읽은 감정을 학습지에 적어 보세요." },
+                      mission:"서로 다른 표정을 5가지 지어 보고, AI가 읽은 감정을 학습지에 적어 보세요.",
+                      title_en:"The AI That Reads Faces", mission_en:"Make 5 different faces and write down the emotion the AI reads for each one." },
       "pose":       { no:3,  title:"몸으로 말해요",       models:["사람 포즈 인식"], tabs:["webcam","upload"], goal:3,
-                      mission:"재미있는 동작을 3가지 해 보고, AI가 몸의 점 17개를 어디에 찍는지 관찰해 보세요." },
+                      mission:"재미있는 동작을 3가지 해 보고, AI가 몸의 점 17개를 어디에 찍는지 관찰해 보세요.",
+                      title_en:"Talk With Your Body", mission_en:"Strike 3 fun poses and watch where the AI places the 17 body points." },
       "object-hunt":{ no:4,  title:"AI 보물찾기",         models:["사물 인식"], tabs:["webcam","upload"], goal:5,
-                      mission:"주변에서 물건을 가져와 AI가 이름을 맞히는지 5개 확인해 보세요. AI가 모르는 물건도 찾아보세요!" },
+                      mission:"주변에서 물건을 가져와 AI가 이름을 맞히는지 5개 확인해 보세요. AI가 모르는 물건도 찾아보세요!",
+                      title_en:"AI Treasure Hunt", mission_en:"Bring 5 objects and check if the AI names them right. Try to find one it doesn't know!" },
       "ocr":        { no:5,  title:"글자를 읽는 AI",      models:["글자 인식"], tabs:["webcam","upload","sketch"], goal:3,
-                      mission:"또박또박 쓴 글씨와 흘려 쓴 글씨를 보여 주고, AI가 어떤 글씨를 잘 읽는지 비교해 보세요." },
+                      mission:"또박또박 쓴 글씨와 흘려 쓴 글씨를 보여 주고, AI가 어떤 글씨를 잘 읽는지 비교해 보세요.",
+                      title_en:"The AI That Reads Writing", mission_en:"Show neat writing and messy writing, and compare which one the AI reads better." },
       "number":     { no:6,  title:"수식을 읽는 AI",      models:["숫자 인식"], tabs:["sketch","webcam"], goal:3,
-                      mission:"스케치북에 숫자와 연산 기호를 써서, AI가 잘 읽는지 3번 시험해 보세요." },
+                      mission:"스케치북에 숫자와 연산 기호를 써서, AI가 잘 읽는지 3번 시험해 보세요.",
+                      title_en:"The AI That Reads Math", mission_en:"Write numbers and math symbols in the sketchbook and test the AI 3 times." },
       "transform":  { no:7,  title:"그림을 바꾸는 AI",    models:["이미지 변환(만화)","이미지 변환(감성)","배경 제거"], tabs:["upload","webcam"], goal:3,
-                      mission:"같은 사진을 세 가지 방법으로 바꿔 보고, 어떤 변환이 가장 마음에 드는지 골라 보세요." },
+                      mission:"같은 사진을 세 가지 방법으로 바꿔 보고, 어떤 변환이 가장 마음에 드는지 골라 보세요.",
+                      title_en:"The AI That Changes Pictures", mission_en:"Change the same photo in three different ways and pick your favorite." },
       "sketch-quiz":{ no:8,  title:"내 그림을 맞혀 봐",   models:["사물 인식","이미지 분류"], tabs:["sketch"], goal:3,
-                      mission:"스케치북에 그림을 그리고, AI가 무엇인지 맞히는지 3번 도전해 보세요." },
+                      mission:"스케치북에 그림을 그리고, AI가 무엇인지 맞히는지 3번 도전해 보세요.",
+                      title_en:"Guess My Drawing", mission_en:"Draw something in the sketchbook and challenge the AI to guess it, 3 times." },
       "age":        { no:9,  title:"AI의 눈은 정확할까?", models:["얼굴 나이/성별 분석"], tabs:["webcam"], goal:3,
-                      mission:"얼굴 각도와 밝기를 바꿔 가며 3번 실행해 보세요. 결과가 달라지나요? (결과는 재미로만 보고, 친구의 외모 이야기는 하지 않아요.)" },
+                      mission:"얼굴 각도와 밝기를 바꿔 가며 3번 실행해 보세요. 결과가 달라지나요? (결과는 재미로만 보고, 친구의 외모 이야기는 하지 않아요.)",
+                      title_en:"Are AI Eyes Accurate?", mission_en:"Run it 3 times while changing the angle and lighting. Do the results change? (Just for fun — no comments about anyone's looks.)" },
       "mask":       { no:10, title:"마스크와 AI",         models:["마스크 인식","얼굴 감정 분석"], tabs:["webcam"], goal:2,
-                      mission:"마스크를 쓰고 한 번, 벗고 한 번 실행해 보세요. 마스크를 쓰면 감정 인식이 잘 될까요?" },
+                      mission:"마스크를 쓰고 한 번, 벗고 한 번 실행해 보세요. 마스크를 쓰면 감정 인식이 잘 될까요?",
+                      title_en:"Masks and AI", mission_en:"Run it once with a mask on and once with it off. Does emotion detection still work with a mask?" },
       "caption-vs": { no:11, title:"두 AI의 대결",        models:["이미지 태그","이미지 설명"], tabs:["upload","webcam"], goal:2,
-                      mission:"같은 사진을 두 모델에 각각 넣어 보고, 어느 쪽 설명이 더 좋은지 비교해 보세요." },
+                      mission:"같은 사진을 두 모델에 각각 넣어 보고, 어느 쪽 설명이 더 좋은지 비교해 보세요.",
+                      title_en:"Battle of Two AIs", mission_en:"Put the same photo into both models and compare which description is better." },
       "detective":  { no:12, title:"사진 탐정",           models:["이미지 장소 인식","이미지 시간 인식","이미지 날씨 인식"], tabs:["upload","webcam"], goal:3,
-                      mission:"사진 한 장으로 장소·시간·날씨를 모두 추리해 보세요. AI는 무엇을 보고 알아냈을까요?" },
+                      mission:"사진 한 장으로 장소·시간·날씨를 모두 추리해 보세요. AI는 무엇을 보고 알아냈을까요?",
+                      title_en:"Photo Detective", mission_en:"Use one photo to deduce the place, time and weather. What clues did the AI use?" },
       "qr":         { no:13, title:"비밀 메시지 QR",      models:["QR코드 인식"], tabs:["upload","webcam"], goal:2,
-                      mission:"QR코드를 보여 주고, AI가 숨은 내용을 읽어 내는지 확인해 보세요." }
+                      mission:"QR코드를 보여 주고, AI가 숨은 내용을 읽어 내는지 확인해 보세요.",
+                      title_en:"Secret Message QR", mission_en:"Show a QR code and check if the AI can read the hidden message." }
     };
+    const lTitle = l => LANG === "en" ? (l.title_en || l.title) : l.title;
+    const lMission = l => LANG === "en" ? (l.mission_en || l.mission) : l.mission;
+
     const _lessonSlug = new URLSearchParams(location.search).get('lesson');
     const LESSON = (_lessonSlug && LESSON_LIST[_lessonSlug]) ? LESSON_LIST[_lessonSlug] : null;
     const LESSON_INDEX_MODE = _lessonSlug === 'list';
@@ -770,10 +891,39 @@
       }
     });
     document.addEventListener('fullscreenchange', function() {
-      fsLabel.innerText = document.fullscreenElement ? '전체화면 종료' : '전체화면';
+      fsLabel.innerText = document.fullscreenElement ? T('fsExit') : T('fs');
     });
 
     apiDocLink.href = '/docs';
+
+    /* ----- 언어 적용 (정적 텍스트) ----- */
+    (function applyStatic() {
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+      document.title = T("titleTag");
+      set("txtTitle", T("title"));           set("txtEyebrow", T("eyebrow"));
+      set("txtBlocksLink", T("blocksLink")); set("langButton", T("langBtn"));
+      set("fsLabel", T("fs"));
+      set("txtQ1", T("q1")); set("txtQ2", T("q2")); set("txtQ3", T("q3"));
+      set("txtMissionLabel", T("missionLabel"));
+      set("txtModelLabel", T("modelLabel")); set("txtGuideLabel", T("guideLabel"));
+      set("txtPromptLabel", T("promptLabel"));
+      set("txtTabUpload", T("tabUpload")); set("txtTabWebcam", T("tabWebcam"));
+      set("txtTabSketch", T("tabSketch"));
+      set("txtLive", T("live")); set("runLabel", T("run"));
+      set("txtInputHead", T("inputHead"));
+      set("txtUploadMain", T("uploadMain")); set("txtUploadHint", T("uploadHint"));
+      set("captureWebcam", T("capture"));
+      set("txtPenColor", T("penColor")); set("txtPenWidth", T("penWidth"));
+      set("clearSketch", T("clearSketch"));
+      set("stampMark", T("stamp")); set("txtEasyLabel", T("easyLabel"));
+      set("saveResultButton", T("saveResult")); set("clearHistoryButton", T("clearHistory"));
+      set("txtHistoryTitle", T("historyTitle")); set("txtDetails", T("details"));
+      set("copyJsonButton", T("copy"));
+    })();
+    document.getElementById('langButton').addEventListener('click', function() {
+      try { localStorage.setItem("vapiLang", LANG === "ko" ? "en" : "ko"); } catch (e) {}
+      location.reload();       // 상태가 많은 페이지라 새로고침 전환이 안전
+    });
 
     const modelSelect = document.getElementById('modelSelect');
     const guide = document.getElementById('guide');
@@ -781,23 +931,23 @@
       const selected = this.value;
       let prompt = "-";
       if (selected === "이미지 질문") {
-        prompt = "이미지를 설명해주세요.";
+        prompt = T("promptQ");
       } else if (selected === "이미지 설명") {
-        prompt = "이미지를 30자 이내로 설명해주세요.";
+        prompt = T("promptVLM");
       }
       document.getElementById('promptInput').value = prompt;
-      guide.value = SERVICE_LIST[selected].tooltip;
+      guide.value = mTip(selected);
     });
 
     for (let key in SERVICE_LIST) {
       if (LESSON && !LESSON.models.includes(key)) continue;
       const option = document.createElement('option');
-      option.value = key;
-      option.text = key;
+      option.value = key;                 // 내부 키는 한국어 이름 그대로 (API 매핑 유지)
+      option.text = mName(key);
       modelSelect.appendChild(option);
     }
     modelSelect.value = LESSON ? LESSON.models[0] : "이미지 설명";
-    guide.value = SERVICE_LIST[modelSelect.value].tooltip;
+    guide.value = mTip(modelSelect.value);
     modelSelect.dispatchEvent(new Event('change')); // 프롬프트 기본값 반영
 
     const tabButtons = document.querySelectorAll('.tabButton');
@@ -817,12 +967,12 @@
     const lessonSelect = document.getElementById('lessonSelect');
     (function initLessonSelect() {
       const optFree = document.createElement('option');
-      optFree.value = ''; optFree.text = '자유 모드';
+      optFree.value = ''; optFree.text = T("freeMode");
       lessonSelect.appendChild(optFree);
       for (const [slug, l] of Object.entries(LESSON_LIST)) {
         const o = document.createElement('option');
         o.value = slug;
-        o.text = `${l.no}차시 · ${l.title}`;
+        o.text = UI[LANG].lessonOpt(l.no, lTitle(l));
         lessonSelect.appendChild(o);
       }
       lessonSelect.value = LESSON ? _lessonSlug : '';
@@ -837,22 +987,22 @@
       if (!LESSON) return;
       el.style.display = 'inline';
       const done = Math.min(missionCount, LESSON.goal);
-      el.innerHTML = '도전 <span class="done">' + '●'.repeat(done) + '</span>' + '○'.repeat(LESSON.goal - done)
-        + (missionCount >= LESSON.goal ? ' <span class="done">완료!</span>' : '');
+      el.innerHTML = T("challenge") + ' <span class="done">' + '●'.repeat(done) + '</span>' + '○'.repeat(LESSON.goal - done)
+        + (missionCount >= LESSON.goal ? ' <span class="done">' + T("complete") + '</span>' : '');
       if (missionCount >= LESSON.goal) {
-        stampMark.textContent = '참 잘했어요';
+        stampMark.textContent = T("stampDone");
         stampMark.classList.add('complete');
       }
     }
 
     if (LESSON) {
       // 머리표: 차시 제목
-      document.querySelector('.h-subject .eyebrow').innerText = '컴퓨터 비전 실습 · ' + LESSON.no + '차시';
-      document.querySelector('.h-subject .title').innerText = LESSON.title;
+      document.querySelector('.h-subject .eyebrow').innerText = UI[LANG].lessonEyebrow(LESSON.no);
+      document.querySelector('.h-subject .title').innerText = lTitle(LESSON);
       // 문항1 → 미션 지문
       document.getElementById('q1').style.display = 'none';
       document.getElementById('missionBox').style.display = 'flex';
-      document.getElementById('missionText').innerText = LESSON.mission;
+      document.getElementById('missionText').innerText = lMission(LESSON);
       // 학생에게 불필요한 요소 숨김
       document.getElementById('apiDocLink').style.display = 'none';
       if (LESSON.models.length === 1) document.getElementById('modelField').style.display = 'none';
@@ -877,14 +1027,14 @@
       document.querySelector('.subheader').style.display = 'none';
       document.querySelector('.tab-prompt-row').style.display = 'none';
       document.querySelector('.main-container').style.display = 'none';
-      document.querySelector('.h-subject .title').innerText = '차시 목록';
+      document.querySelector('.h-subject .title').innerText = T('lessonListTitle');
       const idx = document.createElement('div');
       idx.className = 'lesson-index';
       idx.innerHTML = Object.entries(LESSON_LIST).map(([slug, l]) =>
         `<a class="lesson-card" href="?lesson=${slug}">
-           <span class="no">${l.no}차시</span>
-           <span class="t">${l.title}</span>
-           <span class="m">${l.models.join(', ')}</span>
+           <span class="no">${UI[LANG].lessonNo(l.no)}</span>
+           <span class="t">${lTitle(l)}</span>
+           <span class="m">${l.models.map(mName).join(', ')}</span>
          </a>`
       ).join('');
       document.body.appendChild(idx);
@@ -1076,7 +1226,8 @@
         selectedService.params.prompt = prompt;
       }
       formData.append('uploadFile', imageBlob, 'image.jpg');
-      const query = new URLSearchParams(selectedService.params).toString();
+      const query = new URLSearchParams(
+        Object.assign({ lang: LANG }, selectedService.params)).toString();  // VLM 응답 언어
       url = url + '?' + query;
       try {
         const response = await fetch(url, { method: 'POST', headers: headers, body: formData });
@@ -1102,26 +1253,150 @@
     function esc(s) {
       return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
-    const DIR_KO = { L:'왼쪽', R:'오른쪽', C:'', T:'위', B:'아래' };
-    function dirToKo(d) {
+    const DIRW = {
+      ko: { L:'왼쪽', R:'오른쪽', C:'', T:'위', B:'아래' },
+      en: { L:'left', R:'right', C:'', T:'up', B:'down' },
+    };
+    function dirLabel(d) {
       if (!d || d.length !== 2) return d || '';
-      if (d === 'CC') return '정면';
-      const h = DIR_KO[d[0]] || '', v = DIR_KO[d[1]] || '';
-      return (h + ' ' + v).trim() + ' 방향';
+      if (d === 'CC') return LANG === 'en' ? 'straight ahead' : '정면';
+      const h = DIRW[LANG][d[0]] || '', v = DIRW[LANG][d[1]] || '';
+      const w = (h + ' ' + v).trim();
+      return LANG === 'en' ? w : w + ' 방향';
     }
-    const WEATHER_KO = { sunny:'맑음 ☀', snow:'눈 ☃', cloudy:'흐림', rainy:'비', unknown:'알 수 없음' };
-    const TIME_KO = { morning:'아침', noon:'낮', afternoon:'낮(오후)', evening:'저녁', night:'밤', daytime:'낮', unknown:'알 수 없음' };
-    const RPS_KO = { rock:'바위', paper:'보', scissors:'가위', scissor:'가위' };
+    const WEATHER_W = {
+      ko: { sunny:'맑음 ☀', snow:'눈 ☃', cloudy:'흐림', rainy:'비', unknown:'알 수 없음' },
+      en: { sunny:'sunny ☀', snow:'snowy ☃', cloudy:'cloudy', rainy:'rainy', unknown:'unknown' },
+    };
+    const TIME_W = {
+      ko: { morning:'아침', noon:'낮', afternoon:'낮(오후)', evening:'저녁', night:'밤', daytime:'낮', unknown:'알 수 없음' },
+      en: { morning:'morning', noon:'midday', afternoon:'afternoon', evening:'evening', night:'night', daytime:'daytime', unknown:'unknown' },
+    };
+    const RPS_W = {
+      ko: { rock:'바위', paper:'보', scissors:'가위', scissor:'가위' },
+      en: { rock:'rock', paper:'paper', scissors:'scissors', scissor:'scissors' },
+    };
     function nameCounts(items, key) {
       const m = {};
       (items || []).forEach(it => { const n = it[key]; if (n) m[n] = (m[n] || 0) + 1; });
-      return Object.entries(m).map(([n, c]) => c > 1 ? `${esc(n)} ${c}개` : esc(n)).join(', ');
+      return Object.entries(m).map(([n, c]) =>
+        c > 1 ? (LANG === 'en' ? `${esc(n)} ×${c}` : `${esc(n)} ${c}개`) : esc(n)).join(', ');
     }
     function easySummary(res) {
       if (!res || res.result === 'fail' || res.error) {
-        return `앗, 이번에는 잘 안 됐어요. <span class="sub">(${esc(res && (res.data || res.error) || '오류')})</span>`;
+        return LANG === 'en'
+          ? `Hmm, that didn't work this time. <span class="sub">(${esc(res && (res.data || res.error) || 'error')})</span>`
+          : `앗, 이번에는 잘 안 됐어요. <span class="sub">(${esc(res && (res.data || res.error) || '오류')})</span>`;
       }
       const d = res.data;
+      if (LANG === 'en') {
+        switch (res.type) {
+          case 'caption_place_e': {
+            const env = d.environment === '실내' ? 'indoors' : d.environment === '실외' ? 'outdoors'
+                      : d.environment === 'indoor' ? 'indoors' : d.environment === 'outdoor' ? 'outdoors' : esc(d.environment);
+            return `This looks like <b>${env}</b> — probably a <b>${esc(d.category)}</b>.`;
+          }
+          case 'caption_time_e': {
+            const t = TIME_W.en[d.time] || esc(d.time);
+            return d.time === 'unknown'
+              ? `Can't tell the time of day. <span class="sub">(no outdoor view in the photo)</span>`
+              : `The photo was probably taken in the <b>${t}</b>.`;
+          }
+          case 'caption_weather_e': {
+            const w = WEATHER_W.en[d.weather] || esc(d.weather);
+            return d.weather === 'unknown'
+              ? `Can't tell the weather. <span class="sub">(no outdoor view in the photo)</span>`
+              : `The weather in the photo looks <b>${w}</b>.`;
+          }
+          case 'caption_question_e':
+            return `Answer: <b>${esc(d.answer)}</b><div class="sub">${esc(d.answer_en || '')}</div>`;
+          case 'caption_tag_e': {
+            const tags = Array.isArray(d.tag) ? d.tag.join(', ') : d.tag;
+            return `Tags found: <b>${esc(tags)}</b>`;
+          }
+          case 'vlm_inference_e':
+            return `<b>${esc(d.answer)}</b>`;
+          case 'face_detect_e':
+            return d.length ? `Found <b>${d.length}</b> face${d.length > 1 ? 's' : ''}!` : `No faces found.`;
+          case 'face_analyze_e':
+            if (!d.length) return `No faces found.`;
+            return d.map((f, i) =>
+              `${d.length > 1 ? 'Face ' + (i+1) + ': ' : 'Face: '}<b>${esc(f.gender_en || f.gender)}</b> · about <b>${esc(f.age)}</b> · <b>${esc(f.emotion_en || f.emotion)}</b> · looking ${dirLabel(f.pos && f.pos.direction)}`
+            ).join('<br>');
+          case 'face_emotion_e':
+            if (!d.length) return `No faces found.`;
+            return d.map((f, i) =>
+              `${d.length > 1 ? 'Face ' + (i+1) : 'The face'} looks <b>${esc(f.emotion_en || f.emotion)}</b>.`
+            ).join('<br>');
+          case 'face_age_gender_e':
+            if (!d.length) return `No faces found.`;
+            return d.map((f, i) =>
+              `${d.length > 1 ? 'Face ' + (i+1) + ': ' : 'Face: '}<b>${esc(f.gender_en || f.gender)}</b> · about <b>${esc(f.age)}</b>`
+            ).join('<br>');
+          case 'face_pose_e':
+            if (!d.length) return `No faces found.`;
+            return d.map((f, i) =>
+              `${d.length > 1 ? 'Face ' + (i+1) : 'The face'} is looking <b>${dirLabel((f.pos || f.pose || {}).direction)}</b>.`
+            ).join('<br>');
+          case 'face_attribute': {
+            if (!d.length) return `No faces found.`;
+            const ATTR_EN = { Eyeglasses:'glasses', Mustache:'a mustache', Beard:'a beard', Hat:'a hat' };
+            return d.map((f, i) => {
+              const found = Object.keys(ATTR_EN).filter(k => f[k] > 55).map(k => ATTR_EN[k]);
+              const head = d.length > 1 ? 'Face ' + (i+1) : 'The face';
+              return found.length
+                ? `${head} has <b>${found.join(', ')}</b>.`
+                : `${head} has no special features.`;
+            }).join('<br>');
+          }
+          case 'mask_detect': {
+            if (!d.length) return `No faces found.`;
+            const on = d.filter(f => f.mask === 1).length;
+            return `<b>${on}</b> of <b>${d.length}</b> face${d.length > 1 ? 's are' : ' is'} wearing a mask.`;
+          }
+          case 'object_search_e': {
+            const people = d.person || [];
+            const objs = d.object_en || d.object || [];
+            const parts = [];
+            if (people.length) parts.push(`<b>${people.length}</b> ${people.length > 1 ? 'people' : 'person'}`);
+            if (objs.length) parts.push(`objects: <b>${nameCounts(objs, 'name')}</b>`);
+            return parts.length ? `Found ${parts.join(' / ')}!` : `No objects found.`;
+          }
+          case 'object_custom_e': {
+            const objs = (d && d.object) || [];
+            if (!objs.length) return `Nothing found.`;
+            const mode = res.detect_mode;
+            if (mode === 'rps') {
+              const names = objs.map(o => `<b>${RPS_W.en[o.name] || esc(o.name)}</b>`).join(', ');
+              return `You played ${names}!`;
+            }
+            return `Found <b>${nameCounts(objs, 'name')}</b>!`;
+          }
+          case 'object_pose_e':
+            return d.length
+              ? `Found the pose of <b>${d.length}</b> ${d.length > 1 ? 'people' : 'person'} (17 key points). Check the dots and lines above!`
+              : `No people found.`;
+          case 'object_cls_e': {
+            if (!d.length) return `Could not classify it.`;
+            const top = d[0];
+            return `This image looks like <b>${esc(top.name)}</b>. <span class="sub">(confidence ${esc(top.score)}%)</span>`;
+          }
+          case 'ocr': {
+            if (!d.length) return `No text found.`;
+            return `Text read: <b>${d.map(t => esc(t.text)).join(' ')}</b>`;
+          }
+          case 'barcode': {
+            if (!d.length) return `No QR code found.`;
+            return d.map(b => `QR code says: <b>${esc(b.data || b.text || '')}</b>`).join('<br>');
+          }
+          case 'cartoon': case 'webtoon': case 'portrait': case 'sketch': case 'sr':
+            return `Changed the image into a new style! Check the picture above.`;
+          case 'object_seg_e':
+            return `Colored in each object's area. Check the picture above.`;
+          default:
+            return `Got a result. Open the details below for more.`;
+        }
+      }
       switch (res.type) {
         /* --- 텍스트 계열 --- */
         case 'caption_place_e': {
@@ -1129,13 +1404,13 @@
           return `이곳은 <b>${env}</b>이고, <b>${esc(d.category)}</b>(으)로 보여요.`;
         }
         case 'caption_time_e': {
-          const t = TIME_KO[d.time] || esc(d.time);
+          const t = TIME_W.ko[d.time] || esc(d.time);
           return d.time === 'unknown'
             ? `시간대를 알 수 없어요. <span class="sub">(바깥 풍경이 보이지 않아요)</span>`
             : `사진을 찍은 시간대는 <b>${t}</b>인 것 같아요.`;
         }
         case 'caption_weather_e': {
-          const w = WEATHER_KO[d.weather] || esc(d.weather);
+          const w = WEATHER_W.ko[d.weather] || esc(d.weather);
           return d.weather === 'unknown'
             ? `날씨를 알 수 없어요. <span class="sub">(바깥 풍경이 보이지 않아요)</span>`
             : `사진 속 날씨는 <b>${w}</b>이에요.`;
@@ -1155,7 +1430,7 @@
         case 'face_analyze_e':
           if (!d.length) return `얼굴을 찾지 못했어요.`;
           return d.map((f, i) =>
-            `${d.length > 1 ? (i+1) + '번 ' : ''}얼굴: <b>${esc(f.gender)}</b> · 약 <b>${esc(f.age)}살</b> · <b>${esc(f.emotion)}</b> 표정 · ${dirToKo(f.pos && f.pos.direction)}`
+            `${d.length > 1 ? (i+1) + '번 ' : ''}얼굴: <b>${esc(f.gender)}</b> · 약 <b>${esc(f.age)}살</b> · <b>${esc(f.emotion)}</b> 표정 · ${dirLabel(f.pos && f.pos.direction)}`
           ).join('<br>');
         case 'face_emotion_e':
           if (!d.length) return `얼굴을 찾지 못했어요.`;
@@ -1170,7 +1445,7 @@
         case 'face_pose_e':
           if (!d.length) return `얼굴을 찾지 못했어요.`;
           return d.map((f, i) =>
-            `${d.length > 1 ? (i+1) + '번 ' : ''}얼굴은 <b>${dirToKo((f.pos || f.pose || {}).direction)}</b>을 보고 있어요.`
+            `${d.length > 1 ? (i+1) + '번 ' : ''}얼굴은 <b>${dirLabel((f.pos || f.pose || {}).direction)}</b>을 보고 있어요.`
           ).join('<br>');
         case 'face_attribute': {
           if (!d.length) return `얼굴을 찾지 못했어요.`;
@@ -1201,7 +1476,7 @@
           if (!objs.length) return `찾지 못했어요.`;
           const mode = res.detect_mode;
           if (mode === 'rps') {
-            const names = objs.map(o => `<b>${RPS_KO[o.name] || esc(o.name)}</b>`).join(', ');
+            const names = objs.map(o => `<b>${RPS_W.ko[o.name] || esc(o.name)}</b>`).join(', ');
             return `${names}을(를) 냈어요!`;
           }
           return `<b>${nameCounts(objs, 'name')}</b>을(를) 찾았어요!`;
@@ -1390,7 +1665,7 @@
 
     async function handleRun(model, prompt, imageSource) {
       if (!imageSource) {
-        alert("이미지를 선택하세요.");
+        alert(T("aSelectImage"));
         return;
       }
 
@@ -1425,7 +1700,7 @@
       }
 
       if (!imageBlob) {
-        alert("이미지를 선택하세요.");
+        alert(T("aSelectImage"));
         return;
       }
 
@@ -1452,8 +1727,8 @@
       const resultJSON = document.getElementById('resultJSON');
 
       mainRunButton.disabled = true;
-      sysBusy(true);
-      runLabel.innerText = '실행 중...';
+      sysBusy(true, devOf(modelSelect.value));
+      runLabel.innerText = T('running');
       resultJSON.innerText = '';
       hideStamp();
       hideEasy();
@@ -1470,13 +1745,13 @@
 
           if (activeTab.id === 'upload') {
             if (!fileInput.files[0]) {
-              alert("이미지를 선택하세요.");
+              alert(T("aSelectImage"));
               return;
             }
             imageSource = uploadPreview;
           } else if (activeTab.id === 'webcam') {
             if (webcamCanvas.style.display === 'none') {
-              alert("웹캠 이미지를 캡쳐하세요.");
+              alert(T("aCapture"));
               return;
             }
             imageSource = webcamCanvas;
@@ -1490,7 +1765,7 @@
 
         } catch (error) {
           console.error("실행 중 오류 발생:", error);
-          alert("오류가 발생했습니다. 콘솔을 확인해주세요.");
+          alert(T("aError"));
         }
       })();
 
@@ -1498,13 +1773,13 @@
 
       sysBusy(false);
       mainRunButton.disabled = false;
-      runLabel.innerText = '실행';
+      runLabel.innerText = T('run');
     });
 
     /* ----- 결과 이미지 저장 ----- */
     document.getElementById('saveResultButton').addEventListener('click', function() {
       const canvas = document.getElementById('resultCanvas');
-      if (!canvas.width || !canvas.height) { alert("먼저 실행해 주세요."); return; }
+      if (!canvas.width || !canvas.height) { alert(T("aRunFirst")); return; }
       const a = document.createElement('a');
       const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
       a.download = `vapi-${modelSelect.value}-${stamp}.png`;
@@ -1527,7 +1802,7 @@
         full: canvas.toDataURL('image/jpeg', 0.85),
         text: easyText.innerText.slice(0, 40),
         json: JSON.stringify(res, null, 2),
-        model: modelSelect.value,
+        model: mName(modelSelect.value),
       };
       history.unshift(entry);
       if (history.length > 8) history.pop();
@@ -1577,9 +1852,7 @@
       const ok = LIVE_OK.has(modelSelect.value);
       liveCheck.disabled = !ok;
       liveToggle.classList.toggle('off', !ok);
-      liveToggle.title = ok
-        ? "웹캠으로 계속 인식합니다 (체크하면 웹캠 탭으로 전환)"
-        : "이 모델은 응답이 길어 라이브를 지원하지 않아요 (얼굴·사물·포즈 계열에서 사용)";
+      liveToggle.title = ok ? T("liveOkTip") : T("liveNoTip");
       if (!ok && liveCheck.checked) { liveCheck.checked = false; stopLive(); }
     }
     modelSelect.addEventListener('change', updateLiveAvailability);
@@ -1600,15 +1873,15 @@
       if (liveRunning) return;
       liveRunning = true;
       liveToggle.classList.add('on');
-      document.getElementById('runLabel').innerText = '라이브 중';
+      document.getElementById('runLabel').innerText = T('liveRun');
       document.getElementById('mainRunButton').disabled = true;
-      sysBusy(true);
+      sysBusy(true, devOf(modelSelect.value));
       liveLoop();
     }
     function stopLive() {
       liveRunning = false;
       liveToggle.classList.remove('on');
-      document.getElementById('runLabel').innerText = '실행';
+      document.getElementById('runLabel').innerText = T('run');
       document.getElementById('mainRunButton').disabled = false;
       sysBusy(false);
     }
@@ -1624,7 +1897,7 @@
         await new Promise(r => setTimeout(r, 100));
       }
       if (!webcamVideo.videoWidth) {
-        alert("웹캠을 사용할 수 없어요. 카메라 권한을 확인해 주세요.");
+        alert(T("aNoWebcam"));
         this.checked = false;
         return;
       }
@@ -1666,13 +1939,13 @@
 
       try {
         document.execCommand('copy');
-        this.innerText = '복사됨!';
+        this.innerText = T('copied');
         setTimeout(() => {
-          this.innerText = '복사';
+          this.innerText = T('copy');
         }, 1500);
       } catch (err) {
         console.error('JSON 복사 실패:', err);
-        alert('복사에 실패했습니다.');
+        alert(T('aCopyFail'));
       }
 
       document.body.removeChild(textArea);
