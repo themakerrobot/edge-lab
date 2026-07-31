@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI 블록 코딩</title>
+  <link href="/fonts/fonts.css" rel="stylesheet">
+  <style>
+    :root {
+      --paper: #faf8f0; --rule: rgba(59,93,214,.10); --box: #fff;
+      --ink: #26262e; --ink-2: #6d6c66;
+      --pen-blue: #2b4bd8; --pen-blue-d: #1f3ab0; --pen-red: #d94141;
+      --line: #cdcabc; --line-d: #26262e; --r: 6px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      display: flex; flex-direction: column; height: 100dvh; overflow: hidden;
+      color: var(--ink); background-color: var(--paper);
+      background-image: repeating-linear-gradient(transparent 0, transparent 27px, var(--rule) 27px, var(--rule) 28px);
+      font-family: "Gowun Dodum", "Apple SD Gothic Neo", system-ui, sans-serif;
+      padding: 12px; gap: 10px;
+    }
+    button, select {
+      font-family: inherit; font-size: .95rem; color: var(--ink); background: #fff;
+      border: 1.5px solid var(--line); border-radius: var(--r); padding: 7px 14px; cursor: pointer;
+    }
+    button:hover { border-color: var(--pen-blue); }
+
+    .header {
+      flex: 0 0 auto; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      background: var(--box); border: 2px solid var(--line-d); border-radius: 3px;
+      box-shadow: 2px 2px 0 rgba(38,38,46,.12); padding: 10px 16px;
+    }
+    .h-title { display: flex; flex-direction: column; }
+    .h-title .eyebrow { font-size: .7rem; letter-spacing: .14em; color: var(--ink-2); }
+    .h-title .title { font-family: "Gowun Batang", serif; font-size: 1.3rem; font-weight: 700; }
+    .h-title .title .od { font-size: .8rem; color: var(--pen-red); }
+    .h-tools { margin-left: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    #runButton { background: var(--pen-blue); border-color: var(--pen-blue); color: #fff; font-weight: 700; padding: 8px 26px; }
+    #runButton:hover { background: var(--pen-blue-d); }
+    #runButton:disabled { background: #b9b7ac; border-color: #b9b7ac; cursor: wait; }
+    #stopButton { border-color: var(--pen-red); color: var(--pen-red); font-weight: 700; }
+    a.back { font-size: .88rem; color: var(--pen-blue-d); text-decoration: none; margin-right: 4px; }
+    a.back:hover { text-decoration: underline; }
+
+    .main { flex: 1 1 auto; min-height: 0; display: flex; gap: 12px; }
+    .work {
+      flex: 1.25 1 0; min-width: 0; display: flex; flex-direction: column;
+      background: var(--box); border: 1.5px solid var(--line); border-radius: var(--r); overflow: hidden;
+    }
+    .panel-head {
+      flex: 0 0 auto; display: flex; align-items: center; gap: 9px;
+      padding: 10px 16px; border-bottom: 1.5px dashed var(--line);
+      font-family: "Gowun Batang", serif; font-weight: 700;
+    }
+    #blocklyDiv { flex: 1 1 auto; min-height: 0; }
+
+    .stage-panel {
+      flex: 1 1 0; min-width: 380px; display: flex; flex-direction: column;
+      background: var(--box); border: 1.5px solid var(--line); border-radius: var(--r); overflow: hidden;
+    }
+    .stage-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+    .stage {
+      position: relative; width: 100%; aspect-ratio: 4/3; max-height: 60vh;
+      background: #191a1f; border: 1.5px solid var(--line-d); border-radius: 4px; overflow: hidden;
+      flex: 0 0 auto; align-self: center;
+    }
+    .stage video, .stage canvas, .stage img.shot {
+      position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain;
+    }
+    .stage img.shot { display: none; background: #191a1f; }
+    #bigText {
+      position: absolute; left: 0; right: 0; bottom: 10%; text-align: center;
+      font-family: "Gowun Batang", serif; font-size: 2rem; font-weight: 700; color: #fff;
+      text-shadow: 0 2px 8px rgba(0,0,0,.75); padding: 0 12px; word-break: keep-all;
+    }
+    #bubble {
+      position: absolute; top: 10px; left: 10px; max-width: 75%;
+      background: #fff; border: 2px solid var(--line-d); border-radius: 12px; border-bottom-left-radius: 2px;
+      padding: 8px 14px; font-size: 1rem; display: none;
+    }
+    .stage-tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .stage-tools .hint { font-size: .8rem; color: var(--ink-2); }
+    #logBox {
+      flex: 0 0 auto; background: #fdfcf8; border: 1.5px solid var(--line); border-radius: var(--r);
+      padding: 8px 12px; font-family: "Menlo","Consolas",ui-monospace,monospace; font-size: .78rem;
+      max-height: 120px; overflow-y: auto; color: #3a3a42; white-space: pre-wrap;
+    }
+    #logBox:empty::before { content: "실행하면 진행 상황이 여기에 적혀요."; color: #a3a094; }
+    details.codeview { flex: 0 0 auto; }
+    details.codeview summary { cursor: pointer; font-family: "Gowun Batang", serif; font-weight: 700; font-size: .9rem; color: var(--ink-2); }
+    details.codeview pre {
+      margin-top: 6px; background: #fdfcf8; border: 1.5px solid var(--line); border-radius: var(--r);
+      padding: 10px; font-size: .75rem; max-height: 180px; overflow: auto; white-space: pre-wrap;
+    }
+    @media (max-width: 900px) {
+      body { overflow: auto; height: auto; min-height: 100dvh; }
+      .main { flex-direction: column; }
+      #blocklyDiv { height: 60vh; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="h-title">
+      <span class="eyebrow">인공지능 · 컴퓨터 비전 · 인터넷 없이 내 컴퓨터에서 실행돼요</span>
+      <span class="title">AI 블록 코딩 <span class="od">(On-Device)</span></span>
+    </div>
+    <div class="h-tools">
+      <a class="back" href="/" style="
+        display:inline-flex;align-items:center;gap:7px;background:#fff;
+        border:1.5px solid var(--line-d);color:var(--ink);font-weight:600;
+        padding:8px 14px;border-radius:var(--r);text-decoration:none;font-size:.95rem;">
+        &#9998; 체험 실습</a>
+      <button id="saveButton">저장</button>
+      <button id="loadButton">불러오기</button>
+      <input type="file" id="loadFile" accept=".json" style="display:none">
+      <button id="stopButton">정지</button>
+      <button id="runButton"><span id="runLabel">실행 ▶</span></button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="work">
+      <div class="panel-head">블록을 조립해요</div>
+      <div id="blocklyDiv"></div>
+    </div>
+
+    <div class="stage-panel">
+      <div class="panel-head">무대</div>
+      <div class="stage-body">
+        <div class="stage" id="stage">
+          <video id="cam" autoplay playsinline muted></video>
+          <img class="shot" id="shotImg" alt="">
+          <canvas id="overlay" width="640" height="480"></canvas>
+          <div id="bigText"></div>
+          <div id="bubble"></div>
+        </div>
+        <div class="stage-tools">
+          <button id="uploadButton">사진 올리기</button>
+          <input type="file" id="uploadFile" accept="image/*" style="display:none">
+          <span class="hint" id="uploadHint">「업로드한 사진」 블록에서 사용돼요</span>
+        </div>
+        <div id="logBox"></div>
+        <details class="codeview">
+          <summary>만들어진 코드 보기 (JavaScript)</summary>
+          <pre id="codeView"></pre>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <script src="/blockly/blockly_compressed.js"></script>
+  <script src="/blockly/blocks_compressed.js"></script>
+  <script src="/blockly/javascript_compressed.js"></script>
+  <script src="/blockly/msg/ko.js"></script>
+  <script>
+  "use strict";
+  /**********************************************************************
+   * vapi-od AI 블록 코딩 — Blockly 워크스페이스 + 무대 + async 실행기
+   * 서버는 기존 vapi-od API 그대로 사용 (백엔드 수정 없음)
+   **********************************************************************/
+  const G = javascript.javascriptGenerator;
+  const Order = javascript.Order;
+
+  /* ---------------- 한글 라벨 매핑 ---------------- */
+  const KMAP = {
+    scissors: "가위", scissor: "가위", rock: "바위", paper: "보",
+    fire: "불", smoke: "연기", helmet: "안전모", face: "얼굴", box: "박스",
+    fall: "낙상", fallen: "낙상", person: "사람",
+  };
+  const ko = n => KMAP[n] || n;
+  const DIR_KO = { L: "왼쪽", R: "오른쪽", T: "위", B: "아래", C: "" };
+  const TIME_KO = { morning: "아침", afternoon: "낮", evening: "저녁", night: "밤", unknown: "모름" };
+  const WEATHER_KO = { sunny: "맑음", cloudy: "흐림", rainy: "비", snow: "눈", unknown: "모름" };
+
+  /* ---------------- 커스텀 블록 정의 ---------------- */
+  const C_INPUT = 200, C_AI = 220, C_VLM = 260, C_JUDGE = 40, C_STAGE = 20;
+  Blockly.defineBlocksWithJsonArray([
+    // 입력
+    { type: "ai_capture", message0: "웹캠에서 사진 찍기", output: "String", colour: C_INPUT,
+      tooltip: "웹캠 화면을 한 장 찍어서 사진으로 돌려줘요." },
+    { type: "ai_upload", message0: "업로드한 사진", output: "String", colour: C_INPUT,
+      tooltip: "무대의 [사진 올리기]로 올린 사진이에요." },
+    // AI 인식
+    { type: "ai_detect_draw", message0: "%1 에서 %2 인식하고 박스 그리기",
+      previousStatement: null, nextStatement: null, colour: C_AI,
+      args0: [ { type: "input_value", name: "IMG", check: "String" },
+        { type: "field_dropdown", name: "MODE", options: [
+          ["얼굴","face"],["사물","objects"],["글자","ocr"],["QR","qr"],
+          ["가위바위보","rps"],["불","fire"],["공","ball"],["숫자","number"],
+          ["낙상","fall"],["안전모","helmet"],["박스","box"] ] } ],
+      tooltip: "인식해서 찾은 위치에 박스를 그려요. 같은 사진이면 결과가 겹쳐 쌓여요." },
+    { type: "ai_detect_one", message0: "%1 에서 %2 인식하기", output: "String", colour: C_AI,
+      args0: [ { type: "input_value", name: "IMG", check: "String" },
+        { type: "field_dropdown", name: "MODE", options: [
+          ["가위바위보","rps"],["불","fire"],["공","ball"],["숫자","number"],
+          ["낙상","fall"],["안전모","helmet"],["박스","box"] ] } ],
+      tooltip: "가장 확실한 것 하나의 이름을 알려줘요. 없으면 '없음'." },
+    { type: "ai_objects", message0: "%1 에서 사물 모두 찾기", output: "Array", colour: C_AI,
+      args0: [ { type: "input_value", name: "IMG", check: "String" } ],
+      tooltip: "찾은 사물 이름들의 리스트를 돌려줘요." },
+    { type: "ai_face", message0: "%1 얼굴의 %2", output: null, colour: C_AI,
+      args0: [ { type: "input_value", name: "IMG", check: "String" },
+        { type: "field_dropdown", name: "WHAT", options: [
+          ["감정","emotion"],["나이","age"],["성별","gender"],["방향","dir"] ] } ],
+      tooltip: "첫 번째 얼굴의 정보를 알려줘요. 나이는 숫자예요." },
+    { type: "ai_face_count", message0: "%1 에서 얼굴 개수", output: "Number", colour: C_AI,
+      args0: [ { type: "input_value", name: "IMG", check: "String" } ] },
+    { type: "ai_ocr", message0: "%1 의 글자 읽기", output: "String", colour: C_AI,
+      args0: [ { type: "input_value", name: "IMG", check: "String" } ] },
+    { type: "ai_qr", message0: "%1 의 QR 읽기", output: "String", colour: C_AI,
+      args0: [ { type: "input_value", name: "IMG", check: "String" } ] },
+    // AI 언어/변환
+    { type: "ai_ask", message0: "%1 에게 %2 물어보기", output: "String", colour: C_VLM,
+      args0: [ { type: "input_value", name: "IMG", check: "String" },
+               { type: "input_value", name: "Q", check: "String" } ],
+      tooltip: "사진을 보고 질문에 답해요. (몇 초 걸려요)" },
+    { type: "ai_guess", message0: "%1 의 %2 추측하기", output: "String", colour: C_VLM,
+      args0: [ { type: "input_value", name: "IMG", check: "String" },
+        { type: "field_dropdown", name: "KIND", options: [
+          ["장소","place"],["시간","time"],["날씨","weather"],["태그","tag"] ] } ] },
+    { type: "ai_transform", message0: "%1 을(를) %2 로 바꾸기", output: "String", colour: C_VLM,
+      args0: [ { type: "input_value", name: "IMG", check: "String" },
+        { type: "field_dropdown", name: "KIND", options: [
+          ["만화","cartoon"],["감성 그림","sketch"],["배경 제거","portrait"],["화질 개선","sr"] ] } ],
+      tooltip: "바뀐 사진을 돌려줘요. 다른 AI 블록에 다시 넣을 수도 있어요." },
+    // 판단 도우미
+    { type: "ai_beats", message0: "%1 이(가) %2 을(를) 이기면", output: "Boolean", colour: C_JUDGE,
+      args0: [ { type: "input_value", name: "A", check: "String" },
+               { type: "input_value", name: "B", check: "String" } ],
+      tooltip: "가위바위보 승패를 판단해요." },
+    { type: "ai_random_rps", message0: "가위·바위·보 중 랜덤", output: "String", colour: C_JUDGE },
+    // 무대
+    { type: "st_say", message0: "%1 말하기", previousStatement: null, nextStatement: null, colour: C_STAGE,
+      args0: [ { type: "input_value", name: "TEXT" } ], tooltip: "소리 내어 읽고 말풍선으로 보여줘요." },
+    { type: "st_show_text", message0: "%1 크게 보여주기", previousStatement: null, nextStatement: null, colour: C_STAGE,
+      args0: [ { type: "input_value", name: "TEXT" } ] },
+    { type: "st_show_image", message0: "사진 %1 보여주기", previousStatement: null, nextStatement: null, colour: C_STAGE,
+      args0: [ { type: "input_value", name: "IMG", check: "String" } ] },
+    { type: "st_boxes", message0: "인식 결과 박스 그리기", previousStatement: null, nextStatement: null, colour: C_STAGE,
+      tooltip: "마지막 인식에서 찾은 위치에 박스를 그려요." },
+    { type: "st_clear", message0: "무대 지우기", previousStatement: null, nextStatement: null, colour: C_STAGE },
+    { type: "st_wait", message0: "%1 초 기다리기", previousStatement: null, nextStatement: null, colour: C_STAGE,
+      args0: [ { type: "input_value", name: "SEC", check: "Number" } ] },
+    { type: "ai_detect_draw", message0: "%1 에서 %2 인식하고 박스 그리기",
+      previousStatement: null, nextStatement: null, colour: C_AI,
+      args0: [ { type: "input_value", name: "IMG", check: "String" },
+        { type: "field_dropdown", name: "MODE", options: [
+          ["얼굴","face"],["사물","objects"],["글자","ocr"],["QR","qr"],
+          ["가위바위보","rps"],["불","fire"],["공","ball"],["숫자","number"],
+          ["낙상","fall"],["안전모","helmet"],["박스","box"] ] } ],
+      tooltip: "인식하고 바로 박스를 그려요. 같은 사진이면 여러 인식이 겹쳐 그려져요." },
+    { type: "ai_exec", message0: "실행하기 %1", previousStatement: null, nextStatement: null, colour: C_JUDGE,
+      args0: [ { type: "input_value", name: "V" } ],
+      tooltip: "값 블록을 결과 없이 실행만 해요." },
+  ]);
+
+  /* ---------------- 코드 생성기 ---------------- */
+  const V = (b, n, d) => G.valueToCode(b, n, Order.NONE) || d;
+  G.forBlock["ai_capture"]    = () => ["(await AI.capture())", Order.ATOMIC];
+  G.forBlock["ai_upload"]     = () => ["(AI.uploaded())", Order.ATOMIC];
+  G.forBlock["ai_detect_draw"] = b => `await AI.detectDraw(${V(b,"IMG","null")}, '${b.getFieldValue("MODE")}');\n`;
+  G.forBlock["ai_detect_one"] = b => [`(await AI.detectOne(${V(b,"IMG","null")}, '${b.getFieldValue("MODE")}'))`, Order.ATOMIC];
+  G.forBlock["ai_objects"]    = b => [`(await AI.objects(${V(b,"IMG","null")}))`, Order.ATOMIC];
+  G.forBlock["ai_face"]       = b => [`(await AI.face(${V(b,"IMG","null")}, '${b.getFieldValue("WHAT")}'))`, Order.ATOMIC];
+  G.forBlock["ai_face_count"] = b => [`(await AI.faceCount(${V(b,"IMG","null")}))`, Order.ATOMIC];
+  G.forBlock["ai_ocr"]        = b => [`(await AI.ocr(${V(b,"IMG","null")}))`, Order.ATOMIC];
+  G.forBlock["ai_qr"]         = b => [`(await AI.qr(${V(b,"IMG","null")}))`, Order.ATOMIC];
+  G.forBlock["ai_ask"]        = b => [`(await AI.ask(${V(b,"IMG","null")}, ${V(b,"Q","''")}))`, Order.ATOMIC];
+  G.forBlock["ai_guess"]      = b => [`(await AI.guess(${V(b,"IMG","null")}, '${b.getFieldValue("KIND")}'))`, Order.ATOMIC];
+  G.forBlock["ai_transform"]  = b => [`(await AI.transform(${V(b,"IMG","null")}, '${b.getFieldValue("KIND")}'))`, Order.ATOMIC];
+  G.forBlock["ai_beats"]      = b => [`(AI.beats(${V(b,"A","''")}, ${V(b,"B","''")}))`, Order.ATOMIC];
+  G.forBlock["ai_random_rps"] = () => ["(AI.randomRps())", Order.ATOMIC];
+  G.forBlock["st_say"]        = b => `await RT.say(${V(b,"TEXT","''")});\n`;
+  G.forBlock["st_show_text"]  = b => `RT.showText(${V(b,"TEXT","''")});\n`;
+  G.forBlock["st_show_image"] = b => `RT.showImage(${V(b,"IMG","null")});\n`;
+  G.forBlock["st_boxes"]      = () => "RT.drawBoxes();\n";
+  G.forBlock["st_clear"]      = () => "RT.clearStage();\n";
+  G.forBlock["st_wait"]       = b => `await RT.wait(${V(b,"SEC","1")});\n`;
+  G.forBlock["ai_detect_draw"]= b => `await AI.detectDraw(${V(b,"IMG","null")}, '${b.getFieldValue("MODE")}');\n`;
+  G.forBlock["ai_exec"]       = b => `${V(b,"V","null")};\n`;
+
+  /* ---------------- 툴박스 ---------------- */
+  const toolbox = { kind: "categoryToolbox", contents: [
+    { kind: "category", name: "입력", colour: C_INPUT, contents: [
+      { kind: "block", type: "ai_capture" }, { kind: "block", type: "ai_upload" } ] },
+    { kind: "category", name: "AI 인식", colour: C_AI, contents: [
+      { kind: "block", type: "ai_detect_draw" },
+      { kind: "block", type: "ai_detect_one" }, { kind: "block", type: "ai_objects" },
+      { kind: "block", type: "ai_face" }, { kind: "block", type: "ai_face_count" },
+      { kind: "block", type: "ai_ocr" }, { kind: "block", type: "ai_qr" } ] },
+    { kind: "category", name: "AI 언어·변환", colour: C_VLM, contents: [
+      { kind: "block", type: "ai_ask", inputs: { Q: { shadow: { type: "text", fields: { TEXT: "무엇이 보이나요?" } } } } },
+      { kind: "block", type: "ai_guess" }, { kind: "block", type: "ai_transform" } ] },
+    { kind: "category", name: "무대", colour: C_STAGE, contents: [
+      { kind: "block", type: "st_say", inputs: { TEXT: { shadow: { type: "text", fields: { TEXT: "안녕!" } } } } },
+      { kind: "block", type: "st_show_text", inputs: { TEXT: { shadow: { type: "text", fields: { TEXT: "이겼다!" } } } } },
+      { kind: "block", type: "st_show_image" }, { kind: "block", type: "st_boxes" },
+      { kind: "block", type: "st_clear" },
+      { kind: "block", type: "st_wait", inputs: { SEC: { shadow: { type: "math_number", fields: { NUM: 1 } } } } } ] },
+    { kind: "sep" },
+    { kind: "category", name: "반복", colour: 120, contents: [
+      { kind: "block", type: "controls_repeat_ext", inputs: { TIMES: { shadow: { type: "math_number", fields: { NUM: 5 } } } } },
+      { kind: "block", type: "controls_whileUntil" } ] },
+    { kind: "category", name: "판단", colour: C_JUDGE, contents: [
+      { kind: "block", type: "controls_if" }, { kind: "block", type: "logic_compare" },
+      { kind: "block", type: "logic_operation" }, { kind: "block", type: "logic_negate" },
+      { kind: "block", type: "logic_boolean" },
+      { kind: "block", type: "ai_beats" }, { kind: "block", type: "ai_random_rps" },
+      { kind: "block", type: "ai_exec" } ] },
+    { kind: "category", name: "계산", colour: 230, contents: [
+      { kind: "block", type: "math_number" }, { kind: "block", type: "math_arithmetic" },
+      { kind: "block", type: "math_random_int", inputs: {
+        FROM: { shadow: { type: "math_number", fields: { NUM: 1 } } },
+        TO: { shadow: { type: "math_number", fields: { NUM: 10 } } } } } ] },
+    { kind: "category", name: "글자", colour: 160, contents: [
+      { kind: "block", type: "text" }, { kind: "block", type: "text_join" } ] },
+    { kind: "category", name: "리스트", colour: 260, contents: [
+      { kind: "block", type: "lists_create_with" }, { kind: "block", type: "lists_length" },
+      { kind: "block", type: "lists_indexOf" } ] },
+    { kind: "category", name: "변수", custom: "VARIABLE", colour: 330 },
+  ] };
+
+  const ws = Blockly.inject("blocklyDiv", {
+    media: "/blockly/media/",
+    toolbox, trashcan: true, renderer: "zelos",
+    zoom: { controls: true, wheel: true, startScale: 0.9 },
+    grid: { spacing: 24, length: 2, colour: "#e6e3d8", snap: true },
+  });
+
+  /* ---------------- 무대 요소 ---------------- */
+  const cam = document.getElementById("cam");
+  const shotImg = document.getElementById("shotImg");
+  const overlay = document.getElementById("overlay");
+  const octx = overlay.getContext("2d");
+  const bigText = document.getElementById("bigText");
+  const bubble = document.getElementById("bubble");
+  const logBox = document.getElementById("logBox");
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } })
+      .then(s => { cam.srcObject = s; })
+      .catch(() => log("웹캠을 사용할 수 없어요 (사진 올리기로 진행 가능)"));
+  }
+  function log(msg) {
+    logBox.textContent += (logBox.textContent ? "\n" : "") + msg;
+    logBox.scrollTop = logBox.scrollHeight;
+  }
+
+  /* ---------------- 업로드 사진 ---------------- */
+  let uploadedURL = null;
+  document.getElementById("uploadButton").addEventListener("click", () =>
+    document.getElementById("uploadFile").click());
+  document.getElementById("uploadFile").addEventListener("change", function () {
+    const f = this.files[0];
+    if (!f) return;
+    const rd = new FileReader();
+    rd.onload = e => {
+      const im = new Image();
+      im.onload = () => {
+        // 최대 1280px로 축소해 좌표계를 고정 (박스 좌표 = 이 크기 기준)
+        const scale = Math.min(1, 1280 / Math.max(im.width, im.height));
+        const c = document.createElement("canvas");
+        c.width = Math.round(im.width * scale);
+        c.height = Math.round(im.height * scale);
+        c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+        uploadedURL = c.toDataURL("image/jpeg", 0.9);
+        shotImg.src = uploadedURL; shotImg.style.display = "block";
+        document.getElementById("uploadHint").textContent = "사진이 준비됐어요 (" + f.name + ")";
+      };
+      im.src = e.target.result;
+    };
+    rd.readAsDataURL(f);
+  });
+
+  /* ---------------- AI 헬퍼 (vapi-od 호출) ---------------- */
+  function dataURLtoBlob(u) {
+    const [h, b64] = u.split(","), mime = h.match(/data:(.*?);/)[1];
+    const bin = atob(b64), arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type: mime });
+  }
+  async function dims(url) {
+    return new Promise((res, rej) => {
+      const im = new Image();
+      im.onload = () => res({ w: im.naturalWidth, h: im.naturalHeight });
+      im.onerror = rej;
+      im.src = url;
+    });
+  }
+  async function post(path, imgURL, params) {
+    if (!imgURL) throw "사진이 없어요 (사진 블록을 연결하세요)";
+    await RT.aiGate();                       // 호출 상한 + 최소 간격 + 정지 확인
+    AI.lastImg = imgURL;
+    AI.lastDim = await dims(imgURL);
+    let url = "/" + path;
+    if (params) url += "?" + new URLSearchParams(params).toString();
+    const fd = new FormData();
+    fd.append("uploadFile", dataURLtoBlob(imgURL), "image.jpg");
+    let res;
+    try {
+      res = await fetch(url, { method: "POST", body: fd,
+                               signal: RT.abort ? RT.abort.signal : undefined });
+    } catch (e) {
+      if (e && e.name === "AbortError") throw "STOP";  // 정지 버튼이 fetch를 끊음
+      throw e;
+    }
+    const j = await res.json();
+    if (j.result !== "ok") throw "AI 오류: " + (j.data || "실패");
+    RT.lastElapsed = j.elapsed_ms || 0;
+    return j.data;
+  }
+
+  const COLOR = { face: "#2b4bd8", objects: "#2e9e5b", text: "#e08a1e", custom: "#d94141" };
+  const COLORS = { face: "#2b4bd8", objects: "#2e8b57", text: "#d97b2b", custom: "#d94141" };
+  const AI = {
+    lastBoxes: [],
+    layers: { img: null, items: [] },
+    addLayer(img, items, color) {
+      // 같은 사진이면 누적, 사진이 바뀌면 새로 시작 (사진 원본은 절대 수정하지 않음)
+      if (AI.layers.img !== img) AI.layers = { img: img, items: [] };
+      AI.layers.items.push(...items.map(it => ({ ...it, color })));
+      AI.lastBoxes = items;
+    },
+    _setBoxes(img, boxes, color) {
+      // 같은 사진에 대한 인식은 누적, 사진이 바뀌면 새로 시작
+      if (AI.lastImg !== undefined && AI._boxImg === img) {
+        AI.lastBoxes = AI.lastBoxes.concat(boxes.map(b => ({ ...b, color })));
+      } else {
+        AI.lastBoxes = boxes.map(b => ({ ...b, color }));
+      }
+      AI._boxImg = img;
+    },
+    async capture() {
+      if (!cam.videoWidth) throw "웹캠이 준비되지 않았어요";
+      const c = document.createElement("canvas");
+      c.width = 640; c.height = 480;
+      c.getContext("2d").drawImage(cam, 0, 0, 640, 480);
+      shotImg.style.display = "none";           // 웹캠 라이브 뷰 유지
+      return c.toDataURL("image/jpeg", 0.85);
+    },
+    uploaded() {
+      if (!uploadedURL) throw "먼저 무대에서 [사진 올리기]를 해주세요";
+      return uploadedURL;
+    },
+    async detectOne(img, mode) {
+      const d = await post("object/object_custom_e", img, { detect_mode: mode });
+      const objs = (d && d.object) || [];
+      AI._setBoxes(img, objs.map(o => ({ box: o.box, label: ko(o.name) })), COLOR.custom);
+      return objs.length ? ko(objs[0].name) : "없음";
+    },
+    async objects(img) {
+      const d = await post("object/object_search_e", img);
+      const all = [...(d.person || []), ...(d.object || [])];
+      AI._setBoxes(img, all.map(o => ({ box: o.box, label: o.name })), COLOR.objects);
+      return all.map(o => o.name);
+    },
+    async face(img, what) {
+      const d = await post("face/face_analyze_e", img);
+      const pick = f => {                    // 질문한 항목의 값 (라벨/반환 공용)
+        if (what === "emotion") return f.emotion;
+        if (what === "age") return f.age + "살";
+        if (what === "gender") return f.gender;
+        const dir = (f.pos && f.pos.direction) || "";
+        if (dir === "CC") return "정면";
+        return ((DIR_KO[dir[0]] || "") + " " + (DIR_KO[dir[1]] || "")).trim() || "정면";
+      };
+      if (!d.length) { AI._setBoxes(img, [], COLOR.face); return what === "age" ? 0 : "없음"; }
+      AI._setBoxes(img, d.map(f => ({ box: f.box, label: String(pick(f)) })), COLOR.face);
+      return what === "age" ? d[0].age : pick(d[0]);
+    },
+    async faceCount(img) {
+      const d = await post("face/face_detect_e", img);
+      AI._setBoxes(img, d.map(f => ({ box: f.box, label: "얼굴" })), COLOR.face);
+      return d.length;
+    },
+    async ocr(img) {
+      const d = await post("code/ocr", img);
+      AI._setBoxes(img, d.map(t => ({ box: t.box, label: t.text })), COLOR.text);
+      return d.map(t => t.text).join(" ");
+    },
+    async qr(img) {
+      const d = await post("code/barcode", img);
+      AI._setBoxes(img, d.map(b => ({ box: b.box, label: "QR" })), COLOR.text);
+      return d.length ? d[0].data : "";
+    },
+    async ask(img, q) {
+      const d = await post("vlm/vlm_inference_e", img, { prompt: q });
+      return d.answer;
+    },
+    async guess(img, kind) {
+      if (kind === "place") {
+        const d = await post("caption/caption_place_e", img);
+        return d.environment + " " + d.category;
+      }
+      if (kind === "time") {
+        const d = await post("caption/caption_time_e", img);
+        return TIME_KO[d.time] || d.time;
+      }
+      if (kind === "weather") {
+        const d = await post("caption/caption_weather_e", img);
+        return WEATHER_KO[d.weather] || d.weather;
+      }
+      const d = await post("caption/caption_tag_e", img);
+      return d.tag;
+    },
+    async transform(img, kind) {
+      const d = await post("gan/" + kind, img);
+      return "data:image/jpeg;base64," + d;
+    },
+    async detectDraw(img, mode) {
+      if (mode === "face") await AI.faceCount(img);
+      else if (mode === "objects") await AI.objects(img);
+      else if (mode === "ocr") await AI.ocr(img);
+      else if (mode === "qr") await AI.qr(img);
+      else await AI.detectOne(img, mode);
+      RT.drawBoxes();
+    },
+    async detectDraw(img, mode) {
+      if (mode === "face") await AI.faceCount(img);
+      else if (mode === "objects") await AI.objects(img);
+      else if (mode === "ocr") await AI.ocr(img);
+      else if (mode === "qr") await AI.qr(img);
+      else await AI.detectOne(img, mode);
+      RT.drawBoxes();
+    },
+    beats(a, b) {
+      const w = { "가위": "보", "바위": "가위", "보": "바위" };
+      return w[a] === b;
+    },
+    randomRps() { return ["가위", "바위", "보"][Math.floor(Math.random() * 3)]; },
+  };
+
+  /* ---------------- 실행기 (RT) ---------------- */
+  const RT = {
+    stopFlag: false, iter: 0, lastElapsed: 0,
+    abort: null, aiCalls: 0, lastAiAt: 0,
+    AI_CALL_LIMIT: 50, AI_MIN_GAP: 300,
+    async aiGate() {
+      if (RT.stopFlag) throw "STOP";
+      if (++RT.aiCalls > RT.AI_CALL_LIMIT)
+        throw "AI를 너무 많이 불렀어요 (한 번 실행에 " + RT.AI_CALL_LIMIT + "번까지)";
+      const gap = Date.now() - RT.lastAiAt;
+      if (gap < RT.AI_MIN_GAP) await sleep(RT.AI_MIN_GAP - gap);  // 서버 연타 방지
+      if (RT.stopFlag) throw "STOP";
+      RT.lastAiAt = Date.now();
+    },
+    async step(id) {
+      if (RT.stopFlag) throw "STOP";
+      ws.highlightBlock(id);
+      await sleep(30);                          // 진행이 눈에 보이는 최소 템포
+    },
+    loopTrap() {
+      if (RT.stopFlag) throw "STOP";
+      if (++RT.iter > 5000) throw "반복이 너무 많아요 (5000회 초과)";
+    },
+    async say(text) {
+      text = String(text);
+      bubble.textContent = text; bubble.style.display = "block";
+      log("말하기: " + text);
+      await new Promise(res => {
+        try {
+          const u = new SpeechSynthesisUtterance(text);
+          u.lang = "ko-KR";
+          u.onend = res; u.onerror = res;
+          speechSynthesis.cancel();
+          speechSynthesis.speak(u);
+          setTimeout(res, Math.max(1500, text.length * 250));  // 안전 타임아웃
+        } catch (e) { res(); }
+      });
+    },
+    showText(t) { bigText.textContent = String(t); log("보여주기: " + t); },
+    showImage(u) {
+      if (!u) return;
+      shotImg.src = u; shotImg.style.display = "block";
+      octx.clearRect(0, 0, overlay.width, overlay.height);
+    },
+    drawBoxes() {
+      if (!AI.lastImg || !AI.lastDim) { log("먼저 인식 블록을 실행하세요."); return; }
+      // 분석했던 그 프레임을 배경으로 표시 → 박스와 대상이 항상 일치
+      shotImg.src = AI.lastImg; shotImg.style.display = "block";
+      const { w, h } = AI.lastDim;
+      overlay.width = w; overlay.height = h;        // 캔버스 좌표계 = 사진 좌표계
+      const k = Math.max(1, w / 640);               // 사진 크기에 비례한 선/글자 굵기
+      octx.clearRect(0, 0, w, h);
+      octx.lineWidth = 3 * k;
+      octx.font = (18 * k) + "px 'Gowun Dodum', sans-serif";
+      AI.lastBoxes.forEach(({ box, label, color }) => {
+        const c = color || "#2b4bd8";
+        const [x1, y1, x2, y2] = box;
+        octx.strokeStyle = c;
+        octx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+        const tw = octx.measureText(label).width;
+        octx.fillStyle = c;
+        octx.fillRect(x1, Math.max(0, y1 - 24 * k), tw + 12 * k, 24 * k);
+        octx.fillStyle = "#fff";
+        octx.fillText(label, x1 + 6 * k, Math.max(18 * k, y1 - 6 * k));
+      });
+    },
+    clearStage() {
+      AI.lastBoxes = []; AI._boxImg = null;
+      octx.clearRect(0, 0, overlay.width, overlay.height);
+      bigText.textContent = ""; bubble.style.display = "none";
+      shotImg.style.display = "none";
+    },
+    async wait(s) {
+      const until = Date.now() + Number(s) * 1000;
+      while (Date.now() < until) {
+        if (RT.stopFlag) throw "STOP";
+        await sleep(50);
+      }
+    },
+  };
+
+  /* ---------------- 실행/정지 ---------------- */
+  G.STATEMENT_PREFIX = "await RT.step(%1);\n";
+  G.INFINITE_LOOP_TRAP = "RT.loopTrap();\n";
+  G.addReservedWords("AI,RT");
+
+  const runButton = document.getElementById("runButton");
+  const runLabel = document.getElementById("runLabel");
+  const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+
+  document.getElementById("runButton").addEventListener("click", async () => {
+    if (runButton.disabled) return;
+    RT.stopFlag = false; RT.iter = 0;
+    RT.aiCalls = 0; RT.lastAiAt = 0;
+    RT.abort = new AbortController();
+    logBox.textContent = "";
+    RT.clearStage();
+    runButton.disabled = true; runLabel.textContent = "실행 중...";
+    let code = "";
+    try {
+      code = G.workspaceToCode(ws);
+      document.getElementById("codeView").textContent = code || "(블록이 없어요)";
+      if (!code.trim()) { log("블록을 먼저 조립해 주세요."); return; }
+      log("실행 시작");
+      const fn = new AsyncFunction("AI", "RT", code);
+      await fn(AI, RT);
+      log("실행 완료");
+    } catch (e) {
+      if (e === "STOP") log("정지했어요.");
+      else { log("오류: " + e); console.error(e, "\n--- code ---\n" + code); }
+    } finally {
+      ws.highlightBlock(null);
+      runButton.disabled = false; runLabel.textContent = "실행 ▶";
+    }
+  });
+  document.getElementById("stopButton").addEventListener("click", () => {
+    RT.stopFlag = true;
+    if (RT.abort) RT.abort.abort();          // 진행 중인 AI 요청 즉시 끊기
+    speechSynthesis.cancel();
+  });
+
+  /* ---------------- 저장/불러오기 ---------------- */
+  document.getElementById("saveButton").addEventListener("click", () => {
+    const state = Blockly.serialization.workspaces.save(ws);
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.download = "ai-blocks-" + new Date().toISOString().slice(0, 10) + ".json";
+    a.href = URL.createObjectURL(blob);
+    a.click();
+  });
+  document.getElementById("loadButton").addEventListener("click", () =>
+    document.getElementById("loadFile").click());
+  document.getElementById("loadFile").addEventListener("change", function () {
+    const f = this.files[0];
+    if (!f) return;
+    const rd = new FileReader();
+    rd.onload = e => {
+      try {
+        Blockly.serialization.workspaces.load(JSON.parse(e.target.result), ws);
+        log("불러오기 완료: " + f.name);
+      } catch (err) { alert("파일을 읽을 수 없어요: " + err); }
+    };
+    rd.readAsText(f);
+    this.value = "";
+  });
+  </script>
+</body>
+</html>
