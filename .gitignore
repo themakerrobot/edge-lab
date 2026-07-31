@@ -33,4 +33,4 @@ Thumbs.db
 
 image_temp/
 
-build/
+build/.ultralytics/
