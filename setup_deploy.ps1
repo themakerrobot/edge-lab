@@ -4,32 +4,25 @@
 #  usage:
 #    powershell -ExecutionPolicy Bypass -File setup_deploy.ps1
 #    powershell -ExecutionPolicy Bypass -File setup_deploy.ps1 -Token hf_xxxx
-#  token lookup order: -Token arg > HF_TOKEN env > $EMBEDDED_TOKEN below
+#  token lookup order: -Token arg > HF_TOKEN env
 # ==========================================================================
 param([string]$Token = "")
 
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
 
-# Read-only fine-grained token scoped to the model repo may be embedded here.
-# NOTE: anyone with this file can download the models. Keep the repo private.
-$EMBEDDED_TOKEN = ""
-
 if ($Token) { $env:HF_TOKEN = $Token }
-elseif (-not $env:HF_TOKEN -and $EMBEDDED_TOKEN) { $env:HF_TOKEN = $EMBEDDED_TOKEN }
 if (-not $env:HF_TOKEN) {
-  Write-Host "[WARN] no HF token given (arg/env/embedded) - download will fail if repo is private" -ForegroundColor Yellow
+  Write-Host "[WARN] no HF token given (arg/env) - download will fail if repo is private" -ForegroundColor Yellow
 }
 
 Write-Host "=== [1/5] venv ===" -ForegroundColor Cyan
 if (-not (Test-Path "venv\Scripts\python.exe")) { python -m venv venv }
 $PY = "venv\Scripts\python.exe"
-& $PY -m pip --version 2>$null | Out-Null
-if ($LASTEXITCODE -ne 0) {
-  Write-Host "  pip missing - bootstrapping (ensurepip)" -ForegroundColor Yellow
-  & $PY -m ensurepip --upgrade
-  if ($LASTEXITCODE -ne 0) { throw "venv has no pip (delete venv and retry)" }
-}
+# pip bootstrap via cmd (avoids PS5.1 stderr-to-error promotion); fast no-op if pip exists
+cmd /c "venv\Scripts\python.exe -m ensurepip --upgrade >nul 2>&1"
+cmd /c "venv\Scripts\python.exe -m pip --version >nul 2>&1"
+if ($LASTEXITCODE -ne 0) { throw "venv has no pip - delete venv folder and retry" }
 & $PY -m pip install --upgrade pip --quiet
 
 Write-Host "=== [2/5] packages ===" -ForegroundColor Cyan
@@ -37,6 +30,7 @@ Write-Host "=== [2/5] packages ===" -ForegroundColor Cyan
     ultralytics opencv-python pillow numpy easyocr python-multipart huggingface_hub mediapipe
 if ($LASTEXITCODE -ne 0) { throw "package install failed" }
 & $PY -m pip install pyzbar 2>$null | Out-Null   # optional (1D barcodes)
+$global:LASTEXITCODE = 0
 
 Write-Host "=== [3/5] models from HF ===" -ForegroundColor Cyan
 & "venv\Scripts\hf.exe" download leeyunjai/vapi-od --local-dir models --exclude "models.7z"
