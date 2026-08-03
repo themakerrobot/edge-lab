@@ -24,6 +24,12 @@ if (-not $env:HF_TOKEN) {
 Write-Host "=== [1/5] venv ===" -ForegroundColor Cyan
 if (-not (Test-Path "venv\Scripts\python.exe")) { python -m venv venv }
 $PY = "venv\Scripts\python.exe"
+& $PY -m pip --version 2>$null | Out-Null
+if ($LASTEXITCODE -ne 0) {
+  Write-Host "  pip missing - bootstrapping (ensurepip)" -ForegroundColor Yellow
+  & $PY -m ensurepip --upgrade
+  if ($LASTEXITCODE -ne 0) { throw "venv has no pip (delete venv and retry)" }
+}
 & $PY -m pip install --upgrade pip --quiet
 
 Write-Host "=== [2/5] packages ===" -ForegroundColor Cyan
