@@ -4,20 +4,23 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title id="txtTitleTag">AI 블록 코딩</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
   <style>
     :root {
-      --paper: #faf8f0; --rule: rgba(59,93,214,.10); --box: #fff;
-      --ink: #26262e; --ink-2: #6d6c66;
+      --paper: #f5f8fb; --rule: transparent; --box: #fff;
+      --ink: #26303c; --ink-2: #64707e;
+      --cyan: #29b8e5; --cyan-d: #0f93c0;
       --pen-blue: #2b4bd8; --pen-blue-d: #1f3ab0; --pen-red: #d94141;
-      --line: #cdcabc; --line-d: #26262e; --r: 6px;
+      --line: #ccd6e0; --line-d: #2c4a7c; --r: 6px;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; }
     body {
       display: flex; flex-direction: column; height: 100dvh; overflow: hidden;
       color: var(--ink); background-color: var(--paper);
-      background-image: repeating-linear-gradient(transparent 0, transparent 27px, var(--rule) 27px, var(--rule) 28px);
+
       font-family: "Gowun Dodum", "Apple SD Gothic Neo", system-ui, sans-serif;
       padding: 12px; gap: 10px;
     }
@@ -29,42 +32,61 @@
 
     /* 디바이스 HUD */
     .devbar {
-      display: flex; align-items: center; gap: 6px 12px; flex-wrap: wrap;
-      background: #1b1c22; border: 1.5px solid #0f1014; border-radius: 6px;
-      padding: 6px 12px; margin-bottom: 8px;
+      display: flex; align-items: center; gap: 6px 14px; flex-wrap: wrap;
+      background: #fffdf6;
+      border: 1.5px solid var(--line-d);
+      border-radius: 3px;
+      padding: 7px 14px; margin-bottom: 8px;
       font-family: "Menlo", "Consolas", ui-monospace, monospace;
-      font-size: .74rem; letter-spacing: .02em; color: #cfd2da;
+      font-size: .76rem; letter-spacing: .02em;
+      color: var(--ink-2);
+      box-shadow: 0 1px 0 rgba(44,74,124,.15);
+      transform: rotate(-.25deg);
+      position: relative;
     }
-    .devbar .brand { color: #8f95a3; }
-    .devbar .brand b { color: #eaecf1; letter-spacing: .08em; }
+    .devbar::before {
+      content: "";
+      position: absolute; top: -7px; left: 26px;
+      width: 54px; height: 13px;
+      background: rgba(41, 184, 229, .38);
+      border-left: 1px solid rgba(44,74,124,.15);
+      border-right: 1px solid rgba(44,74,124,.15);
+      transform: rotate(-2deg);
+    }
+    .devbar .brand { color: var(--ink-2); }
+    .devbar .brand b { color: var(--ink); letter-spacing: .08em; }
     .devbar .chip {
       display: inline-flex; align-items: center; gap: 6px;
-      background: #24262e; border: 1px solid #33363f; border-radius: 999px;
-      padding: 2px 10px; color: #6f7480;
+      background: #fff; border: 1.5px solid var(--line); border-radius: 999px;
+      padding: 2px 10px; color: #a3aebc;
     }
-    .devbar .chip .dot { width: 7px; height: 7px; border-radius: 50%; background: #3d424e; }
-    .devbar .chip.on { color: #b9bec9; border-color: #3f7d55; }
-    .devbar .chip.on .dot { background: #46d17f; box-shadow: 0 0 7px rgba(70,209,127,.75); }
-    .devbar .chip.busy { border-color: #7d6a3f; color: #f2d99a; }
-    .devbar .chip.busy .dot { background: #e8b13d; animation: devblink 1s infinite; }
-    .devbar .chip .st { color: #6f7480; font-variant-numeric: tabular-nums; }
-    .devbar .chip.on .st { color: #8f95a3; }
+    .devbar .chip .dot { width: 7px; height: 7px; border-radius: 50%; background: #d9e0e8; }
+    .devbar .chip.on { color: var(--ink); border-color: var(--ink); }
+    .devbar .chip.on .dot { background: var(--cyan); box-shadow: 0 0 5px rgba(41,184,229,.6); }
+    .devbar .chip.busy { border-color: var(--pen-red); color: var(--pen-red); }
+    .devbar .chip.busy .dot { background: var(--pen-red); animation: devblink 1s infinite; }
+    .devbar .chip .st { color: #a3aebc; font-variant-numeric: tabular-nums; }
+    .devbar .chip.on .st { color: var(--ink-2); }
     @keyframes devblink { 50% { opacity: .35; } }
     @media (prefers-reduced-motion: reduce) { .devbar .chip.busy .dot { animation: none; } }
+    .devbar .sep { color: var(--line); }
     .devbar .meter { margin-left: auto; display: flex; gap: 12px; }
-    .devbar .meter .k { color: #8f95a3; }
-    .devbar .meter .v { color: #46d17f; font-variant-numeric: tabular-nums; }
+    .devbar .meter .k { color: #a3aebc; }
+    .devbar .meter .v { color: var(--pen-blue-d); font-variant-numeric: tabular-nums; font-weight: 700; }
 
     .header {
       flex: 0 0 auto; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
       background: var(--box); border: 2px solid var(--line-d); border-radius: 3px;
-      box-shadow: 2px 2px 0 rgba(38,38,46,.12); padding: 10px 16px;
+      box-shadow: 0 1px 0 rgba(44,74,124,.18); padding: 10px 16px;
     }
     .h-title { display: flex; flex-direction: column; }
     .h-title .eyebrow { font-size: .7rem; letter-spacing: .14em; color: var(--ink-2); }
     .h-title .title { font-family: "Gowun Batang", serif; font-size: 1.3rem; font-weight: 700; }
     .h-title .title .od { font-size: .8rem; color: var(--pen-red); }
-    .h-tools { margin-left: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .h-tools {
+      margin-left: auto; display: flex; flex-direction: row;
+      gap: 8px; align-items: center; flex-wrap: wrap;
+    }
     #runButton { background: var(--pen-blue); border-color: var(--pen-blue); color: #fff; font-weight: 700; padding: 8px 26px; }
     #runButton:hover { background: var(--pen-blue-d); }
     #runButton:disabled { background: #b9b7ac; border-color: #b9b7ac; cursor: wait; }
@@ -79,8 +101,17 @@
     }
     .panel-head {
       flex: 0 0 auto; display: flex; align-items: center; gap: 9px;
-      padding: 10px 16px; border-bottom: 1.5px dashed var(--line);
-      font-family: "Gowun Batang", serif; font-weight: 700;
+      margin: 12px 12px 16px; padding: 7px 14px;
+      border: 2.5px solid var(--cyan); border-radius: 2px;
+      font-family: "Gowun Dodum", sans-serif; font-weight: 700;
+      color: var(--cyan-d);
+      position: relative;
+    }
+    .panel-head::after {
+      content: "";
+      position: absolute; left: 14px; bottom: -12px;
+      border: 7px solid transparent;
+      border-top: 9px solid var(--cyan);
     }
     #blocklyDiv { flex: 1 1 auto; min-height: 0; }
 
@@ -132,9 +163,12 @@
 </head>
 <body>
   <div class="header">
-    <div class="h-title">
+    <div class="h-title" style="flex-direction:row;align-items:center;gap:12px;display:flex;">
+      <img src="/assets/pibo-prof.png" alt="" style="height:44px;flex:0 0 auto;">
+      <span style="display:flex;flex-direction:column;">
       <span class="eyebrow" id="txtEyebrow">인공지능 · 컴퓨터 비전 · 인터넷 없이 내 컴퓨터에서 실행돼요</span>
       <span class="title"><span id="txtTitle">AI 블록 코딩</span> <span class="od">(On-Device)</span></span>
+    </span>
     </div>
     <div class="h-tools">
       <a class="back" href="/" style="
@@ -152,14 +186,19 @@
   </div>
 
   <div class="devbar" id="devbar">
-    <span class="brand"><b>VAPI-OD</b> · on-device</span>
+    <span class="brand"><b>VAPI-OD</b> · on-device vision runtime</span>
+    <span class="sep">|</span>
     <span class="chip" id="chipCPU"><span class="dot"></span>CPU<span class="st" id="stCPU"></span></span>
     <span class="chip" id="chipGPU"><span class="dot"></span>GPU<span class="st" id="stGPU"></span></span>
     <span class="chip" id="chipNPU"><span class="dot"></span>NPU<span class="st" id="stNPU"></span></span>
+    <span class="sep">|</span>
+    <span id="devModels">models &mdash;</span>
+    <span class="sep">|</span>
+    <span id="devNet">NETWORK: OFFLINE</span>
     <span class="meter">
       <span><span class="k">last</span> <span class="v" id="devLast">--</span></span>
       <span><span class="k">exec</span> <span class="v" id="devExec">--</span></span>
-      <span><span class="k">calls</span> <span class="v" id="devCalls">0</span></span>
+      <span><span class="k">runs</span> <span class="v" id="devCalls">0</span></span>
     </span>
   </div>
 
@@ -640,6 +679,11 @@
         const el = chipOf(d);
         if (el) el.classList.add("on");
       });
+      const m = info.models || {};
+      document.getElementById("devModels").textContent =
+        `VLM ${m.vlm} · YOLO ${m.detect}+custom${m.custom} · FACE ${m.face} · TRANSFORM ${m.transform}`;
+      document.getElementById("devNet").textContent =
+        'NETWORK: OFFLINE  ·  OV ' + ((info.runtime && info.runtime.openvino) || '');
     } catch (e) { /* 오프라인 초기화 실패는 무시 */ }
   })();
 

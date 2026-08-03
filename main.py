@@ -113,6 +113,8 @@ app = FastAPI(title="vapi-od", docs_url="/docs", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True,
                    allow_methods=["*"], allow_headers=["*"])
 os.makedirs("view_project/fonts", exist_ok=True)
+if os.path.isdir("view_project/assets"):
+    app.mount("/assets", StaticFiles(directory="view_project/assets"), name="assets")
 app.mount("/fonts", StaticFiles(directory="view_project/fonts"), name="fonts")
 if os.path.isdir("view_project/blockly"):
     app.mount("/blockly", StaticFiles(directory="view_project/blockly"), name="blockly")

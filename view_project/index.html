@@ -4,20 +4,24 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>컴퓨터 비전 실습</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
   <style>
     /* ===== 디자인 토큰 : "학습지" (줄노트 + 시험지 머리표 + 빨간펜) ===== */
     :root {
-      --paper:    #faf8f0;                 /* 갱지 느낌 */
-      --rule:     rgba(59, 93, 214, .10);  /* 노트 파란 줄 */
+      --paper:    #f5f8fb;                 /* 흰 활동지 */
+      --rule:     transparent;
       --box:      #ffffff;
-      --ink:      #26262e;
-      --ink-2:    #6d6c66;
+      --ink:      #26303c;
+      --ink-2:    #64707e;
+      --cyan:     #29b8e5;                 /* 활동지 섹션 타이틀 */
+      --cyan-d:   #0f93c0;
       --pen-blue: #2b4bd8;
       --pen-blue-d:#1f3ab0;
       --pen-red:  #d94141;
-      --line:     #cdcabc;
-      --line-d:   #26262e;
+      --line:     #ccd6e0;
+      --line-d:   #2c4a7c;                 /* 활동지 표 네이비 괘선 */
       --r: 6px;
     }
 
@@ -31,9 +35,7 @@
       overflow: hidden;
       color: var(--ink);
       background-color: var(--paper);
-      background-image: repeating-linear-gradient(
-        transparent 0, transparent 27px, var(--rule) 27px, var(--rule) 28px
-      );
+
       font-family: "Gowun Dodum", "Apple SD Gothic Neo", system-ui, sans-serif;
       line-height: 1.5;
       padding: 12px;
@@ -68,14 +70,12 @@
       background: var(--box);
       border: 2px solid var(--line-d);
       border-radius: 3px;
-      box-shadow: 2px 2px 0 rgba(38,38,46,.12);
+      box-shadow: 0 1px 0 rgba(44,74,124,.18);
     }
     .header > div {
       display: flex; flex-direction: column; justify-content: center;
       padding: 10px 16px;
-      border-right: 1px solid var(--line-d);
     }
-    .header > div:last-child { border-right: none; }
     .h-subject .eyebrow {
       font-size: .7rem; letter-spacing: .14em; color: var(--ink-2);
     }
@@ -98,62 +98,78 @@
     .h-env .k { font-size: .78rem; color: var(--ink-2); }
     .h-tools { flex-direction: row !important; align-items: center; gap: 8px; margin-left: auto; }
 
-    #fullscreenButton {
-      display: inline-flex; align-items: center; gap: 7px;
-      background: #fff; border: 1.5px solid var(--line-d); color: var(--ink);
-      font-weight: 600; padding: 8px 14px; cursor: pointer;
-    }
-    #fullscreenButton:hover { background: var(--paper); }
-    #fullscreenButton svg { width: 15px; height: 15px; }
 
     /* ===== 시스템 상태바 (온디바이스 콘솔) ===== */
     .sysbar {
       flex: 0 0 auto;
       display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px;
-      background: #1b1c22;
-      border: 1.5px solid #0f1014;
-      border-radius: var(--r);
+      background: #fffdf6;
+      border: 1.5px solid var(--line-d);
+      border-radius: 3px;
       padding: 7px 14px;
       font-family: "Menlo", "Consolas", ui-monospace, monospace;
       font-size: .76rem; letter-spacing: .02em;
-      color: #cfd2da;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+      color: var(--ink-2);
+      box-shadow: 0 1px 0 rgba(44,74,124,.15);
+      transform: rotate(-.25deg);          /* 붙여놓은 스티커 느낌 */
+      position: relative;
     }
-    .sysbar .brand { color: #8f95a3; }
-    .sysbar .brand b { color: #eaecf1; font-weight: 700; letter-spacing: .08em; }
+    .sysbar::before {                      /* 마스킹테이프 */
+      content: "";
+      position: absolute; top: -7px; left: 26px;
+      width: 54px; height: 13px;
+      background: rgba(41, 184, 229, .38); /* 활동지 시안 */
+      border-left: 1px solid rgba(38,38,46,.12);
+      border-right: 1px solid rgba(38,38,46,.12);
+      transform: rotate(-2deg);
+    }
+    .sysbar .brand { color: var(--ink-2); }
+    .sysbar .brand b { color: var(--ink); font-weight: 700; letter-spacing: .08em; }
     .chip {
       display: inline-flex; align-items: center; gap: 6px;
-      background: #24262e; border: 1px solid #33363f; border-radius: 999px;
-      padding: 2px 10px; color: #b9bec9;
+      background: #fff; border: 1.5px solid var(--line); border-radius: 999px;
+      padding: 2px 10px; color: #a3a094;
     }
     .chip .dot {
       width: 7px; height: 7px; border-radius: 50%;
-      background: #3d424e; box-shadow: 0 0 0 0 rgba(0,0,0,0);
+      background: #d8d5c8;
     }
-    .chip.on { color: #eaecf1; border-color: #3f7d55; }
-    .chip.on .dot { background: #46d17f; box-shadow: 0 0 7px rgba(70,209,127,.75); }
-    .chip .st { color: #6f7480; font-variant-numeric: tabular-nums; }
-    .chip.on .st { color: #8f95a3; }
-    .chip.hit { border-color: #46d17f; }
-    .chip.hit .st { color: #46d17f; }
-    .chip.busy { border-color: #7d6a3f; color: #f2d99a; }
-    .chip.busy .dot { background: #e8b13d; box-shadow: 0 0 7px rgba(232,177,61,.75); animation: blink 1s infinite; }
+    .chip.on { color: var(--ink); border-color: var(--ink); }
+    .chip.on .dot { background: var(--cyan); box-shadow: 0 0 5px rgba(41,184,229,.6); }
+    .chip.busy { border-color: var(--pen-red); color: var(--pen-red); }
+    .chip.busy .dot { background: var(--pen-red); animation: blink 1s infinite; }
     @keyframes blink { 50% { opacity: .35; } }
-    .sysbar .sep { color: #464a55; }
+    .chip .st { color: #a3a094; font-variant-numeric: tabular-nums; }
+    .chip.on .st { color: var(--ink-2); }
+    .chip.hit { border-color: var(--cyan); }
+    .chip.hit .st { color: var(--cyan-d); }
+    .sysbar .sep { color: var(--line); }
     .sysbar .meter { margin-left: auto; display: flex; align-items: center; gap: 12px; }
-    .sysbar .meter .k { color: #8f95a3; }
-    .sysbar .meter .v { color: #46d17f; font-variant-numeric: tabular-nums; }
+    .sysbar .meter .k { color: #a3a094; }
+    .sysbar .meter .v { color: var(--pen-blue-d); font-variant-numeric: tabular-nums; font-weight: 700; }
     @media (prefers-reduced-motion: reduce) { .chip.busy .dot { animation: none; } }
 
     /* ===== 문항 공통 ===== */
-    .qnum {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 26px; height: 26px; flex: 0 0 26px;
-      border: 1.8px solid var(--ink); border-radius: 50%;
-      font-family: "Gowun Batang", serif; font-weight: 700; font-size: .95rem;
+    .q {
+      position: relative;
+      border: 2.5px solid var(--cyan);
       background: #fff;
+      padding: 6px 16px 6px 12px;
+      border-radius: 2px;
     }
-    .qtext { font-family: "Gowun Batang", serif; font-weight: 700; font-size: 1.02rem; }
+    .q::after {                            /* 활동지 섹션 타이틀의 ▼ 마커 */
+      content: "";
+      position: absolute; left: 14px; bottom: -12px;
+      border: 7px solid transparent;
+      border-top: 9px solid var(--cyan);
+    }
+    .qnum {
+      display: inline-flex; align-items: center;
+      font-family: "Gowun Dodum", sans-serif; font-weight: 700; font-size: 1.05rem;
+      color: var(--cyan-d);
+    }
+    .qnum::after { content: "."; }
+    .qtext { font-family: "Gowun Dodum", sans-serif; font-weight: 700; font-size: 1.02rem; color: var(--cyan-d); }
 
     /* ===== 문항 1 : 모델 고르기 ===== */
     .subheader {
@@ -356,16 +372,24 @@
     /* 확인 도장 — 실행 완료 시에만 */
     #stampMark {
       position: absolute; top: 8px; right: 8px;
-      width: 72px; height: 72px;
+      width: 84px; height: 84px;
       border: 3px double var(--pen-red);
       border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-family: "Gowun Batang", serif; font-weight: 700; font-size: 1.05rem;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 1px;
+      font-family: "Gowun Batang", serif; font-weight: 700; font-size: .78rem;
       color: var(--pen-red);
+      background: rgba(255,255,255,.72);
       transform: rotate(-12deg) scale(0);
       opacity: 0;
       pointer-events: none;
     }
+    #stampMark::before {
+      content: "";
+      width: 40px; height: 44px;
+      background: url('/assets/pibo-thumbsup.png') center/contain no-repeat;
+    }
+    #stampMark.complete::before { background-image: url('/assets/pibo-hero.png'); }
     #stampMark.show {
       animation: stampIn .35s cubic-bezier(.2, 1.6, .4, 1) forwards;
     }
@@ -409,22 +433,40 @@
       display: none;
       flex: 0 0 auto;
       margin-top: 14px;
-      border-left: 4px solid var(--pen-blue);
+      align-items: flex-start; gap: 12px;
+    }
+    .easy-answer.show { display: flex; }
+    .easy-answer .pibo {
+      flex: 0 0 auto; width: 64px; height: 72px;
+      background: url('/assets/pibo-idea.png') center/contain no-repeat;
+      margin-top: 2px;
+    }
+    .easy-answer.fail .pibo { background-image: url('/assets/pibo-hmm.png'); }
+    .easy-answer .bubble-wrap {
+      position: relative; flex: 1 1 auto;
       background: #f5f7ff;
-      border-radius: 0 var(--r) var(--r) 0;
+      border: 1.5px solid var(--pen-blue);
+      border-radius: 10px;
       padding: 10px 14px;
     }
-    .easy-answer.show { display: flex; align-items: flex-start; gap: 12px; }
+    .easy-answer .bubble-wrap::before {
+      content: "";
+      position: absolute; left: -9px; top: 22px;
+      width: 14px; height: 14px;
+      background: #f5f7ff;
+      border-left: 1.5px solid var(--pen-blue);
+      border-bottom: 1.5px solid var(--pen-blue);
+      transform: rotate(45deg);
+    }
+    .easy-answer.fail .bubble-wrap { background: #fdf3f2; border-color: var(--pen-red); }
+    .easy-answer.fail .bubble-wrap::before { background: #fdf3f2; border-color: var(--pen-red); }
     .easy-answer .ea-label {
       flex: 0 0 auto;
-      font-family: "Gowun Batang", serif; font-weight: 700; font-size: .9rem;
+      font-family: "Gowun Batang", serif; font-weight: 700; font-size: .82rem;
       color: var(--pen-blue-d);
-      border: 1.5px solid var(--pen-blue);
-      border-radius: 4px;
-      padding: 1px 8px;
-      margin-top: 1px;
+      margin-bottom: 3px;
     }
-    #easyText { font-size: .98rem; line-height: 1.75; word-break: keep-all; }
+    .easy-answer.fail .ea-label { color: var(--pen-red); }
     #easyText .sub { color: var(--ink-2); font-size: .85rem; }
     #easyText b { color: var(--pen-blue-d); }
 
@@ -478,8 +520,6 @@
       .tab-content.active { display: block; }
       .upload-container, .webcam-container, .sketch-container, .result-frame { min-height: 260px; }
       .header { flex-direction: column; }
-      .header > div { border-right: none; border-bottom: 1px solid var(--line-d); }
-      .header > div:last-child { border-bottom: none; }
       .h-tools { margin-left: 0; }
       .promptWrapper { margin-left: 0; flex-basis: 100%; }
       .doc-link { margin-left: 0; }
@@ -489,9 +529,12 @@
 <body>
   <!-- 시험지 머리표 -->
   <div class="header">
-    <div class="h-subject">
+    <div class="h-subject" style="flex-direction:row;align-items:center;gap:12px;">
+      <img src="/assets/pibo-prof.png" alt="" style="height:44px;flex:0 0 auto;">
+      <span style="display:flex;flex-direction:column;">
       <span class="eyebrow" id="txtEyebrow">인공지능 · 컴퓨터 비전 · 인터넷 없이 내 컴퓨터에서 실행돼요</span>
       <span class="title"><span id="txtTitle">컴퓨터 비전 실습</span> <span style="font-size:.85rem;color:var(--pen-red);vertical-align:middle;">(On-Device)</span></span>
+    </span>
     </div>
     <div class="h-tools">
       <a href="/blocks" id="blocksLink" title="AI 블록 코딩으로 이동" style="
@@ -501,10 +544,7 @@
         &#9632; <span id="txtBlocksLink">블록 코딩</span></a>
       <button id="langButton" title="한국어 / English">EN</button>
       <select id="lessonSelect" title="차시 선택"></select>
-      <button id="fullscreenButton" title="전체화면으로 보기">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V5a1 1 0 0 1 1-1h4M20 9V5a1 1 0 0 0-1-1h-4M4 15v4a1 1 0 0 0 1 1h4M20 15v4a1 1 0 0 1-1 1h-4"/></svg>
-        <span id="fsLabel">전체화면</span>
-      </button>
+
     </div>
   </div>
 
@@ -579,6 +619,7 @@
         <div id="upload" class="tab-content active">
           <div class="upload-container" id="uploadPlaceholder">
             <div id="uploadText">
+              <img src="/assets/pibo-hello.png" alt="" style="height:110px;display:block;margin:0 auto 10px;">
               <span id="txtUploadMain">이 칸에 이미지를 붙여 보세요</span>
               <div class="hint" id="txtUploadHint">끌어놓기 또는 클릭해서 업로드</div>
             </div>
@@ -628,8 +669,11 @@
         </div>
 
         <div class="easy-answer" id="easyAnswer">
-          <span class="ea-label" id="txtEasyLabel">풀이</span>
-          <div id="easyText"></div>
+          <div class="pibo" id="easyPibo"></div>
+          <div class="bubble-wrap">
+            <div class="ea-label" id="txtEasyLabel">파이보의 풀이</div>
+            <div id="easyText"></div>
+          </div>
         </div>
 
         <div class="result-tools">
@@ -671,7 +715,6 @@
         titleTag: "컴퓨터 비전 실습", title: "컴퓨터 비전 실습",
         eyebrow: "인공지능 · 컴퓨터 비전 · 인터넷 없이 내 컴퓨터에서 실행돼요",
         blocksLink: "블록 코딩", langBtn: "EN",
-        fs: "전체화면", fsExit: "전체화면 종료",
         q1: "모델을 골라요", q2: "이미지를 넣고 실행해요", q3: "결과를 확인해요",
         missionLabel: "미션", modelLabel: "모델", guideLabel: "가이드", promptLabel: "프롬프트",
         tabUpload: "이미지", tabWebcam: "웹캠", tabSketch: "스케치북",
@@ -679,7 +722,7 @@
         inputHead: "입력 이미지",
         uploadMain: "이 칸에 이미지를 붙여 보세요", uploadHint: "끌어놓기 또는 클릭해서 업로드",
         capture: "캡쳐", penColor: "색상", penWidth: "굵기", clearSketch: "초기화",
-        stamp: "확인!", stampDone: "참 잘했어요", easyLabel: "풀이",
+        stamp: "확인!", stampDone: "참 잘했어요", easyLabel: "파이보의 풀이",
         saveResult: "결과 이미지 저장", clearHistory: "기록 지우기",
         historyTitle: "실행 기록 — 눌러서 다시 보기",
         details: "상세보기 — 결과 데이터(JSON)", copy: "복사", copied: "복사됨!",
@@ -700,7 +743,6 @@
         titleTag: "Computer Vision Lab", title: "Computer Vision Lab",
         eyebrow: "AI · computer vision · runs on this computer, no internet needed",
         blocksLink: "Block Coding", langBtn: "한국어",
-        fs: "Fullscreen", fsExit: "Exit fullscreen",
         q1: "Pick a model", q2: "Add an image and run", q3: "Check the result",
         missionLabel: "Mission", modelLabel: "Model", guideLabel: "Guide", promptLabel: "Prompt",
         tabUpload: "Image", tabWebcam: "Webcam", tabSketch: "Sketchbook",
@@ -708,7 +750,7 @@
         inputHead: "Input image",
         uploadMain: "Drop an image here", uploadHint: "Drag & drop, or click to upload",
         capture: "Capture", penColor: "Color", penWidth: "Width", clearSketch: "Clear",
-        stamp: "Done!", stampDone: "Great job!", easyLabel: "Answer",
+        stamp: "Done!", stampDone: "Great job!", easyLabel: "Pibo says",
         saveResult: "Save result image", clearHistory: "Clear history",
         historyTitle: "History — click to view again",
         details: "Details — result data (JSON)", copy: "Copy", copied: "Copied!",
@@ -888,22 +930,6 @@
     const LESSON_INDEX_MODE = _lessonSlug === 'list';
     let missionCount = 0;
 
-    /* ----- 전체화면 버튼 ----- */
-    const fullscreenButton = document.getElementById('fullscreenButton');
-    const fsLabel = document.getElementById('fsLabel');
-    fullscreenButton.addEventListener('click', function() {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(err => {
-          console.log("전체화면 진입 오류:", err);
-        });
-      } else {
-        document.exitFullscreen();
-      }
-    });
-    document.addEventListener('fullscreenchange', function() {
-      fsLabel.innerText = document.fullscreenElement ? T('fsExit') : T('fs');
-    });
-
     apiDocLink.href = '/docs';
 
     /* ----- 언어 적용 (정적 텍스트) ----- */
@@ -912,7 +938,6 @@
       document.title = T("titleTag");
       set("txtTitle", T("title"));           set("txtEyebrow", T("eyebrow"));
       set("txtBlocksLink", T("blocksLink")); set("langButton", T("langBtn"));
-      set("fsLabel", T("fs"));
       set("txtQ1", T("q1")); set("txtQ2", T("q2")); set("txtQ3", T("q3"));
       set("txtMissionLabel", T("missionLabel"));
       set("txtModelLabel", T("modelLabel")); set("txtGuideLabel", T("guideLabel"));
@@ -1538,6 +1563,8 @@
     }
     function showEasy(res) {
       easyText.innerHTML = easySummary(res);
+      const failed = !res || res.result === 'fail' || res.error;
+      easyAnswer.classList.toggle('fail', !!failed);
       easyAnswer.classList.add('show');
     }
 
