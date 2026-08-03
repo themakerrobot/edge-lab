@@ -14,6 +14,7 @@ sudo apt-get update -qq && sudo apt-get install -y -qq wget
 pip install openvino openvino-genai fastapi "uvicorn[standard]" \
     ultralytics opencv-python pillow numpy easyocr python-multipart
 pip install "optimum[openvino]" nncf torchvision
+pip install mediapipe
 # pyzbar: 1D 바코드 전용(선택). QR은 OpenCV 디코더로 동작한다.
 sudo apt-get install -y -qq libzbar0 && pip install pyzbar || echo "pyzbar skipped"
 
@@ -95,6 +96,11 @@ wget -q --show-progress -O "$MODELS/gan/u2net.onnx" \
 
 echo "=== [5.5/6] local fonts ==="
 python fonts_download.py
+
+echo "=== [5.7/6] mediapipe models ==="
+mkdir -p models/mediapipe
+wget -q -O models/mediapipe/face_landmarker.task "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task"
+wget -q -O models/mediapipe/gesture_recognizer.task "https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/latest/gesture_recognizer.task"
 
 echo "=== [6/6] easyocr + offline check ==="
 python - <<'PY'

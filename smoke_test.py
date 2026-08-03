@@ -73,6 +73,8 @@ CASES = [
     ("VLM 태그",         "/caption/caption_tag_e",  "plain", None),
     ("이미지 분류",       "/object/object_cls_e",    "plain", None),
     ("얼굴 속성",        "/face/face_attribute",    "plain", None),
+    ("얼굴 거리·방향(MP)", "/face/mesh_e",            "plain", None),
+    ("손동작(MP)",        "/object/hand_e",          "plain", None),
 ]
 
 

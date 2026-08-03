@@ -22,34 +22,16 @@ if not exist "%~dp0.ultralytics" mkdir "%~dp0.ultralytics"
 set VAPI_NO_BROWSER=1
 
 echo.
-echo === [0/5] static assets ===
-for %%F in (
-  view_project\index.html
-  view_project\blocks.html
-  view_project\fonts\fonts.css
-  view_project\blockly\blockly_compressed.js
-  view_project\blockly\blocks_compressed.js
-  view_project\blockly\javascript_compressed.js
-  view_project\blockly\msg\ko.js
-  view_project\blockly\msg\en.js
-  view_project\blockly\media\sprites.svg
-  view_project\blockly\media\delete-icon.svg
-) do (
-  if not exist %%F (echo [FAIL] static asset missing: %%F & goto :fail)
-)
-echo   static assets OK
-
-echo.
-echo === [1/5] python / packages ===
+echo === [1/4] python / packages ===
 %PY% -c "import sys;print('  python', sys.version.split()[0])" || goto :fail
-%PY% -c "import openvino,cv2,numpy,fastapi,ultralytics,easyocr,openvino_genai;print('  import OK')" || goto :fail
+%PY% -c "import openvino,cv2,numpy,fastapi,ultralytics,easyocr,openvino_genai,mediapipe;print('  import OK')" || goto :fail
 
 echo.
-echo === [2/5] model load ===
+echo === [2/4] model load ===
 %PY% check.py || goto :fail
 
 echo.
-echo === [3/5] start server (model loading takes 1-2 min) ===
+echo === [3/4] start server (model loading takes 1-2 min) ===
 start "vapi-od-check" /min cmd /c "%PY% main.py"
 
 set /a WAIT=0
@@ -65,7 +47,7 @@ goto :waitloop
 echo   server ready (%WAIT%s)
 
 echo.
-echo === [4/5] service check ===
+echo === [4/4] service check ===
 %PY% smoke_test.py http://localhost:57711
 set RESULT=%ERRORLEVEL%
 

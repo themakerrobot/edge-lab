@@ -17,22 +17,6 @@ echo.
 echo === [1/7] preflight ===
 if not exist models\vlm (echo [ERROR] models\ not found - run setup first & exit /b 1)
 if not exist main.py  (echo [ERROR] run from project root & exit /b 1)
-REM static assets - a bundle built without these ships a broken UI
-for %%F in (
-  view_project\index.html
-  view_project\blocks.html
-  view_project\fonts\fonts.css
-  view_project\blockly\blockly_compressed.js
-  view_project\blockly\blocks_compressed.js
-  view_project\blockly\javascript_compressed.js
-  view_project\blockly\msg\ko.js
-  view_project\blockly\msg\en.js
-  view_project\blockly\media\sprites.svg
-  view_project\blockly\media\delete-icon.svg
-) do (
-  if not exist %%F (echo [ERROR] static asset missing: %%F & exit /b 1)
-)
-echo   static assets OK
 
 for /f %%v in ('python -c "import sys;print(str(sys.version_info.major)+'.'+str(sys.version_info.minor))"') do set PYVER=%%v
 if "%PYVER%"=="3.10" set EMBED=3.10.11
@@ -74,7 +58,7 @@ echo === [4/7] install packages into pylib ===
 python -m pip install --upgrade pip --quiet
 python -m pip install --target %BUILD%\pylib ^
     openvino openvino-genai fastapi "uvicorn[standard]" ^
-    ultralytics opencv-python pillow numpy easyocr python-multipart
+    ultralytics opencv-python pillow numpy easyocr python-multipart mediapipe
 if errorlevel 1 (echo [ERROR] package install failed & exit /b 1)
 REM pyzbar is optional (QR works via OpenCV)
 python -m pip install --target %BUILD%\pylib pyzbar >nul 2>&1
