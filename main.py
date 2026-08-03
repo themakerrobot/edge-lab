@@ -117,6 +117,9 @@ app.mount("/fonts", StaticFiles(directory="view_project/fonts"), name="fonts")
 if os.path.isdir("view_project/blockly"):
     app.mount("/blockly", StaticFiles(directory="view_project/blockly"), name="blockly")
 
+import mp_routes  # noqa: E402  (MediaPipe 확장: /face/mesh_e, /object/hand_e, /face/mesh_calibrate)
+app.include_router(mp_routes.router)
+
 
 # ---------------------------------------------------------------- 공통
 def save_upload(upload: UploadFile, service_name: str) -> str:

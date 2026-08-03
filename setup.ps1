@@ -15,6 +15,7 @@ Write-Host "=== [1/6] python packages ===" -ForegroundColor Cyan
 pip install openvino openvino-genai fastapi "uvicorn[standard]" `
     ultralytics opencv-python pillow numpy easyocr python-multipart
 pip install "optimum[openvino]" nncf torchvision
+pip install mediapipe
 # pyzbar: 1D 바코드 전용(선택). QR은 OpenCV 디코더로 동작하므로 실패해도 무방.
 # Windows에서 pyzbar를 쓰려면 VC++ 2013 재배포 패키지(x64)가 필요하다.
 pip install pyzbar
@@ -108,6 +109,12 @@ Invoke-WebRequest -Uri "https://github.com/danielgatis/rembg/releases/download/v
 Write-Host "=== [5.5/6] local fonts ===" -ForegroundColor Cyan
 python fonts_download.py
 if ($LASTEXITCODE -ne 0) { throw "font download failed" }
+
+Write-Host "=== [5.7/6] mediapipe models ===" -ForegroundColor Cyan
+$mpDir = Join-Path $MODELS "mediapipe"
+New-Item -ItemType Directory -Force -Path $mpDir | Out-Null
+Invoke-WebRequest -Uri "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task" -OutFile (Join-Path $mpDir "face_landmarker.task")
+Invoke-WebRequest -Uri "https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/latest/gesture_recognizer.task" -OutFile (Join-Path $mpDir "gesture_recognizer.task")
 
 Write-Host "=== [6/6] easyocr + offline check ===" -ForegroundColor Cyan
 @'

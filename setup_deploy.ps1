@@ -28,7 +28,7 @@ $PY = "venv\Scripts\python.exe"
 
 Write-Host "=== [2/5] packages ===" -ForegroundColor Cyan
 & $PY -m pip install openvino openvino-genai fastapi "uvicorn[standard]" `
-    ultralytics opencv-python pillow numpy easyocr python-multipart huggingface_hub
+    ultralytics opencv-python pillow numpy easyocr python-multipart huggingface_hub mediapipe
 if ($LASTEXITCODE -ne 0) { throw "package install failed" }
 & $PY -m pip install pyzbar 2>$null | Out-Null   # optional (1D barcodes)
 

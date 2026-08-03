@@ -255,6 +255,9 @@
       o_emotion: "감정", o_age: "나이", o_gender: "성별", o_dir: "방향",
       o_place: "장소", o_time: "시간", o_weather: "날씨", o_tag: "태그",
       o_cartoon: "만화", o_sketch: "감성 그림", o_portrait: "배경 제거", o_sr: "화질 개선",
+      o_hand: "손 모양", o_dist: "얼굴 거리",
+      b_hand: "%1 의 손 모양", b_hand_tip: "엄지척·브이·주먹·손바닥·검지위·사랑해 중 하나를 알려줘요. 없으면 '없음'.",
+      b_face_dist: "%1 얼굴까지 거리(cm)", b_face_dist_tip: "홍채 크기로 카메라와 얼굴 사이 거리를 추정해요.",
 
       sh_question: "무엇이 보이나요?", sh_hello: "안녕!", sh_win: "이겼다!",
 
@@ -314,6 +317,9 @@
       o_emotion: "emotion", o_age: "age", o_gender: "gender", o_dir: "direction",
       o_place: "place", o_time: "time of day", o_weather: "weather", o_tag: "tags",
       o_cartoon: "a cartoon", o_sketch: "a sketch", o_portrait: "no background", o_sr: "higher quality",
+      o_hand: "hand gesture", o_dist: "face distance",
+      b_hand: "hand gesture in %1", b_hand_tip: "Thumbs-up, victory, fist, open palm, pointing up or I-love-you. 'none' if no hand.",
+      b_face_dist: "distance to the face in %1 (cm)", b_face_dist_tip: "Estimates camera-to-face distance from iris size.",
 
       sh_question: "What do you see?", sh_hello: "Hi!", sh_win: "I won!",
 
@@ -375,7 +381,7 @@
       { type: "ai_detect_draw", message0: t("b_detect_draw"),
         previousStatement: null, nextStatement: null, colour: C_AI,
         args0: [ IMG, { type: "field_dropdown", name: "MODE", options: opt(
-          ["face","objects","ocr","qr","rps","fire","ball","number","fall","helmet","box"]) } ],
+          ["face","hand","dist","objects","ocr","qr","rps","fire","ball","number","fall","helmet","box"]) } ],
         tooltip: t("b_detect_draw_tip") },
       { type: "ai_detect_one", message0: t("b_detect_one"), output: "String", colour: C_AI,
         args0: [ IMG, { type: "field_dropdown", name: "MODE", options: opt(
@@ -389,6 +395,10 @@
         tooltip: t("b_face_tip") },
       { type: "ai_face_count", message0: t("b_face_count"), output: "Number", colour: C_AI,
         args0: [ IMG ] },
+      { type: "ai_hand", message0: t("b_hand"), output: "String", colour: C_AI,
+        args0: [ IMG ], tooltip: t("b_hand_tip") },
+      { type: "ai_face_dist", message0: t("b_face_dist"), output: "Number", colour: C_AI,
+        args0: [ IMG ], tooltip: t("b_face_dist_tip") },
       { type: "ai_ocr", message0: t("b_ocr"), output: "String", colour: C_AI, args0: [ IMG ] },
       { type: "ai_qr", message0: t("b_qr"), output: "String", colour: C_AI, args0: [ IMG ] },
       // AI 언어/변환
@@ -435,6 +445,8 @@
   G.forBlock["ai_detect_one"] = b => [`(await AI.detectOne(${V(b,"IMG","null")}, '${b.getFieldValue("MODE")}'))`, Order.ATOMIC];
   G.forBlock["ai_objects"]    = b => [`(await AI.objects(${V(b,"IMG","null")}))`, Order.ATOMIC];
   G.forBlock["ai_face"]       = b => [`(await AI.face(${V(b,"IMG","null")}, '${b.getFieldValue("WHAT")}'))`, Order.ATOMIC];
+  G.forBlock["ai_hand"]       = b => [`(await AI.hand(${V(b,"IMG","null")}))`, Order.ATOMIC];
+  G.forBlock["ai_face_dist"]  = b => [`(await AI.faceDist(${V(b,"IMG","null")}))`, Order.ATOMIC];
   G.forBlock["ai_face_count"] = b => [`(await AI.faceCount(${V(b,"IMG","null")}))`, Order.ATOMIC];
   G.forBlock["ai_ocr"]        = b => [`(await AI.ocr(${V(b,"IMG","null")}))`, Order.ATOMIC];
   G.forBlock["ai_qr"]         = b => [`(await AI.qr(${V(b,"IMG","null")}))`, Order.ATOMIC];
@@ -464,6 +476,7 @@
         { kind: "block", type: "ai_detect_draw" },
         { kind: "block", type: "ai_detect_one" }, { kind: "block", type: "ai_objects" },
         { kind: "block", type: "ai_face" }, { kind: "block", type: "ai_face_count" },
+        { kind: "block", type: "ai_hand" }, { kind: "block", type: "ai_face_dist" },
         { kind: "block", type: "ai_ocr" }, { kind: "block", type: "ai_qr" } ] },
       { kind: "category", name: t("cat_lang"), colour: C_VLM, contents: [
         { kind: "block", type: "ai_ask", inputs: { Q: txt(t("sh_question")) } },
@@ -761,6 +774,17 @@
       AI._setBoxes(img, d.map(b => ({ box: b.box, label: "QR" })), COLOR.text);
       return d.length ? d[0].data : "";
     },
+    async hand(img) {
+      const d = await post("object/hand_e", img);
+      const name = x => (LANG === "en" ? (x.gesture_en || x.gesture) : x.gesture);
+      AI.addLayer(img, d.map(x => ({ box: x.box, label: name(x) })), COLORS.custom);
+      return d.length ? name(d[0]) : t("r_none");
+    },
+    async faceDist(img) {
+      const d = await post("face/mesh_e", img);
+      AI.addLayer(img, d.map(f => ({ box: f.box, label: f.distance + "cm" })), COLORS.face);
+      return d.length ? d[0].distance : 0;
+    },
     async ask(img, q) {
       const d = await post("vlm/vlm_inference_e", img, { prompt: q });
       return d.answer;
@@ -787,6 +811,8 @@
     },
     async detectDraw(img, mode) {
       if (mode === "face") await AI.faceCount(img);
+      else if (mode === "hand") await AI.hand(img);
+      else if (mode === "dist") await AI.faceDist(img);
       else if (mode === "objects") await AI.objects(img);
       else if (mode === "ocr") await AI.ocr(img);
       else if (mode === "qr") await AI.qr(img);
@@ -795,6 +821,8 @@
     },
     async detectDraw(img, mode) {
       if (mode === "face") await AI.faceCount(img);
+      else if (mode === "hand") await AI.hand(img);
+      else if (mode === "dist") await AI.faceDist(img);
       else if (mode === "objects") await AI.objects(img);
       else if (mode === "ocr") await AI.ocr(img);
       else if (mode === "qr") await AI.qr(img);

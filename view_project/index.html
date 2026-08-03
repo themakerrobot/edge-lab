@@ -299,11 +299,19 @@
       background: #fdfcf8; padding: 14px;
     }
     #webcamVideo, #webcamCanvas {
-      width: auto; max-width: 100%; max-height: 100%;
-      min-width: 260px; flex: 0 1 auto;
+      /* 스트리밍/캡처 2장이 한 줄에 나란히: 반응형으로 늘고 줄어들며,
+         좁아지면 flex-wrap에 의해 자동으로 세로 배치로 전환 */
+      flex: 1 1 300px;
+      width: auto; min-width: 240px;
+      max-width: calc(50% - 6px); max-height: 100%;
       object-fit: contain; background: #222; border-radius: 3px;
     }
     #webcamCanvas { display: none; background: #fff; }
+    /* 캡처 전(1장뿐)에는 넓게 사용 */
+    .webcam-container:has(#webcamCanvas[style*="none"]) #webcamVideo { max-width: 100%; }
+    @media (max-width: 1200px) {
+      #webcamVideo, #webcamCanvas { max-width: 100%; }
+    }
 
     .sketch-container {
       border: 1.5px solid var(--line);
@@ -728,6 +736,8 @@
       "얼굴 감정 분석": { "api": "face/face_emotion_e", "params": {}, "tooltip": "얼굴의 감정을 분석합니다.", "en": "Face emotion", "tooltip_en": "Reads the emotion on each face." },
       "얼굴 나이/성별 분석": { "api": "face/face_age_gender_e", "params": {}, "tooltip": "얼굴의 나이/성별을 분석합니다.", "en": "Face age / gender", "tooltip_en": "Estimates each face's age and gender." },
       "얼굴 방향 인식": { "api": "face/face_pose_e", "params": {}, "tooltip": "얼굴의 시선 방향을 인식합니다.", "en": "Face direction", "tooltip_en": "Detects which way each face is looking." },
+      "얼굴 거리·방향": { "api": "face/mesh_e", "params": {}, "tooltip": "홍채 크기로 카메라와의 거리(cm)와 시선 방향을 추정합니다.", "en": "Face distance / direction", "tooltip_en": "Estimates distance to the camera (cm) from iris size, plus gaze direction." },
+      "손동작 인식": { "api": "object/hand_e", "params": {}, "tooltip": "손 모양(엄지척, 브이, 주먹 등)과 손가락 21개 포인트를 인식합니다.", "en": "Hand gesture", "tooltip_en": "Recognizes hand gestures (thumbs-up, victory, fist...) and 21 finger points." },
       "사물 인식": { "api": "object/object_search_e", "params": {}, "tooltip": "80가지 사물의 이름/위치를 인식합니다.", "en": "Object detection", "tooltip_en": "Finds 80 kinds of objects and where they are." },
       "가위바위보 인식": { "api": "object/object_custom_e", "params": {"detect_mode":"rps"}, "tooltip": "가위바위보를 인식합니다.", "en": "Rock-paper-scissors", "tooltip_en": "Recognizes rock, paper and scissors hands." },
       "불 인식": { "api": "object/object_custom_e", "params": {"detect_mode":"fire"}, "tooltip": "불, 연기를 인식합니다.", "en": "Fire detection", "tooltip_en": "Detects fire and smoke." },
@@ -1338,6 +1348,14 @@
             return d.map((f, i) =>
               `${d.length > 1 ? 'Face ' + (i+1) : 'The face'} is looking <b>${dirLabel((f.pos || f.pose || {}).direction)}</b>.`
             ).join('<br>');
+          case 'mesh_e':
+            if (!d.length) return `No faces found.`;
+            return d.map((f, i) =>
+              `${d.length > 1 ? 'Face ' + (i+1) : 'The face'} is about <b>${esc(f.distance)}cm</b> away, looking <b>${dirLabel(f.direction)}</b>.`
+            ).join('<br>');
+          case 'hand_e':
+            if (!d.length) return `No hands found.`;
+            return d.map(hd => `Hand gesture: <b>${esc(hd.gesture_en || hd.gesture)}</b> <span class="sub">(${esc(hd.score)}%)</span>`).join('<br>');
           case 'face_attribute': {
             if (!d.length) return `No faces found.`;
             const ATTR_EN = { Eyeglasses:'glasses', Mustache:'a mustache', Beard:'a beard', Hat:'a hat' };
@@ -1447,6 +1465,14 @@
           return d.map((f, i) =>
             `${d.length > 1 ? (i+1) + '번 ' : ''}얼굴은 <b>${dirLabel((f.pos || f.pose || {}).direction)}</b>을 보고 있어요.`
           ).join('<br>');
+        case 'mesh_e':
+          if (!d.length) return `얼굴을 찾지 못했어요.`;
+          return d.map((f, i) =>
+            `${d.length > 1 ? (i+1) + '번 ' : ''}얼굴은 카메라에서 약 <b>${esc(f.distance)}cm</b>, <b>${dirLabel(f.direction)}</b>을 보고 있어요.`
+          ).join('<br>');
+        case 'hand_e':
+          if (!d.length) return `손을 찾지 못했어요.`;
+          return d.map(hd => `손 모양: <b>${esc(hd.gesture)}</b> <span class="sub">(확신 ${esc(hd.score)}%)</span>`).join('<br>');
         case 'face_attribute': {
           if (!d.length) return `얼굴을 찾지 못했어요.`;
           const ATTR_KO = { Eyeglasses:'안경', Mustache:'콧수염', Beard:'턱수염', Hat:'모자' };
@@ -1557,7 +1583,21 @@
         const scaleX = resultCanvas.width / srcWidth;
         const scaleY = resultCanvas.height / srcHeight;
 
-        if (res.type === "mask_detect") {
+        if (res.type === "mesh_e") {
+          res.data.forEach((item) => {
+            const [x1, y1, x2, y2] = item.box;
+            drawRect(ctx, x1, y1, x2, y2, "rgb(43, 75, 216)", `${item.distance}cm ${item.direction}`, scaleX, scaleY);
+          });
+        }
+        else if (res.type === "hand_e") {
+          res.data.forEach((item) => {
+            const [x1, y1, x2, y2] = item.box;
+            const gname = (LANG === 'en' ? (item.gesture_en || item.gesture) : item.gesture);
+            drawRect(ctx, x1, y1, x2, y2, "rgb(217, 65, 65)", `${gname} (${item.score}%)`, scaleX, scaleY);
+            (item.points || []).forEach(p => drawEllipse(ctx, p[0], p[1], 3, "rgb(43, 75, 216)", scaleX, scaleY));
+          });
+        }
+        else if (res.type === "mask_detect") {
           res.data.forEach((item, idx) => {
             const [x1, y1, x2, y2] = item.box;
             const color = item.mask === 1 ? "rgb(43, 75, 216)" : "rgb(217, 65, 65)";
@@ -1841,7 +1881,7 @@
     const LIVE_OK = new Set([
       "얼굴 인식","얼굴 분석","얼굴 감정 분석","얼굴 나이/성별 분석","얼굴 방향 인식","마스크 인식",
       "사물 인식","사람 포즈 인식","가위바위보 인식","불 인식","공 인식","숫자 인식",
-      "낙상 인식","안전모 인식","박스 인식","QR코드 인식"
+      "낙상 인식","안전모 인식","박스 인식","QR코드 인식","얼굴 거리·방향","손동작 인식"
     ]);
     const liveToggle = document.getElementById('liveToggle');
     const liveCheck = document.getElementById('liveCheck');
