@@ -70,8 +70,9 @@ if exist launcher.py if exist vapi-od.ico (
   "%PY_LOCAL%" -m pip install --quiet pyinstaller
   if errorlevel 1 (echo [WARN] pyinstaller install failed - skipping exe) else (
     "%PY_LOCAL%" -m PyInstaller --onefile --clean --noconfirm ^
-      --name vapi-od --icon vapi-od.ico ^
-      --distpath . --workpath build\exe --specpath build\exe launcher.py
+      --name vapi-od --icon "%~dp0vapi-od.ico" ^
+      --distpath "%~dp0." --workpath "%~dp0build\exe" --specpath "%~dp0build\exe" ^
+      "%~dp0launcher.py"
     if errorlevel 1 (echo [WARN] exe build failed - continuing without exe)
   )
 ) else (
