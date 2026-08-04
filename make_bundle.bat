@@ -81,7 +81,7 @@ if exist launcher.py if exist vapi-od.ico (
 
 echo.
 echo === [6/8] copy sources and models ===
-for %%F in (main.py engines.py prompts.py check.py smoke_test.py README.md) do (
+for %%F in (main.py engines.py prompts.py mp_routes.py check.py smoke_test.py README.md) do (
   copy /y %%F %BUILD%\ >nul
   if errorlevel 1 (echo [ERROR] copy failed: %%F & exit /b 1)
 )
@@ -111,7 +111,7 @@ REM bundle launcher (ASCII only, CRLF via echo)
 
 echo.
 echo === [7/8] verify bundled python ===
-for %%F in (main.py engines.py prompts.py check.py smoke_test.py run.bat bundle_check.bat) do (
+for %%F in (main.py engines.py prompts.py mp_routes.py check.py smoke_test.py run.bat bundle_check.bat) do (
   if not exist %BUILD%\%%F (echo [ERROR] missing in bundle: %%F & exit /b 1)
 )
 %BUILD%\python\python.exe -c "import openvino,cv2,numpy;print('  import OK  openvino',openvino.__version__.split('-')[0])"
