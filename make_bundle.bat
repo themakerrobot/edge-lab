@@ -124,8 +124,8 @@ if exist %ZIP% del %ZIP%
 tar -a -c -f %ZIP% -C build vapi-od
 if errorlevel 1 (echo [ERROR] compress failed & exit /b 1)
 
-for %%A in (%ZIP%) do set SIZE=%%~zA
-set /a SIZEMB=%SIZE%/1048576
+REM cmd set /a is 32-bit; use PowerShell for multi-GB sizes
+for /f %%S in ('powershell -NoProfile -Command "[math]::Round((Get-Item ''%ZIP%'').Length/1MB)"') do set SIZEMB=%%S
 echo.
 echo DONE: %ZIP%  (%SIZEMB% MB)
 echo   target PC: extract -^> run.bat      check: bundle_check.bat
