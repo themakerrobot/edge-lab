@@ -16,6 +16,7 @@ pip install openvino openvino-genai fastapi "uvicorn[standard]" `
     ultralytics opencv-python pillow numpy easyocr python-multipart
 pip install "optimum[openvino]" nncf torchvision
 pip install mediapipe
+pip install pyinstaller   # make_bundle.bat 의 런처 exe 빌드용 (개발 PC 전용)
 # pyzbar: 1D 바코드 전용(선택). QR은 OpenCV 디코더로 동작하므로 실패해도 무방.
 # Windows에서 pyzbar를 쓰려면 VC++ 2013 재배포 패키지(x64)가 필요하다.
 pip install pyzbar
