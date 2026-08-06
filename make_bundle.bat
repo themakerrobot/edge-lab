@@ -81,7 +81,7 @@ if exist launcher.py if exist vapi-od.ico (
 
 echo.
 echo === [6/8] copy sources and models ===
-for %%F in (main.py engines.py prompts.py mp_routes.py check.py smoke_test.py README.md) do (
+for %%F in (main.py engines.py prompts.py mp_routes.py train_routes.py stats_routes.py check.py smoke_test.py README.md) do (
   copy /y %%F %BUILD%\ >nul
   if errorlevel 1 (echo [ERROR] copy failed: %%F & exit /b 1)
 )
@@ -92,6 +92,13 @@ xcopy /e /i /q /y view_project %BUILD%\view_project >nul
 echo   copying models\ (several GB, takes a few minutes) ...
 xcopy /e /i /q /y models %BUILD%\models >nul
 if errorlevel 1 (echo [ERROR] models copy failed & exit /b 1)
+REM models\user 는 학생 결과물 - 빈 폴더만 둔다
+if exist %BUILD%\models\user rmdir /s /q %BUILD%\models\user
+mkdir %BUILD%\models\user
+if exist %BUILD%\models\project rmdir /s /q %BUILD%\models\project
+mkdir %BUILD%\models\project
+if exist %BUILD%\models\stats rmdir /s /q %BUILD%\models\stats
+mkdir %BUILD%\models\stats
 
 REM bundle launcher (ASCII only, CRLF via echo)
 > %BUILD%\run.bat (
@@ -111,9 +118,13 @@ REM bundle launcher (ASCII only, CRLF via echo)
 
 echo.
 echo === [7/8] verify bundled python ===
-for %%F in (main.py engines.py prompts.py mp_routes.py check.py smoke_test.py run.bat bundle_check.bat) do (
+for %%F in (main.py engines.py prompts.py mp_routes.py train_routes.py stats_routes.py check.py smoke_test.py run.bat bundle_check.bat) do (
   if not exist %BUILD%\%%F (echo [ERROR] missing in bundle: %%F & exit /b 1)
 )
+for %%F in (view_project\index.html view_project\blocks.html view_project\train.html view_project\options.html view_project\lib\tf.min-3.11.0.js view_project\lib\usage.js) do (
+  if not exist %BUILD%\%%F (echo [ERROR] missing in bundle: %%F & exit /b 1)
+)
+if not exist %BUILD%\models\backbone\mobilenetv2_feat.xml (echo [ERROR] missing in bundle: models\backbone & exit /b 1)
 %BUILD%\python\python.exe -c "import openvino,cv2,numpy;print('  import OK  openvino',openvino.__version__.split('-')[0])"
 if errorlevel 1 (echo [ERROR] import failed inside bundle & exit /b 1)
 

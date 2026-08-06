@@ -177,6 +177,7 @@
         padding:8px 14px;border-radius:var(--r);text-decoration:none;font-size:.95rem;">
         &#9998; <span id="txtBack">체험 실습</span></a>
       <button id="langButton" title="한국어 / English">EN</button>
+      <button id="exampleButton">예제</button>
       <button id="saveButton">저장</button>
       <button id="loadButton">불러오기</button>
       <input type="file" id="loadFile" accept=".json" style="display:none">
@@ -223,6 +224,11 @@
           <input type="file" id="uploadFile" accept="image/*" style="display:none">
           <span class="hint" id="uploadHint">「업로드한 사진」 블록에서 사용돼요</span>
         </div>
+        <div id="varsBox" style="display:none;border:1.5px dashed var(--line);
+             border-radius:var(--r);padding:6px 10px;font-size:.82rem;background:#fffdf6;">
+          <b id="txtVarsTitle" style="color:var(--ink-2);font-size:.76rem;">변수 값</b>
+          <div id="varsBody" style="font-variant-numeric:tabular-nums;"></div>
+        </div>
         <div id="logBox"></div>
         <details class="codeview">
           <summary id="txtCodeView">만들어진 코드 보기 (JavaScript)</summary>
@@ -236,6 +242,20 @@
   <script src="/blockly/blocks_compressed.js"></script>
   <script src="/blockly/javascript_compressed.js"></script>
   <script src="/blockly/msg/en.js"></script>
+  <div id="exModal" style="display:none;position:fixed;inset:0;background:rgba(38,48,60,.45);
+       z-index:50;align-items:center;justify-content:center;">
+    <div style="background:#fff;border:2px solid var(--line-d);border-radius:6px;
+         max-width:460px;width:92%;padding:16px;">
+      <div style="display:flex;align-items:center;margin-bottom:4px;">
+        <b id="txtExTitle" style="font-size:1.05rem;">예제 프로그램</b>
+        <button id="exClose" style="margin-left:auto;border:1.5px solid var(--line);
+          background:#fff;border-radius:6px;padding:2px 10px;cursor:pointer;">×</button>
+      </div>
+      <div class="hint" id="txtExHint" style="font-size:.82rem;color:var(--ink-2);
+           margin-bottom:10px;">누르면 지금 블록이 예제로 바뀌어요.</div>
+      <div id="exList" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+  </div>
   <script>window.MSG_EN = Object.assign({}, Blockly.Msg);</script>
   <script src="/blockly/msg/ko.js"></script>
   <script>window.MSG_KO = Object.assign({}, Blockly.Msg);</script>
@@ -274,6 +294,9 @@
       b_detect_one: "%1 에서 %2 인식하기",
       b_detect_one_tip: "가장 확실한 것 하나의 이름을 알려줘요. 없으면 '없음'.",
       b_objects: "%1 에서 사물 모두 찾기", b_objects_tip: "찾은 사물 이름들의 리스트를 돌려줘요.",
+      b_custom: "%1 을(를) %2 로 분류하기",
+      b_custom_tip: "[모델 만들기]에서 내가 학습시킨 AI로 분류해요. 가장 확실한 이름을 돌려줘요. (손모양) 모델은 손이 안 보이면 \"없음\"이 나와요.",
+      o_noCustom: "(만든 모델 없음)", o_poseTag: "(손모양)",
       b_face: "%1 얼굴의 %2", b_face_tip: "첫 번째 얼굴의 정보를 알려줘요. 나이는 숫자예요.",
       b_face_count: "%1 에서 얼굴 개수",
       b_ocr: "%1 의 글자 읽기", b_qr: "%1 의 QR 읽기",
@@ -295,6 +318,119 @@
       o_place: "장소", o_time: "시간", o_weather: "날씨", o_tag: "태그",
       o_cartoon: "만화", o_sketch: "감성 그림", o_portrait: "배경 제거", o_sr: "화질 개선",
       o_hand: "손 모양", o_dist: "얼굴 거리",
+
+      /* --- 사진 편집 --- */
+      cat_edit: "사진 편집",
+      b_resize: "%1 을(를) %2 배로 확대/축소",
+      b_resize_tip: "2는 두 배로 키우고, 0.5는 절반으로 줄여요.",
+      b_rotate: "%1 을(를) %2 도 돌리기",
+      b_rotate_tip: "시계 방향으로 돌려요. 90, 180 같은 수를 넣어요.",
+      b_flip: "%1 을(를) %2 뒤집기", o_flipH: "좌우로", o_flipV: "위아래로",
+      b_crop: "%1 을(를) %2 부분만 자르기",
+      b_crop_tip: "사진에서 고른 부분만 남겨요.",
+      o_center: "가운데", o_left: "왼쪽 절반", o_right: "오른쪽 절반",
+      o_top: "위쪽 절반", o_bottom: "아래쪽 절반",
+      b_merge: "%1 와(과) %2 을(를) %3 붙이기",
+      b_merge_tip: "두 사진을 한 장으로 붙여요. 높이(가로)나 너비(세로)를 맞춰 줘요.",
+      o_sideH: "옆으로", o_sideV: "아래로",
+      b_overlay: "%1 위에 %2 을(를) %3 크기로 %4 에 올리기",
+      b_overlay_tip: "사진 위에 다른 사진을 작게 올려요 (사진 속 사진).",
+      b_tone: "%1 의 %2 을(를) %3 만큼",
+      b_tone_tip: "-100부터 100까지. 0은 그대로예요.",
+      o_bright: "밝기", o_contrast: "명암", o_saturate: "선명한 색",
+      b_filter: "%1 에 %2 필터",
+      b_filter_tip: "사진 전체의 분위기를 바꿔요.",
+      o_gray: "흑백", o_sepia: "옛날 사진", o_invert: "색 반전", o_blur: "흐리게",
+      b_text: "%1 에 글자 %2 를 %3 에 크기 %4 색 %5 로 쓰기",
+      b_text_tip: "사진에 글자를 써 넣어요. 크기는 10~100이 좋아요.",
+      b_text_rot: "%1 에 글자 %2 를 %3 에 %4 도 기울여 쓰기",
+      b_draw_rect: "%1 에 %2 네모 그리기 — %3, 색 %4",
+      b_draw_circle: "%1 에 %2 동그라미 그리기 — %3, 색 %4",
+      b_draw_line: "%1 에 %2 에서 %3 로 선 긋기 — 색 %4",
+      b_draw_tip: "사진에 도형을 그려요. 위치는 아홉 칸 중에서 골라요.",
+      o_fill: "채운", o_hollow: "테두리만",
+      b_size_of: "%1 의 %2", o_width: "너비", o_height: "높이",
+      b_size_of_tip: "사진의 크기를 숫자로 알려줘요 (픽셀).",
+      o_tl: "왼쪽 위", o_tc: "위", o_tr: "오른쪽 위",
+      o_ml: "왼쪽", o_mc: "가운데", o_mr: "오른쪽",
+      o_bl: "왼쪽 아래", o_bc: "아래", o_br: "오른쪽 아래",
+      o_small: "작게", o_mid: "중간", o_big: "크게",
+      o_cRed: "빨강", o_cBlue: "파랑", o_cYellow: "노랑", o_cGreen: "초록",
+      o_cWhite: "하양", o_cBlack: "검정", o_cCyan: "하늘",
+
+      /* --- 픽셀 / 색 --- */
+      b_color_at: "%1 의 %2 색깔",
+      b_color_at_tip: "그 자리의 색 이름을 알려줘요 (빨강, 파랑, 초록...).",
+      b_main_color: "%1 에서 가장 많은 색",
+      b_main_color_tip: "사진 전체에서 제일 많이 나온 색 이름이에요.",
+      c_red: "빨강", c_orange: "주황", c_yellow: "노랑", c_green: "초록",
+      c_cyan: "하늘", c_blue: "파랑", c_purple: "보라",
+      c_black: "검정", c_white: "하양", c_gray: "회색",
+
+      /* --- 인식 연계 --- */
+      b_crop_detected: "마지막 인식에서 %1 것만 잘라내기",
+      b_crop_detected_tip: "인식 블록을 먼저 쓰고, 찾은 것만 오려낸 사진을 돌려줘요.",
+      o_first: "첫 번째", o_last: "마지막",
+      b_sticker: "%1 의 모든 얼굴에 %2 붙이기",
+      b_sticker_tip: "얼굴을 찾아 그 위에 스티커 사진을 올려요. 얼굴이 없으면 그대로예요.",
+      m_noDetect: "먼저 인식 블록을 사용하세요",
+      g_Thumb_Up: "엄지척", g_Victory: "브이", g_Open_Palm: "손바닥",
+      g_Closed_Fist: "주먹", g_Pointing_Up: "검지위", g_ILoveYou: "사랑해",
+
+      /* --- 기다리기(이벤트) --- */
+      b_wait_face: "얼굴이 보일 때까지 기다리기",
+      b_wait_hand: "손모양이 %1 이(가) 될 때까지 기다리기",
+      b_wait_custom: "내 모델 %1 이(가) %2 로 답할 때까지 기다리기",
+      b_wait_ev_tip: "웹캠을 계속 보다가 조건이 되면 다음으로 넘어가요. 60초가 지나면 그냥 넘어가요.",
+
+      /* --- 로그 / 저장 --- */
+      b_print: "%1 로그에 쓰기",
+      b_print_tip: "무대는 그대로 두고 아래 로그 창에만 써요 (프로그램 확인용).",
+      b_save_stage: "무대 사진 파일로 저장",
+      b_save_stage_tip: "지금 무대에 보이는 사진을 컴퓨터에 내려받아요.",
+      m_saved: "사진을 저장했어요",
+      b_note: "음 %1 을(를) %2 박자 연주",
+      b_note_tip: "삐 소리로 음을 연주해요. 소리가 나려면 스피커를 켜 주세요.",
+      b_beep: "%1 소리 내기",
+      o_beepOk: "딩동(성공)", o_beepNo: "삐-(실패)", o_sndSiren: "사이렌",
+      o_sndLaser: "레이저", o_sndCoin: "코인", o_sndJump: "점프", o_sndDrum: "북",
+      o_sndClap: "박수", o_sndChime: "차임벨", o_sndFanfare: "팡파레",
+      b_melody: "멜로디 %1 연주 (템포 %2)",
+      b_melody_tip: "도레미파솔라시 + 높은도는 '도2'. 쉼표는 공백이에요. 예: 도미솔 솔 도2",
+      b_freq: "%1 Hz 소리를 %2 초 내기",
+      b_freq_tip: "숫자가 클수록 높은 소리예요. 사람은 20~20000Hz를 들어요.",
+      m_badNote: "모르는 음은 건너뛰었어요: ",
+      sh_melody: "도미솔 솔 도2",
+      n_do: "도", n_re: "레", n_mi: "미", n_fa: "파", n_sol: "솔",
+      n_la: "라", n_si: "시", n_do2: "높은도",
+      vars_title: "변수 값",
+      btn_examples: "예제",
+      ex_title: "예제 프로그램",
+      ex_hint: "누르면 지금 블록이 예제로 바뀌어요. 저장하지 않은 블록은 사라져요.",
+      ex_greet: "얼굴 보이면 인사하기",
+      ex_greet_d: "얼굴이 나타날 때까지 기다렸다가 인사해요. (이벤트 대기)",
+      ex_rps: "가위바위보 대결",
+      ex_rps_d: "내 손모양과 컴퓨터의 랜덤을 겨뤄요. (인식·판단)",
+      ex_selfie: "흑백 셀카 만들기",
+      ex_selfie_d: "사진을 찍고 흑백으로 바꿔 글자를 써서 저장해요. (사진 편집)",
+      ex_color: "가운데 색 말하기",
+      ex_color_d: "5번 반복하며 화면 가운데 색을 말해요. (픽셀·반복)",
+      ex_sound: "소리 실험 (멜로디·주파수)",
+      ex_sound_d: "멜로디를 연주하고, 같은 음을 주파수로 내 봐요. (소리·과학)",
+      ex_count: "얼굴 수 세기",
+      ex_count_d: "얼굴 개수를 변수에 담아 말해요. (변수·인식)",
+      m_waitTimeout: "60초가 지나서 그냥 넘어가요",
+
+      /* --- 상급생용 (픽셀 좌표) --- */
+      cat_edit_xy: "사진 편집 (좌표)",
+      lbl_xy_note: "왼쪽 위가 (0,0)이에요. 사진 크기는 보통 640×480.",
+      b_crop_xy: "%1 을(를) x %2 y %3 너비 %4 높이 %5 로 자르기",
+      b_text_xy: "%1 에 글자 %2 — x %3 y %4 크기 %5 색 %6 회전 %7 도",
+      b_rect_xy: "%1 에 네모 — x %2 y %3 너비 %4 높이 %5 %6 색 %7",
+      b_circle_xy: "%1 에 동그라미 — x %2 y %3 반지름 %4 %5 색 %6",
+      b_line_xy: "%1 에 선 — x %2 y %3 에서 x %4 y %5 로 색 %6",
+      b_overlay_xy: "%1 위에 %2 — x %3 y %4 너비 %5",
+      b_color_xy: "%1 의 x %2 y %3 색깔",
       b_hand: "%1 의 손 모양", b_hand_tip: "엄지척·브이·주먹·손바닥·검지위·사랑해 중 하나를 알려줘요. 없으면 '없음'.",
       b_face_dist: "%1 얼굴까지 거리(cm)", b_face_dist_tip: "홍채 크기로 카메라와 얼굴 사이 거리를 추정해요.",
 
@@ -303,6 +439,7 @@
       r_none: "없음", r_front: "정면", r_ageSuffix: "살", r_face: "얼굴",
       m_noCam: "웹캠을 사용할 수 없어요 (사진 올리기로 진행 가능)",
       m_noImage: "사진이 없어요 (사진 블록을 연결하세요)",
+      m_noCustom: "모델을 골라주세요 ([모델 만들기]에서 먼저 학습하세요)",
       m_aiError: "AI 오류: ", m_fail: "실패",
       m_camNotReady: "웹캠이 준비되지 않았어요",
       m_needUpload: "먼저 무대에서 [사진 올리기]를 해주세요",
@@ -336,6 +473,9 @@
       b_detect_one: "detect %2 in %1",
       b_detect_one_tip: "Returns the name of the most confident result, or 'none'.",
       b_objects: "find every object in %1", b_objects_tip: "Returns a list of object names.",
+      b_custom: "classify %1 with %2",
+      b_custom_tip: "Uses an AI you trained in [Make my AI]. Returns the most confident label. A (hand) model returns \"none\" when no hand is visible.",
+      o_noCustom: "(no model yet)", o_poseTag: "(hand)",
       b_face: "%2 of the face in %1", b_face_tip: "Info about the first face. Age is a number.",
       b_face_count: "number of faces in %1",
       b_ocr: "read the text in %1", b_qr: "read the QR code in %1",
@@ -357,6 +497,119 @@
       o_place: "place", o_time: "time of day", o_weather: "weather", o_tag: "tags",
       o_cartoon: "a cartoon", o_sketch: "a sketch", o_portrait: "no background", o_sr: "higher quality",
       o_hand: "hand gesture", o_dist: "face distance",
+      /* --- Photo editing --- */
+      cat_edit: "Photo Editing",
+      b_resize: "scale %1 by %2 ×",
+      b_resize_tip: "2 doubles the size, 0.5 halves it.",
+      b_rotate: "rotate %1 by %2 °",
+      b_rotate_tip: "Rotates clockwise. Try 90 or 180.",
+      b_flip: "flip %1 %2", o_flipH: "left-right", o_flipV: "up-down",
+      b_crop: "crop %1 to the %2",
+      b_crop_tip: "Keeps only the chosen part of the photo.",
+      o_center: "center", o_left: "left half", o_right: "right half",
+      o_top: "top half", o_bottom: "bottom half",
+      b_merge: "join %1 and %2 %3",
+      b_merge_tip: "Joins two photos into one.",
+      o_sideH: "side by side", o_sideV: "stacked",
+      b_overlay: "put %2 on %1 at %4, %3 size",
+      b_overlay_tip: "Places a small photo on top of another (picture-in-picture).",
+      b_tone: "change %2 of %1 by %3",
+      b_tone_tip: "From -100 to 100. 0 means no change.",
+      o_bright: "brightness", o_contrast: "contrast", o_saturate: "saturation",
+      b_filter: "apply %2 filter to %1",
+      b_filter_tip: "Changes the whole mood of the photo.",
+      o_gray: "black & white", o_sepia: "old photo", o_invert: "invert", o_blur: "blur",
+      b_text: "write %2 on %1 at %3, size %4, color %5",
+      b_text_tip: "Writes text onto the photo. Size 10–100 works well.",
+      b_text_rot: "write %2 on %1 at %3, tilted %4 °",
+      b_draw_rect: "draw a %2 rectangle on %1 — %3, color %4",
+      b_draw_circle: "draw a %2 circle on %1 — %3, color %4",
+      b_draw_line: "draw a line on %1 from %2 to %3 — color %4",
+      b_draw_tip: "Draws a shape on the photo. Pick one of nine spots.",
+      o_fill: "filled", o_hollow: "outline",
+      b_size_of: "%2 of %1", o_width: "width", o_height: "height",
+      b_size_of_tip: "Tells the photo size in pixels.",
+      o_tl: "top-left", o_tc: "top", o_tr: "top-right",
+      o_ml: "left", o_mc: "center", o_mr: "right",
+      o_bl: "bottom-left", o_bc: "bottom", o_br: "bottom-right",
+      o_small: "small", o_mid: "medium", o_big: "large",
+      o_cRed: "red", o_cBlue: "blue", o_cYellow: "yellow", o_cGreen: "green",
+      o_cWhite: "white", o_cBlack: "black", o_cCyan: "sky blue",
+
+      /* --- Pixels / color --- */
+      b_color_at: "color at %2 of %1",
+      b_color_at_tip: "Tells the color name at that spot (red, blue, green...).",
+      b_main_color: "most common color in %1",
+      b_main_color_tip: "The color name that appears most in the photo.",
+      c_red: "red", c_orange: "orange", c_yellow: "yellow", c_green: "green",
+      c_cyan: "sky blue", c_blue: "blue", c_purple: "purple",
+      c_black: "black", c_white: "white", c_gray: "gray",
+
+      /* --- Detection link --- */
+      b_crop_detected: "cut out the %1 thing from the last detection",
+      b_crop_detected_tip: "Use a detection block first; returns just the found part.",
+      o_first: "first", o_last: "last",
+      b_sticker: "put %2 on every face in %1",
+      b_sticker_tip: "Finds faces and places the sticker photo on them.",
+      m_noDetect: "Use a detection block first",
+      g_Thumb_Up: "thumbs-up", g_Victory: "victory", g_Open_Palm: "open palm",
+      g_Closed_Fist: "fist", g_Pointing_Up: "pointing up", g_ILoveYou: "I-love-you",
+
+      /* --- Wait (events) --- */
+      b_wait_face: "wait until a face appears",
+      b_wait_hand: "wait until the hand gesture is %1",
+      b_wait_custom: "wait until my model %1 answers %2",
+      b_wait_ev_tip: "Keeps watching the webcam and moves on when it happens. Gives up after 60 s.",
+
+      /* --- Log / save --- */
+      b_print: "write %1 to the log",
+      b_print_tip: "Writes only to the log below, without touching the stage.",
+      b_save_stage: "save the stage as an image file",
+      b_save_stage_tip: "Downloads what the stage currently shows.",
+      m_saved: "Image saved",
+      b_note: "play note %1 for %2 beats",
+      b_note_tip: "Plays a beep tone. Turn your speakers on.",
+      b_beep: "make a %1 sound",
+      o_beepOk: "ding (success)", o_beepNo: "buzz (fail)", o_sndSiren: "siren",
+      o_sndLaser: "laser", o_sndCoin: "coin", o_sndJump: "jump", o_sndDrum: "drum",
+      o_sndClap: "clap", o_sndChime: "chime", o_sndFanfare: "fanfare",
+      b_melody: "play melody %1 (tempo %2)",
+      b_melody_tip: "Use c d e f g a b, c2 for high C. Space = rest. e.g. c e g g c2",
+      b_freq: "play %1 Hz for %2 seconds",
+      b_freq_tip: "Higher numbers sound higher. Humans hear 20–20000 Hz.",
+      m_badNote: "Skipped unknown notes: ",
+      sh_melody: "c e g g c2",
+      n_do: "C (do)", n_re: "D (re)", n_mi: "E (mi)", n_fa: "F (fa)", n_sol: "G (sol)",
+      n_la: "A (la)", n_si: "B (si)", n_do2: "high C",
+      vars_title: "Variables",
+      btn_examples: "Examples",
+      ex_title: "Example programs",
+      ex_hint: "Loading replaces your current blocks. Unsaved work is lost.",
+      ex_greet: "Greet when a face appears",
+      ex_greet_d: "Waits for a face, then says hello. (event wait)",
+      ex_rps: "Rock-paper-scissors duel",
+      ex_rps_d: "Your hand vs. a random pick. (detection & logic)",
+      ex_selfie: "Black-and-white selfie",
+      ex_selfie_d: "Take a photo, make it B&W, add text, save. (editing)",
+      ex_color: "Say the center color",
+      ex_color_d: "Repeats 5 times, saying the color at the center. (pixels & loops)",
+      ex_sound: "Sound lab (melody & frequency)",
+      ex_sound_d: "Plays a melody, then the same notes by frequency. (sound & science)",
+      ex_count: "Count the faces",
+      ex_count_d: "Stores the face count in a variable and says it. (variables)",
+      m_waitTimeout: "60 seconds passed, moving on",
+
+      /* --- Advanced (pixel coordinates) --- */
+      cat_edit_xy: "Photo Editing (x, y)",
+      lbl_xy_note: "Top-left is (0,0). Photos are usually 640×480.",
+      b_crop_xy: "crop %1 at x %2 y %3 width %4 height %5",
+      b_text_xy: "write %2 on %1 — x %3 y %4 size %5 color %6 rotate %7 °",
+      b_rect_xy: "rectangle on %1 — x %2 y %3 width %4 height %5 %6 color %7",
+      b_circle_xy: "circle on %1 — x %2 y %3 radius %4 %5 color %6",
+      b_line_xy: "line on %1 — from x %2 y %3 to x %4 y %5 color %6",
+      b_overlay_xy: "put %2 on %1 — x %3 y %4 width %5",
+      b_color_xy: "color of %1 at x %2 y %3",
+
       b_hand: "hand gesture in %1", b_hand_tip: "Thumbs-up, victory, fist, open palm, pointing up or I-love-you. 'none' if no hand.",
       b_face_dist: "distance to the face in %1 (cm)", b_face_dist_tip: "Estimates camera-to-face distance from iris size.",
 
@@ -365,6 +618,7 @@
       r_none: "none", r_front: "front", r_ageSuffix: "", r_face: "face",
       m_noCam: "No webcam available (you can still upload a photo)",
       m_noImage: "No photo (connect a photo block)",
+      m_noCustom: "Pick a model first (train one in [Make my AI])",
       m_aiError: "AI error: ", m_fail: "failed",
       m_camNotReady: "The webcam is not ready yet",
       m_needUpload: "Use [Upload photo] on the stage first",
@@ -386,7 +640,13 @@
     fire: "불", smoke: "연기", helmet: "안전모", face: "얼굴", box: "박스",
     fall: "낙상", fallen: "낙상", person: "사람",
   };
-  const ko = n => (LANG === "en" ? n : (KMAP[n] || n));
+  /* 라벨 정규화 — 모델은 "Rock"처럼 대문자로 주기도 하므로 소문자로 맞춰 조회한다 */
+  const EN_NORM = { scissor: "scissors", scissors: "scissors", rock: "rock", paper: "paper" };
+  const ko = n => {
+    const k = String(n).toLowerCase();
+    if (LANG === "en") return EN_NORM[k] || n;      // 영어 모드: 가위바위보만 소문자 통일
+    return KMAP[k] || n;
+  };
   const DIRS = {
     ko: { L: "왼쪽", R: "오른쪽", T: "위", B: "아래", C: "" },
     en: { L: "left", R: "right", T: "up", B: "down", C: "" },
@@ -404,10 +664,24 @@
   const TIME_KO = new Proxy({}, { get: (_, k) => TIMES[LANG][k] });
   const WEATHER_KO = new Proxy({}, { get: (_, k) => WEATHERS[LANG][k] });
 
+  /* ---------------- 내가 만든 AI 목록 (드롭다운 소스) ---------------- */
+  let CUSTOM_MODELS = [];
+  async function loadCustomModels() {
+    try {
+      const j = await (await fetch("/custom/models")).json();
+      if (j.result === "ok" && Array.isArray(j.data)) CUSTOM_MODELS = j.data;
+    } catch (e) { /* 목록이 없어도 나머지 블록은 정상 동작 */ }
+  }
+
   /* ---------------- 커스텀 블록 정의 ---------------- */
-  const C_INPUT = 200, C_AI = 220, C_VLM = 260, C_JUDGE = 40, C_STAGE = 20;
+  const C_INPUT = 200, C_AI = 220, C_VLM = 260, C_JUDGE = 40, C_STAGE = 20, C_EDIT = 175, C_EDITX = 190;
   const IMG = { type: "input_value", name: "IMG", check: "String" };
   const opt = keys => keys.map(k => [t("o_" + k), k]);
+  const POS9 = () => opt(["tl", "tc", "tr", "ml", "mc", "mr", "bl", "bc", "br"]);
+  const EDCOLORS = () => [
+    [t("o_cRed"), "#e0342e"], [t("o_cBlue"), "#2b4bd8"], [t("o_cYellow"), "#f4c522"],
+    [t("o_cGreen"), "#2fa35c"], [t("o_cWhite"), "#ffffff"], [t("o_cBlack"), "#26262e"],
+    [t("o_cCyan"), "#29b8e5"]];
 
   function defineBlocks() {
     Blockly.defineBlocksWithJsonArray([
@@ -428,6 +702,205 @@
         tooltip: t("b_detect_one_tip") },
       { type: "ai_objects", message0: t("b_objects"), output: "Array", colour: C_AI,
         args0: [ IMG ], tooltip: t("b_objects_tip") },
+      /* --- 사진 편집 (브라우저 canvas — 서버 불필요) --- */
+      { type: "ed_resize", message0: t("b_resize"), output: "String", colour: C_EDIT,
+        args0: [ IMG, { type: "input_value", name: "F", check: "Number" } ],
+        inputsInline: true, tooltip: t("b_resize_tip") },
+      { type: "ed_rotate", message0: t("b_rotate"), output: "String", colour: C_EDIT,
+        args0: [ IMG, { type: "input_value", name: "DEG", check: "Number" } ],
+        inputsInline: true, tooltip: t("b_rotate_tip") },
+      { type: "ed_flip", message0: t("b_flip"), output: "String", colour: C_EDIT,
+        args0: [ IMG, { type: "field_dropdown", name: "DIR",
+          options: () => opt(["flipH", "flipV"]) } ],
+        inputsInline: true },
+      { type: "ed_crop", message0: t("b_crop"), output: "String", colour: C_EDIT,
+        args0: [ IMG, { type: "field_dropdown", name: "PART",
+          options: () => opt(["center", "left", "right", "top", "bottom"]) } ],
+        inputsInline: true, tooltip: t("b_crop_tip") },
+      { type: "ed_merge", message0: t("b_merge"), output: "String", colour: C_EDIT,
+        args0: [ { type: "input_value", name: "A", check: "String" },
+                 { type: "input_value", name: "B", check: "String" },
+                 { type: "field_dropdown", name: "DIR",
+                   options: () => opt(["sideH", "sideV"]) } ],
+        inputsInline: true, tooltip: t("b_merge_tip") },
+      { type: "ed_overlay", message0: t("b_overlay"), output: "String", colour: C_EDIT,
+        args0: [ { type: "input_value", name: "A", check: "String" },
+                 { type: "input_value", name: "B", check: "String" },
+                 { type: "field_dropdown", name: "SIZE",
+                   options: () => opt(["small", "mid", "big"]) },
+                 { type: "field_dropdown", name: "POS", options: () => POS9() } ],
+        inputsInline: true, tooltip: t("b_overlay_tip") },
+      { type: "ed_tone", message0: t("b_tone"), output: "String", colour: C_EDIT,
+        args0: [ IMG, { type: "field_dropdown", name: "WHAT",
+                   options: () => opt(["bright", "contrast", "saturate"]) },
+                 { type: "input_value", name: "V", check: "Number" } ],
+        inputsInline: true, tooltip: t("b_tone_tip") },
+      { type: "ed_filter", message0: t("b_filter"), output: "String", colour: C_EDIT,
+        args0: [ IMG, { type: "field_dropdown", name: "F",
+          options: () => opt(["gray", "sepia", "invert", "blur"]) } ],
+        inputsInline: true, tooltip: t("b_filter_tip") },
+      { type: "ed_text", message0: t("b_text"), output: "String", colour: C_EDIT,
+        args0: [ IMG, { type: "input_value", name: "TXT", check: "String" },
+                 { type: "field_dropdown", name: "POS", options: () => POS9() },
+                 { type: "input_value", name: "SIZE", check: "Number" },
+                 { type: "field_dropdown", name: "COL", options: () => EDCOLORS() } ],
+        inputsInline: true, tooltip: t("b_text_tip") },
+      { type: "ed_text_rot", message0: t("b_text_rot"), output: "String", colour: C_EDIT,
+        args0: [ IMG, { type: "input_value", name: "TXT", check: "String" },
+                 { type: "field_dropdown", name: "POS", options: () => POS9() },
+                 { type: "input_value", name: "DEG", check: "Number" } ],
+        inputsInline: true, tooltip: t("b_text_tip") },
+      { type: "ed_rect", message0: t("b_draw_rect"), output: "String", colour: C_EDIT,
+        args0: [ IMG, { type: "field_dropdown", name: "FILL",
+                   options: () => opt(["fill", "hollow"]) },
+                 { type: "field_dropdown", name: "POS", options: () => POS9() },
+                 { type: "field_dropdown", name: "COL", options: () => EDCOLORS() } ],
+        inputsInline: true, tooltip: t("b_draw_tip") },
+      { type: "ed_circle", message0: t("b_draw_circle"), output: "String", colour: C_EDIT,
+        args0: [ IMG, { type: "field_dropdown", name: "FILL",
+                   options: () => opt(["fill", "hollow"]) },
+                 { type: "field_dropdown", name: "POS", options: () => POS9() },
+                 { type: "field_dropdown", name: "COL", options: () => EDCOLORS() } ],
+        inputsInline: true, tooltip: t("b_draw_tip") },
+      { type: "ed_line", message0: t("b_draw_line"), output: "String", colour: C_EDIT,
+        args0: [ IMG, { type: "field_dropdown", name: "P1", options: () => POS9() },
+                 { type: "field_dropdown", name: "P2", options: () => POS9() },
+                 { type: "field_dropdown", name: "COL", options: () => EDCOLORS() } ],
+        inputsInline: true, tooltip: t("b_draw_tip") },
+      { type: "ed_size_of", message0: t("b_size_of"), output: "Number", colour: C_EDIT,
+        args0: [ IMG, { type: "field_dropdown", name: "WHAT",
+          options: () => opt(["width", "height"]) } ],
+        inputsInline: true, tooltip: t("b_size_of_tip") },
+
+      /* --- 픽셀 / 색 --- */
+      { type: "ed_color_at", message0: t("b_color_at"), output: "String", colour: C_EDIT,
+        args0: [ IMG, { type: "field_dropdown", name: "POS", options: () => POS9() } ],
+        inputsInline: true, tooltip: t("b_color_at_tip") },
+      { type: "ed_main_color", message0: t("b_main_color"), output: "String", colour: C_EDIT,
+        args0: [ IMG ], inputsInline: true, tooltip: t("b_main_color_tip") },
+
+      /* --- 인식 연계 --- */
+      { type: "ed_crop_detected", message0: t("b_crop_detected"), output: "String",
+        colour: C_EDIT,
+        args0: [ { type: "field_dropdown", name: "WHICH",
+          options: () => opt(["first", "last"]) } ],
+        tooltip: t("b_crop_detected_tip") },
+      { type: "ed_sticker", message0: t("b_sticker"), output: "String", colour: C_EDIT,
+        args0: [ { type: "input_value", name: "A", check: "String" },
+                 { type: "input_value", name: "B", check: "String" } ],
+        inputsInline: true, tooltip: t("b_sticker_tip") },
+
+      /* --- 기다리기(이벤트) --- */
+      { type: "ev_wait_face", message0: t("b_wait_face"), colour: C_JUDGE,
+        previousStatement: null, nextStatement: null, tooltip: t("b_wait_ev_tip") },
+      { type: "ev_wait_hand", message0: t("b_wait_hand"), colour: C_JUDGE,
+        previousStatement: null, nextStatement: null,
+        args0: [ { type: "field_dropdown", name: "G", options: () => [
+          [t("g_Thumb_Up"), "Thumb_Up"], [t("g_Victory"), "Victory"],
+          [t("g_Open_Palm"), "Open_Palm"], [t("g_Closed_Fist"), "Closed_Fist"],
+          [t("g_Pointing_Up"), "Pointing_Up"], [t("g_ILoveYou"), "ILoveYou"] ] } ],
+        tooltip: t("b_wait_ev_tip") },
+      { type: "ev_wait_custom", message0: t("b_wait_custom"), colour: C_JUDGE,
+        previousStatement: null, nextStatement: null,
+        args0: [ { type: "field_dropdown", name: "MODEL",
+                   options: () => (CUSTOM_MODELS.length
+                     ? CUSTOM_MODELS.map(m => [m.title, m.slug])
+                     : [[t("o_noCustom"), ""]]) },
+                 { type: "input_value", name: "LABEL", check: "String" } ],
+        inputsInline: true, tooltip: t("b_wait_ev_tip") },
+
+      /* --- 로그 / 저장 --- */
+      { type: "st_note", message0: t("b_note"), colour: C_STAGE,
+        previousStatement: null, nextStatement: null,
+        args0: [ { type: "field_dropdown", name: "N", options: () => [
+          [t("n_do"), "262"], [t("n_re"), "294"], [t("n_mi"), "330"], [t("n_fa"), "349"],
+          [t("n_sol"), "392"], [t("n_la"), "440"], [t("n_si"), "494"], [t("n_do2"), "523"] ] },
+          { type: "input_value", name: "B", check: "Number" } ],
+        inputsInline: true, tooltip: t("b_note_tip") },
+      { type: "st_beep", message0: t("b_beep"), colour: C_STAGE,
+        previousStatement: null, nextStatement: null,
+        args0: [ { type: "field_dropdown", name: "K",
+          options: () => opt(["beepOk", "beepNo", "sndSiren", "sndLaser", "sndCoin",
+                              "sndJump", "sndDrum", "sndClap", "sndChime", "sndFanfare"]) } ],
+        tooltip: t("b_note_tip") },
+      { type: "st_melody", message0: t("b_melody"), colour: C_STAGE,
+        previousStatement: null, nextStatement: null,
+        args0: [ { type: "input_value", name: "M", check: "String" },
+                 { type: "field_dropdown", name: "T", options: () => [
+                   ["♩=90", "90"], ["♩=120", "120"], ["♩=150", "150"] ] } ],
+        inputsInline: true, tooltip: t("b_melody_tip") },
+      { type: "st_freq", message0: t("b_freq"), colour: C_STAGE,
+        previousStatement: null, nextStatement: null,
+        args0: [ { type: "input_value", name: "F", check: "Number" },
+                 { type: "input_value", name: "S", check: "Number" } ],
+        inputsInline: true, tooltip: t("b_freq_tip") },
+      { type: "st_print", message0: t("b_print"), colour: C_STAGE,
+        previousStatement: null, nextStatement: null,
+        args0: [ { type: "input_value", name: "V" } ], tooltip: t("b_print_tip") },
+      { type: "st_save_stage", message0: t("b_save_stage"), colour: C_STAGE,
+        previousStatement: null, nextStatement: null, tooltip: t("b_save_stage_tip") },
+
+      /* --- 상급생용 (픽셀 좌표) --- */
+      { type: "edx_crop", message0: t("b_crop_xy"), output: "String", colour: C_EDITX,
+        args0: [ IMG,
+          { type: "input_value", name: "X", check: "Number" },
+          { type: "input_value", name: "Y", check: "Number" },
+          { type: "input_value", name: "W", check: "Number" },
+          { type: "input_value", name: "H", check: "Number" } ],
+        inputsInline: true, tooltip: t("lbl_xy_note") },
+      { type: "edx_text", message0: t("b_text_xy"), output: "String", colour: C_EDITX,
+        args0: [ IMG, { type: "input_value", name: "TXT", check: "String" },
+          { type: "input_value", name: "X", check: "Number" },
+          { type: "input_value", name: "Y", check: "Number" },
+          { type: "input_value", name: "SIZE", check: "Number" },
+          { type: "field_dropdown", name: "COL", options: () => EDCOLORS() },
+          { type: "input_value", name: "DEG", check: "Number" } ],
+        inputsInline: true, tooltip: t("lbl_xy_note") },
+      { type: "edx_rect", message0: t("b_rect_xy"), output: "String", colour: C_EDITX,
+        args0: [ IMG,
+          { type: "input_value", name: "X", check: "Number" },
+          { type: "input_value", name: "Y", check: "Number" },
+          { type: "input_value", name: "W", check: "Number" },
+          { type: "input_value", name: "H", check: "Number" },
+          { type: "field_dropdown", name: "FILL", options: () => opt(["fill", "hollow"]) },
+          { type: "field_dropdown", name: "COL", options: () => EDCOLORS() } ],
+        inputsInline: true, tooltip: t("lbl_xy_note") },
+      { type: "edx_circle", message0: t("b_circle_xy"), output: "String", colour: C_EDITX,
+        args0: [ IMG,
+          { type: "input_value", name: "X", check: "Number" },
+          { type: "input_value", name: "Y", check: "Number" },
+          { type: "input_value", name: "R", check: "Number" },
+          { type: "field_dropdown", name: "FILL", options: () => opt(["fill", "hollow"]) },
+          { type: "field_dropdown", name: "COL", options: () => EDCOLORS() } ],
+        inputsInline: true, tooltip: t("lbl_xy_note") },
+      { type: "edx_line", message0: t("b_line_xy"), output: "String", colour: C_EDITX,
+        args0: [ IMG,
+          { type: "input_value", name: "X1", check: "Number" },
+          { type: "input_value", name: "Y1", check: "Number" },
+          { type: "input_value", name: "X2", check: "Number" },
+          { type: "input_value", name: "Y2", check: "Number" },
+          { type: "field_dropdown", name: "COL", options: () => EDCOLORS() } ],
+        inputsInline: true, tooltip: t("lbl_xy_note") },
+      { type: "edx_overlay", message0: t("b_overlay_xy"), output: "String", colour: C_EDITX,
+        args0: [ { type: "input_value", name: "A", check: "String" },
+          { type: "input_value", name: "B", check: "String" },
+          { type: "input_value", name: "X", check: "Number" },
+          { type: "input_value", name: "Y", check: "Number" },
+          { type: "input_value", name: "W", check: "Number" } ],
+        inputsInline: true, tooltip: t("lbl_xy_note") },
+      { type: "edx_color", message0: t("b_color_xy"), output: "String", colour: C_EDITX,
+        args0: [ IMG,
+          { type: "input_value", name: "X", check: "Number" },
+          { type: "input_value", name: "Y", check: "Number" } ],
+        inputsInline: true, tooltip: t("lbl_xy_note") },
+
+      { type: "ai_custom", message0: t("b_custom"), output: "String", colour: C_AI,
+        args0: [ IMG, { type: "field_dropdown", name: "MODEL",
+          options: () => (CUSTOM_MODELS.length
+            ? CUSTOM_MODELS.map(m => [
+                m.title + (m.kind === "pose" ? " " + t("o_poseTag") : ""), m.slug])
+            : [[t("o_noCustom"), ""]]) } ],
+        tooltip: t("b_custom_tip") },
       { type: "ai_face", message0: t("b_face"), output: null, colour: C_AI,
         args0: [ IMG, { type: "field_dropdown", name: "WHAT",
           options: opt(["emotion","age","gender","dir"]) } ],
@@ -483,6 +956,41 @@
   G.forBlock["ai_detect_draw"] = b => `await AI.detectDraw(${V(b,"IMG","null")}, '${b.getFieldValue("MODE")}');\n`;
   G.forBlock["ai_detect_one"] = b => [`(await AI.detectOne(${V(b,"IMG","null")}, '${b.getFieldValue("MODE")}'))`, Order.ATOMIC];
   G.forBlock["ai_objects"]    = b => [`(await AI.objects(${V(b,"IMG","null")}))`, Order.ATOMIC];
+  G.forBlock["ai_custom"]     = b => [`(await AI.custom(${V(b,"IMG","null")}, '${b.getFieldValue("MODEL")}'))`, Order.ATOMIC];
+  G.forBlock["ed_resize"]  = b => [`(await ED.resize(${V(b,"IMG","null")}, ${V(b,"F","1")}))`, Order.ATOMIC];
+  G.forBlock["ed_rotate"]  = b => [`(await ED.rotate(${V(b,"IMG","null")}, ${V(b,"DEG","90")}))`, Order.ATOMIC];
+  G.forBlock["ed_flip"]    = b => [`(await ED.flip(${V(b,"IMG","null")}, '${b.getFieldValue("DIR")}'))`, Order.ATOMIC];
+  G.forBlock["ed_crop"]    = b => [`(await ED.crop(${V(b,"IMG","null")}, '${b.getFieldValue("PART")}'))`, Order.ATOMIC];
+  G.forBlock["ed_merge"]   = b => [`(await ED.merge(${V(b,"A","null")}, ${V(b,"B","null")}, '${b.getFieldValue("DIR")}'))`, Order.ATOMIC];
+  G.forBlock["ed_overlay"] = b => [`(await ED.overlay(${V(b,"A","null")}, ${V(b,"B","null")}, '${b.getFieldValue("SIZE")}', '${b.getFieldValue("POS")}'))`, Order.ATOMIC];
+  G.forBlock["ed_tone"]    = b => [`(await ED.tone(${V(b,"IMG","null")}, '${b.getFieldValue("WHAT")}', ${V(b,"V","0")}))`, Order.ATOMIC];
+  G.forBlock["ed_filter"]  = b => [`(await ED.filter(${V(b,"IMG","null")}, '${b.getFieldValue("F")}'))`, Order.ATOMIC];
+  G.forBlock["ed_text"]    = b => [`(await ED.text(${V(b,"IMG","null")}, ${V(b,"TXT","''")}, '${b.getFieldValue("POS")}', ${V(b,"SIZE","40")}, '${b.getFieldValue("COL")}', 0))`, Order.ATOMIC];
+  G.forBlock["ed_text_rot"]= b => [`(await ED.text(${V(b,"IMG","null")}, ${V(b,"TXT","''")}, '${b.getFieldValue("POS")}', 44, '#26262e', ${V(b,"DEG","0")}))`, Order.ATOMIC];
+  G.forBlock["ed_rect"]    = b => [`(await ED.shape(${V(b,"IMG","null")}, 'rect', '${b.getFieldValue("FILL")}', '${b.getFieldValue("POS")}', '${b.getFieldValue("COL")}'))`, Order.ATOMIC];
+  G.forBlock["ed_circle"]  = b => [`(await ED.shape(${V(b,"IMG","null")}, 'circle', '${b.getFieldValue("FILL")}', '${b.getFieldValue("POS")}', '${b.getFieldValue("COL")}'))`, Order.ATOMIC];
+  G.forBlock["ed_line"]    = b => [`(await ED.shape(${V(b,"IMG","null")}, 'line', '', '${b.getFieldValue("P1")}', '${b.getFieldValue("COL")}', '${b.getFieldValue("P2")}'))`, Order.ATOMIC];
+  G.forBlock["ed_size_of"] = b => [`(await ED.sizeOf(${V(b,"IMG","null")}, '${b.getFieldValue("WHAT")}'))`, Order.ATOMIC];
+  G.forBlock["ed_color_at"]     = b => [`(await ED.colorAt(${V(b,"IMG","null")}, '${b.getFieldValue("POS")}'))`, Order.ATOMIC];
+  G.forBlock["ed_main_color"]   = b => [`(await ED.mainColor(${V(b,"IMG","null")}))`, Order.ATOMIC];
+  G.forBlock["ed_crop_detected"]= b => [`(await ED.cropDetected('${b.getFieldValue("WHICH")}'))`, Order.ATOMIC];
+  G.forBlock["ed_sticker"]      = b => [`(await ED.stickerOnFaces(${V(b,"A","null")}, ${V(b,"B","null")}))`, Order.ATOMIC];
+  G.forBlock["ev_wait_face"]    = () => "await RT.waitUntil('face');\n";
+  G.forBlock["ev_wait_hand"]    = b => `await RT.waitUntil('hand', '${b.getFieldValue("G")}');\n`;
+  G.forBlock["ev_wait_custom"]  = b => `await RT.waitUntil('custom', { slug: '${b.getFieldValue("MODEL")}', label: ${V(b,"LABEL","''")} });\n`;
+  G.forBlock["st_print"]        = b => `RT.print(${V(b,"V","''")});\n`;
+  G.forBlock["st_note"]         = b => `await RT.note(${b.getFieldValue("N")}, ${V(b,"B","1")});\n`;
+  G.forBlock["st_beep"]         = b => `await RT.beep('${b.getFieldValue("K")}');\n`;
+  G.forBlock["st_melody"]       = b => `await RT.melody(${V(b,"M","''")}, ${b.getFieldValue("T")});\n`;
+  G.forBlock["st_freq"]         = b => `await RT.freq(${V(b,"F","440")}, ${V(b,"S","0.5")});\n`;
+  G.forBlock["st_save_stage"]   = () => "RT.saveStage();\n";
+  G.forBlock["edx_crop"]    = b => [`(await ED.cropXY(${V(b,"IMG","null")}, ${V(b,"X","0")}, ${V(b,"Y","0")}, ${V(b,"W","100")}, ${V(b,"H","100")}))`, Order.ATOMIC];
+  G.forBlock["edx_text"]    = b => [`(await ED.textXY(${V(b,"IMG","null")}, ${V(b,"TXT","''")}, ${V(b,"X","20")}, ${V(b,"Y","20")}, ${V(b,"SIZE","40")}, '${b.getFieldValue("COL")}', ${V(b,"DEG","0")}))`, Order.ATOMIC];
+  G.forBlock["edx_rect"]    = b => [`(await ED.rectXY(${V(b,"IMG","null")}, ${V(b,"X","0")}, ${V(b,"Y","0")}, ${V(b,"W","100")}, ${V(b,"H","100")}, '${b.getFieldValue("FILL")}', '${b.getFieldValue("COL")}'))`, Order.ATOMIC];
+  G.forBlock["edx_circle"]  = b => [`(await ED.circleXY(${V(b,"IMG","null")}, ${V(b,"X","100")}, ${V(b,"Y","100")}, ${V(b,"R","50")}, '${b.getFieldValue("FILL")}', '${b.getFieldValue("COL")}'))`, Order.ATOMIC];
+  G.forBlock["edx_line"]    = b => [`(await ED.lineXY(${V(b,"IMG","null")}, ${V(b,"X1","0")}, ${V(b,"Y1","0")}, ${V(b,"X2","100")}, ${V(b,"Y2","100")}, '${b.getFieldValue("COL")}'))`, Order.ATOMIC];
+  G.forBlock["edx_overlay"] = b => [`(await ED.overlayXY(${V(b,"A","null")}, ${V(b,"B","null")}, ${V(b,"X","0")}, ${V(b,"Y","0")}, ${V(b,"W","150")}))`, Order.ATOMIC];
+  G.forBlock["edx_color"]   = b => [`(await ED.colorAtXY(${V(b,"IMG","null")}, ${V(b,"X","0")}, ${V(b,"Y","0")}))`, Order.ATOMIC];
   G.forBlock["ai_face"]       = b => [`(await AI.face(${V(b,"IMG","null")}, '${b.getFieldValue("WHAT")}'))`, Order.ATOMIC];
   G.forBlock["ai_hand"]       = b => [`(await AI.hand(${V(b,"IMG","null")}))`, Order.ATOMIC];
   G.forBlock["ai_face_dist"]  = b => [`(await AI.faceDist(${V(b,"IMG","null")}))`, Order.ATOMIC];
@@ -503,6 +1011,21 @@
   G.forBlock["ai_detect_draw"]= b => `await AI.detectDraw(${V(b,"IMG","null")}, '${b.getFieldValue("MODE")}');\n`;
   G.forBlock["ai_exec"]       = b => `${V(b,"V","null")};\n`;
 
+  /* 변수 대입 블록을 감싸 실행 중 값이 화면에 보이게 한다 (C10) */
+  (function () {
+    ["variables_set", "math_change"].forEach(type => {
+      const orig = G.forBlock[type];
+      if (!orig) return;
+      G.forBlock[type] = function (b, gen) {
+        const code = orig.call(this, b, gen);
+        const name = G.getVariableName ? G.getVariableName(b.getFieldValue("VAR"))
+                                       : b.getField("VAR").getText();
+        const js = JSON.stringify(b.getField("VAR").getText());
+        return code + `RT.varSet(${js}, ${name});\n`;
+      };
+    });
+  })();
+
   /* ---------------- 툴박스 ---------------- */
   const txt = v => ({ shadow: { type: "text", fields: { TEXT: v } } });
   const num = v => ({ shadow: { type: "math_number", fields: { NUM: v } } });
@@ -514,9 +1037,44 @@
       { kind: "category", name: t("cat_vision"), colour: C_AI, contents: [
         { kind: "block", type: "ai_detect_draw" },
         { kind: "block", type: "ai_detect_one" }, { kind: "block", type: "ai_objects" },
+        { kind: "block", type: "ai_custom" },
         { kind: "block", type: "ai_face" }, { kind: "block", type: "ai_face_count" },
         { kind: "block", type: "ai_hand" }, { kind: "block", type: "ai_face_dist" },
         { kind: "block", type: "ai_ocr" }, { kind: "block", type: "ai_qr" } ] },
+      { kind: "category", name: t("cat_edit"), colour: C_EDIT, contents: [
+        { kind: "block", type: "ed_resize", inputs: { F: num(2) } },
+        { kind: "block", type: "ed_rotate", inputs: { DEG: num(90) } },
+        { kind: "block", type: "ed_flip" },
+        { kind: "block", type: "ed_crop" },
+        { kind: "block", type: "ed_merge" },
+        { kind: "block", type: "ed_overlay" },
+        { kind: "block", type: "ed_tone", inputs: { V: num(30) } },
+        { kind: "block", type: "ed_filter" },
+        { kind: "block", type: "ed_text", inputs: { TXT: txt(t("sh_hello")), SIZE: num(48) } },
+        { kind: "block", type: "ed_text_rot", inputs: { TXT: txt(t("sh_hello")), DEG: num(-15) } },
+        { kind: "block", type: "ed_rect" },
+        { kind: "block", type: "ed_circle" },
+        { kind: "block", type: "ed_line" },
+        { kind: "block", type: "ed_size_of" },
+        { kind: "block", type: "ed_color_at" },
+        { kind: "block", type: "ed_main_color" },
+        { kind: "block", type: "ed_crop_detected" },
+        { kind: "block", type: "ed_sticker" } ] },
+      { kind: "category", name: t("cat_edit_xy"), colour: C_EDITX, contents: [
+        { kind: "label", text: t("lbl_xy_note") },
+        { kind: "block", type: "edx_crop",
+          inputs: { X: num(160), Y: num(120), W: num(320), H: num(240) } },
+        { kind: "block", type: "edx_text",
+          inputs: { TXT: txt(t("sh_hello")), X: num(30), Y: num(30), SIZE: num(48), DEG: num(0) } },
+        { kind: "block", type: "edx_rect",
+          inputs: { X: num(50), Y: num(50), W: num(200), H: num(120) } },
+        { kind: "block", type: "edx_circle",
+          inputs: { X: num(320), Y: num(240), R: num(80) } },
+        { kind: "block", type: "edx_line",
+          inputs: { X1: num(0), Y1: num(0), X2: num(640), Y2: num(480) } },
+        { kind: "block", type: "edx_overlay",
+          inputs: { X: num(20), Y: num(20), W: num(160) } },
+        { kind: "block", type: "edx_color", inputs: { X: num(320), Y: num(240) } } ] },
       { kind: "category", name: t("cat_lang"), colour: C_VLM, contents: [
         { kind: "block", type: "ai_ask", inputs: { Q: txt(t("sh_question")) } },
         { kind: "block", type: "ai_guess" }, { kind: "block", type: "ai_transform" } ] },
@@ -524,6 +1082,12 @@
         { kind: "block", type: "st_say", inputs: { TEXT: txt(t("sh_hello")) } },
         { kind: "block", type: "st_show_text", inputs: { TEXT: txt(t("sh_win")) } },
         { kind: "block", type: "st_show_image" }, { kind: "block", type: "st_boxes" },
+        { kind: "block", type: "st_note", inputs: { B: num(1) } },
+        { kind: "block", type: "st_beep" },
+        { kind: "block", type: "st_melody", inputs: { M: txt(t("sh_melody")) } },
+        { kind: "block", type: "st_freq", inputs: { F: num(440), S: num(1) } },
+        { kind: "block", type: "st_print" },
+        { kind: "block", type: "st_save_stage" },
         { kind: "block", type: "st_clear" },
         { kind: "block", type: "st_wait", inputs: { SEC: num(1) } } ] },
       { kind: "sep" },
@@ -534,6 +1098,9 @@
         { kind: "block", type: "controls_if" }, { kind: "block", type: "logic_compare" },
         { kind: "block", type: "logic_operation" }, { kind: "block", type: "logic_negate" },
         { kind: "block", type: "logic_boolean" },
+        { kind: "block", type: "ev_wait_face" },
+        { kind: "block", type: "ev_wait_hand" },
+        { kind: "block", type: "ev_wait_custom", inputs: { LABEL: txt("") } },
         { kind: "block", type: "ai_beats" }, { kind: "block", type: "ai_random_rps" },
         { kind: "block", type: "ai_exec" } ] },
       { kind: "category", name: t("cat_math"), colour: 230, contents: [
@@ -556,6 +1123,135 @@
   };
 
   let ws = Blockly.inject("blocklyDiv", Object.assign({ toolbox: buildToolbox() }, WS_OPTS));
+  loadCustomModels();      // 내가 만든 AI 목록 (드롭다운은 열 때마다 최신 목록을 읽음)
+
+  /* ---------------- 예제 프로그램 (C8) ---------------- */
+  /* Blockly serialization JSON. 문구는 t() 로 채워 한/영을 따른다. */
+  function EXAMPLES() {
+    const B = (type, extra) => Object.assign({ type: type }, extra || {});
+    const shadowNum = v => ({ shadow: { type: "math_number", fields: { NUM: v } } });
+    const shadowTxt = v => ({ shadow: { type: "text", fields: { TEXT: v } } });
+    const chain = arr => {                       // 순차 블록 연결
+      for (let i = arr.length - 1; i > 0; i--) arr[i - 1].next = { block: arr[i] };
+      return arr[0];
+    };
+    const CLEAR = () => B("st_clear");           // 모든 예제는 무대를 지우고 시작한다
+    return [
+      { id: "greet", name: t("ex_greet"), desc: t("ex_greet_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
+          CLEAR(),
+          B("ev_wait_face"),
+          B("st_say", { inputs: { TEXT: shadowTxt(t("sh_hello")) } }),
+          B("st_beep", { fields: { K: "beepOk" } }),
+        ]) ] } } },
+      { id: "rps", name: t("ex_rps"), desc: t("ex_rps_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
+          CLEAR(),
+          B("st_say", { inputs: { TEXT: shadowTxt(t("o_rps") + "!") } }),
+          B("st_wait", { inputs: { SEC: shadowNum(1) } }),
+          /* YOLO 가위바위보 모델을 쓴다 — 손모양(브이·주먹...)과 달리 가위/바위/보를 돌려준다 */
+          B("variables_set", { fields: { VAR: { name: "me" } },
+            inputs: { VALUE: { block: B("ai_detect_one", { fields: { MODE: "rps" },
+              inputs: { IMG: { block: B("ai_capture") } } }) } } }),
+          B("variables_set", { fields: { VAR: { name: "com" } },
+            inputs: { VALUE: { block: B("ai_random_rps") } } }),
+          B("st_say", { inputs: { TEXT: { block: B("variables_get",
+            { fields: { VAR: { name: "com" } } }) } } }),
+          B("controls_if", { extraState: { hasElse: true },
+            inputs: {
+              IF0: { block: B("ai_beats", { inputs: {
+                A: { block: B("variables_get", { fields: { VAR: { name: "me" } } }) },
+                B: { block: B("variables_get", { fields: { VAR: { name: "com" } } }) } } }) },
+              DO0: { block: chain([
+                B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_win")) } }),
+                B("st_beep", { fields: { K: "sndFanfare" } }),
+              ]) },
+              ELSE: { block: B("st_beep", { fields: { K: "beepNo" } }) },
+            } }),
+        ]) ] } } },
+      { id: "selfie", name: t("ex_selfie"), desc: t("ex_selfie_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
+          CLEAR(),
+          B("variables_set", { fields: { VAR: { name: "photo" } },
+            inputs: { VALUE: { block: B("ed_text", {
+              fields: { POS: "bc", COL: "#ffffff" },
+              inputs: {
+                IMG: { block: B("ed_filter", { fields: { F: "gray" },
+                  inputs: { IMG: { block: B("ai_capture") } } }) },
+                TXT: shadowTxt(t("sh_hello")), SIZE: shadowNum(48) } }) } } }),
+          B("st_show_image", { inputs: { IMG: { block: B("variables_get",
+            { fields: { VAR: { name: "photo" } } }) } } }),
+          B("st_save_stage"),
+        ]) ] } } },
+      { id: "color", name: t("ex_color"), desc: t("ex_color_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
+          CLEAR(),
+          B("controls_repeat_ext", { inputs: { TIMES: shadowNum(5),
+            DO: { block: chain([
+              B("variables_set", { fields: { VAR: { name: "photo" } },
+                inputs: { VALUE: { block: B("ai_capture") } } }),
+              /* 어디를 보는지 가운데에 네모로 표시해 준다 */
+              B("st_show_image", { inputs: { IMG: { block: B("ed_rect", {
+                fields: { FILL: "hollow", POS: "mc", COL: "#e0342e" },
+                inputs: { IMG: { block: B("variables_get",
+                  { fields: { VAR: { name: "photo" } } }) } } }) } } }),
+              B("st_say", { inputs: { TEXT: { block: B("ed_color_at",
+                { fields: { POS: "mc" },
+                  inputs: { IMG: { block: B("variables_get",
+                    { fields: { VAR: { name: "photo" } } }) } } }) } } }),
+              B("st_wait", { inputs: { SEC: shadowNum(1) } }),
+            ]) } } }),
+        ]) ] } } },
+      { id: "sound", name: t("ex_sound"), desc: t("ex_sound_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
+          CLEAR(),
+          B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_melody")) } }),
+          B("st_melody", { fields: { T: "120" }, inputs: { M: shadowTxt(t("sh_melody")) } }),
+          /* 같은 음을 주파수로도 내 보며 "소리 = 떨림"을 확인한다 */
+          B("st_show_text", { inputs: { TEXT: shadowTxt("262 Hz") } }),
+          B("st_freq", { inputs: { F: shadowNum(262), S: shadowNum(1) } }),
+          B("st_show_text", { inputs: { TEXT: shadowTxt("524 Hz") } }),
+          B("st_freq", { inputs: { F: shadowNum(524), S: shadowNum(1) } }),
+          B("st_beep", { fields: { K: "sndChime" } }),
+        ]) ] } } },
+      { id: "count", name: t("ex_count"), desc: t("ex_count_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
+          CLEAR(),
+          B("variables_set", { fields: { VAR: { name: "n" } },
+            inputs: { VALUE: { block: B("ai_face_count",
+              { inputs: { IMG: { block: B("ai_capture") } } }) } } }),
+          B("st_say", { inputs: { TEXT: { block: B("text_join", {
+            extraState: { itemCount: 2 },
+            inputs: { ADD0: { block: B("variables_get", { fields: { VAR: { name: "n" } } }) },
+                      ADD1: shadowTxt(t("r_face")) } }) } } }),
+          B("st_boxes"),
+        ]) ] } } },
+    ];
+  }
+  const exModal = document.getElementById("exModal");
+  document.getElementById("exampleButton").addEventListener("click", () => {
+    const list = document.getElementById("exList");
+    list.innerHTML = "";
+    EXAMPLES().forEach(ex => {
+      const el = document.createElement("button");
+      el.style.cssText = "text-align:left;border:1.5px solid var(--line);background:#fff;" +
+        "border-radius:6px;padding:10px 12px;cursor:pointer;font-family:inherit;";
+      el.innerHTML = "<b>" + ex.name + "</b><div style='font-size:.8rem;color:var(--ink-2);'>" +
+        ex.desc + "</div>";
+      el.addEventListener("click", () => {
+        try {
+          Blockly.serialization.workspaces.load(ex.state, ws);
+          if (window.vapiStat) vapiStat("example_loaded");
+          exModal.style.display = "none";
+        } catch (e) { console.error(e); log(t("m_error") + e); }
+      });
+      list.appendChild(el);
+    });
+    exModal.style.display = "flex";
+  });
+  document.getElementById("exClose").addEventListener("click", () =>
+    exModal.style.display = "none");
+  exModal.addEventListener("click", e => { if (e.target === exModal) exModal.style.display = "none"; });
 
   /* ---------------- 언어 전환 ---------------- */
   function applyStaticText() {
@@ -564,6 +1260,9 @@
     document.title = t("titleTag");
     set("txtTitle", t("title"));        set("txtEyebrow", t("eyebrow"));
     set("txtBack", t("back"));          set("saveButton", t("save"));
+    set("txtVarsTitle", t("vars_title"));
+    set("exampleButton", t("btn_examples"));
+    set("txtExTitle", t("ex_title")); set("txtExHint", t("ex_hint"));
     set("loadButton", t("load"));       set("stopButton", t("stop"));
     set("runLabel", t("run"));          set("langButton", t("langBtn"));
     set("txtWorkHead", t("workHead"));  set("txtStageHead", t("stageHead"));
@@ -783,6 +1482,11 @@
       AI._setBoxes(img, objs.map(o => ({ box: o.box, label: ko(o.name) })), COLOR.custom);
       return objs.length ? ko(objs[0].name) : t("r_none");
     },
+    async custom(img, slug) {
+      if (!slug) throw t("m_noCustom");
+      const d = await post("custom/predict", img, { model: slug });
+      return (d && d.length) ? d[0].name : t("r_none");
+    },
     async objects(img) {
       const d = await post("object/object_search_e", img);
       const all = [...(d.person || []), ...(d.object || [])];
@@ -882,6 +1586,328 @@
   };
 
   /* ---------------- 실행기 (RT) ---------------- */
+  /* ---------------- 사진 편집 (canvas — 오프라인, 서버 불필요) ---------------- */
+  const ED = (() => {
+    const load = url => new Promise((res, rej) => {
+      if (!url) { rej(t("m_noImage")); return; }
+      const im = new Image();
+      im.onload = () => res(im);
+      im.onerror = () => rej(t("m_noImage"));
+      im.src = url;
+    });
+    const MAXPX = 1600;                       // 확대를 반복해도 폭주하지 않게 상한
+    const out = c => c.toDataURL("image/jpeg", 0.9);
+    const make = (w, h) => {
+      const c = document.createElement("canvas");
+      c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h));
+      return c;
+    };
+    /* 아홉 칸 위치 -> 좌표 (0~1) */
+    const P9 = { tl:[.12,.12], tc:[.5,.12], tr:[.88,.12],
+                 ml:[.12,.5],  mc:[.5,.5],  mr:[.88,.5],
+                 bl:[.12,.88], bc:[.5,.88], br:[.88,.88] };
+
+    return {
+      async resize(url, f) {
+        f = Math.max(0.1, Math.min(8, Number(f) || 1));
+        const im = await load(url);
+        if (f > 1) {
+          /* 확대 = 디지털 줌: 가운데 1/f 영역을 잘라 원래 크기로 키운다 (가까이 보인다) */
+          const w = im.width / f, h = im.height / f;
+          const c = make(im.width, im.height);
+          c.getContext("2d").drawImage(im, (im.width - w) / 2, (im.height - h) / 2,
+                                       w, h, 0, 0, c.width, c.height);
+          return out(c);
+        }
+        /* 축소 = 해상도 줄이기: 화면에 다시 키워 보여주면 흐릿해진다 (화질 실험용) */
+        const c = make(Math.max(8, im.width * f), Math.max(8, im.height * f));
+        c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+        return out(c);
+      },
+      async rotate(url, deg) {
+        const im = await load(url);
+        const r = (Number(deg) || 0) * Math.PI / 180;
+        const w = im.width, h = im.height;
+        const W = Math.abs(w * Math.cos(r)) + Math.abs(h * Math.sin(r));
+        const H = Math.abs(w * Math.sin(r)) + Math.abs(h * Math.cos(r));
+        const c = make(W, H), g = c.getContext("2d");
+        g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height);
+        g.translate(c.width / 2, c.height / 2); g.rotate(r);
+        g.drawImage(im, -w / 2, -h / 2);
+        return out(c);
+      },
+      async flip(url, dir) {
+        const im = await load(url);
+        const c = make(im.width, im.height), g = c.getContext("2d");
+        if (dir === "flipV") { g.translate(0, c.height); g.scale(1, -1); }
+        else { g.translate(c.width, 0); g.scale(-1, 1); }
+        g.drawImage(im, 0, 0);
+        return out(c);
+      },
+      async crop(url, part) {
+        const im = await load(url);
+        const w = im.width, h = im.height;
+        const R = { left:   [0, 0, w / 2, h],    right:  [w / 2, 0, w / 2, h],
+                    top:    [0, 0, w, h / 2],    bottom: [0, h / 2, w, h / 2],
+                    center: [w / 4, h / 4, w / 2, h / 2] }[part] || [0, 0, w, h];
+        const c = make(R[2], R[3]);
+        c.getContext("2d").drawImage(im, R[0], R[1], R[2], R[3], 0, 0, R[2], R[3]);
+        return out(c);
+      },
+      async merge(a, b, dir) {
+        const A = await load(a), B = await load(b);
+        let c, g;
+        if (dir === "sideV") {                 // 아래로: 너비를 맞춘다
+          const w = Math.min(Math.max(A.width, B.width), MAXPX);
+          const ah = A.height * w / A.width, bh = B.height * w / B.width;
+          c = make(w, ah + bh); g = c.getContext("2d");
+          g.drawImage(A, 0, 0, w, ah); g.drawImage(B, 0, ah, w, bh);
+        } else {                               // 옆으로: 높이를 맞춘다
+          const h = Math.min(Math.max(A.height, B.height), MAXPX);
+          const aw = A.width * h / A.height, bw = B.width * h / B.height;
+          c = make(aw + bw, h); g = c.getContext("2d");
+          g.drawImage(A, 0, 0, aw, h); g.drawImage(B, aw, 0, bw, h);
+        }
+        return out(c);
+      },
+      async overlay(a, b, size, pos) {
+        const A = await load(a), B = await load(b);
+        const c = make(A.width, A.height), g = c.getContext("2d");
+        g.drawImage(A, 0, 0);
+        const f = { small: .22, mid: .35, big: .5 }[size] || .3;
+        const bw = A.width * f, bh = B.height * bw / B.width;
+        const [px, py] = P9[pos] || P9.br;
+        const x = px * A.width - bw / 2, y = py * A.height - bh / 2;
+        g.drawImage(B, Math.max(0, Math.min(x, A.width - bw)),
+                       Math.max(0, Math.min(y, A.height - bh)), bw, bh);
+        return out(c);
+      },
+      async tone(url, what, v) {
+        v = Math.max(-100, Math.min(100, Number(v) || 0));
+        const im = await load(url);
+        const c = make(im.width, im.height), g = c.getContext("2d");
+        const f = { bright: "brightness", contrast: "contrast", saturate: "saturate" }[what];
+        g.filter = f + "(" + (100 + v) + "%)";
+        g.drawImage(im, 0, 0);
+        return out(c);
+      },
+      async filter(url, name) {
+        const im = await load(url);
+        const c = make(im.width, im.height), g = c.getContext("2d");
+        g.filter = { gray: "grayscale(100%)", sepia: "sepia(90%)",
+                     invert: "invert(100%)", blur: "blur(4px)" }[name] || "none";
+        g.drawImage(im, 0, 0);
+        return out(c);
+      },
+      async text(url, txt, pos, size, color, deg) {
+        const im = await load(url);
+        const c = make(im.width, im.height), g = c.getContext("2d");
+        g.drawImage(im, 0, 0);
+        txt = String(txt == null ? "" : txt);
+        size = Math.max(8, Math.min(200, Number(size) || 40));
+        const [px, py] = P9[pos] || P9.mc;
+        g.save();
+        g.translate(px * c.width, py * c.height);
+        g.rotate((Number(deg) || 0) * Math.PI / 180);
+        g.font = "bold " + size + 'px "Gowun Dodum", sans-serif';
+        g.textAlign = "center"; g.textBaseline = "middle";
+        g.lineWidth = Math.max(2, size / 10);
+        g.strokeStyle = "rgba(255,255,255,.85)";   // 어떤 배경에서도 읽히게 흰 테두리
+        g.strokeText(txt, 0, 0);
+        g.fillStyle = color || "#26262e";
+        g.fillText(txt, 0, 0);
+        g.restore();
+        return out(c);
+      },
+      async shape(url, kind, fill, pos, color, p2) {
+        const im = await load(url);
+        const c = make(im.width, im.height), g = c.getContext("2d");
+        g.drawImage(im, 0, 0);
+        const S = Math.min(c.width, c.height);
+        g.lineWidth = Math.max(3, S * 0.012);
+        g.strokeStyle = g.fillStyle = color || "#e0342e";
+        const [px, py] = P9[pos] || P9.mc;
+        const x = px * c.width, y = py * c.height;
+        if (kind === "line") {
+          const [qx, qy] = P9[p2] || P9.br;
+          g.beginPath(); g.moveTo(x, y);
+          g.lineTo(qx * c.width, qy * c.height); g.stroke();
+        } else if (kind === "circle") {
+          g.beginPath(); g.arc(x, y, S * 0.16, 0, Math.PI * 2);
+          fill === "fill" ? g.fill() : g.stroke();
+        } else {                               // rect
+          const w = S * 0.34, h = S * 0.26;
+          fill === "fill" ? g.fillRect(x - w / 2, y - h / 2, w, h)
+                          : g.strokeRect(x - w / 2, y - h / 2, w, h);
+        }
+        return out(c);
+      },
+      async sizeOf(url, what) {
+        const im = await load(url);
+        return what === "height" ? im.height : im.width;
+      },
+
+      /* ---- 픽셀 / 색 (컴퓨터에게 사진은 숫자) ---- */
+      _ctxOf(im) {
+        const c = make(im.width, im.height);
+        const g = c.getContext("2d", { willReadFrequently: true });
+        g.drawImage(im, 0, 0);
+        return g;
+      },
+      _colorName(r, g, b) {
+        const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+        if (mx < 50) return t("c_black");
+        if (mn > 205 && mx - mn < 35) return t("c_white");
+        if (mx - mn < 28) return t("c_gray");
+        const d = mx - mn;
+        let h = 0;
+        if (mx === r) h = ((g - b) / d + 6) % 6;
+        else if (mx === g) h = (b - r) / d + 2;
+        else h = (r - g) / d + 4;
+        h *= 60;
+        if (h < 20 || h >= 335) return t("c_red");
+        if (h < 45) return t("c_orange");
+        if (h < 70) return t("c_yellow");
+        if (h < 165) return t("c_green");
+        if (h < 200) return t("c_cyan");
+        if (h < 260) return t("c_blue");
+        return t("c_purple");
+      },
+      async colorAt(url, pos) {
+        const im = await load(url);
+        const g = ED._ctxOf(im);
+        const [px, py] = P9[pos] || P9.mc;
+        /* 한 픽셀은 노이즈가 심하므로 5×5 평균을 쓴다 */
+        const x = Math.round(px * im.width), y = Math.round(py * im.height);
+        const d = g.getImageData(Math.max(0, x - 2), Math.max(0, y - 2), 5, 5).data;
+        let r = 0, gg = 0, b = 0, n = d.length / 4;
+        for (let i = 0; i < d.length; i += 4) { r += d[i]; gg += d[i + 1]; b += d[i + 2]; }
+        return ED._colorName(r / n, gg / n, b / n);
+      },
+      async colorAtXY(url, x, y) {
+        const im = await load(url);
+        const g = ED._ctxOf(im);
+        x = Math.max(0, Math.min(im.width - 1, Math.round(Number(x) || 0)));
+        y = Math.max(0, Math.min(im.height - 1, Math.round(Number(y) || 0)));
+        const d = g.getImageData(x, y, 1, 1).data;
+        return ED._colorName(d[0], d[1], d[2]);
+      },
+      async mainColor(url) {
+        const im = await load(url);
+        const c = make(48, 48);                     // 축소해서 세면 충분하다
+        const g = c.getContext("2d", { willReadFrequently: true });
+        g.drawImage(im, 0, 0, 48, 48);
+        const d = g.getImageData(0, 0, 48, 48).data;
+        const cnt = {};
+        for (let i = 0; i < d.length; i += 4) {
+          const name = ED._colorName(d[i], d[i + 1], d[i + 2]);
+          cnt[name] = (cnt[name] || 0) + 1;
+        }
+        return Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a])[0] || t("c_gray");
+      },
+
+      /* ---- 상급생용: 픽셀 좌표 직접 입력 ---- */
+      async cropXY(url, x, y, w, h) {
+        const im = await load(url);
+        x = Math.max(0, Math.min(im.width - 1, Number(x) || 0));
+        y = Math.max(0, Math.min(im.height - 1, Number(y) || 0));
+        w = Math.max(1, Math.min(im.width - x, Number(w) || 1));
+        h = Math.max(1, Math.min(im.height - y, Number(h) || 1));
+        const c = make(w, h);
+        c.getContext("2d").drawImage(im, x, y, w, h, 0, 0, w, h);
+        return out(c);
+      },
+      async textXY(url, txt, x, y, size, color, deg) {
+        const im = await load(url);
+        const c = make(im.width, im.height), g = c.getContext("2d");
+        g.drawImage(im, 0, 0);
+        size = Math.max(8, Math.min(300, Number(size) || 40));
+        g.save();
+        g.translate(Number(x) || 0, Number(y) || 0);
+        g.rotate((Number(deg) || 0) * Math.PI / 180);
+        g.font = "bold " + size + 'px "Gowun Dodum", sans-serif';
+        g.textAlign = "left"; g.textBaseline = "top";
+        g.lineWidth = Math.max(2, size / 10);
+        g.strokeStyle = "rgba(255,255,255,.85)";
+        g.strokeText(String(txt == null ? "" : txt), 0, 0);
+        g.fillStyle = color || "#26262e";
+        g.fillText(String(txt == null ? "" : txt), 0, 0);
+        g.restore();
+        return out(c);
+      },
+      async rectXY(url, x, y, w, h, fill, color) {
+        const im = await load(url);
+        const c = make(im.width, im.height), g = c.getContext("2d");
+        g.drawImage(im, 0, 0);
+        g.lineWidth = Math.max(2, Math.min(c.width, c.height) * 0.008);
+        g.strokeStyle = g.fillStyle = color || "#e0342e";
+        fill === "fill" ? g.fillRect(+x || 0, +y || 0, +w || 1, +h || 1)
+                        : g.strokeRect(+x || 0, +y || 0, +w || 1, +h || 1);
+        return out(c);
+      },
+      async circleXY(url, x, y, r, fill, color) {
+        const im = await load(url);
+        const c = make(im.width, im.height), g = c.getContext("2d");
+        g.drawImage(im, 0, 0);
+        g.lineWidth = Math.max(2, Math.min(c.width, c.height) * 0.008);
+        g.strokeStyle = g.fillStyle = color || "#e0342e";
+        g.beginPath(); g.arc(+x || 0, +y || 0, Math.max(1, +r || 1), 0, Math.PI * 2);
+        fill === "fill" ? g.fill() : g.stroke();
+        return out(c);
+      },
+      async lineXY(url, x1, y1, x2, y2, color) {
+        const im = await load(url);
+        const c = make(im.width, im.height), g = c.getContext("2d");
+        g.drawImage(im, 0, 0);
+        g.lineWidth = Math.max(2, Math.min(c.width, c.height) * 0.008);
+        g.strokeStyle = color || "#e0342e";
+        g.beginPath(); g.moveTo(+x1 || 0, +y1 || 0); g.lineTo(+x2 || 0, +y2 || 0); g.stroke();
+        return out(c);
+      },
+      async overlayXY(a, b, x, y, w) {
+        const A = await load(a), B = await load(b);
+        const c = make(A.width, A.height), g = c.getContext("2d");
+        g.drawImage(A, 0, 0);
+        w = Math.max(4, Number(w) || 100);
+        g.drawImage(B, +x || 0, +y || 0, w, B.height * w / B.width);
+        return out(c);
+      },
+
+      /* ---- 인식 결과와 연계 ---- */
+      async cropDetected(which) {
+        if (!AI._boxImg || !AI.lastBoxes || !AI.lastBoxes.length) throw t("m_noDetect");
+        const i = which === "last" ? AI.lastBoxes.length - 1 : 0;
+        const [x1, y1, x2, y2] = AI.lastBoxes[i].box;
+        return ED.cropXY(AI._boxImg, x1, y1, Math.max(1, x2 - x1), Math.max(1, y2 - y1));
+      },
+      async stickerOnFaces(img, sticker) {
+        const d = await post("face/face_detect_e", img);
+        if (!d.length) return img;                  // 얼굴이 없으면 원본 그대로
+        const A = await load(img), B = await load(sticker);
+        const c = make(A.width, A.height), g = c.getContext("2d");
+        g.drawImage(A, 0, 0);
+        d.forEach(f => {
+          const [x1, y1, x2, y2] = f.box;
+          const w = (x2 - x1) * 1.15;
+          const h = B.height * w / B.width;
+          g.drawImage(B, x1 - (w - (x2 - x1)) / 2, y1 - h * 0.15, w, h);
+        });
+        return out(c);
+      },
+    };
+  })();
+
+  /* 편집 블록 사용 통계 */
+  (function () {
+    Object.keys(ED).forEach(k => {
+      const f = ED[k];
+      ED[k] = function () {
+        if (window.vapiStat) vapiStat("edit_used");
+        return f.apply(ED, arguments);
+      };
+    });
+  })();
+
   const RT = {
     stopFlag: false, iter: 0, lastElapsed: 0,
     abort: null, aiCalls: 0, lastAiAt: 0,
@@ -920,6 +1946,159 @@
       });
     },
     showText(v) { bigText.textContent = String(v); log(t("m_show") + v); },
+    _audio: null,
+    _tone(freq, sec, type) {
+      /* Web Audio — 오프라인에서도 동작한다 */
+      try {
+        if (!RT._audio) RT._audio = new (window.AudioContext || window.webkitAudioContext)();
+        const a = RT._audio, o = a.createOscillator(), g = a.createGain();
+        o.type = type || "sine"; o.frequency.value = freq;
+        g.gain.setValueAtTime(0.25, a.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + sec);
+        o.connect(g); g.connect(a.destination);
+        o.start(); o.stop(a.currentTime + sec);
+      } catch (e) { /* 소리가 안 나도 프로그램은 계속 */ }
+    },
+    async note(freq, beats) {
+      const sec = Math.max(0.1, Math.min(4, (Number(beats) || 1) * 0.4));
+      RT._tone(freq, sec);
+      await sleep(sec * 1000);
+    },
+    _noise(sec, lp) {
+      /* 화이트 노이즈 — 박수·치직 계열 */
+      try {
+        if (!RT._audio) RT._audio = new (window.AudioContext || window.webkitAudioContext)();
+        const a = RT._audio, n = Math.floor(a.sampleRate * sec);
+        const buf = a.createBuffer(1, n, a.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+        const src = a.createBufferSource(); src.buffer = buf;
+        const g = a.createGain(); g.gain.value = 0.3;
+        if (lp) {
+          const f = a.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = lp;
+          src.connect(f); f.connect(g);
+        } else { src.connect(g); }
+        g.connect(a.destination); src.start();
+      } catch (e) {}
+    },
+    _sweep(f0, f1, sec, type) {
+      /* 주파수 스윕 — 사이렌·레이저·코인 계열 */
+      try {
+        if (!RT._audio) RT._audio = new (window.AudioContext || window.webkitAudioContext)();
+        const a = RT._audio, o = a.createOscillator(), g = a.createGain();
+        o.type = type || "sine";
+        o.frequency.setValueAtTime(f0, a.currentTime);
+        o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), a.currentTime + sec);
+        g.gain.setValueAtTime(0.25, a.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + sec);
+        o.connect(g); g.connect(a.destination);
+        o.start(); o.stop(a.currentTime + sec);
+      } catch (e) {}
+    },
+    async beep(kind) {
+      switch (kind) {
+        case "beepNo":     RT._tone(180, 0.35, "square"); await sleep(380); break;
+        case "sndSiren":   RT._sweep(600, 1200, 0.4); await sleep(400);
+                           RT._sweep(1200, 600, 0.4); await sleep(430); break;
+        case "sndLaser":   RT._sweep(1400, 120, 0.25, "sawtooth"); await sleep(280); break;
+        case "sndCoin":    RT._tone(988, 0.09, "square"); await sleep(90);
+                           RT._tone(1319, 0.25, "square"); await sleep(270); break;
+        case "sndJump":    RT._sweep(220, 880, 0.22, "square"); await sleep(250); break;
+        case "sndDrum":    RT._sweep(160, 45, 0.28); RT._noise(0.08, 900); await sleep(300); break;
+        case "sndClap":    RT._noise(0.12, 2500); await sleep(160);
+                           RT._noise(0.1, 2500); await sleep(140); break;
+        case "sndChime":   RT._tone(880, 0.7); RT._tone(1320, 0.7); RT._tone(1760, 0.5);
+                           await sleep(700); break;
+        case "sndFanfare": for (const f of [523, 659, 784]) { RT._tone(f, 0.16, "triangle"); await sleep(150); }
+                           RT._tone(1047, 0.5, "triangle"); await sleep(520); break;
+        default:           RT._tone(660, 0.12); await sleep(130);
+                           RT._tone(880, 0.18); await sleep(200);
+      }
+    },
+    async melody(text, tempo) {
+      /* "도미솔 솔 도2" / "c e g g c2" — 공백은 쉼표 */
+      const beat = 60000 / (Number(tempo) || 120);
+      const N = { "도": 262, "레": 294, "미": 330, "파": 349, "솔": 392, "라": 440,
+                  "시": 494, "c": 262, "d": 294, "e": 330, "f": 349, "g": 392,
+                  "a": 440, "b": 494 };
+      const toks = [];
+      const str = String(text == null ? "" : text).toLowerCase();
+      /* 한 글자 음 + 뒤의 2(옥타브 위) 를 토큰으로 자른다 */
+      for (let i = 0; i < str.length; i++) {
+        const ch = str[i];
+        if (ch === " ") { toks.push(null); continue; }
+        if (N[ch] !== undefined) {
+          let f = N[ch];
+          if (str[i + 1] === "2") { f *= 2; i++; }
+          toks.push(f);
+        } else if (ch !== "2") { toks.push(undefined); }
+      }
+      const bad = toks.filter(x => x === undefined).length;
+      if (bad) log(t("m_badNote") + bad);
+      for (const f of toks) {
+        if (RT.stopFlag) throw "STOP";
+        if (f) RT._tone(f, beat / 1000 * 0.9);
+        await sleep(beat);
+      }
+    },
+    async freq(f, sec) {
+      f = Math.max(20, Math.min(20000, Number(f) || 440));
+      sec = Math.max(0.05, Math.min(5, Number(sec) || 0.5));
+      RT._tone(f, sec);
+      await sleep(sec * 1000);
+    },
+    varSet(name, val) {
+      /* C10: 실행 중 변수 값을 무대 옆에 보여준다 */
+      RT._vars = RT._vars || {};
+      RT._vars[name] = Array.isArray(val) ? val.join(", ") : val;
+      const box = document.getElementById("varsBox");
+      const body = document.getElementById("varsBody");
+      if (!box || !body) return;
+      box.style.display = "block";
+      body.innerHTML = Object.keys(RT._vars).map(k =>
+        "<div><b>" + k.replace(/&/g,"&amp;").replace(/</g,"&lt;") + "</b> = " +
+        String(RT._vars[k]).replace(/&/g,"&amp;").replace(/</g,"&lt;").slice(0, 60) + "</div>").join("");
+    },
+    print(v) {
+      /* 리스트는 보기 좋게 콤마로 */
+      if (Array.isArray(v)) v = v.join(", ");
+      log("▷ " + String(v));
+    },
+    saveStage() {
+      const url = shownURL;
+      if (!url) { log(t("m_noImage")); return; }
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "vapi-" + new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-") + ".jpg";
+      a.click();
+      log(t("m_saved"));
+    },
+    async waitUntil(kind, want) {
+      /* 조건이 될 때까지 웹캠을 계속 본다. 60초가 지나면 멈춘다.
+         이 안의 인식은 호출 제한(50회)에 세지 않는다 — 기다림 자체가 목적이라서다. */
+      const t0 = Date.now();
+      while (Date.now() - t0 < 60000) {
+        if (RT.stopFlag) throw "STOP";
+        const img = await AI.capture();
+        const before = RT.aiCalls;
+        try {
+          if (kind === "face") {
+            const d = await post("face/face_detect_e", img);
+            if (d.length > 0) return true;
+          } else if (kind === "hand") {
+            const d = await post("object/hand_e", img);
+            if (d.length && (!want || d[0].gesture_en === want)) return true;
+          } else if (kind === "custom") {
+            const d = await post("custom/predict", img, { model: want.slug });
+            if (d.length && d[0].name === want.label && d[0].score >= 0.6) return true;
+          }
+        } catch (e) { /* 인식 실패 프레임은 넘어간다 */ }
+        finally { RT.aiCalls = before; }        // 대기 중 인식은 상한에 안 센다
+        await sleep(250);
+      }
+      log(t("m_waitTimeout"));
+      return false;
+    },
     async showImage(u) {
       if (!u) return;
       await swapShot(u);                        // 디코딩 후 교체 → 깜빡임 없음
@@ -979,6 +2158,8 @@
     RT.stopFlag = false; RT.iter = 0;
     RT.aiCalls = 0; RT.lastAiAt = 0;
     RT.abort = new AbortController();
+    RT._vars = {};
+    document.getElementById("varsBox").style.display = "none";
     logBox.textContent = "";
     RT.clearStage();
     runButton.disabled = true; runLabel.textContent = t("running");
@@ -988,12 +2169,17 @@
       document.getElementById("codeView").textContent = code || t("m_noBlocks");
       if (!code.trim()) { log(t("m_assembleFirst")); return; }
       log(t("m_start"));
-      const fn = new AsyncFunction("AI", "RT", code);
-      await fn(AI, RT);
+      if (window.vapiStat) vapiStat("block_run");
+      const fn = new AsyncFunction("AI", "RT", "ED", code);
+      await fn(AI, RT, ED);
       log(t("m_done"));
+      if (window.vapiStat) vapiStat("block_done");
     } catch (e) {
-      if (e === "STOP") log(t("m_stopped"));
-      else { log(t("m_error") + e); console.error(e, "\n--- code ---\n" + code); }
+      if (e === "STOP") { log(t("m_stopped")); if (window.vapiStat) vapiStat("block_stopped"); }
+      else {
+        log(t("m_error") + e); console.error(e, "\n--- code ---\n" + code);
+        if (window.vapiStat) vapiStat("block_error");
+      }
     } finally {
       ws.highlightBlock(null);
       runButton.disabled = false; runLabel.textContent = t("run");
@@ -1030,5 +2216,6 @@
     this.value = "";
   });
   </script>
+  <script src="/lib/usage.js" data-page="blocks"></script>
 </body>
 </html>

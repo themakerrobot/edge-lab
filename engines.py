@@ -470,18 +470,43 @@ class VlmEngine:
 
 
 # ---------------------------------------------------------------- 로딩
+# 로딩 단계 정의 — 화면(진행바)과 순서를 맞추기 위해 여기에 모아 둔다.
+LOAD_STEPS = [
+    ("object", "사물 찾기", "Object detection"),
+    ("custom", "특별 인식 8종", "8 special detectors"),
+    ("face", "얼굴 분석", "Face analysis"),
+    ("gan", "그림 바꾸기", "Image transform"),
+    ("code", "글자 · 코드 읽기", "Text & code"),
+    ("vlm", "그림 보고 말하기", "Vision language"),
+]
+WARM_STEPS = [
+    ("w_yolo", "사물 찾기 준비", "Warming up detection"),
+    ("w_custom", "특별 인식 준비", "Warming up detectors"),
+    ("w_face", "얼굴 분석 준비", "Warming up face"),
+    ("w_gan", "그림 바꾸기 준비", "Warming up transform"),
+    ("w_vlm", "그림 보고 말하기 준비", "Warming up vision language"),
+]
+TOTAL_STEPS = len(LOAD_STEPS) + len(WARM_STEPS)
+
+
 class Engines:
-    def __init__(self, warmup=True):
+    def __init__(self, warmup=True, progress=None):
+        """progress(key, index) — 단계가 시작될 때마다 호출한다 (로딩 화면용)."""
+        self._progress = progress or (lambda *a: None)
+        self._n = 0
         print(f"[engines] devices={core.available_devices} face={DEV_FACE} gan={DEV_GAN} vlm={DEV_VLM}")
-        self.object = ObjectEngine()
-        self.custom = CustomEngine()
-        self.face = FaceEngine()
-        self.gan = GanEngine()
-        self.code = CodeEngine()
-        self.vlm = VlmEngine()
+        builders = [("object", ObjectEngine), ("custom", CustomEngine), ("face", FaceEngine),
+                    ("gan", GanEngine), ("code", CodeEngine), ("vlm", VlmEngine)]
+        for key, cls in builders:
+            self._step(key)
+            setattr(self, key, cls())
         print("[engines] all models loaded")
         if warmup:
             self.warmup()
+
+    def _step(self, key):
+        self._progress(key, self._n)
+        self._n += 1
 
     def warmup(self):
         """첫 클릭 지연 제거: 각 모델을 더미 이미지로 1회 실행해 미리 컴파일한다."""
@@ -502,6 +527,7 @@ class Engines:
             ("vlm", lambda: self.vlm.generate(face, "hi", 1)),
         ]
         for name, fn in steps:
+            self._step("w_" + name)
             try:
                 fn()
                 print(f"[warmup] {name} ready")

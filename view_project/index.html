@@ -8,6 +8,58 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
   <style>
+    /* ---------------- 부팅(로딩) 화면 ---------------- */
+    #boot {
+      position: fixed; inset: 0; z-index: 100; display: flex;
+      align-items: center; justify-content: center; padding: 20px;
+      background: #f5f8fb;
+      background-image: radial-gradient(rgba(41,184,229,.10) 1px, transparent 1px);
+      background-size: 22px 22px;
+    }
+    #boot.done { display: none; }
+    .boot-card {
+      width: min(680px, 100%); background: #fff; border: 2px solid #2c4a7c;
+      border-radius: 4px; box-shadow: 0 2px 0 rgba(44,74,124,.2);
+      padding: 22px 26px 18px; display: flex; flex-direction: column; gap: 16px;
+    }
+    .boot-brand { display: flex; align-items: center; gap: 12px; }
+    .boot-brand img { height: 44px; }
+    .boot-brand b { display: block; font-family: "Gowun Batang", serif;
+                    font-size: 1.25rem; line-height: 1.2; }
+    .boot-brand i { font-style: normal; font-size: .78rem; color: #64707e; }
+    .boot-slide { display: flex; align-items: center; gap: 18px; min-height: 132px; }
+    .boot-art { flex: 0 0 132px; height: 116px; }
+    .boot-art svg { width: 100%; height: 100%; }
+    .boot-text h2 { font-family: "Gowun Dodum", sans-serif; font-size: 1.08rem;
+                    color: #0f93c0; margin-bottom: 6px; }
+    .boot-text p { font-size: .92rem; color: #26303c; line-height: 1.65; }
+    .boot-slide.fade { opacity: 0; }
+    .boot-slide { transition: opacity .35s; }
+    .boot-dots { display: flex; gap: 6px; justify-content: center; }
+    .boot-dots span { width: 7px; height: 7px; border-radius: 50%; background: #ccd6e0; }
+    .boot-dots span.on { background: #29b8e5; }
+    .boot-progress { display: flex; flex-direction: column; gap: 5px; }
+    .boot-bar { height: 12px; background: #e6eef6; border-radius: 6px; overflow: hidden; }
+    .boot-bar > i { display: block; height: 100%; width: 0;
+                    background: linear-gradient(90deg, #29b8e5, #2b4bd8);
+                    transition: width .4s; }
+    .boot-status { display: flex; font-family: "Menlo","Consolas",monospace;
+                   font-size: .74rem; color: #64707e; }
+    .boot-status span:last-child { margin-left: auto; font-variant-numeric: tabular-nums; }
+    .boot-actions { display: flex; gap: 8px; }
+    .boot-actions button {
+      font-family: inherit; font-size: .95rem; font-weight: 600; cursor: pointer;
+      border: 1.5px solid #2c4a7c; border-radius: 6px; padding: 9px 18px;
+      background: #2b4bd8; color: #fff; margin-left: auto;
+    }
+    .boot-actions button:disabled { background: #aab6c4; border-color: #aab6c4; cursor: default; }
+    .boot-actions button.ghost { background: #fff; color: #64707e;
+                                 border-color: #ccd6e0; margin-left: 0; }
+    @media (max-width: 560px) {
+      .boot-slide { flex-direction: column; text-align: center; }
+      .boot-art { flex: 0 0 auto; height: 92px; }
+    }
+
     /* ===== 디자인 토큰 : "학습지" (줄노트 + 시험지 머리표 + 빨간펜) ===== */
     :root {
       --paper:    #f5f8fb;                 /* 흰 활동지 */
@@ -527,6 +579,42 @@
   </style>
 </head>
 <body>
+  <!-- 부팅 화면 : 모델을 올리는 동안 무엇이 일어나는지 보여준다 -->
+  <div id="boot">
+    <div class="boot-card">
+      <div class="boot-brand">
+        <img src="/assets/pibo-prof.png" alt="">
+        <span>
+          <b id="bootTitle">컴퓨터 비전 실습</b>
+          <i id="bootSub">인터넷 없이 내 컴퓨터에서 실행돼요</i>
+        </span>
+      </div>
+
+      <div class="boot-slide">
+        <div class="boot-art" id="bootArt"></div>
+        <div class="boot-text">
+          <h2 id="bootHead"></h2>
+          <p id="bootBody"></p>
+        </div>
+      </div>
+
+      <div class="boot-dots" id="bootDots"></div>
+
+      <div class="boot-progress">
+        <div class="boot-bar"><i id="bootBar"></i></div>
+        <div class="boot-status">
+          <span id="bootNow">준비하는 중...</span>
+          <span id="bootCount">0 / 0</span>
+        </div>
+      </div>
+
+      <div class="boot-actions">
+        <button id="bootSkip" class="ghost">건너뛰기</button>
+        <button id="bootStart" disabled>준비 중...</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 시험지 머리표 -->
   <div class="header">
     <div class="h-subject" style="flex-direction:row;align-items:center;gap:12px;">
@@ -542,6 +630,16 @@
         border:1.5px solid var(--line-d);color:var(--ink);font-weight:600;
         padding:8px 14px;border-radius:var(--r);text-decoration:none;font-size:.95rem;">
         &#9632; <span id="txtBlocksLink">블록 코딩</span></a>
+      <a href="/train" id="trainLink" title="나만의 AI 만들기로 이동" style="
+        display:inline-flex;align-items:center;gap:7px;background:#fff;
+        border:1.5px solid var(--line-d);color:var(--ink);font-weight:600;
+        padding:8px 14px;border-radius:var(--r);text-decoration:none;font-size:.95rem;">
+        &#9679; <span id="txtTrainLink">모델 만들기</span></a>
+      <a href="/options" id="optionsLink" title="설정 · 점검" aria-label="설정 · 점검" style="
+        display:inline-flex;align-items:center;justify-content:center;background:#fff;
+        border:1.5px solid var(--line-d);color:var(--ink-2);
+        width:38px;height:38px;border-radius:var(--r);text-decoration:none;
+        font-size:1.05rem;line-height:1;">&#9881;</a>
       <button id="langButton" title="한국어 / English">EN</button>
       <select id="lessonSelect" title="차시 선택"></select>
 
@@ -714,7 +812,21 @@
       ko: {
         titleTag: "컴퓨터 비전 실습", title: "컴퓨터 비전 실습",
         eyebrow: "인공지능 · 컴퓨터 비전 · 인터넷 없이 내 컴퓨터에서 실행돼요",
-        blocksLink: "블록 코딩", langBtn: "EN",
+        blocksLink: "블록 코딩", trainLink: "모델 만들기", optionsTip: "설정 · 점검", langBtn: "EN",
+        bootSub: "인터넷 없이 내 컴퓨터에서 실행돼요",
+        bootSkip: "건너뛰기", bootWait: "준비 중...", bootStart: "시작하기",
+        bootDone: "준비 끝!", bootError: "문제가 생겼어요: ",
+        s1h: "인터넷 없이 동작해요",
+        s1b: "이 프로그램은 인터넷에 연결하지 않아요. 웹캠으로 찍은 사진은 이 컴퓨터 밖으로 나가지 않고, 여기 안에서만 처리돼요.",
+        s2h: "AI를 내 컴퓨터에 올리는 중이에요",
+        s2b: "사물 찾기, 얼굴 분석, 손 인식, 글자 읽기, 그림 바꾸기까지 여러 개의 AI를 지금 메모리에 올리고 있어요. 아래 막대가 그 진행 상황이에요.",
+        s3h: "일을 나눠서 해요",
+        s3b: "컴퓨터 안에는 계산을 맡는 부품이 여러 개 있어요. 얼굴은 NPU, 그림 바꾸기는 GPU, 나머지는 CPU가 나눠 맡아 더 빠르게 움직여요.",
+        s4h: "오늘 할 수 있는 것",
+        s4b: "체험 실습에서 AI를 눌러 보고, 블록 코딩으로 나만의 프로그램을 만들고, 모델 만들기에서 내가 직접 AI를 학습시킬 수 있어요.",
+        s5h: "곧 시작해요",
+        s5b: "준비가 끝나면 아래 [시작하기] 버튼이 켜져요. 먼저 웹캠이 잘 보이는지 확인해 두면 좋아요.",
+        customGroup: "내가 만든 AI", customTip: "내가 직접 학습시킨 모델로 분류합니다.",
         q1: "모델을 골라요", q2: "이미지를 넣고 실행해요", q3: "결과를 확인해요",
         missionLabel: "미션", modelLabel: "모델", guideLabel: "가이드", promptLabel: "프롬프트",
         tabUpload: "이미지", tabWebcam: "웹캠", tabSketch: "스케치북",
@@ -742,7 +854,21 @@
       en: {
         titleTag: "Computer Vision Lab", title: "Computer Vision Lab",
         eyebrow: "AI · computer vision · runs on this computer, no internet needed",
-        blocksLink: "Block Coding", langBtn: "한국어",
+        blocksLink: "Block Coding", trainLink: "Make my AI", optionsTip: "Settings & Check", langBtn: "한국어",
+        bootSub: "Runs on this computer, no internet needed",
+        bootSkip: "Skip", bootWait: "Getting ready...", bootStart: "Start",
+        bootDone: "Ready!", bootError: "Something went wrong: ",
+        s1h: "It works without the internet",
+        s1b: "This program never connects to the internet. Photos from your webcam stay on this computer and are processed right here.",
+        s2h: "Loading the AI models",
+        s2b: "Object detection, face analysis, hand tracking, text reading and image transforms are being loaded into memory. The bar below shows the progress.",
+        s3h: "The work is shared out",
+        s3b: "Your computer has several chips for computing. Faces go to the NPU, image transforms to the GPU, and the rest to the CPU — so everything runs faster.",
+        s4h: "What you can do today",
+        s4b: "Try the AIs in Vision Lab, build your own program with Block Coding, and train your very own AI in Make my AI.",
+        s5h: "Almost there",
+        s5b: "The [Start] button turns on when everything is ready. It is a good moment to check that your webcam works.",
+        customGroup: "My own AI", customTip: "Classifies with a model you trained yourself.",
         q1: "Pick a model", q2: "Add an image and run", q3: "Check the result",
         missionLabel: "Mission", modelLabel: "Model", guideLabel: "Guide", promptLabel: "Prompt",
         tabUpload: "Image", tabWebcam: "Webcam", tabSketch: "Sketchbook",
@@ -769,6 +895,86 @@
       },
     };
     const T = k => UI[LANG][k] !== undefined ? UI[LANG][k] : UI.ko[k];
+
+    /* ================= 부팅 화면 =================
+       모델을 올리는 동안 이 툴이 무엇을 하는지 짧게 안내한다.
+       그림은 전부 인라인 SVG — 파일을 더 받지 않는다. */
+    const ART = {
+      offline: '<svg viewBox="0 0 120 105"><rect x="14" y="18" width="92" height="60" rx="5" fill="#fff" stroke="#2c4a7c" stroke-width="3"/><rect x="24" y="28" width="72" height="40" rx="3" fill="#eaf6fb"/><path d="M44 88h32l4 9H40z" fill="#ccd6e0"/><circle cx="60" cy="48" r="13" fill="none" stroke="#29b8e5" stroke-width="3"/><path d="M60 41v9M60 55h.01" stroke="#0f93c0" stroke-width="3" stroke-linecap="round"/><path d="M96 14 22 90" stroke="#d94141" stroke-width="5" stroke-linecap="round"/></svg>',
+      models: '<svg viewBox="0 0 120 105"><g fill="none" stroke="#2c4a7c" stroke-width="3"><rect x="10" y="14" width="30" height="24" rx="4"/><rect x="45" y="14" width="30" height="24" rx="4"/><rect x="80" y="14" width="30" height="24" rx="4"/><rect x="10" y="44" width="30" height="24" rx="4"/><rect x="45" y="44" width="30" height="24" rx="4"/><rect x="80" y="44" width="30" height="24" rx="4"/></g><rect x="10" y="44" width="30" height="24" rx="4" fill="#29b8e5" opacity=".35"/><rect x="45" y="14" width="30" height="24" rx="4" fill="#29b8e5" opacity=".35"/><rect x="80" y="44" width="30" height="24" rx="4" fill="#29b8e5" opacity=".35"/><path d="M22 84h76" stroke="#ccd6e0" stroke-width="8" stroke-linecap="round"/><path d="M22 84h44" stroke="#2b4bd8" stroke-width="8" stroke-linecap="round"/></svg>',
+      chips: '<svg viewBox="0 0 120 105"><rect x="26" y="26" width="68" height="56" rx="6" fill="#fff" stroke="#2c4a7c" stroke-width="3"/><rect x="38" y="38" width="44" height="32" rx="3" fill="#eaf6fb" stroke="#0f93c0" stroke-width="2"/><g stroke="#2c4a7c" stroke-width="3" stroke-linecap="round"><path d="M40 26v-9M60 26v-9M80 26v-9M40 82v9M60 82v9M80 82v9M26 42h-9M26 60h-9M94 42h9M94 60h9"/></g><text x="60" y="59" font-size="13" font-family="monospace" fill="#0f93c0" text-anchor="middle">NPU</text></svg>',
+      menus: '<svg viewBox="0 0 120 105"><rect x="8" y="24" width="32" height="56" rx="5" fill="#fff" stroke="#2c4a7c" stroke-width="3"/><rect x="44" y="24" width="32" height="56" rx="5" fill="#fff" stroke="#2c4a7c" stroke-width="3"/><rect x="80" y="24" width="32" height="56" rx="5" fill="#fff" stroke="#2c4a7c" stroke-width="3"/><circle cx="24" cy="44" r="7" fill="#29b8e5"/><path d="M15 66h18M15 72h12" stroke="#ccd6e0" stroke-width="3" stroke-linecap="round"/><rect x="52" y="38" width="16" height="9" rx="2" fill="#2fa35c"/><rect x="52" y="50" width="16" height="9" rx="2" fill="#d97b2b"/><path d="M51 66h18M51 72h12" stroke="#ccd6e0" stroke-width="3" stroke-linecap="round"/><path d="M88 52l6 6 12-14" stroke="#2b4bd8" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M87 66h18M87 72h12" stroke="#ccd6e0" stroke-width="3" stroke-linecap="round"/></svg>',
+      go: '<svg viewBox="0 0 120 105"><circle cx="60" cy="52" r="34" fill="#eaf6fb" stroke="#29b8e5" stroke-width="3"/><path d="M46 52l10 11 20-24" stroke="#2b4bd8" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    };
+    const SLIDES = [
+      { art: "offline", key: "s1" }, { art: "models", key: "s2" },
+      { art: "chips", key: "s3" },   { art: "menus", key: "s4" },
+      { art: "go", key: "s5" },
+    ];
+
+    (function boot() {
+      const box = document.getElementById("boot");
+      if (!box) return;
+      let idx = 0, ready = false, timer = null;
+
+      function paint() {
+        const sl = SLIDES[idx];
+        document.getElementById("bootArt").innerHTML = ART[sl.art];
+        document.getElementById("bootHead").textContent = T(sl.key + "h");
+        document.getElementById("bootBody").textContent = T(sl.key + "b");
+        document.getElementById("bootDots").innerHTML =
+          SLIDES.map((_, i) => '<span class="' + (i === idx ? "on" : "") + '"></span>').join("");
+      }
+      function next() {
+        const slide = document.querySelector(".boot-slide");
+        slide.classList.add("fade");
+        setTimeout(() => {
+          idx = (idx + 1) % SLIDES.length;
+          paint();
+          slide.classList.remove("fade");
+        }, 350);
+      }
+      function finish() {
+        box.classList.add("done");
+        clearInterval(timer);
+      }
+
+      document.getElementById("bootTitle").textContent = T("title");
+      document.getElementById("bootSub").textContent = T("bootSub");
+      document.getElementById("bootSkip").textContent = T("bootSkip");
+      document.getElementById("bootStart").textContent = T("bootWait");
+      paint();
+      timer = setInterval(next, 8000);
+      document.getElementById("bootSkip").addEventListener("click", finish);
+      document.getElementById("bootStart").addEventListener("click", () => {
+        if (ready) finish();
+      });
+
+      async function poll() {
+        try {
+          const r = await (await fetch("/ready")).json();
+          const pct = r.total ? Math.round(r.loaded / r.total * 100) : 0;
+          document.getElementById("bootBar").style.width = pct + "%";
+          document.getElementById("bootCount").textContent = r.loaded + " / " + r.total;
+          if (r.error) {
+            document.getElementById("bootNow").textContent = T("bootError") + r.error;
+            return;                                   // 더 묻지 않는다
+          }
+          document.getElementById("bootNow").textContent = r.ready
+            ? T("bootDone")
+            : (LANG === "en" ? (r.current_en || "") : (r.current_ko || "")) + " ...";
+          if (r.ready) {
+            ready = true;
+            const b = document.getElementById("bootStart");
+            b.disabled = false;
+            b.textContent = T("bootStart");
+            return;                                   /* 자동 전환하지 않는다 */
+          }
+        } catch (e) { /* 서버가 아직 응답 못 하면 다음 차례에 다시 */ }
+        setTimeout(poll, 700);
+      }
+      poll();
+    })();
 
     const SERVICE_LIST = {
       "얼굴 특성": { "api": "face/face_attribute", "params": {}, "tooltip": "얼굴의 안경, 콧수염, 턱수염, 모자를 인식합니다.", "en": "Face attributes", "tooltip_en": "Detects glasses, mustache, beard and hats on faces." },
@@ -805,10 +1011,14 @@
       "QR코드 인식": { "api": "code/barcode", "params": {}, "tooltip": "이미지에서 바코드를 인식합니다.", "en": "QR code", "tooltip_en": "Reads QR codes in the image." }
     };
 
-    const mName = key => LANG === "en" ? (SERVICE_LIST[key].en || key) : key;
-    const mTip  = key => LANG === "en"
-      ? (SERVICE_LIST[key].tooltip_en || SERVICE_LIST[key].tooltip)
-      : SERVICE_LIST[key].tooltip;
+    const mName = key => {
+      const sv = SERVICE_LIST[key]; if (!sv) return key;
+      return LANG === "en" ? (sv.en || key) : (sv.ko || key);
+    };
+    const mTip  = key => {
+      const sv = SERVICE_LIST[key]; if (!sv) return "";
+      return LANG === "en" ? (sv.tooltip_en || sv.tooltip) : sv.tooltip;
+    };
 
     const SERIAL = "3efde152";
     const CLIENT_TYPE = "08f12867e7a16b1b9071ae92ca8b6e7e1698068f";
@@ -937,7 +1147,10 @@
       const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
       document.title = T("titleTag");
       set("txtTitle", T("title"));           set("txtEyebrow", T("eyebrow"));
-      set("txtBlocksLink", T("blocksLink")); set("langButton", T("langBtn"));
+      set("txtBlocksLink", T("blocksLink")); set("txtTrainLink", T("trainLink"));
+      const ol = document.getElementById("optionsLink");
+      if (ol) { ol.title = T("optionsTip"); ol.setAttribute("aria-label", T("optionsTip")); }
+      set("langButton", T("langBtn"));
       set("txtQ1", T("q1")); set("txtQ2", T("q2")); set("txtQ3", T("q3"));
       set("txtMissionLabel", T("missionLabel"));
       set("txtModelLabel", T("modelLabel")); set("txtGuideLabel", T("guideLabel"));
@@ -984,6 +1197,34 @@
     modelSelect.value = LESSON ? LESSON.models[0] : "이미지 설명";
     guide.value = mTip(modelSelect.value);
     modelSelect.dispatchEvent(new Event('change')); // 프롬프트 기본값 반영
+
+    /* ----- 내가 만든 AI (train.html 에서 학습한 모델) ----- */
+    async function loadCustomModels() {
+      if (LESSON) return;                    // 차시 모드에서는 지정 모델만 사용
+      let list = [];
+      try {
+        const r = await fetch(HOST + '/custom/models');
+        const j = await r.json();
+        list = (j.result === 'ok' && Array.isArray(j.data)) ? j.data : [];
+      } catch (e) { return; }
+      if (!list.length) return;
+      const group = document.createElement('optgroup');
+      group.label = T("customGroup");
+      list.forEach(m => {
+        const key = "custom:" + m.slug;
+        SERVICE_LIST[key] = {
+          api: "custom/predict", params: { model: m.slug },
+          ko: m.title, en: m.title,
+          tooltip: T("customTip") + " (" + (m.labels || []).join(", ") + ")",
+          tooltip_en: T("customTip") + " (" + (m.labels || []).join(", ") + ")",
+        };
+        LIVE_OK.add(key);                    // 가벼운 모델이라 라이브 가능
+        const o = document.createElement('option');
+        o.value = key; o.text = m.title;
+        group.appendChild(o);
+      });
+      modelSelect.appendChild(group);
+    }
 
     const tabButtons = document.querySelectorAll('.tabButton');
     tabButtons.forEach(btn => {
@@ -1351,6 +1592,11 @@
           }
           case 'vlm_inference_e':
             return `<b>${esc(d.answer)}</b>`;
+          case 'custom': {
+            if (!d || !d.length) return `Nothing to answer.`;
+            const t0 = d[0];
+            return `My AI says this is <b>${esc(t0.name)}</b>. <span class="sub">(confidence ${Math.round(t0.score*100)}%)</span>`;
+          }
           case 'face_detect_e':
             return d.length ? `Found <b>${d.length}</b> face${d.length > 1 ? 's' : ''}!` : `No faces found.`;
           case 'face_analyze_e':
@@ -1542,6 +1788,11 @@
           const ko = top['ko_name'] || top['ko_name:'] || top.name;
           return `이 이미지는 <b>${esc(ko)}</b>인 것 같아요. <span class="sub">(확신 ${esc(top.score)}%)</span>`;
         }
+        case 'custom': {
+          if (!d || !d.length) return `대답할 게 없어요.`;
+          const t0 = d[0];
+          return `내가 만든 AI는 <b>${esc(t0.name)}</b>(이)라고 생각해요. <span class="sub">(확신 ${Math.round(t0.score*100)}%)</span>`;
+        }
         case 'ocr': {
           if (!d.length) return `글자를 찾지 못했어요.`;
           return `읽은 글자: <b>${d.map(t => esc(t.text)).join(' ')}</b>`;
@@ -1731,6 +1982,7 @@
     }
 
     async function handleRun(model, prompt, imageSource) {
+      if (window.vapiStat) vapiStat("lab_run");
       if (!imageSource) {
         alert(T("aSelectImage"));
         return;
@@ -1913,6 +2165,7 @@
     const liveToggle = document.getElementById('liveToggle');
     const liveCheck = document.getElementById('liveCheck');
     let liveRunning = false;
+    loadCustomModels();                      // 목록 로드(비동기) — LIVE_OK 준비 후 호출
 
     function updateLiveAvailability() {
       // 모델만 보고 판단한다. 웹캠 탭이 아니면 체크 시 자동으로 전환한다.
@@ -2018,5 +2271,6 @@
       document.body.removeChild(textArea);
     });
   </script>
+  <script src="/lib/usage.js" data-page="index"></script>
 </body>
 </html>

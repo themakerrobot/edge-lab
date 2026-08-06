@@ -18,6 +18,6 @@ set YOLO_OFFLINE=1
 set "YOLO_CONFIG_DIR=%~dp0.ultralytics"
 if not exist "%~dp0.ultralytics" mkdir "%~dp0.ultralytics"
 
-echo Starting vapi-od ... browser opens automatically when models are ready (1-2 min).
+echo Starting vapi-od ... the browser opens right away and shows loading progress.
 "%PY%" main.py
 pause

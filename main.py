@@ -11,7 +11,7 @@ import cv2
 import uvicorn
 from fastapi import FastAPI, File, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 import prompts as P
@@ -25,7 +25,8 @@ eng = None
 
 
 def open_browser():
-    """모델 로딩이 끝난 뒤 기본 브라우저로 화면을 연다.
+    """서버가 뜨자마자 브라우저를 연다 — 모델 로딩은 뒤에서 계속되고,
+    화면은 부팅(로딩) 안내를 보여준다.
     끄고 싶으면 환경변수 VAPI_NO_BROWSER=1 로 실행한다."""
     if os.environ.get("VAPI_NO_BROWSER"):
         return
@@ -98,12 +99,40 @@ def build_device_map():
           f"yolo={DEVICE_OF.get('object_search_e')} code=CPU  (런타임 보고값)")
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
+# ---------------------------------------------------------------- 준비 상태
+# 모델 로딩은 오래 걸린다. 서버는 먼저 뜨고, 로딩은 뒤에서 돌린다.
+# 화면(index.html)이 /ready 를 물어보며 진행바를 그린다.
+READY = {"ready": False, "loaded": 0, "total": 0, "current": "", "error": ""}
+
+
+def _load_engines():
     global eng
     import engines
-    eng = engines.Engines()
-    build_device_map()
+    READY["total"] = engines.TOTAL_STEPS
+    labels = {k: (ko, en) for k, ko, en in engines.LOAD_STEPS + engines.WARM_STEPS}
+
+    def progress(key, index):
+        READY["loaded"] = index
+        READY["current"] = key
+        READY["current_ko"], READY["current_en"] = labels.get(key, (key, key))
+
+    try:
+        eng = engines.Engines(progress=progress)
+        build_device_map()
+        READY["loaded"] = READY["total"]
+        READY["current"] = ""
+        READY["ready"] = True
+        print("[engines] ready — 화면에서 시작할 수 있습니다")
+    except Exception as ex:
+        import traceback
+        traceback.print_exc()
+        READY["error"] = str(ex)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    import threading
+    threading.Thread(target=_load_engines, daemon=True).start()
     print(f"! vapi-od listening on {HOST}:{PORT}")
     open_browser()
     yield
@@ -112,15 +141,44 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="vapi-od", docs_url="/docs", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True,
                    allow_methods=["*"], allow_headers=["*"])
+
+# 로딩 중에도 열어 두는 경로 (페이지·정적파일·상태). 나머지 AI 호출은 503 으로 막는다.
+ALLOW_WHILE_LOADING = ("/ready", "/system", "/lib", "/assets", "/fonts", "/blockly",
+                       "/docs", "/openapi.json", "/favicon", "/stats", "/custom")
+
+
+@app.middleware("http")
+async def _loading_guard(request: Request, call_next):
+    path = request.url.path
+    if (not READY["ready"] and request.method != "OPTIONS"
+            and path not in ("/", "/blocks", "/train", "/options")
+            and not path.startswith(ALLOW_WHILE_LOADING)):
+        return JSONResponse(status_code=503, content={
+            "type": "loading", "result": "fail",
+            "data": "AI를 준비하는 중이에요. 조금만 기다려 주세요.", "elapsed_ms": 0})
+    return await call_next(request)
+
+
+@app.get("/ready", tags=["system"], summary="모델 준비 상태 (로딩 화면용)")
+async def ready():
+    return dict(READY)
 os.makedirs("view_project/fonts", exist_ok=True)
 if os.path.isdir("view_project/assets"):
     app.mount("/assets", StaticFiles(directory="view_project/assets"), name="assets")
 app.mount("/fonts", StaticFiles(directory="view_project/fonts"), name="fonts")
 if os.path.isdir("view_project/blockly"):
     app.mount("/blockly", StaticFiles(directory="view_project/blockly"), name="blockly")
+if os.path.isdir("view_project/lib"):
+    app.mount("/lib", StaticFiles(directory="view_project/lib"), name="lib")
 
 import mp_routes  # noqa: E402  (MediaPipe 확장: /face/mesh_e, /object/hand_e, /face/mesh_calibrate)
 app.include_router(mp_routes.router)
+
+import train_routes  # noqa: E402  (나만의 AI: /custom/predict, /custom/upload, /custom/models ...)
+app.include_router(train_routes.router)
+
+import stats_routes  # noqa: E402  (사용 통계: 미들웨어 자동집계 + /stats/*)
+stats_routes.install(app)
 
 
 # ---------------------------------------------------------------- 공통
@@ -460,6 +518,18 @@ async def index():
 @app.get("/blocks", response_class=HTMLResponse)
 async def blocks():
     with open("view_project/blocks.html", encoding="utf-8") as f:
+        return f.read()
+
+
+@app.get("/train", response_class=HTMLResponse)
+async def train():
+    with open("view_project/train.html", encoding="utf-8") as f:
+        return f.read()
+
+
+@app.get("/options", response_class=HTMLResponse)
+async def options_page():
+    with open("view_project/options.html", encoding="utf-8") as f:
         return f.read()
 
 
