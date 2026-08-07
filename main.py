@@ -186,14 +186,15 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True,
 
 # 로딩 중에도 열어 두는 경로 (페이지·정적파일·상태). 나머지 AI 호출은 503 으로 막는다.
 ALLOW_WHILE_LOADING = ("/ready", "/system", "/lib", "/assets", "/fonts", "/blockly",
-                       "/docs", "/openapi.json", "/favicon", "/stats", "/custom")
+                       "/docs", "/openapi.json", "/favicon", "/stats", "/custom", "/pycode",
+                       "/speech")
 
 
 @app.middleware("http")
 async def _loading_guard(request: Request, call_next):
     path = request.url.path
     if (not READY["ready"] and request.method != "OPTIONS"
-            and path not in ("/", "/blocks", "/train", "/options")
+            and path not in ("/", "/blocks", "/train", "/options", "/code")
             and not path.startswith(ALLOW_WHILE_LOADING)):
         return JSONResponse(status_code=503, content={
             "type": "loading", "result": "fail",
@@ -221,6 +222,12 @@ app.include_router(train_routes.router)
 
 import stats_routes  # noqa: E402  (사용 통계: 미들웨어 자동집계 + /stats/*)
 stats_routes.install(app)
+
+import code_routes  # noqa: E402  (파이썬 IDE: /pycode/run·stop·output·save ...)
+app.include_router(code_routes.router)
+
+import speech_routes  # noqa: E402  (음성 인식: /speech/stt — 첫 요청 때 지연 로딩)
+app.include_router(speech_routes.router)
 
 
 # ---------------------------------------------------------------- 공통
@@ -558,6 +565,12 @@ async def train():
 @app.get("/options", response_class=HTMLResponse)
 async def options_page():
     with open("view_project/options.html", encoding="utf-8") as f:
+        return f.read()
+
+
+@app.get("/code", response_class=HTMLResponse)
+async def code_page():
+    with open("view_project/code.html", encoding="utf-8") as f:
         return f.read()
 
 

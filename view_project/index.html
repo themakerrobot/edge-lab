@@ -553,7 +553,14 @@
 </head>
 <body>
   <!-- 부팅 화면 : 모델을 올리는 동안 무엇이 일어나는지 보여준다 -->
-  <div id="boot" class="done">
+  <!-- 로딩 화면은 처음부터 덮어 둔다. 이미 준비가 끝난 세션이면 아래 스크립트가 바로 걷는다.
+       (나중에 표시하면 그 사이 체험 화면이 잠깐 보였다가 가려진다) -->
+  <script>
+    /* 같은 세션에서 이미 로딩이 끝났다면(페이지 이동) 처음부터 숨겨 깜빡임을 없앤다 */
+    document.write(sessionStorage.getItem("vapi-ready") === "1"
+      ? '<style>#boot{display:none}</style>' : "");
+  </script>
+  <div id="boot">
     <div class="boot-card">
       <div class="boot-brand">
         <img src="/assets/pibo-prof.png" alt="">
@@ -598,11 +605,16 @@
     </span>
     </div>
     <div class="h-tools">
-      <a href="/blocks" id="blocksLink" title="만들기 — 블록으로 나만의 프로그램" style="
+      <a href="/blocks" id="blocksLink" title="블록 코딩 — 블록으로 나만의 프로그램" style="
         display:inline-flex;align-items:center;gap:7px;background:#fff;
         border:1.5px solid var(--line-d);color:var(--ink);font-weight:600;
         padding:8px 14px;border-radius:var(--r);text-decoration:none;font-size:.95rem;">
-        &#9632; <span id="txtBlocksLink">만들기</span></a>
+        &#9632; <span id="txtBlocksLink">블록 코딩</span></a>
+      <a href="/code" id="codeLink" title="파이썬 — 코드로 AI를 불러 봐요" style="
+        display:inline-flex;align-items:center;gap:7px;background:#fff;
+        border:1.5px solid var(--line-d);color:var(--ink);font-weight:600;
+        padding:8px 14px;border-radius:var(--r);text-decoration:none;font-size:.95rem;">
+        &#10095; <span id="txtCodeLink">파이썬</span></a>
       <a href="/train" id="trainLink" title="가르치기 — 내가 직접 AI를 학습시켜요" style="
         display:inline-flex;align-items:center;gap:7px;background:#fff;
         border:1.5px solid var(--line-d);color:var(--ink);font-weight:600;
@@ -775,7 +787,7 @@
       ko: {
         titleTag: "The Maker", title: "The Maker",
         eyebrow: "써보기 · AI 12가지를 눌러 봐요 · 인터넷 없이 내 컴퓨터에서",
-        blocksLink: "만들기", trainLink: "가르치기", optionsTip: "설정 · 점검", langBtn: "EN",
+        blocksLink: "블록 코딩", trainLink: "가르치기", codeLink: "파이썬", optionsTip: "설정 · 점검", langBtn: "EN",
         bootSub: "인터넷 없이 내 컴퓨터에서 실행돼요",
         bootSkip: "건너뛰기", bootWait: "준비 중...", bootStart: "시작하기",
         bootDone: "준비 끝!", bootError: "문제가 생겼어요: ",
@@ -786,7 +798,7 @@
         s3h: "일을 나눠서 해요",
         s3b: "컴퓨터 안에는 계산을 맡는 부품이 여러 개 있어요. 얼굴은 NPU, 그림 바꾸기는 GPU, 나머지는 CPU가 나눠 맡아 더 빠르게 움직여요.",
         s4h: "오늘 할 수 있는 것",
-        s4b: "써보기에서 AI를 눌러 보고, 만들기에서 블록으로 나만의 프로그램을 짜고, 가르치기에서 내가 직접 AI를 학습시킬 수 있어요.",
+        s4b: "써보기에서 AI를 눌러 보고, 블록 코딩과 파이썬으로 나만의 프로그램을 짜고, 가르치기에서 내가 직접 AI를 학습시킬 수 있어요.",
         s5h: "곧 시작해요",
         s5b: "준비가 끝나면 아래 [시작하기] 버튼이 켜져요. 먼저 웹캠이 잘 보이는지 확인해 두면 좋아요.",
         customGroup: "내가 가르친 AI", customTip: "내가 직접 학습시킨 모델로 분류합니다.",
@@ -812,7 +824,7 @@
       en: {
         titleTag: "The Maker", title: "The Maker",
         eyebrow: "Use · try 12 AIs · runs on this computer, no internet",
-        blocksLink: "Code", trainLink: "Train", optionsTip: "Settings & Check", langBtn: "한",
+        blocksLink: "Blocks", trainLink: "Train", codeLink: "Python", optionsTip: "Settings & Check", langBtn: "한",
         bootSub: "Runs on this computer, no internet needed",
         bootSkip: "Skip", bootWait: "Getting ready...", bootStart: "Start",
         bootDone: "Ready!", bootError: "Something went wrong: ",
@@ -823,7 +835,7 @@
         s3h: "The work is shared out",
         s3b: "Your computer has several chips for computing. Faces go to the NPU, image transforms to the GPU, and the rest to the CPU — so everything runs faster.",
         s4h: "What you can do today",
-        s4b: "Try the AIs in Use, write your own program in Code, and train your very own AI in Train.",
+        s4b: "Try the AIs in Use, write your own program in Blocks or Python, and train your very own AI in Train.",
         s5h: "Almost there",
         s5b: "The [Start] button turns on when everything is ready. It is a good moment to check that your webcam works.",
         customGroup: "My own AI", customTip: "Classifies with a model you trained yourself.",
@@ -913,7 +925,8 @@
       async function poll() {
         try {
           const r = await (await fetch("/ready")).json();
-          if (r.ready && !shown) return;              // 이미 준비 끝 → 바로 실습 화면
+          if (r.ready) sessionStorage.setItem("vapi-ready", "1");
+          if (r.ready && !shown) { finish(); return; }   // 이미 준비 끝 → 바로 실습 화면
           show();
           const pct = r.total ? Math.round(r.loaded / r.total * 100) : 0;
           document.getElementById("bootBar").style.width = pct + "%";
@@ -1061,6 +1074,7 @@
       document.title = T("titleTag");
       set("txtTitle", T("title"));           set("txtEyebrow", T("eyebrow"));
       set("txtBlocksLink", T("blocksLink")); set("txtTrainLink", T("trainLink"));
+      set("txtCodeLink", T("codeLink"));
       const ol = document.getElementById("optionsLink");
       if (ol) { ol.title = T("optionsTip"); ol.setAttribute("aria-label", T("optionsTip")); }
       set("langButton", T("langBtn"));

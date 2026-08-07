@@ -56,10 +56,13 @@ WEATHER_CHOICES = ["sunny", "cloudy", "rainy", "snow", "unknown"]
 
 _QUESTION = {
     "ko": ("사진을 보고 질문에 답하세요. 반드시 아래 JSON 형식으로만 답하세요.\n"
-           '{"answer": "<한국어 답변>", "answer_en": "<English answer>"}\n'
+           "answer 에는 한국어 답을, answer_en 에는 같은 뜻의 영어 답을 넣으세요. "
+           "설명이나 형식 표시는 넣지 마세요.\n"
+           '{"answer": "", "answer_en": ""}\n'
            "질문: {q}"),
     "en": ("Look at the photo and answer the question. Answer only in the JSON format below.\n"
-           '{"answer": "<English answer>", "answer_en": "<the same English answer>"}\n'
+           "Put the English answer in both fields. Do not add any explanation or markers.\n"
+           '{"answer": "", "answer_en": ""}\n'
            "Question: {q}"),
 }
 
@@ -161,13 +164,28 @@ def _extract_json(text):
     return None
 
 
+_PLACE_HOLDER = re.compile(
+    r"^\s*<[^<>]{0,40}>\s*|\s*<[^<>]{0,40}>\s*$")
+
+
+def _clean(v):
+    """모델이 프롬프트의 자리표시자(<한국어 답변> 등)를 베껴 붙인 경우 떼어낸다."""
+    t = str(v or "").strip()
+    for _ in range(3):                       # 앞뒤로 여러 개 붙는 경우까지
+        t2 = _PLACE_HOLDER.sub("", t).strip()
+        if t2 == t:
+            break
+        t = t2
+    return t
+
+
 def parse_caption(text):
     d = _extract_json(text)
     if isinstance(d, dict) and d.get("caption"):
-        cap = str(d.get("caption", ""))
-        cap_en = str(d.get("caption_en", "")) or cap
+        cap = _clean(d.get("caption"))
+        cap_en = _clean(d.get("caption_en")) or cap
         return {"caption": cap, "caption_en": cap_en, "raw": [cap_en]}
-    t = (text or "").strip()
+    t = _clean(text)
     return {"caption": t, "caption_en": t, "raw": [t]}
 
 
@@ -201,11 +219,11 @@ def parse_choice(text, choices):
 def parse_question(text, prompt):
     d = _extract_json(text)
     if isinstance(d, dict) and d.get("answer"):
-        ans = str(d.get("answer", ""))
+        ans = _clean(d.get("answer"))
         return {"answer": ans,
-                "answer_en": str(d.get("answer_en", "")) or ans,
+                "answer_en": _clean(d.get("answer_en")) or ans,
                 "prompt_en": prompt}
-    t = (text or "").strip()
+    t = _clean(text)
     return {"answer": t, "answer_en": t, "prompt_en": prompt}
 
 
@@ -217,9 +235,9 @@ def parse_tag(text):
             tag = ", ".join(map(str, tag))
         if isinstance(tag_en, list):
             tag_en = ", ".join(map(str, tag_en))
-        tag, tag_en = str(tag), str(tag_en)
+        tag, tag_en = _clean(tag), _clean(tag_en)
         return {"tag": tag, "tag_en": tag_en or tag}
-    t = (text or "").strip()
+    t = _clean(text)
     return {"tag": t, "tag_en": t}
 
 

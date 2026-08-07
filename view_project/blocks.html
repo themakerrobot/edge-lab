@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title id="txtTitleTag">만들기 — The Maker</title>
+  <title id="txtTitleTag">블록 코딩 — The Maker</title>
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
@@ -175,7 +175,7 @@
       <img src="/assets/pibo-prof.png" alt="" style="height:44px;flex:0 0 auto;">
       <span style="display:flex;flex-direction:column;">
       <span class="eyebrow" id="txtEyebrow">인공지능 · 컴퓨터 비전 · 인터넷 없이 내 컴퓨터에서 실행돼요</span>
-      <span class="title"><span id="txtTitle">만들기</span> <span class="od">(On-Device)</span></span>
+      <span class="title"><span id="txtTitle">블록 코딩</span> <span class="od">(On-Device)</span></span>
     </span>
     </div>
     <div class="h-tools">
@@ -278,7 +278,7 @@
 
   const I18N = {
     ko: {
-      titleTag: "만들기 — The Maker", title: "만들기",
+      titleTag: "블록 코딩 — The Maker", title: "블록 코딩",
       eyebrow: "블록으로 나만의 프로그램을 · 인터넷 없이 내 컴퓨터에서",
       back: "The Maker (홈)", save: "저장", load: "불러오기", stop: "정지", run: "실행 ▶",
       running: "실행 중...", langBtn: "EN",
@@ -311,6 +311,9 @@
       b_beats: "%1 이(가) %2 을(를) 이기면", b_beats_tip: "가위바위보 승패를 판단해요.",
       b_random_rps: "가위·바위·보 중 랜덤",
       b_say: "%1 말하기", b_say_tip: "소리 내어 읽고 말풍선으로 보여줘요.",
+      b_voice: "목소리 %1 로 바꾸기", b_voice_tip: "말하기에 쓸 목소리를 골라요. F=여자, M=남자.",
+      o_F1: "여자 1", o_F2: "여자 2", o_F3: "여자 3",
+      o_M1: "남자 1", o_M2: "남자 2", o_M3: "남자 3",
       b_show_text: "%1 크게 보여주기", b_show_image: "사진 %1 보여주기",
       b_boxes: "인식 결과 박스 그리기", b_boxes_tip: "마지막 인식에서 찾은 위치에 박스를 그려요.",
       b_clear: "무대 지우기", b_wait: "%1 초 기다리기",
@@ -457,7 +460,7 @@
       tts: "ko-KR",
     },
     en: {
-      titleTag: "Code — The Maker", title: "Code",
+      titleTag: "Blocks — The Maker", title: "Blocks",
       eyebrow: "write your own program with blocks · runs on this computer",
       back: "The Maker (home)", save: "Save", load: "Load", stop: "Stop", run: "Run ▶",
       running: "Running...", langBtn: "한",
@@ -490,6 +493,9 @@
       b_beats: "%1 beats %2", b_beats_tip: "Decides a rock-paper-scissors round.",
       b_random_rps: "random rock, paper or scissors",
       b_say: "say %1", b_say_tip: "Reads it aloud and shows a speech bubble.",
+      b_voice: "set voice to %1", b_voice_tip: "Picks the voice for speaking. F=female, M=male.",
+      o_F1: "female 1", o_F2: "female 2", o_F3: "female 3",
+      o_M1: "male 1", o_M2: "male 2", o_M3: "male 3",
       b_show_text: "show %1 in big letters", b_show_image: "show photo %1",
       b_boxes: "draw detection boxes", b_boxes_tip: "Draws boxes from the latest detection.",
       b_clear: "clear the stage", b_wait: "wait %1 seconds",
@@ -942,6 +948,10 @@
       // 무대
       { type: "st_say", message0: t("b_say"), previousStatement: null, nextStatement: null,
         colour: C_STAGE, args0: [ { type: "input_value", name: "TEXT" } ], tooltip: t("b_say_tip") },
+      { type: "st_voice", message0: t("b_voice"), previousStatement: null, nextStatement: null,
+        colour: C_STAGE, tooltip: t("b_voice_tip"),
+        args0: [ { type: "field_dropdown", name: "V",
+                   options: opt(["F1", "F2", "F3", "M1", "M2", "M3"]) } ] },
       { type: "st_show_text", message0: t("b_show_text"), previousStatement: null, nextStatement: null,
         colour: C_STAGE, args0: [ { type: "input_value", name: "TEXT" } ] },
       { type: "st_show_image", message0: t("b_show_image"), previousStatement: null, nextStatement: null,
@@ -1010,6 +1020,7 @@
   G.forBlock["ai_beats"]      = b => [`(AI.beats(${V(b,"A","''")}, ${V(b,"B","''")}))`, Order.ATOMIC];
   G.forBlock["ai_random_rps"] = () => ["(AI.randomRps())", Order.ATOMIC];
   G.forBlock["st_say"]        = b => `await RT.say(${V(b,"TEXT","''")});\n`;
+  G.forBlock["st_voice"]      = b => `RT.voice = "${b.getFieldValue("V")}";\n`;
   G.forBlock["st_show_text"]  = b => `RT.showText(${V(b,"TEXT","''")});\n`;
   G.forBlock["st_show_image"] = b => `await RT.showImage(${V(b,"IMG","null")});\n`;
   G.forBlock["st_boxes"]      = () => "await RT.drawBoxes();\n";
@@ -1087,6 +1098,7 @@
         { kind: "block", type: "ai_guess" }, { kind: "block", type: "ai_transform" } ] },
       { kind: "category", name: t("cat_stage"), colour: C_STAGE, contents: [
         { kind: "block", type: "st_say", inputs: { TEXT: txt(t("sh_hello")) } },
+        { kind: "block", type: "st_voice" },
         { kind: "block", type: "st_show_text", inputs: { TEXT: txt(t("sh_win")) } },
         { kind: "block", type: "st_show_image" }, { kind: "block", type: "st_boxes" },
         { kind: "block", type: "st_note", inputs: { B: num(1) } },
@@ -1939,7 +1951,39 @@
       text = String(text);
       bubble.textContent = text; bubble.style.display = "block";
       log(t("m_say") + text);
-      await new Promise(res => {
+      if (await RT._sayServer(text)) return;   // 온디바이스 TTS(Supertonic)
+      await RT._sayBrowser(text);              // 안 되면 브라우저 음성으로
+    },
+    /* 서버 TTS — 성공하면 true. 첫 호출은 모델을 여느라 몇 초 걸린다. */
+    async _sayServer(text) {
+      if (RT._ttsOff) return false;
+      try {
+        const r = await fetch("/speech/tts", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, lang: LANG === "en" ? "en" : "ko",
+                                 voice: RT.voice || "F1" }),
+        });
+        if (!r.ok || !(r.headers.get("Content-Type") || "").includes("audio")) {
+          RT._ttsOff = true;                   // 모델이 없으면 다시 시도하지 않는다
+          return false;
+        }
+        const buf = await r.arrayBuffer();
+        if (!RT._audio) RT._audio = new (window.AudioContext || window.webkitAudioContext)();
+        const a = RT._audio;
+        const src = a.createBufferSource();
+        src.buffer = await a.decodeAudioData(buf);
+        src.connect(a.destination);
+        RT._voiceSrc = src;
+        await new Promise(res => { src.onended = res; src.start(); });
+        RT._voiceSrc = null;
+        return true;
+      } catch (e) {
+        RT._ttsOff = true;
+        return false;
+      }
+    },
+    _sayBrowser(text) {
+      return new Promise(res => {
         try {
           const u = new SpeechSynthesisUtterance(text);
           u.lang = t("tts");
@@ -1949,6 +1993,10 @@
           setTimeout(res, Math.max(1500, text.length * 250));  // 안전 타임아웃
         } catch (e) { res(); }
       });
+    },
+    _stopVoice() {
+      try { speechSynthesis.cancel(); } catch (e) {}
+      try { if (RT._voiceSrc) { RT._voiceSrc.stop(); RT._voiceSrc = null; } } catch (e) {}
     },
     showText(v) { bigText.textContent = String(v); log(t("m_show") + v); },
     _audio: null,
@@ -2160,7 +2208,7 @@
 
   document.getElementById("runButton").addEventListener("click", async () => {
     if (runButton.disabled) return;
-    RT.stopFlag = false; RT.iter = 0;
+    RT.stopFlag = false; RT.iter = 0; RT.voice = "F1";   // 목소리는 실행마다 기본값으로
     RT.aiCalls = 0; RT.lastAiAt = 0;
     RT.abort = new AbortController();
     RT._vars = {};
@@ -2193,7 +2241,7 @@
   document.getElementById("stopButton").addEventListener("click", () => {
     RT.stopFlag = true;
     if (RT.abort) RT.abort.abort();          // 진행 중인 AI 요청 즉시 끊기
-    speechSynthesis.cancel();
+    RT._stopVoice();
   });
 
   /* ---------------- 저장/불러오기 ---------------- */

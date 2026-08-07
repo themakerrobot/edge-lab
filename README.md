@@ -8,6 +8,7 @@
 | 메뉴 | 내용 |
 |---|---|
 | 써보기 (Use) | AI 12가지를 눌러 보는 체험 실습 — 라이브 모드, 시스템 상태바 |
+| 파이썬 (Python) | 파이썬 코딩 — themaker 라이브러리로 AI 호출, 실행·정지, 배포 zip |
 | 만들기 (Code) | 블록 코딩 — 인식·사진 편집·소리·이벤트 블록, 예제 6종, 무대 |
 | 가르치기 (Train) | 나만의 AI 학습 — 사진/손모양/표정/상반신/전신 5개 모드, 학습 곡선·특징 지도 |
 | 설정 · 점검 (⚙) | 수업 전 점검, 결과물 관리, 학습 결과 도표, 사용 통계, 전체 초기화 |
@@ -58,6 +59,8 @@ powershell -ExecutionPolicy Bypass -File setup_deploy.ps1 -Token hf_xxxx
 | 글자 인식 | easyocr (ko/en) | CPU |
 | QR 인식 | OpenCV QRCodeDetector | CPU |
 | 나만의 AI 특징 추출 | MobileNetV2 1280d | NPU |
+| 음성 인식 (STT) | Whisper small INT8 (OpenVINO) | GPU/CPU |
+| 음성 합성 (TTS) | Supertonic 3 (ONNX 4단계, 31개 언어, onnxruntime) | CPU |
 
 ## 라이선스
 이 프로젝트는 **AGPL-3.0** 으로 배포한다 (`LICENSE`). YOLO(ultralytics, AGPL-3.0)를 포함하므로
@@ -72,7 +75,20 @@ powershell -ExecutionPolicy Bypass -File setup_deploy.ps1 -Token hf_xxxx
 | MediaPipe | Apache-2.0 |
 | U2Net | Apache-2.0 |
 | easyocr | Apache-2.0 |
+| Whisper (OpenVINO 변환본) | Apache-2.0 |
+| Supertonic 3 (모델 가중치) | OpenRAIL-M (BigScience Open RAIL-M) |
+| Supertonic 추론 절차 (speech_routes.py) | 공식 예제(supertone-inc/supertonic) MIT 기반 이식 |
 | Blockly / TensorFlow.js / JSZip | Apache-2.0 / Apache-2.0 / MIT |
+
+### TTS 모델(OpenRAIL-M) 재배포 시 지켜야 할 것
+상업 사용·재배포·서비스 호스팅은 허용된다. 다만 모델(또는 그 파생물)을 남에게 넘길 때:
+1. 라이선스 사본(`models/tts/LICENSE`)을 함께 준다.
+2. 이용 약관·계약서에 **Attachment A의 사용 제한**을 그대로 넣고, 받는 쪽에 그 적용을 알린다.
+3. 모델 파일을 고쳤다면 고쳤다는 표시를 남긴다.
+
+주요 제한(발췌): 미성년자 착취·가해, 허위정보 유포, 동의 없는 인물 사칭(딥페이크),
+기계 생성물임을 밝히지 않은 배포, 의료 조언·판독, 법집행·출입국 자동판정 등.
+이 제한은 AGPL 코드가 아니라 **TTS 모델 가중치에만** 적용된다 (코드와 모델은 별개 저작물).
 
 ## 개발용: 모델 직접 변환
 pt 원본에서 처음부터 변환할 때만 필요하다 (30~50분). 배포 기기에서는 위 설치만으로 충분하다.

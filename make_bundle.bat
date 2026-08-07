@@ -58,7 +58,7 @@ echo.
 echo === [4/8] install packages into pylib ===
 python -m pip install --upgrade pip --quiet
 python -m pip install --target %BUILD%\pylib ^
-    "openvino==2026.2.*" "openvino-genai==2026.2.*" fastapi "uvicorn[standard]" ^
+    "openvino==2026.2.*" "openvino-genai==2026.2.*" fastapi "uvicorn[standard]" sounddevice "onnxruntime==1.23.*" ^
     ultralytics opencv-python pillow numpy easyocr python-multipart mediapipe
 if errorlevel 1 (echo [ERROR] package install failed & exit /b 1)
 REM pyzbar is optional (QR works via OpenCV)
@@ -74,6 +74,12 @@ if exist launcher.py if exist themaker.ico (
       --distpath "%~dp0." --workpath "%~dp0build\exe" --specpath "%~dp0build\exe" ^
       "%~dp0launcher.py"
     if errorlevel 1 (echo [WARN] exe build failed - continuing without exe)
+    rem 학생 작품 배포용 범용 런처 (파이썬 페이지의 [배포] 가 zip 에 넣는다)
+    "%PY_LOCAL%" -m PyInstaller --onefile --clean --noconfirm ^
+      --name themaker-run --icon "%~dp0themaker.ico" ^
+      --distpath "%~dp0." --workpath "%~dp0build\exe" --specpath "%~dp0build\exe" ^
+      "%~dp0runner.py"
+    if errorlevel 1 (echo [WARN] runner exe build failed - deploy will use .bat)
   )
 ) else (
   echo   launcher.py / themaker.ico not found - skipping exe
@@ -81,12 +87,13 @@ if exist launcher.py if exist themaker.ico (
 
 echo.
 echo === [6/8] copy sources and models ===
-for %%F in (main.py engines.py prompts.py mp_routes.py train_routes.py stats_routes.py check.py smoke_test.py README.md) do (
+for %%F in (main.py engines.py prompts.py mp_routes.py train_routes.py stats_routes.py code_routes.py speech_routes.py themaker.py runner.py check.py smoke_test.py README.md) do (
   copy /y %%F %BUILD%\ >nul
   if errorlevel 1 (echo [ERROR] copy failed: %%F & exit /b 1)
 )
 copy /y bundle_check.bat %BUILD%\ >nul
 if exist themaker.exe copy /y themaker.exe %BUILD%\ >nul
+if exist themaker-run.exe copy /y themaker-run.exe %BUILD%\ >nul
 if exist themaker.ico copy /y themaker.ico %BUILD%\ >nul
 xcopy /e /i /q /y view_project %BUILD%\view_project >nul
 echo   copying models\ (several GB, takes a few minutes) ...
@@ -100,6 +107,8 @@ mkdir %BUILD%\models\project
 if exist %BUILD%\models\stats rmdir /s /q %BUILD%\models\stats
 mkdir %BUILD%\models\stats
 if exist %BUILD%\models\.appwin rmdir /s /q %BUILD%\models\.appwin
+if exist %BUILD%\models\pycode rmdir /s /q %BUILD%\models\pycode
+mkdir %BUILD%\models\pycode
 
 REM bundle launcher (ASCII only, CRLF via echo)
 > %BUILD%\run.bat (
