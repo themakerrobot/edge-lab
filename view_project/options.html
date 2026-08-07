@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>설정 · 점검 — vapi-od</title>
+  <title>설정 · 점검 — The Maker</title>
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
@@ -35,7 +35,8 @@
     .h-subject .eyebrow { font-size:.7rem; letter-spacing:.14em; color:var(--ink-2); }
     .h-subject .title { font-family:"Gowun Batang",serif; font-size:1.4rem; font-weight:700; line-height:1.2; }
     .h-tools { flex-direction:row !important; align-items:center; gap:8px; margin-left:auto; }
-    .h-tools a, .h-tools button {
+    /* 링크만 굵게 — 버튼은 다른 페이지와 같은 기본 스타일을 따른다 */
+    .h-tools a {
       display:inline-flex; align-items:center; gap:7px; background:#fff;
       border:1.5px solid var(--line-d); color:var(--ink); font-weight:600;
       padding:8px 14px; border-radius:var(--r); font-size:.95rem; cursor:pointer;
@@ -161,8 +162,8 @@
       </span>
     </div>
     <div class="h-tools">
-      <a href="/">&#9998; <span id="txtHomeLink">체험 실습</span></a>
-      <button id="langButton" title="한국어 / English">EN</button>
+      <a href="/" id="homeLink" style="display:inline-flex;align-items:center;justify-content:center;background:#fff;border:1.5px solid var(--line-d);color:var(--ink);width:38px;height:38px;border-radius:var(--r);text-decoration:none;font-size:1.15rem;line-height:1;">&#8962;</a>
+      <button id="langButton" title="한국어 / English" style="min-width:46px;">EN</button>
     </div>
   </div>
 
@@ -170,8 +171,6 @@
     <span class="brand"><b>VAPI-OD</b> · classroom console</span>
     <span class="sep">|</span>
     <span id="sysDevices">devices —</span>
-    <span class="sep">|</span>
-    <span id="sysNet">NETWORK: OFFLINE</span>
     <span class="meter">
       <span><span class="k">models</span> <span class="v" id="sysModels">0</span></span>
       <span><span class="k">works</span> <span class="v" id="sysWorks">0</span></span>
@@ -249,16 +248,16 @@
   try { LANG = localStorage.getItem("vapiLang") || "ko"; } catch (e) {}
   const I18N = {
     ko: {
-      titleTag: "설정 · 점검 — vapi-od", title: "설정 · 점검",
+      titleTag: "설정 · 점검 — The Maker", title: "설정 · 점검",
       eyebrow: "인공지능 · 컴퓨터 비전 · 이 PC의 준비 상태와 결과물",
-      homeLink: "체험 실습", langBtn: "EN",
+      homeLink: "The Maker (홈)", langBtn: "EN",
       q1: "수업 전 점검", q2: "결과물", q3: "학습 결과 도표",
       q1hint: "수업 시작 5분 전에 한 번 눌러 주세요. 모델·디바이스·저장 폴더·웹캠을 한꺼번에 확인합니다.",
       run: "점검 실행", running: "점검 중...", camBtn: "웹캠 확인", camOff: "웹캠 끄기",
       refresh: "새로고침", export: "전체 내려받기", clear: "전체 초기화",
       modelsTitle: "만든 AI", worksTitle: "저장된 작품 (사진 포함)",
       sumTrains: "학습 횟수", sumModels: "저장한 AI", sumAcc: "평균 정확도",
-      noReport: "아직 학습 기록이 없어요. [모델 만들기]에서 시험지를 남기고 학습하면 여기에 도표가 나와요.",
+      noReport: "아직 학습 기록이 없어요. [가르치기]에서 시험지를 남기고 학습하면 여기에 도표가 나와요.",
       rSamples: "사진", rAcc: "정확도", printReport: "도표 인쇄",
       q4: "사용 통계", statReset: "통계 초기화",
       stTime: "사용 시간", stCalls: "AI 호출", stOpens: "페이지 열람",
@@ -267,14 +266,14 @@
       colCount: "횟수", colAvg: "평균", colFail: "실패",
       confirmStat: "사용 통계를 지웁니다. 계속할까요?",
       evName: {
-        lab_run: "체험 실습 실행", block_run: "블록 프로그램 실행",
+        lab_run: "써보기 실행", block_run: "블록 프로그램 실행",
         block_done: "블록 정상 종료", block_error: "블록 오류", block_stopped: "블록 정지",
         train_run: "학습 실행", model_saved: "모델 저장", project_saved: "작품 저장",
         samples_collected: "모은 사진", bias_hit: "AI 속이기 성공",
         edit_used: "사진 편집 사용",
         example_loaded: "예제 불러오기",
       },
-      pgName: { index: "체험 실습", blocks: "블록 코딩", train: "모델 만들기",
+      pgName: { index: "써보기", blocks: "만들기", train: "가르치기",
                 options: "설정 · 점검", etc: "기타" },
       notRun: "아직 점검하지 않았어요.", none: "아직 없어요.",
       colTitle: "이름", colInfo: "내용", colWhen: "만든 때", colAct: "",
@@ -288,16 +287,16 @@
       err: "오류: ",
     },
     en: {
-      titleTag: "Settings & Check — vapi-od", title: "Settings & Check",
+      titleTag: "Settings & Check — The Maker", title: "Settings & Check",
       eyebrow: "AI · computer vision · readiness and results on this PC",
-      homeLink: "Vision Lab", langBtn: "한국어",
+      homeLink: "The Maker (home)", langBtn: "한",
       q1: "Pre-class check", q2: "Saved results", q3: "Training report",
       q1hint: "Run this 5 minutes before class. It checks models, devices, storage and the webcam at once.",
       run: "Run check", running: "Checking...", camBtn: "Check webcam", camOff: "Webcam off",
       refresh: "Refresh", export: "Download all", clear: "Clear all",
       modelsTitle: "Trained AIs", worksTitle: "Saved work (with photos)",
       sumTrains: "Training runs", sumModels: "Saved AIs", sumAcc: "Average accuracy",
-      noReport: "No training yet. Keep a test set while training in [Make my AI].",
+      noReport: "No training yet. Keep a test set while training in [Train].",
       rSamples: "photos", rAcc: "accuracy", printReport: "Print report",
       q4: "Usage", statReset: "Clear usage",
       stTime: "Time used", stCalls: "AI calls", stOpens: "Page opens",
@@ -306,14 +305,14 @@
       colCount: "Count", colAvg: "Avg", colFail: "Fail",
       confirmStat: "This clears usage statistics. Continue?",
       evName: {
-        lab_run: "Vision Lab runs", block_run: "Block program runs",
+        lab_run: "Use runs", block_run: "Block program runs",
         block_done: "Block finished", block_error: "Block errors", block_stopped: "Block stopped",
         train_run: "Training runs", model_saved: "Models saved", project_saved: "Work saved",
         samples_collected: "Photos collected", bias_hit: "Fooled the AI",
         edit_used: "Photo edits",
         example_loaded: "Examples loaded",
       },
-      pgName: { index: "Vision Lab", blocks: "Block Coding", train: "Make my AI",
+      pgName: { index: "Use", blocks: "Code", train: "Train",
                 options: "Settings", etc: "Other" },
       notRun: "Not checked yet.", none: "Nothing yet.",
       colTitle: "Name", colInfo: "Contents", colWhen: "Created", colAct: "",
@@ -339,8 +338,9 @@
     try {
       const info = await (await fetch("/system")).json();
       $("sysDevices").textContent = "devices " + ((info.devices || []).join(" ") || "—");
-      $("sysNet").textContent = "NETWORK: OFFLINE  ·  OV " + ((info.runtime && info.runtime.openvino) || "");
+      if (info.ready) return;
     } catch (e) {}
+    setTimeout(initSystem, 1500);
   })();
 
   /* ---------------- 수업 전 점검 ---------------- */
@@ -600,7 +600,9 @@
     const set = (id, v) => { const el = $(id); if (el) el.textContent = v; };
     document.title = t("titleTag");
     set("txtTitle", t("title")); set("txtEyebrow", t("eyebrow"));
-    set("txtHomeLink", t("homeLink")); set("langButton", t("langBtn"));
+    const hl = $("homeLink");
+    if (hl) { hl.title = t("homeLink"); hl.setAttribute("aria-label", t("homeLink")); }
+    set("langButton", t("langBtn"));
     set("txtQ1", t("q1")); set("txtQ2", t("q2")); set("txtQ1Hint", t("q1hint"));
     set("txtRun", t("run")); set("txtCamBtn", t("camBtn"));
     set("txtRefresh", t("refresh")); set("txtExport", t("export")); set("txtClear", t("clear"));

@@ -66,17 +66,17 @@ python -m pip install --target %BUILD%\pylib pyzbar >nul 2>&1
 
 echo.
 echo === [5/8] build launcher exe ===
-if exist launcher.py if exist vapi-od.ico (
+if exist launcher.py if exist themaker.ico (
   "%PY_LOCAL%" -m pip install --quiet pyinstaller
   if errorlevel 1 (echo [WARN] pyinstaller install failed - skipping exe) else (
     "%PY_LOCAL%" -m PyInstaller --onefile --clean --noconfirm ^
-      --name vapi-od --icon "%~dp0vapi-od.ico" ^
+      --name themaker --icon "%~dp0themaker.ico" ^
       --distpath "%~dp0." --workpath "%~dp0build\exe" --specpath "%~dp0build\exe" ^
       "%~dp0launcher.py"
     if errorlevel 1 (echo [WARN] exe build failed - continuing without exe)
   )
 ) else (
-  echo   launcher.py / vapi-od.ico not found - skipping exe
+  echo   launcher.py / themaker.ico not found - skipping exe
 )
 
 echo.
@@ -86,8 +86,8 @@ for %%F in (main.py engines.py prompts.py mp_routes.py train_routes.py stats_rou
   if errorlevel 1 (echo [ERROR] copy failed: %%F & exit /b 1)
 )
 copy /y bundle_check.bat %BUILD%\ >nul
-if exist vapi-od.exe copy /y vapi-od.exe %BUILD%\ >nul
-if exist vapi-od.ico copy /y vapi-od.ico %BUILD%\ >nul
+if exist themaker.exe copy /y themaker.exe %BUILD%\ >nul
+if exist themaker.ico copy /y themaker.ico %BUILD%\ >nul
 xcopy /e /i /q /y view_project %BUILD%\view_project >nul
 echo   copying models\ (several GB, takes a few minutes) ...
 xcopy /e /i /q /y models %BUILD%\models >nul
@@ -99,6 +99,7 @@ if exist %BUILD%\models\project rmdir /s /q %BUILD%\models\project
 mkdir %BUILD%\models\project
 if exist %BUILD%\models\stats rmdir /s /q %BUILD%\models\stats
 mkdir %BUILD%\models\stats
+if exist %BUILD%\models\.appwin rmdir /s /q %BUILD%\models\.appwin
 
 REM bundle launcher (ASCII only, CRLF via echo)
 > %BUILD%\run.bat (
@@ -121,10 +122,12 @@ echo === [7/8] verify bundled python ===
 for %%F in (main.py engines.py prompts.py mp_routes.py train_routes.py stats_routes.py check.py smoke_test.py run.bat bundle_check.bat) do (
   if not exist %BUILD%\%%F (echo [ERROR] missing in bundle: %%F & exit /b 1)
 )
-for %%F in (view_project\index.html view_project\blocks.html view_project\train.html view_project\options.html view_project\lib\tf.min-3.11.0.js view_project\lib\usage.js) do (
+for %%F in (view_project\index.html view_project\blocks.html view_project\train.html view_project\options.html view_project\lib\tf.min-3.11.0.js view_project\lib\jszip.min.js view_project\lib\usage.js) do (
   if not exist %BUILD%\%%F (echo [ERROR] missing in bundle: %%F & exit /b 1)
 )
-if not exist %BUILD%\models\backbone\mobilenetv2_feat.xml (echo [ERROR] missing in bundle: models\backbone & exit /b 1)
+for %%F in (mobilenetv2_feat.xml mobilenetv2_feat.bin mobilenetv2_feat.json) do (
+  if not exist %BUILD%\models\backbone\%%F (echo [ERROR] missing in bundle: models\backbone\%%F & exit /b 1)
+)
 %BUILD%\python\python.exe -c "import openvino,cv2,numpy;print('  import OK  openvino',openvino.__version__.split('-')[0])"
 if errorlevel 1 (echo [ERROR] import failed inside bundle & exit /b 1)
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title id="txtTitleTag">AI 블록 코딩</title>
+  <title id="txtTitleTag">만들기 — The Maker</title>
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
@@ -113,6 +113,14 @@
       border: 7px solid transparent;
       border-top: 9px solid var(--cyan);
     }
+    /* 문항 상자와 작업 버튼을 한 줄에 둔다 (버튼은 오른쪽 끝) */
+    .work-head { flex: 0 0 auto; display: flex; align-items: center; flex-wrap: wrap; }
+    .stage-panel .panel-head { align-self: flex-start; }   /* 조립 칸과 같은 크기로 */
+    .work-head .panel-head { margin-right: 0; }
+    .work-tools {
+      margin: 12px 12px 16px auto; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    }
+    .work-tools button { padding: 7px 12px; font-size: .9rem; }
     #blocklyDiv { flex: 1 1 auto; min-height: 0; }
 
     .stage-panel {
@@ -167,22 +175,12 @@
       <img src="/assets/pibo-prof.png" alt="" style="height:44px;flex:0 0 auto;">
       <span style="display:flex;flex-direction:column;">
       <span class="eyebrow" id="txtEyebrow">인공지능 · 컴퓨터 비전 · 인터넷 없이 내 컴퓨터에서 실행돼요</span>
-      <span class="title"><span id="txtTitle">AI 블록 코딩</span> <span class="od">(On-Device)</span></span>
+      <span class="title"><span id="txtTitle">만들기</span> <span class="od">(On-Device)</span></span>
     </span>
     </div>
     <div class="h-tools">
-      <a class="back" href="/" style="
-        display:inline-flex;align-items:center;gap:7px;background:#fff;
-        border:1.5px solid var(--line-d);color:var(--ink);font-weight:600;
-        padding:8px 14px;border-radius:var(--r);text-decoration:none;font-size:.95rem;">
-        &#9998; <span id="txtBack">체험 실습</span></a>
-      <button id="langButton" title="한국어 / English">EN</button>
-      <button id="exampleButton">예제</button>
-      <button id="saveButton">저장</button>
-      <button id="loadButton">불러오기</button>
-      <input type="file" id="loadFile" accept=".json" style="display:none">
-      <button id="stopButton">정지</button>
-      <button id="runButton"><span id="runLabel">실행 ▶</span></button>
+      <a class="back" href="/" id="homeLink" style="display:inline-flex;align-items:center;justify-content:center;background:#fff;border:1.5px solid var(--line-d);color:var(--ink);width:38px;height:38px;border-radius:var(--r);text-decoration:none;font-size:1.15rem;line-height:1;">&#8962;</a>
+      <button id="langButton" title="한국어 / English" style="min-width:46px;">EN</button>
     </div>
   </div>
 
@@ -192,10 +190,6 @@
     <span class="chip" id="chipCPU"><span class="dot"></span>CPU<span class="st" id="stCPU"></span></span>
     <span class="chip" id="chipGPU"><span class="dot"></span>GPU<span class="st" id="stGPU"></span></span>
     <span class="chip" id="chipNPU"><span class="dot"></span>NPU<span class="st" id="stNPU"></span></span>
-    <span class="sep">|</span>
-    <span id="devModels">models &mdash;</span>
-    <span class="sep">|</span>
-    <span id="devNet">NETWORK: OFFLINE</span>
     <span class="meter">
       <span><span class="k">last</span> <span class="v" id="devLast">--</span></span>
       <span><span class="k">exec</span> <span class="v" id="devExec">--</span></span>
@@ -205,7 +199,17 @@
 
   <div class="main">
     <div class="work">
-      <div class="panel-head" id="txtWorkHead">블록을 조립해요</div>
+      <div class="work-head">
+        <div class="panel-head" id="txtWorkHead">블록을 조립해요</div>
+        <div class="work-tools">
+          <button id="exampleButton">예제</button>
+          <button id="saveButton">저장</button>
+          <button id="loadButton">불러오기</button>
+          <input type="file" id="loadFile" accept=".json" style="display:none">
+          <button id="runButton"><span id="runLabel">실행 ▶</span></button>
+          <button id="stopButton">정지</button>
+        </div>
+      </div>
       <div id="blocklyDiv"></div>
     </div>
 
@@ -274,9 +278,9 @@
 
   const I18N = {
     ko: {
-      titleTag: "AI 블록 코딩", title: "AI 블록 코딩",
-      eyebrow: "인공지능 · 컴퓨터 비전 · 인터넷 없이 내 컴퓨터에서 실행돼요",
-      back: "체험 실습", save: "저장", load: "불러오기", stop: "정지", run: "실행 ▶",
+      titleTag: "만들기 — The Maker", title: "만들기",
+      eyebrow: "블록으로 나만의 프로그램을 · 인터넷 없이 내 컴퓨터에서",
+      back: "The Maker (홈)", save: "저장", load: "불러오기", stop: "정지", run: "실행 ▶",
       running: "실행 중...", langBtn: "EN",
       workHead: "블록을 조립해요", stageHead: "무대",
       upload: "사진 올리기", uploadHint: "「업로드한 사진」 블록에서 사용돼요",
@@ -295,8 +299,8 @@
       b_detect_one_tip: "가장 확실한 것 하나의 이름을 알려줘요. 없으면 '없음'.",
       b_objects: "%1 에서 사물 모두 찾기", b_objects_tip: "찾은 사물 이름들의 리스트를 돌려줘요.",
       b_custom: "%1 을(를) %2 로 분류하기",
-      b_custom_tip: "[모델 만들기]에서 내가 학습시킨 AI로 분류해요. 가장 확실한 이름을 돌려줘요. (손모양) 모델은 손이 안 보이면 \"없음\"이 나와요.",
-      o_noCustom: "(만든 모델 없음)", o_poseTag: "(손모양)",
+      b_custom_tip: "[가르치기]에서 내가 학습시킨 AI로 분류해요. 가장 확실한 이름을 돌려줘요. (손모양) 모델은 손이 안 보이면 \"없음\"이 나와요.",
+      o_noCustom: "(만든 모델 없음)", o_poseTag: "(손모양)", o_faceTag: "(표정)", o_upTag: "(상반신)", o_bodyTag: "(전신)",
       b_face: "%1 얼굴의 %2", b_face_tip: "첫 번째 얼굴의 정보를 알려줘요. 나이는 숫자예요.",
       b_face_count: "%1 에서 얼굴 개수",
       b_ocr: "%1 의 글자 읽기", b_qr: "%1 의 QR 읽기",
@@ -439,7 +443,7 @@
       r_none: "없음", r_front: "정면", r_ageSuffix: "살", r_face: "얼굴",
       m_noCam: "웹캠을 사용할 수 없어요 (사진 올리기로 진행 가능)",
       m_noImage: "사진이 없어요 (사진 블록을 연결하세요)",
-      m_noCustom: "모델을 골라주세요 ([모델 만들기]에서 먼저 학습하세요)",
+      m_noCustom: "모델을 골라주세요 ([가르치기]에서 먼저 학습하세요)",
       m_aiError: "AI 오류: ", m_fail: "실패",
       m_camNotReady: "웹캠이 준비되지 않았어요",
       m_needUpload: "먼저 무대에서 [사진 올리기]를 해주세요",
@@ -453,10 +457,10 @@
       tts: "ko-KR",
     },
     en: {
-      titleTag: "AI Block Coding", title: "AI Block Coding",
-      eyebrow: "AI · computer vision · runs on this computer, no internet needed",
-      back: "Playground", save: "Save", load: "Load", stop: "Stop", run: "Run ▶",
-      running: "Running...", langBtn: "한국어",
+      titleTag: "Code — The Maker", title: "Code",
+      eyebrow: "write your own program with blocks · runs on this computer",
+      back: "The Maker (home)", save: "Save", load: "Load", stop: "Stop", run: "Run ▶",
+      running: "Running...", langBtn: "한",
       workHead: "Build your blocks", stageHead: "Stage",
       upload: "Upload photo", uploadHint: "Used by the “uploaded photo” block",
       uploadReady: "Photo ready",
@@ -474,8 +478,8 @@
       b_detect_one_tip: "Returns the name of the most confident result, or 'none'.",
       b_objects: "find every object in %1", b_objects_tip: "Returns a list of object names.",
       b_custom: "classify %1 with %2",
-      b_custom_tip: "Uses an AI you trained in [Make my AI]. Returns the most confident label. A (hand) model returns \"none\" when no hand is visible.",
-      o_noCustom: "(no model yet)", o_poseTag: "(hand)",
+      b_custom_tip: "Uses an AI you trained in [Train]. Returns the most confident label. A (hand) model returns \"none\" when no hand is visible.",
+      o_noCustom: "(no model yet)", o_poseTag: "(hand)", o_faceTag: "(face)", o_upTag: "(upper)", o_bodyTag: "(body)",
       b_face: "%2 of the face in %1", b_face_tip: "Info about the first face. Age is a number.",
       b_face_count: "number of faces in %1",
       b_ocr: "read the text in %1", b_qr: "read the QR code in %1",
@@ -618,7 +622,7 @@
       r_none: "none", r_front: "front", r_ageSuffix: "", r_face: "face",
       m_noCam: "No webcam available (you can still upload a photo)",
       m_noImage: "No photo (connect a photo block)",
-      m_noCustom: "Pick a model first (train one in [Make my AI])",
+      m_noCustom: "Pick a model first (train one in [Train])",
       m_aiError: "AI error: ", m_fail: "failed",
       m_camNotReady: "The webcam is not ready yet",
       m_needUpload: "Use [Upload photo] on the stage first",
@@ -898,7 +902,10 @@
         args0: [ IMG, { type: "field_dropdown", name: "MODEL",
           options: () => (CUSTOM_MODELS.length
             ? CUSTOM_MODELS.map(m => [
-                m.title + (m.kind === "pose" ? " " + t("o_poseTag") : ""), m.slug])
+                m.title + (m.kind === "pose" ? " " + t("o_poseTag")
+                         : m.kind === "face" ? " " + t("o_faceTag")
+                         : m.kind === "body_up" ? " " + t("o_upTag")
+                         : m.kind === "body" ? " " + t("o_bodyTag") : ""), m.slug])
             : [[t("o_noCustom"), ""]]) } ],
         tooltip: t("b_custom_tip") },
       { type: "ai_face", message0: t("b_face"), output: null, colour: C_AI,
@@ -1190,11 +1197,9 @@
             DO: { block: chain([
               B("variables_set", { fields: { VAR: { name: "photo" } },
                 inputs: { VALUE: { block: B("ai_capture") } } }),
-              /* 어디를 보는지 가운데에 네모로 표시해 준다 */
-              B("st_show_image", { inputs: { IMG: { block: B("ed_rect", {
-                fields: { FILL: "hollow", POS: "mc", COL: "#e0342e" },
-                inputs: { IMG: { block: B("variables_get",
-                  { fields: { VAR: { name: "photo" } } }) } } }) } } }),
+              /* 표시는 찍은 사진 그대로 — 네모를 그리면 그 색을 읽는 줄 오해한다 */
+              B("st_show_image", { inputs: { IMG: { block: B("variables_get",
+                { fields: { VAR: { name: "photo" } } }) } } }),
               B("st_say", { inputs: { TEXT: { block: B("ed_color_at",
                 { fields: { POS: "mc" },
                   inputs: { IMG: { block: B("variables_get",
@@ -1259,7 +1264,9 @@
     document.documentElement.lang = LANG;
     document.title = t("titleTag");
     set("txtTitle", t("title"));        set("txtEyebrow", t("eyebrow"));
-    set("txtBack", t("back"));          set("saveButton", t("save"));
+    const hl = document.getElementById("homeLink");
+    if (hl) { hl.title = t("back"); hl.setAttribute("aria-label", t("back")); }
+    set("saveButton", t("save"));
     set("txtVarsTitle", t("vars_title"));
     set("exampleButton", t("btn_examples"));
     set("txtExTitle", t("ex_title")); set("txtExHint", t("ex_hint"));
@@ -1370,6 +1377,7 @@
   let devCalls = 0;
   const chipOf = d => document.getElementById("chip" + String(d || "").toUpperCase());
 
+  /* 모델 로딩 전에는 디바이스 표가 비어 있다 — 준비될 때까지 다시 물어본다. */
   (async function initDevbar() {
     try {
       const info = await (await fetch("/system")).json();
@@ -1378,12 +1386,9 @@
         const el = chipOf(d);
         if (el) el.classList.add("on");
       });
-      const m = info.models || {};
-      document.getElementById("devModels").textContent =
-        `VLM ${m.vlm} · YOLO ${m.detect}+custom${m.custom} · FACE ${m.face} · TRANSFORM ${m.transform}`;
-      document.getElementById("devNet").textContent =
-        'NETWORK: OFFLINE  ·  OV ' + ((info.runtime && info.runtime.openvino) || '');
-    } catch (e) { /* 오프라인 초기화 실패는 무시 */ }
+      if (info.ready) return;
+    } catch (e) { /* 서버가 아직 못 뜬 경우 */ }
+    setTimeout(initDevbar, 1500);
   })();
 
   function devBusy(dev) {
@@ -2069,7 +2074,7 @@
       if (!url) { log(t("m_noImage")); return; }
       const a = document.createElement("a");
       a.href = url;
-      a.download = "vapi-" + new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-") + ".jpg";
+      a.download = "themaker-" + new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-") + ".jpg";
       a.click();
       log(t("m_saved"));
     },

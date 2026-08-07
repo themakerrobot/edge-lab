@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""vapi-od 실행기 — exe로 빌드되어 같은 폴더의 run.bat 을 실행한다."""
+"""The Maker 실행기 — themaker.exe 로 빌드되어 같은 폴더의 run.bat 을 실행한다."""
 import os
 import subprocess
 import sys
@@ -17,7 +17,7 @@ def main():
     run = os.path.join(base, "run.bat")
     if not os.path.exists(run):
         print("[오류] run.bat 을 찾을 수 없습니다.")
-        print("vapi-od.exe 를 프로젝트 폴더(run.bat 옆)에 두고 실행하세요.")
+        print("themaker.exe 를 프로젝트 폴더(run.bat 옆)에 두고 실행하세요.")
         print("현재 위치:", base)
         input("\n엔터를 누르면 닫힙니다. ")
         return 1

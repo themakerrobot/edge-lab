@@ -24,12 +24,33 @@ os.makedirs(IMAGE_DIR, exist_ok=True)
 eng = None
 
 
+# Chrome / Edge 를 앱 모드(--app)로 열기 위한 후보 경로.
+# 주소창·탭·북마크가 없는 전용 창으로 떠서 프로그램처럼 보인다.
+_APP_BROWSERS = [
+    r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+    r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+    os.path.expandvars(r"%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe"),
+    r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+    r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+]
+
+
+def _find_app_browser():
+    for p in _APP_BROWSERS:
+        if p and os.path.exists(p):
+            return p
+    return None
+
+
 def open_browser():
-    """서버가 뜨자마자 브라우저를 연다 — 모델 로딩은 뒤에서 계속되고,
+    """서버가 뜨자마자 화면을 연다 — 모델 로딩은 뒤에서 계속되고,
     화면은 부팅(로딩) 안내를 보여준다.
-    끄고 싶으면 환경변수 VAPI_NO_BROWSER=1 로 실행한다."""
+
+    Chrome/Edge 가 있으면 앱 모드(--app)로 전용 창을 띄우고, 없으면 기본 브라우저로 연다.
+    끄고 싶으면 VAPI_NO_BROWSER=1, 앱 모드만 끄려면 VAPI_NO_APPMODE=1 로 실행한다."""
     if os.environ.get("VAPI_NO_BROWSER"):
         return
+    import subprocess
     import threading
     import webbrowser
 
@@ -37,6 +58,19 @@ def open_browser():
 
     def _open():
         time.sleep(1.0)  # uvicorn 소켓 바인딩 여유
+        exe = None if os.environ.get("VAPI_NO_APPMODE") else _find_app_browser()
+        if exe:
+            try:
+                # 전용 프로필을 쓰면 이미 열려 있는 브라우저 창과 섞이지 않는다.
+                profile = os.path.abspath(os.path.join("models", ".appwin"))
+                subprocess.Popen([exe, f"--app={url}",
+                                  f"--user-data-dir={profile}",
+                                  "--window-size=1400,900",
+                                  "--no-first-run", "--no-default-browser-check"])
+                print("[browser] 앱 창으로 실행:", os.path.basename(exe))
+                return
+            except Exception as ex:
+                print("[browser] 앱 모드 실패:", ex, "→ 기본 브라우저로 엽니다")
         try:
             webbrowser.open(url)
         except Exception as ex:
@@ -92,6 +126,8 @@ def build_device_map():
               "object_custom_e", "mask_detect"):
         DEVICE_OF[k] = "CPU"
     for k in ("ocr", "barcode"):
+        DEVICE_OF[k] = "CPU"
+    for k in ("mesh_e", "hand_e", "mesh_calibrate"):     # MediaPipe
         DEVICE_OF[k] = "CPU"
 
     print(f"[devices] face={DEVICE_OF.get('face_analyze_e')} "

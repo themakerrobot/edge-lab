@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>컴퓨터 비전 실습</title>
+  <title>The Maker</title>
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
@@ -580,12 +580,12 @@
 </head>
 <body>
   <!-- 부팅 화면 : 모델을 올리는 동안 무엇이 일어나는지 보여준다 -->
-  <div id="boot">
+  <div id="boot" class="done">
     <div class="boot-card">
       <div class="boot-brand">
         <img src="/assets/pibo-prof.png" alt="">
         <span>
-          <b id="bootTitle">컴퓨터 비전 실습</b>
+          <b id="bootTitle">The Maker</b>
           <i id="bootSub">인터넷 없이 내 컴퓨터에서 실행돼요</i>
         </span>
       </div>
@@ -621,27 +621,27 @@
       <img src="/assets/pibo-prof.png" alt="" style="height:44px;flex:0 0 auto;">
       <span style="display:flex;flex-direction:column;">
       <span class="eyebrow" id="txtEyebrow">인공지능 · 컴퓨터 비전 · 인터넷 없이 내 컴퓨터에서 실행돼요</span>
-      <span class="title"><span id="txtTitle">컴퓨터 비전 실습</span> <span style="font-size:.85rem;color:var(--pen-red);vertical-align:middle;">(On-Device)</span></span>
+      <span class="title"><span id="txtTitle">The Maker</span> <span style="font-size:.85rem;color:var(--pen-red);vertical-align:middle;">(On-Device)</span></span>
     </span>
     </div>
     <div class="h-tools">
-      <a href="/blocks" id="blocksLink" title="AI 블록 코딩으로 이동" style="
+      <a href="/blocks" id="blocksLink" title="만들기 — 블록으로 나만의 프로그램" style="
         display:inline-flex;align-items:center;gap:7px;background:#fff;
         border:1.5px solid var(--line-d);color:var(--ink);font-weight:600;
         padding:8px 14px;border-radius:var(--r);text-decoration:none;font-size:.95rem;">
-        &#9632; <span id="txtBlocksLink">블록 코딩</span></a>
-      <a href="/train" id="trainLink" title="나만의 AI 만들기로 이동" style="
+        &#9632; <span id="txtBlocksLink">만들기</span></a>
+      <a href="/train" id="trainLink" title="가르치기 — 내가 직접 AI를 학습시켜요" style="
         display:inline-flex;align-items:center;gap:7px;background:#fff;
         border:1.5px solid var(--line-d);color:var(--ink);font-weight:600;
         padding:8px 14px;border-radius:var(--r);text-decoration:none;font-size:.95rem;">
-        &#9679; <span id="txtTrainLink">모델 만들기</span></a>
+        &#9679; <span id="txtTrainLink">가르치기</span></a>
+      <select id="lessonSelect" title="차시 선택"></select>
       <a href="/options" id="optionsLink" title="설정 · 점검" aria-label="설정 · 점검" style="
         display:inline-flex;align-items:center;justify-content:center;background:#fff;
         border:1.5px solid var(--line-d);color:var(--ink-2);
         width:38px;height:38px;border-radius:var(--r);text-decoration:none;
         font-size:1.05rem;line-height:1;">&#9881;</a>
-      <button id="langButton" title="한국어 / English">EN</button>
-      <select id="lessonSelect" title="차시 선택"></select>
+      <button id="langButton" title="한국어 / English" style="min-width:46px;">EN</button>
 
     </div>
   </div>
@@ -653,10 +653,6 @@
     <span class="chip" id="chipCPU"><span class="dot"></span>CPU<span class="st" id="stCPU"></span></span>
     <span class="chip" id="chipGPU"><span class="dot"></span>GPU<span class="st" id="stGPU"></span></span>
     <span class="chip" id="chipNPU"><span class="dot"></span>NPU<span class="st" id="stNPU"></span></span>
-    <span class="sep">|</span>
-    <span id="sysModels">models —</span>
-    <span class="sep">|</span>
-    <span id="sysNet">NETWORK: OFFLINE</span>
     <span class="meter">
       <span><span class="k">last</span> <span class="v" id="sysElapsed">--</span></span>
       <span><span class="k">exec</span> <span class="v" id="sysDevice">--</span></span>
@@ -810,9 +806,9 @@
 
     const UI = {
       ko: {
-        titleTag: "컴퓨터 비전 실습", title: "컴퓨터 비전 실습",
-        eyebrow: "인공지능 · 컴퓨터 비전 · 인터넷 없이 내 컴퓨터에서 실행돼요",
-        blocksLink: "블록 코딩", trainLink: "모델 만들기", optionsTip: "설정 · 점검", langBtn: "EN",
+        titleTag: "The Maker", title: "The Maker",
+        eyebrow: "써보기 · AI 12가지를 눌러 봐요 · 인터넷 없이 내 컴퓨터에서",
+        blocksLink: "만들기", trainLink: "가르치기", optionsTip: "설정 · 점검", langBtn: "EN",
         bootSub: "인터넷 없이 내 컴퓨터에서 실행돼요",
         bootSkip: "건너뛰기", bootWait: "준비 중...", bootStart: "시작하기",
         bootDone: "준비 끝!", bootError: "문제가 생겼어요: ",
@@ -823,10 +819,10 @@
         s3h: "일을 나눠서 해요",
         s3b: "컴퓨터 안에는 계산을 맡는 부품이 여러 개 있어요. 얼굴은 NPU, 그림 바꾸기는 GPU, 나머지는 CPU가 나눠 맡아 더 빠르게 움직여요.",
         s4h: "오늘 할 수 있는 것",
-        s4b: "체험 실습에서 AI를 눌러 보고, 블록 코딩으로 나만의 프로그램을 만들고, 모델 만들기에서 내가 직접 AI를 학습시킬 수 있어요.",
+        s4b: "써보기에서 AI를 눌러 보고, 만들기에서 블록으로 나만의 프로그램을 짜고, 가르치기에서 내가 직접 AI를 학습시킬 수 있어요.",
         s5h: "곧 시작해요",
         s5b: "준비가 끝나면 아래 [시작하기] 버튼이 켜져요. 먼저 웹캠이 잘 보이는지 확인해 두면 좋아요.",
-        customGroup: "내가 만든 AI", customTip: "내가 직접 학습시킨 모델로 분류합니다.",
+        customGroup: "내가 가르친 AI", customTip: "내가 직접 학습시킨 모델로 분류합니다.",
         q1: "모델을 골라요", q2: "이미지를 넣고 실행해요", q3: "결과를 확인해요",
         missionLabel: "미션", modelLabel: "모델", guideLabel: "가이드", promptLabel: "프롬프트",
         tabUpload: "이미지", tabWebcam: "웹캠", tabSketch: "스케치북",
@@ -840,10 +836,9 @@
         details: "상세보기 — 결과 데이터(JSON)", copy: "복사", copied: "복사됨!",
         freeMode: "자유 모드", lessonListTitle: "차시 목록",
         lessonOpt: (no, t) => `${no}차시 · ${t}`, lessonNo: no => `${no}차시`,
-        lessonEyebrow: no => `컴퓨터 비전 실습 · ${no}차시`,
+        lessonEyebrow: no => `The Maker · ${no}차시`,
         challenge: "도전", complete: "완료!",
         promptQ: "이미지를 설명해주세요.", promptVLM: "이미지를 30자 이내로 설명해주세요.",
-        modelsWait: "models: 연결 대기",
         liveOkTip: "웹캠으로 계속 인식합니다 (체크하면 웹캠 탭으로 전환)",
         liveNoTip: "이 모델은 응답이 길어 라이브를 지원하지 않아요 (얼굴·사물·포즈 계열에서 사용)",
         aSelectImage: "이미지를 선택하세요.", aCapture: "웹캠 이미지를 캡쳐하세요.",
@@ -852,9 +847,9 @@
         aCopyFail: "복사에 실패했습니다.",
       },
       en: {
-        titleTag: "Computer Vision Lab", title: "Computer Vision Lab",
-        eyebrow: "AI · computer vision · runs on this computer, no internet needed",
-        blocksLink: "Block Coding", trainLink: "Make my AI", optionsTip: "Settings & Check", langBtn: "한국어",
+        titleTag: "The Maker", title: "The Maker",
+        eyebrow: "Use · try 12 AIs · runs on this computer, no internet",
+        blocksLink: "Code", trainLink: "Train", optionsTip: "Settings & Check", langBtn: "한",
         bootSub: "Runs on this computer, no internet needed",
         bootSkip: "Skip", bootWait: "Getting ready...", bootStart: "Start",
         bootDone: "Ready!", bootError: "Something went wrong: ",
@@ -865,7 +860,7 @@
         s3h: "The work is shared out",
         s3b: "Your computer has several chips for computing. Faces go to the NPU, image transforms to the GPU, and the rest to the CPU — so everything runs faster.",
         s4h: "What you can do today",
-        s4b: "Try the AIs in Vision Lab, build your own program with Block Coding, and train your very own AI in Make my AI.",
+        s4b: "Try the AIs in Use, write your own program in Code, and train your very own AI in Train.",
         s5h: "Almost there",
         s5b: "The [Start] button turns on when everything is ready. It is a good moment to check that your webcam works.",
         customGroup: "My own AI", customTip: "Classifies with a model you trained yourself.",
@@ -882,10 +877,9 @@
         details: "Details — result data (JSON)", copy: "Copy", copied: "Copied!",
         freeMode: "Free mode", lessonListTitle: "Lessons",
         lessonOpt: (no, t) => `Lesson ${no} · ${t}`, lessonNo: no => `Lesson ${no}`,
-        lessonEyebrow: no => `Computer Vision Lab · Lesson ${no}`,
+        lessonEyebrow: no => `The Maker · Lesson ${no}`,
         challenge: "Tries", complete: "Done!",
         promptQ: "Describe this image.", promptVLM: "Describe this image in one short sentence.",
-        modelsWait: "models: waiting",
         liveOkTip: "Keeps detecting from the webcam (checking switches to the webcam tab)",
         liveNoTip: "This model is too slow for live mode (use face / object / pose models)",
         aSelectImage: "Choose an image first.", aCapture: "Capture a webcam image first.",
@@ -915,7 +909,7 @@
     (function boot() {
       const box = document.getElementById("boot");
       if (!box) return;
-      let idx = 0, ready = false, timer = null;
+      let idx = 0, ready = false, timer = null, shown = false;
 
       function paint() {
         const sl = SLIDES[idx];
@@ -936,23 +930,32 @@
       }
       function finish() {
         box.classList.add("done");
-        clearInterval(timer);
+        if (timer) clearInterval(timer);
       }
 
-      document.getElementById("bootTitle").textContent = T("title");
-      document.getElementById("bootSub").textContent = T("bootSub");
-      document.getElementById("bootSkip").textContent = T("bootSkip");
-      document.getElementById("bootStart").textContent = T("bootWait");
-      paint();
-      timer = setInterval(next, 8000);
-      document.getElementById("bootSkip").addEventListener("click", finish);
-      document.getElementById("bootStart").addEventListener("click", () => {
-        if (ready) finish();
-      });
+      /* 로딩이 끝난 뒤 다시 들어온 경우에는 안내를 띄우지 않는다.
+         (블록 코딩 → 체험 실습 처럼 페이지를 오갈 때마다 나오면 방해가 된다) */
+      function show() {
+        if (shown) return;
+        shown = true;
+        box.classList.remove("done");
+        document.getElementById("bootTitle").textContent = T("title");
+        document.getElementById("bootSub").textContent = T("bootSub");
+        document.getElementById("bootSkip").textContent = T("bootSkip");
+        document.getElementById("bootStart").textContent = T("bootWait");
+        paint();
+        timer = setInterval(next, 8000);
+        document.getElementById("bootSkip").addEventListener("click", finish);
+        document.getElementById("bootStart").addEventListener("click", () => {
+          if (ready) finish();
+        });
+      }
 
       async function poll() {
         try {
           const r = await (await fetch("/ready")).json();
+          if (r.ready && !shown) return;              // 이미 준비 끝 → 바로 실습 화면
+          show();
           const pct = r.total ? Math.round(r.loaded / r.total * 100) : 0;
           document.getElementById("bootBar").style.width = pct + "%";
           document.getElementById("bootCount").textContent = r.loaded + " / " + r.total;
@@ -970,7 +973,9 @@
             b.textContent = T("bootStart");
             return;                                   /* 자동 전환하지 않는다 */
           }
-        } catch (e) { /* 서버가 아직 응답 못 하면 다음 차례에 다시 */ }
+        } catch (e) {
+          show();                                     // 서버가 아직 못 뜬 상태 → 안내를 띄운다
+        }
         setTimeout(poll, 700);
       }
       poll();
@@ -1034,8 +1039,8 @@
     let runCount = 0;
     const sysEl = {
       cpu: document.getElementById('chipCPU'), gpu: document.getElementById('chipGPU'),
-      npu: document.getElementById('chipNPU'), models: document.getElementById('sysModels'),
-      net: document.getElementById('sysNet'), elapsed: document.getElementById('sysElapsed'),
+      npu: document.getElementById('chipNPU'),
+      elapsed: document.getElementById('sysElapsed'),
       device: document.getElementById('sysDevice'), runs: document.getElementById('sysRuns'),
     };
     /* 서비스명 -> 실행 디바이스 (서버가 런타임에서 읽은 실측값) */
@@ -1044,6 +1049,7 @@
     const svcName = model => (SERVICE_LIST[model].api.split('/')[1] || '');
     const devOf = model => (DEVICE_OF[svcName(model)] || '').toUpperCase();
 
+    /* 모델 로딩이 끝나기 전에는 디바이스 표가 비어 있다. 준비될 때까지 다시 물어본다. */
     (async function initSystem() {
       try {
         const info = await (await fetch('/system')).json();
@@ -1052,22 +1058,20 @@
           const el = sysEl[d.toLowerCase()];
           if (el) el.classList.add('on');
         });
-        const m = info.models || {};
-        sysEl.models.textContent =
-          `VLM ${m.vlm} · YOLO ${m.detect}+custom${m.custom} · FACE ${m.face} · TRANSFORM ${m.transform}`;
-        sysEl.net.textContent = 'NETWORK: OFFLINE  ·  OV ' + (info.runtime && info.runtime.openvino || '');
-      } catch (e) {
-        sysEl.models.textContent = T('modelsWait');
-      }
+        if (info.ready) return;
+      } catch (e) { /* 서버가 아직 못 뜬 경우 */ }
+      setTimeout(initSystem, 1500);
     })();
     /* 실행 중에는 '그 디바이스 칩만' 점멸시킨다.
        세 칩이 전부 켜지면 어디서 도는지 구분이 안 된다. */
+    let LAST_DEV = '';                     // 서버가 마지막으로 알려준 실행 장치
     function sysBusy(on, dev) {
       document.querySelectorAll('.chip').forEach(c => c.classList.remove('busy'));
       if (!on) return;
-      const el = sysEl[(dev || '').toLowerCase()];
+      /* 어느 칩이 일할지 모르면 아무 칩도 켜지 않는다.
+         전부 켜면 "세 개를 동시에 쓴다"는 잘못된 인상을 준다. */
+      const el = sysEl[((dev || LAST_DEV) || '').toLowerCase()];
       if (el) el.classList.add('busy');
-      else document.querySelectorAll('.chip.on').forEach(c => c.classList.add('busy'));
     }
     function sysReport(res, ms) {
       runCount++;
@@ -1076,6 +1080,7 @@
       sysEl.elapsed.textContent = took + ' ms';
       const dev = ((res && res.device) || '').toUpperCase();
       sysEl.device.textContent = dev || '--';
+      if (dev) LAST_DEV = dev;
 
       const st = DEV_STATS[dev];
       if (st) {
@@ -1791,7 +1796,7 @@
         case 'custom': {
           if (!d || !d.length) return `대답할 게 없어요.`;
           const t0 = d[0];
-          return `내가 만든 AI는 <b>${esc(t0.name)}</b>(이)라고 생각해요. <span class="sub">(확신 ${Math.round(t0.score*100)}%)</span>`;
+          return `내가 가르친 AI는 <b>${esc(t0.name)}</b>(이)라고 생각해요. <span class="sub">(확신 ${Math.round(t0.score*100)}%)</span>`;
         }
         case 'ocr': {
           if (!d.length) return `글자를 찾지 못했어요.`;
@@ -2175,7 +2180,10 @@
       liveToggle.title = ok ? T("liveOkTip") : T("liveNoTip");
       if (!ok && liveCheck.checked) { liveCheck.checked = false; stopLive(); }
     }
-    modelSelect.addEventListener('change', updateLiveAvailability);
+    modelSelect.addEventListener('change', () => {
+      updateLiveAvailability();
+      if (liveRunning) sysBusy(true, devOf(modelSelect.value));
+    });
     tabButtons.forEach(b => b.addEventListener('click', updateLiveAvailability));
 
     async function liveLoop() {
@@ -2183,6 +2191,7 @@
         const ctx = webcamCanvas.getContext('2d');
         ctx.drawImage(webcamVideo, 0, 0, webcamCanvas.width, webcamCanvas.height);
         webcamCanvas.style.display = 'block';
+        sysBusy(true, devOf(modelSelect.value));   // 도중에 모델을 바꿔도 따라간다
         try {
           await handleRun(modelSelect.value, document.getElementById('promptInput').value, webcamCanvas);
         } catch (e) { console.error(e); }

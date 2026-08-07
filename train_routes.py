@@ -40,6 +40,10 @@ REPORTS_PATH = "models/stats/reports.json"
 IMAGE_DIR = "image_temp/"
 IMAGE_DIM = 1280
 POSE_DIM = 63                       # 21점 × (x,y,z)
+FACE_DIM = 52                       # MediaPipe 블렌드셰이프 계수
+BODY_UP_DIM = 22                    # 상반신 11점 × (x,y)
+BODY_DIM = 34                       # 전신 17점 × (x,y)
+KP_CONF = 0.5                       # 이 값보다 흐린 관절은 "안 보임"으로 본다
 SIZE = 224
 MAX_ZIP = 128 * 1024 * 1024         # 업로드 zip 상한
 MAX_IMAGES = 600                    # zip 1회 처리 상한
@@ -55,7 +59,8 @@ _meta = {}
 _heads = {}                         # slug -> Head (캐시)
 
 _DT = {"float32": np.float32, "int32": np.int32, "uint8": np.uint8, "bool": np.bool_}
-DIM_OF = {"image": IMAGE_DIM, "pose": POSE_DIM}
+DIM_OF = {"image": IMAGE_DIM, "pose": POSE_DIM, "face": FACE_DIM,
+          "body_up": BODY_UP_DIM, "body": BODY_DIM}
 
 
 class SoftError(ValueError):
@@ -154,8 +159,145 @@ def _embed_pose(bgr):
     return pts.reshape(-1)                              # (63,)
 
 
+# ---------------------------------------------------------------- 표정(얼굴) 특징
+# mp_routes 의 얼굴 인식기는 블렌드셰이프를 끄고 쓰기 때문에, 표정 학습 전용
+# 인식기를 따로 하나 만든다 (처음 쓸 때만 로딩된다).
+_face_bs = None
+_face_lock = threading.Lock()
+
+# 화면에 얼굴선을 그리기 위한 랜드마크 묶음 (MediaPipe 표준 인덱스)
+FACE_CONTOURS = {
+    "oval": [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365,
+             379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93,
+             234, 127, 162, 21, 54, 103, 67, 109, 10],
+    "eyeL": [33, 246, 161, 160, 159, 158, 157, 173, 133, 155, 154, 153, 145, 144, 163, 7, 33],
+    "eyeR": [263, 466, 388, 387, 386, 385, 384, 398, 362, 382, 381, 380, 374, 373, 390, 249, 263],
+    "browL": [70, 63, 105, 66, 107],
+    "browR": [300, 293, 334, 296, 336],
+    "lips": [61, 185, 40, 39, 37, 0, 267, 269, 270, 409, 291, 375, 321, 405, 314,
+             17, 84, 181, 91, 146, 61],
+}
+
+
+def _load_face():
+    global _face_bs
+    if _face_bs is not None:
+        return
+    import mp_routes
+    from mediapipe.tasks.python import BaseOptions
+    from mediapipe.tasks.python import vision
+    path = os.path.join(mp_routes.MP_DIR, "face_landmarker.task")
+    if not os.path.exists(path):
+        raise RuntimeError(f"MediaPipe 모델이 없습니다: {path}")
+    _face_bs = vision.FaceLandmarker.create_from_options(
+        vision.FaceLandmarkerOptions(
+            base_options=BaseOptions(model_asset_path=path),
+            output_face_blendshapes=True, num_faces=1))
+    print("[custom] face_landmarker (blendshapes) loaded")
+
+
+def _face_result(bgr):
+    """가장 잘 잡힌 얼굴 하나의 (블렌드셰이프 52개, 랜드마크) 를 돌려준다."""
+    import mp_routes
+    _load_face()
+    with _face_lock:
+        res = _face_bs.detect(mp_routes._mp_image(bgr))
+    if not res or not res.face_blendshapes:
+        return None
+    return res
+
+
+def _embed_face(bgr):
+    """표정 특징 = 블렌드셰이프 52개.
+
+    '입꼬리 올림', '눈썹 올림' 같은 의미 있는 값이라 거리·각도·조명에 강하다.
+    좌표를 직접 쓰지 않으므로 따로 정규화할 필요가 없다.
+    """
+    res = _face_result(bgr)
+    if res is None:
+        raise SoftError("얼굴이 보이지 않아요. 얼굴을 화면 안에 보여 주세요.")
+    scores = [c.score for c in res.face_blendshapes[0]]
+    if len(scores) < FACE_DIM:
+        scores += [0.0] * (FACE_DIM - len(scores))
+    return np.array(scores[:FACE_DIM], dtype=np.float32)
+
+
+# ---------------------------------------------------------------- 몸동작 특징
+# COCO 17 관절: 0 코 1 왼눈 2 오른눈 3 왼귀 4 오른귀 5 왼어깨 6 오른어깨
+#               7 왼팔꿈치 8 오른팔꿈치 9 왼손목 10 오른손목 11 왼엉덩이 12 오른엉덩이
+#               13 왼무릎 14 오른무릎 15 왼발목 16 오른발목
+BODY_EDGES = [(0, 1), (0, 2), (1, 3), (2, 4), (5, 6), (5, 7), (7, 9), (6, 8), (8, 10),
+              (5, 11), (6, 12), (11, 12), (11, 13), (13, 15), (12, 14), (14, 16)]
+UPPER_N = 11                        # 0~10 (얼굴·어깨·팔) — 책상에 앉아도 잡힌다
+
+
+def _body_keypoints(bgr):
+    """가장 크게 잡힌 사람 한 명의 관절 17개 [(x, y, conf)]. 없으면 None."""
+    import main                                        # 이미 로딩된 모듈을 그대로 쓴다
+    if getattr(main, "eng", None) is None:
+        raise SoftError("AI를 준비하는 중이에요. 조금만 기다려 주세요.")
+    r = main.eng.object.pose(bgr)[0]
+    if r.keypoints is None or r.boxes is None or len(r.boxes) == 0:
+        return None
+    areas = []
+    for i in range(len(r.boxes)):
+        x1, y1, x2, y2 = r.boxes.xyxy[i].cpu().numpy()
+        areas.append((x2 - x1) * (y2 - y1))
+    i = int(np.argmax(areas))                          # 화면에서 가장 큰 사람
+    xy = r.keypoints.xy[i].cpu().numpy()
+    if r.keypoints.conf is not None:
+        cf = r.keypoints.conf[i].cpu().numpy()
+    else:
+        cf = np.ones(len(xy), dtype=np.float32)
+    return [(float(p[0]), float(p[1]), float(c)) for p, c in zip(xy, cf)]
+
+
+def _embed_body(bgr, full):
+    """관절 위치를 몸 크기로 정규화한다.
+
+    전신은 엉덩이 중심을 원점 · 몸통 길이로, 상반신은 어깨 중심을 원점 · 어깨 너비로
+    나눈다. 그래서 카메라와의 거리나 화면 위치가 달라도 같은 자세면 비슷한 값이 된다.
+    """
+    kp = _body_keypoints(bgr)
+    if kp is None:
+        raise SoftError("사람이 보이지 않아요. 카메라 앞에 서 주세요.")
+    need = [5, 6, 11, 12] if full else [5, 6]
+    if any(kp[i][2] < KP_CONF for i in need):
+        raise SoftError("전신이 다 보이지 않아요. 뒤로 조금 물러서 주세요." if full
+                        else "어깨가 보이지 않아요. 몸을 화면 안에 보여 주세요.")
+    mid = lambda a, b: ((kp[a][0] + kp[b][0]) / 2, (kp[a][1] + kp[b][1]) / 2)
+    sh = mid(5, 6)
+    if full:
+        hip = mid(11, 12)
+        origin = hip
+        scale = float(np.hypot(sh[0] - hip[0], sh[1] - hip[1]))
+        idx = range(17)
+    else:
+        origin = sh
+        scale = float(np.hypot(kp[5][0] - kp[6][0], kp[5][1] - kp[6][1]))
+        idx = range(UPPER_N)
+    if scale < 1e-3:
+        raise SoftError("사람이 너무 작게 보여요. 조금 앞으로 와 주세요.")
+    out = []
+    for i in idx:
+        x, y, c = kp[i]
+        if c < KP_CONF:                                # 안 보이는 관절은 0 으로 둔다
+            out += [0.0, 0.0]
+        else:
+            out += [(x - origin[0]) / scale, (y - origin[1]) / scale]
+    return np.array(out, dtype=np.float32)
+
+
 def _embed(bgr, kind="image"):
-    return _embed_pose(bgr) if kind == "pose" else _embed_image(bgr)
+    if kind == "body_up":
+        return _embed_body(bgr, False)
+    if kind == "body":
+        return _embed_body(bgr, True)
+    if kind == "pose":
+        return _embed_pose(bgr)
+    if kind == "face":
+        return _embed_face(bgr)
+    return _embed_image(bgr)
 
 
 def _imread(path):
@@ -278,31 +420,51 @@ def _zip_images(raw):
 
 
 # ---------------------------------------------------------------- 공통 응답
-def _run(name, fn):
+def _dev_for(kind):
+    """그 작업을 실제로 처리한 장치. 백본만 NPU/GPU 이고 나머지는 CPU 다.
+
+    이 값이 화면 상태바의 exec 표시가 되므로, 백본 장치를 그대로 쓰면
+    손·표정·몸동작까지 NPU 로 잘못 보인다.
+    """
+    if kind in ("pose", "face"):
+        return "CPU"                      # MediaPipe
+    if kind in ("body", "body_up"):
+        try:
+            import main
+            return main.DEVICE_OF.get("pose_e", "CPU")
+        except Exception:
+            return "CPU"
+    return _device                        # image (OpenVINO 백본)
+
+
+def _run(name, fn, device=None):
     """기존 서버와 동일한 {type,result,data,elapsed_ms,device} 응답 포맷."""
     t0 = time.perf_counter()
     try:
         data = fn()
         return {"type": name, "result": "ok", "data": data,
-                "elapsed_ms": int((time.perf_counter() - t0) * 1000), "device": _device}
+                "elapsed_ms": int((time.perf_counter() - t0) * 1000),
+                "device": device or _device}
     except SoftError as ex:
         return {"type": name, "result": "fail", "data": str(ex),
-                "elapsed_ms": int((time.perf_counter() - t0) * 1000)}
+                "elapsed_ms": int((time.perf_counter() - t0) * 1000),
+                "device": device or _device}
     except Exception as ex:
         import traceback
         traceback.print_exc()
         return {"type": name, "result": "fail", "data": "Inference error:" + str(ex),
-                "elapsed_ms": int((time.perf_counter() - t0) * 1000)}
+                "elapsed_ms": int((time.perf_counter() - t0) * 1000),
+                "device": device or _device}
 
 
-def _run_image(name, upload, fn):
+def _run_image(name, upload, fn, device=None):
     """웹캠 캡쳐 1장 업로드 — mp_routes 와 동일한 임시파일 방식."""
     os.makedirs(IMAGE_DIR, exist_ok=True)
     path = IMAGE_DIR + name + "-" + str(uuid.uuid4()) + ".jpg"
     with open(path, "wb") as f:
         f.write(upload.file.read())
     try:
-        return _run(name, lambda: fn(_imread(path)))
+        return _run(name, lambda: fn(_imread(path)), device=device)
     finally:
         if os.path.exists(path):
             os.remove(path)
@@ -316,7 +478,7 @@ async def custom_embed(request: Request, uploadFile: UploadFile = File(...),
         v = _embed(bgr, kind)
         return {"kind": kind, "dim": len(v),
                 "feature": [round(float(x), 6) for x in v]}
-    return _run_image("custom_embed", uploadFile, fn)
+    return _run_image("custom_embed", uploadFile, fn, device=_dev_for(kind))
 
 
 @router.post("/custom/pose", tags=["custom"], summary="손 랜드마크 (화면 표시용)")
@@ -333,7 +495,46 @@ async def custom_pose(request: Request, uploadFile: UploadFile = File(...)):
             return {"found": False, "points": []}
         return {"found": True, "points": hand["norm"],
                 "hand": hand["handed"], "gesture": hand["gesture"]}
-    return _run("custom_pose", fn)
+    return _run("custom_pose", fn, device="CPU")
+
+
+@router.post("/custom/face", tags=["custom"], summary="얼굴선 + 표정 값 (화면 표시용)")
+async def custom_face(request: Request, uploadFile: UploadFile = File(...)):
+    """얼굴이 없어도 실패로 보지 않는다 — 학습 화면에서 계속 호출하는 용도."""
+    raw = uploadFile.file.read()
+
+    def fn():
+        res = _face_result(_decode(raw))
+        if res is None:
+            return {"found": False, "lines": [], "top": []}
+        lm = res.face_landmarks[0]
+        lines = [[[round(lm[i].x, 4), round(lm[i].y, 4)] for i in idx if i < len(lm)]
+                 for idx in FACE_CONTOURS.values()]
+        bs = sorted(res.face_blendshapes[0], key=lambda c: -c.score)[:3]
+        top = [{"name": c.category_name, "score": round(float(c.score), 3)}
+               for c in bs if c.score > 0.15]
+        return {"found": True, "lines": lines, "top": top}
+    return _run("custom_face", fn, device="CPU")
+
+
+@router.post("/custom/body", tags=["custom"], summary="몸 관절 (화면 표시용)")
+async def custom_body(request: Request, uploadFile: UploadFile = File(...),
+                      kind: str = Query("body", description="body | body_up")):
+    """사람이 없어도 실패로 보지 않는다 — 학습 화면에서 계속 호출하는 용도."""
+    raw = uploadFile.file.read()
+
+    def fn():
+        bgr = _decode(raw)
+        h, w = bgr.shape[:2]
+        kp = _body_keypoints(bgr)
+        if kp is None:
+            return {"found": False, "points": [], "edges": []}
+        n = 17 if kind == "body" else UPPER_N
+        pts = [[round(x / w, 4), round(y / h, 4), round(c, 2)] for x, y, c in kp[:n]]
+        edges = [e for e in BODY_EDGES if e[0] < n and e[1] < n]
+        ok = all(kp[i][2] >= KP_CONF for i in ([5, 6, 11, 12] if kind == "body" else [5, 6]))
+        return {"found": ok, "points": pts, "edges": edges, "conf": KP_CONF}
+    return _run("custom_body", fn, device=_dev_for("body"))
 
 
 @router.post("/custom/embed_batch", tags=["custom"], summary="특징 추출 (여러 장 한 번에)")
@@ -353,7 +554,7 @@ async def custom_embed_batch(request: Request, uploadFiles: List[UploadFile] = F
                 failed.append({"index": i, "reason": str(ex)})
         return {"kind": kind, "dim": DIM_OF.get(kind, 0),
                 "count": len(feats), "failed": failed, "features": feats}
-    return _run("custom_embed_batch", fn)
+    return _run("custom_embed_batch", fn, device=_dev_for(kind))
 
 
 @router.post("/custom/embed_zip", tags=["custom"], summary="특징 추출 (클래스 압축파일 통째로)")
@@ -372,7 +573,7 @@ async def custom_embed_zip(request: Request, uploadFile: UploadFile = File(...),
                 failed.append(n)
         return {"label": label, "kind": kind, "dim": DIM_OF.get(kind, 0),
                 "count": len(feats), "failed": failed, "features": feats}
-    return _run("custom_embed_zip", fn)
+    return _run("custom_embed_zip", fn, device=_dev_for(kind))
 
 
 # ---------------------------------------------------------------- 추론
@@ -380,6 +581,11 @@ async def custom_embed_zip(request: Request, uploadFile: UploadFile = File(...),
 async def custom_predict(request: Request, uploadFile: UploadFile = File(...),
                          model: str = Query(..., description="모델 slug"),
                          top: int = Query(0, description="상위 N개만 (0=전체)")):
+    try:
+        kind = _head(model).kind                    # 캐시되어 있어 비용이 없다
+    except Exception:
+        kind = "image"
+
     def fn(bgr):
         head = _head(model)
         try:
@@ -389,7 +595,7 @@ async def custom_predict(request: Request, uploadFile: UploadFile = File(...),
         order = np.argsort(-probs)
         out = [{"name": head.labels[i], "score": round(float(probs[i]), 4)} for i in order]
         return out[:top] if top > 0 else out
-    return _run_image("custom", uploadFile, fn)
+    return _run_image("custom", uploadFile, fn, device=_dev_for(kind))
 
 
 @router.post("/custom/predict_zip", tags=["custom"],
@@ -397,6 +603,10 @@ async def custom_predict(request: Request, uploadFile: UploadFile = File(...),
 async def custom_predict_zip(request: Request, uploadFile: UploadFile = File(...),
                              model: str = Query(..., description="모델 slug")):
     raw = uploadFile.file.read()
+    try:
+        kind = _head(model).kind
+    except Exception:
+        kind = "image"
 
     def fn():
         head = _head(model)
@@ -411,7 +621,7 @@ async def custom_predict_zip(request: Request, uploadFile: UploadFile = File(...
             items.append({"file": n, "name": head.labels[k],
                           "score": round(float(probs[k]), 4)})
         return items
-    return _run("custom_predict_zip", fn)
+    return _run("custom_predict_zip", fn, device=_dev_for(kind))
 
 
 # ---------------------------------------------------------------- 모델 관리
@@ -657,6 +867,13 @@ async def custom_selftest(request: Request):
             add("pose", True, "gesture_recognizer ready")
         except Exception as ex:
             add("pose", False, ex)
+
+        # 2-2. 표정(블렌드셰이프)
+        try:
+            _load_face()
+            add("face", True, "blendshapes ready")
+        except Exception as ex:
+            add("face", False, ex)
 
         # 3. 저장 폴더 쓰기 권한
         for root in (USER_DIR, PROJECT_DIR, IMAGE_DIR):

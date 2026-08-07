@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>나만의 AI 만들기</title>
+  <title>가르치기 — The Maker</title>
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
@@ -256,6 +256,17 @@
     .pred .row.top .pb > i { background: var(--cyan); }
     .pred .sc { flex: 0 0 46px; font-size: .84rem; color: var(--ink-2); }
 
+    /* ----- 접기 ----- */
+    .sect .fold {
+      border: none; background: none; cursor: pointer; padding: 2px 6px;
+      color: var(--ink-2); font-size: .95rem; line-height: 1;
+      transition: transform .18s; flex: 0 0 auto;
+    }
+    .sect.closed .fold { transform: rotate(-90deg); }
+    .sect.closed .sbody { display: none; }
+    .sect.closed .head { border-bottom: none; padding-bottom: 0; }
+    .sect .head .q { cursor: pointer; }
+
     /* ----- 그래프 (학습 곡선 / 특징 지도 / 확신 흐름) ----- */
     .charts { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
     .chart { flex: 1 1 240px; border: 1.5px solid var(--line); border-radius: var(--r);
@@ -353,16 +364,12 @@
       <img src="/assets/pibo-prof.png" alt="" style="height:44px;flex:0 0 auto;">
       <span style="display:flex;flex-direction:column;">
       <span class="eyebrow" id="txtEyebrow">인공지능 · 컴퓨터 비전 · 인터넷 없이 내 컴퓨터에서 실행돼요</span>
-      <span class="title"><span id="txtTitle">나만의 AI 만들기</span> <span style="font-size:.85rem;color:var(--pen-red);vertical-align:middle;">(On-Device)</span></span>
+      <span class="title"><span id="txtTitle">가르치기</span> <span style="font-size:.85rem;color:var(--pen-red);vertical-align:middle;">(On-Device)</span></span>
     </span>
     </div>
     <div class="h-tools">
-      <a href="/" id="homeLink" title="체험 실습으로 이동" style="
-        display:inline-flex;align-items:center;gap:7px;background:#fff;
-        border:1.5px solid var(--line-d);color:var(--ink);font-weight:600;
-        padding:8px 14px;border-radius:var(--r);text-decoration:none;font-size:.95rem;">
-        &#9998; <span id="txtHomeLink">체험 실습</span></a>
-      <button id="langButton" title="한국어 / English">EN</button>
+      <a href="/" id="homeLink" style="display:inline-flex;align-items:center;justify-content:center;background:#fff;border:1.5px solid var(--line-d);color:var(--ink);width:38px;height:38px;border-radius:var(--r);text-decoration:none;font-size:1.15rem;line-height:1;">&#8962;</a>
+      <button id="langButton" title="한국어 / English" style="min-width:46px;">EN</button>
     </div>
   </div>
 
@@ -373,12 +380,9 @@
     <span class="chip" id="chipCPU"><span class="dot"></span>CPU<span class="st" id="stCPU"></span></span>
     <span class="chip" id="chipGPU"><span class="dot"></span>GPU<span class="st" id="stGPU"></span></span>
     <span class="chip" id="chipNPU"><span class="dot"></span>NPU<span class="st" id="stNPU"></span></span>
-    <span class="sep">|</span>
-    <span id="sysModels">models &mdash;</span>
-    <span class="sep">|</span>
-    <span id="sysNet">NETWORK: OFFLINE</span>
     <span class="meter">
       <span><span class="k">last</span> <span class="v" id="sysElapsed">--</span></span>
+      <span id="fpsBox" style="display:none;"><span class="k">fps</span> <span class="v" id="sysFps">--</span></span>
       <span><span class="k">exec</span> <span class="v" id="sysDevice">--</span></span>
       <span><span class="k">runs</span> <span class="v" id="sysRuns">0</span></span>
     </span>
@@ -411,6 +415,9 @@
           <span class="modeSw" id="modeSw">
             <button data-kind="image" class="on" id="txtModeImage">사진</button>
             <button data-kind="pose" id="txtModePose">손모양</button>
+            <button data-kind="face" id="txtModeFace">표정</button>
+            <button data-kind="body_up" id="txtModeUp">상반신</button>
+            <button data-kind="body" id="txtModeBody">전신</button>
           </span>
           <span class="hint" id="txtQ2Hint">클래스마다 30장쯤 모으면 좋아요</span>
         </span>
@@ -527,7 +534,7 @@
             </span>
           </div>
           <div class="hint" id="txtQ5Hint" style="margin-bottom:10px;">
-            저장하면 [체험 실습]과 [블록 코딩]에서 내가 만든 AI로 바로 쓸 수 있어요.
+            저장하면 [써보기]와 [만들기]에서 내가 가르친 AI로 바로 쓸 수 있어요.
           </div>
           <div class="saved" id="savedList"></div>
         </div>
@@ -567,7 +574,8 @@
    *   저장      : /custom/upload  (web-classifier 와 동일한 zip 포맷)
    * 특징을 학습·추론 모두 서버에서 뽑으므로 브라우저/서버 결과가 원리상 같다.
    **********************************************************************/
-  const DIM_OF = { image: 1280, pose: 63 };
+  const DIM_OF = { image: 1280, pose: 63, face: 52, body_up: 22, body: 34 };
+  const SKELETON = ["pose", "face", "body_up", "body"];   // 골격/선을 그리는 모드
   let FEAT_KIND = "image";                 // image(사진) | pose(손모양)
   const FEAT_DIM = () => DIM_OF[FEAT_KIND];
   const LS_KEY = "vapiTrainDraft";
@@ -578,10 +586,20 @@
   try { LANG = localStorage.getItem("vapiLang") || "ko"; } catch (e) {}
   const I18N = {
     ko: {
-      titleTag: "나만의 AI 만들기", title: "나만의 AI 만들기",
-      eyebrow: "인공지능 · 컴퓨터 비전 · 인터넷 없이 내 컴퓨터에서 실행돼요",
-      homeLink: "체험 실습", langBtn: "EN",
-      modeImage: "사진", modePose: "손모양",
+      titleTag: "가르치기 — The Maker", title: "가르치기",
+      eyebrow: "내가 직접 AI를 학습시켜요 · 인터넷 없이 내 컴퓨터에서",
+      homeLink: "The Maker (홈)", langBtn: "EN",
+      modeImage: "사진", modePose: "손모양", modeFace: "표정",
+      modeUp: "상반신", modeBody: "전신",
+      upHint: "책상에 앉은 채로 해요. 얼굴·어깨·팔 관절 11개만 학습해서 옷 색이나 배경에 흔들리지 않아요.",
+      bodyHint: "온몸이 보이도록 뒤로 물러서 주세요. 관절 17개 위치만 학습해요.",
+      bodyOk: "자세 인식됨", bodyNo: "사람 없음",
+      skippedBody: "자세가 안 잡혀서 %1장은 건너뛰었어요.",
+      allSkippedBody: "자세를 못 찾아서 한 장도 넣지 못했어요. 몸이 화면에 다 보이게 서 주세요.",
+      faceHint: "얼굴을 화면에 크게 보여 주세요. 입꼬리·눈썹 같은 표정 값 52개만 학습해서 배경·거리에 흔들리지 않아요.",
+      faceOk: "얼굴 인식됨", faceNo: "얼굴 없음",
+      skippedFace: "얼굴이 안 보여서 %1장은 건너뛰었어요.",
+      allSkippedFace: "얼굴을 못 찾아서 한 장도 넣지 못했어요. 얼굴을 화면에 크게 보여 주세요.",
       q6: "AI를 속여 보세요", q7: "작품을 저장하고 다음 시간에 이어 해요",
       q7hint: "사진과 클래스까지 통째로 저장돼요. 학습을 안 끝냈어도 저장할 수 있어요.",
       holdout: "시험지 따로 두기(20%)",
@@ -617,7 +635,6 @@
       q1hint: "이름을 정하고, 오른쪽 2번에서 사진을 모아요. 클래스는 2개 이상이어야 학습할 수 있어요.",
       q2hint: "클래스마다 30장쯤 모으면 좋아요",
       q2count: "사진 %1장 · 클래스 %2개 (클래스마다 30장쯤 모으면 좋아요)",
-      modelsWait: "backbone: unavailable",
       noBackbone: "특징 추출 모델(models/backbone)이 없어요. 서버 관리자에게 문의하세요.",
       errShot: "사진을 넣지 못했어요 — %1",
       q2guide: "모을 클래스를 먼저 고르고, [연속 촬영]을 <b>누르고 있는 동안</b> 사진이 계속 찍혀요.",
@@ -632,7 +649,7 @@
       chkImbalance: "사진 수가 많이 달라요 (%1). 적은 클래스가 불리해질 수 있어요.",
       chkDup: "%1 에 거의 똑같은 사진이 많아요. 다양한 각도·배경으로 찍으면 더 잘 배워요.",
       chkOverfit: "반복이 많을수록 시험 점수가 떨어지면 '외우기'가 시작된 거예요. 곡선을 확인해 보세요.",
-      q5hint: "저장하면 [체험 실습]과 [블록 코딩]에서 내가 만든 AI로 바로 쓸 수 있어요.",
+      q5hint: "저장하면 [써보기]와 [만들기]에서 내가 가르친 AI로 바로 쓸 수 있어요.",
       addClass: "클래스 추가", reset: "전체 지우기", targetClass: "모을 클래스",
       holdShot: "연속 촬영 (누르고 있기)", oneShot: "한 장 찍기", shotGap: "촬영 간격(ms)",
       camOff: "웹캠 끄기", camOn: "웹캠 켜기",
@@ -651,7 +668,7 @@
       logExtract: "특징을 뽑는 중 ... %1/%2",
       sayTop: "이건 <b>%1</b>인 것 같아요! (확신 %2%)",
       sayLow: "음... <b>%1</b>인 것 같은데 확신이 낮아요 (%2%). 사진을 더 모아 보세요.",
-      savedOk: "저장했어요. [체험 실습]에서 바로 쓸 수 있어요.",
+      savedOk: "저장했어요. [써보기]에서 바로 쓸 수 있어요.",
       aNoCam: "웹캠을 열 수 없어요. 카메라 권한을 확인해 주세요.",
       aNeedTarget: "먼저 모을 클래스를 골라 주세요.",
       aNeedTitle: "모델 이름을 적어 주세요.",
@@ -660,10 +677,20 @@
       restored: "이전에 만들던 내용을 불러왔어요.",
     },
     en: {
-      titleTag: "Make my AI", title: "Make my AI",
-      eyebrow: "AI · computer vision · runs on this computer, no internet needed",
-      homeLink: "Vision Lab", langBtn: "한국어",
-      modeImage: "Photo", modePose: "Hand",
+      titleTag: "Train — The Maker", title: "Train",
+      eyebrow: "train your very own AI · runs on this computer",
+      homeLink: "The Maker (home)", langBtn: "한",
+      modeImage: "Photo", modePose: "Hand", modeFace: "Face",
+      modeUp: "Upper body", modeBody: "Full body",
+      upHint: "You can stay seated. Only 11 joints (face, shoulders, arms) are learned, so clothes and background matter less.",
+      bodyHint: "Step back so your whole body is visible. Only the 17 joint positions are learned.",
+      bodyOk: "pose detected", bodyNo: "no person",
+      skippedBody: "Skipped %1 photos with no pose.",
+      allSkippedBody: "No pose found, so nothing was added. Make sure your body is fully visible.",
+      faceHint: "Show your face clearly. Only 52 expression values (smile, brow raise...) are learned, so distance and background matter less.",
+      faceOk: "face detected", faceNo: "no face",
+      skippedFace: "Skipped %1 photos with no face.",
+      allSkippedFace: "No face found, so nothing was added. Show your face clearly.",
       q6: "Try to fool your AI", q7: "Save your work and continue next time",
       q7hint: "Photos and classes are saved together. You can save before training too.",
       holdout: "Keep a test set (20%)",
@@ -699,7 +726,6 @@
       q1hint: "Name each class, then collect photos in step 2 on the right. You need at least 2 classes.",
       q2hint: "About 30 photos per class works well",
       q2count: "%1 photos · %2 classes (about 30 per class works well)",
-      modelsWait: "backbone: unavailable",
       noBackbone: "The feature model (models/backbone) is missing. Ask your administrator.",
       errShot: "Could not add the photo — %1",
       q2guide: "Pick a class first, then <b>hold</b> [Burst capture] to keep taking photos.",
@@ -714,7 +740,7 @@
       chkImbalance: "Class sizes differ a lot (%1). Small classes may lose out.",
       chkDup: "%1 has many near-identical photos. Vary angle and background to learn better.",
       chkOverfit: "If test accuracy drops as epochs grow, the AI started memorizing. Check the curve.",
-      q5hint: "Once saved, you can use it in [Vision Lab] and [Block Coding].",
+      q5hint: "Once saved, you can use it in [Use] and [Code].",
       addClass: "Add class", reset: "Clear all", targetClass: "Collect into",
       holdShot: "Burst capture (hold)", oneShot: "Take one", shotGap: "Interval (ms)",
       camOff: "Webcam off", camOn: "Webcam on",
@@ -733,7 +759,7 @@
       logExtract: "Extracting features ... %1/%2",
       sayTop: "I think this is <b>%1</b>! (confidence %2%)",
       sayLow: "Hmm, maybe <b>%1</b>, but I'm not sure (%2%). Try collecting more photos.",
-      savedOk: "Saved. You can use it in [Vision Lab] now.",
+      savedOk: "Saved. You can use it in [Use] now.",
       aNoCam: "Can't open the webcam. Check the camera permission.",
       aNeedTarget: "Pick a class to collect into first.",
       aNeedTitle: "Please enter a model name.",
@@ -760,30 +786,32 @@
   /* ---------------- 상태바 (체험툴·블록툴과 동일 규약) ---------------- */
   const sysEl = {
     cpu: $("chipCPU"), gpu: $("chipGPU"), npu: $("chipNPU"),
-    models: $("sysModels"), net: $("sysNet"),
     last: $("sysElapsed"), exec: $("sysDevice"), calls: $("sysRuns"),
+    fps: $("sysFps"), fpsBox: $("fpsBox"),
   };
   const DEV_STATS = { CPU: { n: 0 }, GPU: { n: 0 }, NPU: { n: 0 } };
   let FEAT_DEV = "";                       // 백본이 실제로 도는 디바이스
   let BACKBONE_OK = false;                 // 특징 추출 모델 사용 가능 여부
   let runCount = 0;
 
-  (async function initSystem() {
+  (async function initChips() {
     try {
       const info = await (await fetch("/system")).json();
       (info.devices || []).forEach(d => {
         const el = sysEl[d.toLowerCase()];
         if (el) el.classList.add("on");
       });
-      sysEl.net.textContent = "NETWORK: OFFLINE  ·  OV " + ((info.runtime && info.runtime.openvino) || "");
+      if (info.ready) return;
     } catch (e) { /* /system 이 없어도 학습은 동작한다 */ }
+    setTimeout(initChips, 1500);
+  })();
+
+  (async function initSystem() {
     try {
       const j = await (await fetch("/custom/backbone")).json();
       if (j.result === "ok") {
         FEAT_DEV = (j.data.device || "").toUpperCase();
         BACKBONE_OK = true;
-        sysEl.models.textContent =
-          "BACKBONE MobileNetV2 " + j.data.dim + "d · HEAD Dense128 (browser)";
       } else { backboneMissing(); }
     } catch (e) { backboneMissing(); }
   })();
@@ -792,9 +820,10 @@
   function sysBusy(on) {
     document.querySelectorAll(".chip").forEach(c => c.classList.remove("busy"));
     if (!on) return;
-    const el = sysEl[(FEAT_DEV || "").toLowerCase()];
+    /* 어느 칩이 일할지 모르면 아무 칩도 켜지 않는다 (전부 켜면 오해를 준다) */
+    const dev = (FEAT_KIND === "image" ? FEAT_DEV : "CPU").toLowerCase();
+    const el = sysEl[dev];
     if (el) el.classList.add("busy");
-    else document.querySelectorAll(".chip.on").forEach(c => c.classList.add("busy"));
   }
   function devReport(dev, ms) {
     runCount++;
@@ -814,7 +843,6 @@
   /* 특징 추출 모델이 없으면 사진 모으기 자체가 불가능하다 — 즉시 알리고 잠근다. */
   function backboneMissing() {
     BACKBONE_OK = false;
-    sysEl.models.textContent = t("modelsWait");
     ["holdShot", "oneShot", "trainBtn"].forEach(id => { $(id).disabled = true; });
     document.querySelectorAll('.cls button[data-a="imgs"], .cls button[data-a="zip"]')
       .forEach(b => { b.disabled = true; });
@@ -1012,8 +1040,8 @@
       $("saveBtn").disabled = $("downloadBtn").disabled = true;
       $("testOnce").disabled = $("testLive").disabled = $("biasBtn").disabled = true;
       $("score").style.display = $("wrong").style.display = "none";
-      $("txtQ2Guide").innerHTML = (k === "pose") ? t("poseHint") : t("q2guide");
-      if (k === "pose") poseWatch(); else poseWatchStop();
+      $("txtQ2Guide").innerHTML = modeHint(k);
+      if (SKELETON.includes(k)) poseWatch(); else poseWatchStop();
       renderClasses(); saveDraft();
     });
   });
@@ -1026,7 +1054,7 @@
       stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
       cam.srcObject = stream;
       $("txtCamToggle").textContent = t("camOff");
-      if (FEAT_KIND === "pose") poseWatch();
+      if (SKELETON.includes(FEAT_KIND)) poseWatch();
     } catch (e) { alert(t("aNoCam")); }
   }
   function camOff() {
@@ -1090,7 +1118,13 @@
       renderClasses();
       await new Promise(r => setTimeout(r, 0));
     }
-    if (skipped) log(skipped >= buf.length ? t("allSkipped") : t("skipped", skipped));
+    if (skipped) {
+      const all = FEAT_KIND === "face" ? "allSkippedFace"
+                : isBody() ? "allSkippedBody" : "allSkipped";
+      const some = FEAT_KIND === "face" ? "skippedFace"
+                 : isBody() ? "skippedBody" : "skipped";
+      log(skipped >= buf.length ? t(all) : t(some, skipped));
+    }
     if (window.vapiStat) vapiStat("samples_collected", buf.length - skipped);
     return skipped;
   }
@@ -1113,7 +1147,7 @@
       if (!blob) break;
       buf.push({ blob: blob, thumb: thumbOf(cam) });
       log(t("logBurst", buf.length));
-      if (FEAT_KIND === "pose" && buf.length % 3 === 0) probeHand();   // 골격 표시 유지
+      if (SKELETON.includes(FEAT_KIND) && buf.length % 3 === 0) probeNow();
       await new Promise(r => setTimeout(r, gap));
     }
     $("cambox").classList.remove("rec");
@@ -1133,9 +1167,61 @@
 
   /* ---------------- 손 인식 실시간 확인 (손모양 모드 전용) ---------------- */
   let poseWatchOn = false, poseFps = 0;
+  const isBody = k => (k || FEAT_KIND).startsWith("body");
+  function modeHint(k) {
+    if (k === "pose") return t("poseHint");
+    if (k === "face") return t("faceHint");
+    if (k === "body_up") return t("upHint");
+    if (k === "body") return t("bodyHint");
+    return t("q2guide");
+  }
   function poseBadge(ok) {
     $("cambox").classList.toggle("handOk", !!ok);
-    $("poseBadge").textContent = ok ? t("handOk") : t("handNo");
+    const on = FEAT_KIND === "face" ? t("faceOk") : isBody() ? t("bodyOk") : t("handOk");
+    const off = FEAT_KIND === "face" ? t("faceNo") : isBody() ? t("bodyNo") : t("handNo");
+    $("poseBadge").textContent = ok ? on : off;
+  }
+  const probeNow = () => (FEAT_KIND === "face" ? probeFace()
+                        : isBody() ? probeBody() : probeHand());
+
+  /* 몸 관절을 뼈대로 그린다 (안 보이는 관절은 건너뛴다) */
+  function drawBody(points, edges) {
+    const cv = $("overlay"), box = $("cambox");
+    const w = box.clientWidth, h = box.clientHeight;
+    if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    const g = cv.getContext("2d");
+    g.clearRect(0, 0, w, h);
+    if (!points || !points.length) return;
+    const vis = p => p && p[2] >= 0.5;
+    g.strokeStyle = "rgba(41,184,229,.95)";
+    g.lineWidth = 3; g.lineCap = "round";
+    (edges || []).forEach(([a, b]) => {
+      if (!vis(points[a]) || !vis(points[b])) return;
+      g.beginPath();
+      g.moveTo(points[a][0] * w, points[a][1] * h);
+      g.lineTo(points[b][0] * w, points[b][1] * h);
+      g.stroke();
+    });
+    points.forEach(p => {
+      if (!vis(p)) return;
+      g.beginPath(); g.arc(p[0] * w, p[1] * h, 4, 0, Math.PI * 2);
+      g.fillStyle = "#fff"; g.fill();
+      g.lineWidth = 2; g.strokeStyle = "rgba(15,147,192,.9)"; g.stroke();
+    });
+  }
+
+  async function probeBody() {
+    if (!cam.videoWidth) return false;
+    probeCtx.drawImage(cam, 0, 0, PROBE_W, PROBE_H);
+    const blob = await new Promise(r => probeCanvas.toBlob(r, "image/jpeg", 0.6));
+    const fd = new FormData();
+    fd.append("uploadFile", blob, "probe.jpg");
+    const j = await (await fetch("/custom/body?kind=" + FEAT_KIND,
+                                 { method: "POST", body: fd })).json();
+    if (j.device) sysEl.exec.textContent = j.device;
+    if (j.result !== "ok") { drawBody(null); return false; }
+    drawBody(j.data.points, j.data.edges);
+    return !!j.data.found;
   }
   /* MediaPipe 손 골격 연결 (손목-엄지-검지-중지-약지-새끼) */
   const HAND_LINKS = [
@@ -1174,6 +1260,40 @@
   probeCanvas.width = PROBE_W; probeCanvas.height = PROBE_H;
   const probeCtx = probeCanvas.getContext("2d", { willReadFrequently: true });
 
+  /* 얼굴선(윤곽·눈·눈썹·입)을 그린다 */
+  function drawFace(lines) {
+    const cv = $("overlay"), box = $("cambox");
+    const w = box.clientWidth, h = box.clientHeight;
+    if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    const g = cv.getContext("2d");
+    g.clearRect(0, 0, w, h);
+    if (!lines || !lines.length) return;
+    g.strokeStyle = "rgba(41,184,229,.95)";
+    g.lineWidth = 2; g.lineJoin = "round";
+    lines.forEach(pts => {
+      if (!pts || pts.length < 2) return;
+      g.beginPath();
+      pts.forEach((p, i) => {
+        const x = p[0] * w, y = p[1] * h;
+        i ? g.lineTo(x, y) : g.moveTo(x, y);
+      });
+      g.stroke();
+    });
+  }
+
+  async function probeFace() {
+    if (!cam.videoWidth) return false;
+    probeCtx.drawImage(cam, 0, 0, PROBE_W, PROBE_H);
+    const blob = await new Promise(r => probeCanvas.toBlob(r, "image/jpeg", 0.6));
+    const fd = new FormData();
+    fd.append("uploadFile", blob, "probe.jpg");
+    const j = await (await fetch("/custom/face", { method: "POST", body: fd })).json();
+    if (j.device) sysEl.exec.textContent = j.device;
+    if (j.result !== "ok") { drawFace(null); return false; }
+    drawFace(j.data.lines);
+    return !!j.data.found;
+  }
+
   async function probeHand() {
     if (!cam.videoWidth) return false;
     probeCtx.drawImage(cam, 0, 0, PROBE_W, PROBE_H);
@@ -1181,6 +1301,7 @@
     const fd = new FormData();
     fd.append("uploadFile", blob, "probe.jpg");
     const j = await (await fetch("/custom/pose", { method: "POST", body: fd })).json();
+    if (j.device) sysEl.exec.textContent = j.device;
     if (j.result !== "ok") { drawHand(null); return false; }
     drawHand(j.data.points);
     return !!j.data.found;
@@ -1192,23 +1313,84 @@
     if (poseWatchOn) return;
     poseWatchOn = true;
     $("cambox").classList.add("poseOn");
-    while (poseWatchOn && FEAT_KIND === "pose") {
+    while (poseWatchOn && SKELETON.includes(FEAT_KIND)) {
       const t0 = performance.now();
       if (stream && !holding && !busy) {
-        try { poseBadge(await probeHand()); } catch (e) { poseBadge(false); }
+        try { poseBadge(await probeNow()); } catch (e) { poseBadge(false); }
       }
       const spent = performance.now() - t0;
       poseFps = poseFps ? poseFps * 0.8 + (1000 / Math.max(spent, 1)) * 0.2
                         : 1000 / Math.max(spent, 1);
       sysEl.last.textContent = Math.round(spent) + " ms";
-      sysEl.exec.textContent = Math.round(poseFps) + " fps";
-      await new Promise(r => setTimeout(r, Math.max(0, POSE_TARGET_MS - spent)));
+      sysEl.fpsBox.style.display = "";
+      sysEl.fps.textContent = Math.round(poseFps);
+      const target = isBody() ? 150 : POSE_TARGET_MS;   // 몸 인식은 CPU라 더 여유를 둔다
+      await new Promise(r => setTimeout(r, Math.max(0, target - spent)));
     }
     poseWatchOn = false;
+    poseFps = 0;
+    sysEl.fpsBox.style.display = "none";
+    sysEl.fps.textContent = "--";
     drawHand(null);
     $("cambox").classList.remove("poseOn", "handOk");
   }
   function poseWatchStop() { poseWatchOn = false; }
+
+  /* ---------------- 문항 접기 ----------------
+     오른쪽이 길어져 스크롤이 많아진다. 3~7번은 접을 수 있게 하고
+     마지막 상태를 기억한다. (1·2번은 항상 열려 있어야 흐름이 끊기지 않는다) */
+  const FOLD_KEY = "vapiTrainFold";
+  const FOLD_DEFAULT_CLOSED = [5, 6, 7];       // 처음에는 뒤쪽 문항을 접어 둔다
+  const SECTS = {};
+
+  (function initFold() {
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem(FOLD_KEY) || "{}"); } catch (e) {}
+
+    document.querySelectorAll(".sect").forEach(sect => {
+      const head = sect.querySelector(".head");
+      const numEl = sect.querySelector(".qnum");
+      if (!head || !numEl) return;
+      const n = parseInt(numEl.textContent, 10);
+      if (!(n >= 3)) return;
+      SECTS[n] = sect;
+
+      /* 머리 아래 내용을 한 덩어리로 묶어야 통째로 접힌다 */
+      const body = document.createElement("div");
+      body.className = "sbody";
+      while (head.nextSibling) body.appendChild(head.nextSibling);
+      sect.appendChild(body);
+
+      const btn = document.createElement("button");
+      btn.className = "fold";
+      btn.type = "button";
+      btn.innerHTML = "&#9660;";
+      btn.setAttribute("aria-label", "toggle");
+      head.insertBefore(btn, head.firstChild);
+
+      const closed = (saved[n] !== undefined) ? saved[n] : FOLD_DEFAULT_CLOSED.includes(n);
+      sect.classList.toggle("closed", !!closed);
+
+      const toggle = () => {
+        sect.classList.toggle("closed");
+        try {
+          const cur = JSON.parse(localStorage.getItem(FOLD_KEY) || "{}");
+          cur[n] = sect.classList.contains("closed");
+          localStorage.setItem(FOLD_KEY, JSON.stringify(cur));
+        } catch (e) {}
+      };
+      btn.addEventListener("click", toggle);
+      /* 제목을 눌러도 접힌다. 오른쪽 버튼들은 그대로 동작해야 한다. */
+      const q = head.querySelector(".q");
+      if (q) q.addEventListener("click", toggle);
+    });
+  })();
+
+  /* 결과가 생겼는데 접혀 있으면 저절로 펼친다 */
+  function openSect(n) {
+    const el = SECTS[n];
+    if (el) el.classList.remove("closed");
+  }
 
   /* ---------------- 그래프 그리기 ---------------- */
   const CLS_COLORS = ["#2b4bd8", "#d94141", "#2fa35c", "#d97b2b", "#7b3fbf",
@@ -1455,6 +1637,7 @@
         VX = tf.tensor2d(vaX, [vaX.length, dim]);
         VY = tf.oneHot(tf.tensor1d(vaY, "int32"), useable.length);
       }
+      openSect(3);
       $("trainCharts").style.display = "flex";
       drawMap(useable);                              // 특징 지도는 데이터로 바로 그린다
       await model.fit(X, Y, {
@@ -1517,6 +1700,7 @@
       } catch (e) { /* 기록 실패는 학습에 지장 없다 */ }
 
       bar(1); log(t("logDone"));
+      openSect(4);
       $("pred").innerHTML = '<div class="hint">' + t("q4ready") + '</div>';
       $("testOnce").disabled = $("testLive").disabled = $("biasBtn").disabled = false;
       $("saveBtn").disabled = $("downloadBtn").disabled = false;
@@ -1829,8 +2013,11 @@
     const html = (id, v) => { const el = $(id); if (el) el.innerHTML = v; };
     document.title = t("titleTag");
     set("txtTitle", t("title")); set("txtEyebrow", t("eyebrow"));
-    set("txtHomeLink", t("homeLink"));
+    const hl = $("homeLink");
+    if (hl) { hl.title = t("homeLink"); hl.setAttribute("aria-label", t("homeLink")); }
     set("txtModeImage", t("modeImage")); set("txtModePose", t("modePose"));
+    set("txtModeFace", t("modeFace"));
+    set("txtModeUp", t("modeUp")); set("txtModeBody", t("modeBody"));
     set("txtHoldout", t("holdout")); set("txtQ6", t("q6")); set("txtQ7", t("q7"));
     set("txtQ7Hint", t("q7hint")); set("txtBias", t("bias")); set("txtBiasHint", t("biasHint"));
     set("txtBias1", t("bias1")); set("txtBias2", t("bias2"));
@@ -1864,8 +2051,8 @@
   /* ---------------- 시작 ---------------- */
   if (restoreDraft()) { renderClasses(); log(t("restored")); }
   else { addClass(); addClass(); }
-  if (FEAT_KIND === "pose") {
-    $("txtQ2Guide").innerHTML = t("poseHint");
+  if (SKELETON.includes(FEAT_KIND)) {
+    $("txtQ2Guide").innerHTML = modeHint(FEAT_KIND);
     poseWatch();
   }
   </script>
