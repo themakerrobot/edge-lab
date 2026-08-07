@@ -580,6 +580,42 @@ async def monitor():
     return {"devices": core.available_devices}
 
 
+# 어떤 버전으로 돌고 있는지 — 문제 생겼을 때 "언제부터" 를 찾는 근거
+KEY_PACKAGES = ["openvino", "openvino-genai", "onnxruntime", "ultralytics",
+                "mediapipe", "opencv-python", "numpy", "easyocr", "fastapi",
+                "sounddevice", "huggingface-hub"]
+
+
+@app.get("/system/packages", tags=["system"], summary="설치된 패키지 버전")
+async def system_packages():
+    import platform
+    try:
+        from importlib.metadata import version, PackageNotFoundError
+    except ImportError:                       # 아주 오래된 파이썬 대비
+        return {"result": "fail", "data": "버전을 읽을 수 없어요."}
+
+    pkgs = {}
+    for name in KEY_PACKAGES:
+        try:
+            pkgs[name] = version(name)
+        except PackageNotFoundError:
+            pkgs[name] = None                 # 안 깔림
+        except Exception:
+            pkgs[name] = "?"
+
+    snap = os.path.join("models", "installed-packages.txt")
+    saved = ""
+    if os.path.exists(snap):
+        try:
+            with open(snap, encoding="utf-8", errors="replace") as f:
+                saved = f.readline().strip()  # 설치 시각이 적힌 첫 줄
+        except Exception:
+            pass
+    return {"result": "ok",
+            "data": {"python": platform.python_version(), "packages": pkgs,
+                     "installed_at": saved, "snapshot": os.path.exists(snap)}}
+
+
 @app.get("/system")
 async def system():
     """온디바이스 상태 요약 (프론트 상단 HUD용)."""

@@ -192,6 +192,18 @@
           수업 시작 5분 전에 한 번 눌러 주세요. 모델·디바이스·저장 폴더·웹캠을 한꺼번에 확인합니다.
         </div>
         <div class="checks" id="checks"><div class="empty" id="txtNotRun">아직 점검하지 않았어요.</div></div>
+        <div style="margin-top:12px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <b style="font-size:.9rem;" id="txtVerTitle">설치 버전</b>
+            <button class="btn" id="verCopy" style="margin-left:auto;padding:4px 9px;font-size:.82rem;">
+              <span id="txtVerCopy">복사</span></button>
+          </div>
+          <div class="hint" id="txtVerHint" style="margin:4px 0 6px;">
+            문제가 생겼을 때 예전과 무엇이 달라졌는지 비교하는 데 씁니다.
+          </div>
+          <div id="verBox" style="font-family:Menlo,Consolas,ui-monospace,monospace;
+               font-size:.8rem;color:var(--ink-2);white-space:pre-wrap;line-height:1.6;">—</div>
+        </div>
         <div class="camwrap" id="camwrap" style="display:none;">
           <video id="cam" autoplay muted playsinline></video>
         </div>
@@ -276,6 +288,9 @@
       pgName: { index: "써보기", blocks: "블록 코딩", train: "가르치기",
                 code: "파이썬", options: "설정 · 점검", etc: "기타" },
       notRun: "아직 점검하지 않았어요.", none: "아직 없어요.",
+      verTitle: "설치 버전", verCopy: "복사", verCopied: "복사했어요",
+      verHint: "문제가 생겼을 때 예전과 무엇이 달라졌는지 비교하는 데 씁니다.",
+      verMissing: "설치 기록이 없어요 (setup 을 다시 돌리면 남습니다)",
       colTitle: "이름", colInfo: "내용", colWhen: "만든 때", colAct: "",
       kBackbone: "특징 추출 모델", kPose: "손 인식(MediaPipe)", kStorage: "저장 현황",
       kWrite: "쓰기 권한", kCam: "웹캠",
@@ -315,6 +330,9 @@
       pgName: { index: "Use", blocks: "Blocks", train: "Train",
                 code: "Python", options: "Settings", etc: "Other" },
       notRun: "Not checked yet.", none: "Nothing yet.",
+      verTitle: "Installed versions", verCopy: "Copy", verCopied: "Copied",
+      verHint: "Use this to compare what changed when something breaks.",
+      verMissing: "No install record (run setup again to create one)",
       colTitle: "Name", colInfo: "Contents", colWhen: "Created", colAct: "",
       kBackbone: "Feature model", kPose: "Hand tracking (MediaPipe)", kStorage: "Storage",
       kWrite: "Write access", kCam: "Webcam",
@@ -334,6 +352,28 @@
   const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
   /* ---------------- 상태바 ---------------- */
+  /* ---------------- 설치 버전 ---------------- */
+  let VER_TEXT = "";
+  (async function loadVersions() {
+    try {
+      const j = await (await fetch("/system/packages")).json();
+      if (j.result !== "ok") return;
+      const d = j.data;
+      const lines = ["python " + d.python];
+      Object.entries(d.packages).forEach(([k, v]) => lines.push(k + " " + (v || "-")));
+      VER_TEXT = (d.installed_at ? d.installed_at + "\n" : "") + lines.join("\n");
+      $("verBox").textContent = lines.join(" · ")
+        + (d.snapshot ? "" : "\n" + t("verMissing"));
+    } catch (e) {}
+  })();
+  $("verCopy").addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(VER_TEXT || $("verBox").textContent);
+      const el = $("txtVerCopy"); el.textContent = t("verCopied");
+      setTimeout(() => { el.textContent = t("verCopy"); }, 1500);
+    } catch (e) {}
+  });
+
   (async function initSystem() {
     try {
       const info = await (await fetch("/system")).json();
@@ -610,6 +650,8 @@
     set("txtQ3", t("q3")); set("txtPrintReport", t("printReport"));
     set("txtQ4", t("q4")); set("txtStatReset", t("statReset"));
     set("txtNotRun", t("notRun"));
+    set("txtVerTitle", t("verTitle")); set("txtVerCopy", t("verCopy"));
+    set("txtVerHint", t("verHint"));
   })();
   $("langButton").addEventListener("click", () => {
     try { localStorage.setItem("vapiLang", LANG === "ko" ? "en" : "ko"); } catch (e) {}
