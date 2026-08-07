@@ -452,33 +452,6 @@
       #stampMark.show { animation: none; transform: rotate(-12deg) scale(1); opacity: .88; }
     }
 
-    /* 미션 모드 */
-    .mission-label {
-      font-family: "Gowun Batang", serif; font-weight: 700; font-size: .9rem;
-      color: #fff; background: var(--pen-red);
-      padding: 2px 10px; border-radius: 4px; white-space: nowrap;
-    }
-    .mission-text { font-weight: 600; word-break: keep-all; }
-    #missionProgress {
-      margin-left: auto; font-size: .95rem; letter-spacing: .18em;
-      color: var(--ink-2); white-space: nowrap;
-    }
-    #missionProgress .done { color: var(--pen-red); }
-    #stampMark.complete { font-size: .82rem; line-height: 1.2; text-align: center; padding: 6px; }
-    .lesson-index { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 16px; }
-    .lesson-index a.lesson-card {
-      display: flex; align-items: baseline; gap: 12px;
-      padding: 12px 16px; margin-bottom: 10px;
-      background: var(--box); border: 1.5px solid var(--line); border-radius: var(--r);
-      color: var(--ink); text-decoration: none;
-    }
-    .lesson-index a.lesson-card:hover { border-color: var(--pen-blue); }
-    .lesson-card .no {
-      font-family: "Gowun Batang", serif; font-weight: 700; color: var(--pen-blue-d);
-      flex: 0 0 52px;
-    }
-    .lesson-card .t { font-weight: 700; }
-    .lesson-card .m { color: var(--ink-2); font-size: .85rem; margin-left: auto; text-align: right; }
 
     /* 풀이 (쉬운 결과) */
     .easy-answer {
@@ -635,7 +608,6 @@
         border:1.5px solid var(--line-d);color:var(--ink);font-weight:600;
         padding:8px 14px;border-radius:var(--r);text-decoration:none;font-size:.95rem;">
         &#9679; <span id="txtTrainLink">가르치기</span></a>
-      <select id="lessonSelect" title="차시 선택"></select>
       <a href="/options" id="optionsLink" title="설정 · 점검" aria-label="설정 · 점검" style="
         display:inline-flex;align-items:center;justify-content:center;background:#fff;
         border:1.5px solid var(--line-d);color:var(--ink-2);
@@ -665,10 +637,6 @@
     <div class="q" id="q1">
       <span class="qnum">1</span>
       <span class="qtext" id="txtQ1">모델을 골라요</span>
-    </div>
-    <div class="q" id="missionBox" style="display:none;">
-      <span class="mission-label" id="txtMissionLabel">미션</span>
-      <span class="mission-text" id="missionText"></span>
     </div>
     <div class="field" id="modelField">
       <label class="field-label" for="modelSelect" id="txtModelLabel">모델</label>
@@ -754,7 +722,6 @@
       <div class="panel-head">
         <span class="qnum">3</span>
         <span class="qtext" id="txtQ3">결과를 확인해요</span>
-        <span id="missionProgress" style="display:none;"></span>
       </div>
       <div class="panel-body">
         <div class="result-frame">
@@ -824,7 +791,7 @@
         s5b: "준비가 끝나면 아래 [시작하기] 버튼이 켜져요. 먼저 웹캠이 잘 보이는지 확인해 두면 좋아요.",
         customGroup: "내가 가르친 AI", customTip: "내가 직접 학습시킨 모델로 분류합니다.",
         q1: "모델을 골라요", q2: "이미지를 넣고 실행해요", q3: "결과를 확인해요",
-        missionLabel: "미션", modelLabel: "모델", guideLabel: "가이드", promptLabel: "프롬프트",
+        modelLabel: "모델", guideLabel: "가이드", promptLabel: "프롬프트",
         tabUpload: "이미지", tabWebcam: "웹캠", tabSketch: "스케치북",
         live: "라이브", run: "실행", running: "실행 중...", liveRun: "라이브 중",
         inputHead: "입력 이미지",
@@ -834,10 +801,6 @@
         saveResult: "결과 이미지 저장", clearHistory: "기록 지우기",
         historyTitle: "실행 기록 — 눌러서 다시 보기",
         details: "상세보기 — 결과 데이터(JSON)", copy: "복사", copied: "복사됨!",
-        freeMode: "자유 모드", lessonListTitle: "차시 목록",
-        lessonOpt: (no, t) => `${no}차시 · ${t}`, lessonNo: no => `${no}차시`,
-        lessonEyebrow: no => `The Maker · ${no}차시`,
-        challenge: "도전", complete: "완료!",
         promptQ: "이미지를 설명해주세요.", promptVLM: "이미지를 30자 이내로 설명해주세요.",
         liveOkTip: "웹캠으로 계속 인식합니다 (체크하면 웹캠 탭으로 전환)",
         liveNoTip: "이 모델은 응답이 길어 라이브를 지원하지 않아요 (얼굴·사물·포즈 계열에서 사용)",
@@ -865,7 +828,7 @@
         s5b: "The [Start] button turns on when everything is ready. It is a good moment to check that your webcam works.",
         customGroup: "My own AI", customTip: "Classifies with a model you trained yourself.",
         q1: "Pick a model", q2: "Add an image and run", q3: "Check the result",
-        missionLabel: "Mission", modelLabel: "Model", guideLabel: "Guide", promptLabel: "Prompt",
+        modelLabel: "Model", guideLabel: "Guide", promptLabel: "Prompt",
         tabUpload: "Image", tabWebcam: "Webcam", tabSketch: "Sketchbook",
         live: "Live", run: "Run", running: "Running...", liveRun: "Live",
         inputHead: "Input image",
@@ -875,10 +838,6 @@
         saveResult: "Save result image", clearHistory: "Clear history",
         historyTitle: "History — click to view again",
         details: "Details — result data (JSON)", copy: "Copy", copied: "Copied!",
-        freeMode: "Free mode", lessonListTitle: "Lessons",
-        lessonOpt: (no, t) => `Lesson ${no} · ${t}`, lessonNo: no => `Lesson ${no}`,
-        lessonEyebrow: no => `The Maker · Lesson ${no}`,
-        challenge: "Tries", complete: "Done!",
         promptQ: "Describe this image.", promptVLM: "Describe this image in one short sentence.",
         liveOkTip: "Keeps detecting from the webcam (checking switches to the webcam tab)",
         liveNoTip: "This model is too slow for live mode (use face / object / pose models)",
@@ -1093,55 +1052,6 @@
       }
     }
 
-    /* ----- 미션 모드 (차시) : ?lesson=슬러그, ?lesson=list 는 목록 ----- */
-    const LESSON_LIST = {
-      "rps":        { no:1,  title:"AI와 가위바위보",     models:["가위바위보 인식"], tabs:["webcam"], goal:3,
-                      mission:"웹캠에 손을 보여 주고, AI가 가위·바위·보를 맞히는지 3번 확인해 보세요.",
-                      title_en:"Rock, Paper, Scissors vs AI", mission_en:"Show your hand to the webcam and see if the AI gets rock, paper or scissors right, 3 times." },
-      "emotion":    { no:2,  title:"표정을 읽는 AI",      models:["얼굴 감정 분석"], tabs:["webcam"], goal:5,
-                      mission:"서로 다른 표정을 5가지 지어 보고, AI가 읽은 감정을 학습지에 적어 보세요.",
-                      title_en:"The AI That Reads Faces", mission_en:"Make 5 different faces and write down the emotion the AI reads for each one." },
-      "pose":       { no:3,  title:"몸으로 말해요",       models:["사람 포즈 인식"], tabs:["webcam","upload"], goal:3,
-                      mission:"재미있는 동작을 3가지 해 보고, AI가 몸의 점 17개를 어디에 찍는지 관찰해 보세요.",
-                      title_en:"Talk With Your Body", mission_en:"Strike 3 fun poses and watch where the AI places the 17 body points." },
-      "object-hunt":{ no:4,  title:"AI 보물찾기",         models:["사물 인식"], tabs:["webcam","upload"], goal:5,
-                      mission:"주변에서 물건을 가져와 AI가 이름을 맞히는지 5개 확인해 보세요. AI가 모르는 물건도 찾아보세요!",
-                      title_en:"AI Treasure Hunt", mission_en:"Bring 5 objects and check if the AI names them right. Try to find one it doesn't know!" },
-      "ocr":        { no:5,  title:"글자를 읽는 AI",      models:["글자 인식"], tabs:["webcam","upload","sketch"], goal:3,
-                      mission:"또박또박 쓴 글씨와 흘려 쓴 글씨를 보여 주고, AI가 어떤 글씨를 잘 읽는지 비교해 보세요.",
-                      title_en:"The AI That Reads Writing", mission_en:"Show neat writing and messy writing, and compare which one the AI reads better." },
-      "number":     { no:6,  title:"수식을 읽는 AI",      models:["숫자 인식"], tabs:["sketch","webcam"], goal:3,
-                      mission:"스케치북에 숫자와 연산 기호를 써서, AI가 잘 읽는지 3번 시험해 보세요.",
-                      title_en:"The AI That Reads Math", mission_en:"Write numbers and math symbols in the sketchbook and test the AI 3 times." },
-      "transform":  { no:7,  title:"그림을 바꾸는 AI",    models:["이미지 변환(만화)","이미지 변환(감성)","배경 제거"], tabs:["upload","webcam"], goal:3,
-                      mission:"같은 사진을 세 가지 방법으로 바꿔 보고, 어떤 변환이 가장 마음에 드는지 골라 보세요.",
-                      title_en:"The AI That Changes Pictures", mission_en:"Change the same photo in three different ways and pick your favorite." },
-      "sketch-quiz":{ no:8,  title:"내 그림을 맞혀 봐",   models:["사물 인식","이미지 분류"], tabs:["sketch"], goal:3,
-                      mission:"스케치북에 그림을 그리고, AI가 무엇인지 맞히는지 3번 도전해 보세요.",
-                      title_en:"Guess My Drawing", mission_en:"Draw something in the sketchbook and challenge the AI to guess it, 3 times." },
-      "age":        { no:9,  title:"AI의 눈은 정확할까?", models:["얼굴 나이/성별 분석"], tabs:["webcam"], goal:3,
-                      mission:"얼굴 각도와 밝기를 바꿔 가며 3번 실행해 보세요. 결과가 달라지나요? (결과는 재미로만 보고, 친구의 외모 이야기는 하지 않아요.)",
-                      title_en:"Are AI Eyes Accurate?", mission_en:"Run it 3 times while changing the angle and lighting. Do the results change? (Just for fun — no comments about anyone's looks.)" },
-      "mask":       { no:10, title:"마스크와 AI",         models:["마스크 인식","얼굴 감정 분석"], tabs:["webcam"], goal:2,
-                      mission:"마스크를 쓰고 한 번, 벗고 한 번 실행해 보세요. 마스크를 쓰면 감정 인식이 잘 될까요?",
-                      title_en:"Masks and AI", mission_en:"Run it once with a mask on and once with it off. Does emotion detection still work with a mask?" },
-      "caption-vs": { no:11, title:"두 AI의 대결",        models:["이미지 태그","이미지 설명"], tabs:["upload","webcam"], goal:2,
-                      mission:"같은 사진을 두 모델에 각각 넣어 보고, 어느 쪽 설명이 더 좋은지 비교해 보세요.",
-                      title_en:"Battle of Two AIs", mission_en:"Put the same photo into both models and compare which description is better." },
-      "detective":  { no:12, title:"사진 탐정",           models:["이미지 장소 인식","이미지 시간 인식","이미지 날씨 인식"], tabs:["upload","webcam"], goal:3,
-                      mission:"사진 한 장으로 장소·시간·날씨를 모두 추리해 보세요. AI는 무엇을 보고 알아냈을까요?",
-                      title_en:"Photo Detective", mission_en:"Use one photo to deduce the place, time and weather. What clues did the AI use?" },
-      "qr":         { no:13, title:"비밀 메시지 QR",      models:["QR코드 인식"], tabs:["upload","webcam"], goal:2,
-                      mission:"QR코드를 보여 주고, AI가 숨은 내용을 읽어 내는지 확인해 보세요.",
-                      title_en:"Secret Message QR", mission_en:"Show a QR code and check if the AI can read the hidden message." }
-    };
-    const lTitle = l => LANG === "en" ? (l.title_en || l.title) : l.title;
-    const lMission = l => LANG === "en" ? (l.mission_en || l.mission) : l.mission;
-
-    const _lessonSlug = new URLSearchParams(location.search).get('lesson');
-    const LESSON = (_lessonSlug && LESSON_LIST[_lessonSlug]) ? LESSON_LIST[_lessonSlug] : null;
-    const LESSON_INDEX_MODE = _lessonSlug === 'list';
-    let missionCount = 0;
 
     apiDocLink.href = '/docs';
 
@@ -1155,7 +1065,6 @@
       if (ol) { ol.title = T("optionsTip"); ol.setAttribute("aria-label", T("optionsTip")); }
       set("langButton", T("langBtn"));
       set("txtQ1", T("q1")); set("txtQ2", T("q2")); set("txtQ3", T("q3"));
-      set("txtMissionLabel", T("missionLabel"));
       set("txtModelLabel", T("modelLabel")); set("txtGuideLabel", T("guideLabel"));
       set("txtPromptLabel", T("promptLabel"));
       set("txtTabUpload", T("tabUpload")); set("txtTabWebcam", T("tabWebcam"));
@@ -1191,19 +1100,17 @@
     });
 
     for (let key in SERVICE_LIST) {
-      if (LESSON && !LESSON.models.includes(key)) continue;
       const option = document.createElement('option');
       option.value = key;                 // 내부 키는 한국어 이름 그대로 (API 매핑 유지)
       option.text = mName(key);
       modelSelect.appendChild(option);
     }
-    modelSelect.value = LESSON ? LESSON.models[0] : "이미지 설명";
+    modelSelect.value = "이미지 설명";
     guide.value = mTip(modelSelect.value);
     modelSelect.dispatchEvent(new Event('change')); // 프롬프트 기본값 반영
 
     /* ----- 내가 만든 AI (train.html 에서 학습한 모델) ----- */
     async function loadCustomModels() {
-      if (LESSON) return;                    // 차시 모드에서는 지정 모델만 사용
       let list = [];
       try {
         const r = await fetch(HOST + '/custom/models');
@@ -1241,84 +1148,6 @@
         this.classList.add('active');
       });
     });
-
-    /* ----- 차시 선택 (헤더) ----- */
-    const lessonSelect = document.getElementById('lessonSelect');
-    (function initLessonSelect() {
-      const optFree = document.createElement('option');
-      optFree.value = ''; optFree.text = T("freeMode");
-      lessonSelect.appendChild(optFree);
-      for (const [slug, l] of Object.entries(LESSON_LIST)) {
-        const o = document.createElement('option');
-        o.value = slug;
-        o.text = UI[LANG].lessonOpt(l.no, lTitle(l));
-        lessonSelect.appendChild(o);
-      }
-      lessonSelect.value = LESSON ? _lessonSlug : '';
-      lessonSelect.addEventListener('change', function() {
-        location.search = this.value ? ('?lesson=' + this.value) : '';
-      });
-    })();
-
-    /* ----- 미션 모드 초기화 ----- */
-    function updateProgress() {
-      const el = document.getElementById('missionProgress');
-      if (!LESSON) return;
-      el.style.display = 'inline';
-      const done = Math.min(missionCount, LESSON.goal);
-      el.innerHTML = T("challenge") + ' <span class="done">' + '●'.repeat(done) + '</span>' + '○'.repeat(LESSON.goal - done)
-        + (missionCount >= LESSON.goal ? ' <span class="done">' + T("complete") + '</span>' : '');
-      if (missionCount >= LESSON.goal) {
-        stampMark.textContent = T("stampDone");
-        stampMark.classList.add('complete');
-      }
-    }
-
-    if (LESSON) {
-      // 머리표: 차시 제목
-      document.querySelector('.h-subject .eyebrow').innerText = UI[LANG].lessonEyebrow(LESSON.no);
-      document.querySelector('.h-subject .title').innerText = lTitle(LESSON);
-      // 문항1 → 미션 지문
-      document.getElementById('q1').style.display = 'none';
-      document.getElementById('missionBox').style.display = 'flex';
-      document.getElementById('missionText').innerText = lMission(LESSON);
-      // 학생에게 불필요한 요소 숨김
-      document.getElementById('apiDocLink').style.display = 'none';
-      if (LESSON.models.length === 1) document.getElementById('modelField').style.display = 'none';
-      // 탭 잠금
-      tabButtons.forEach(b => {
-        if (!LESSON.tabs.includes(b.dataset.tab)) b.style.display = 'none';
-      });
-      if (LESSON.tabs.length <= 1) document.querySelector('.tabs').style.display = 'none';
-      if (LESSON.tabs.length === 0) {
-        // 이미지 입력이 필요 없는 차시: 입력 패널 숨김
-        document.querySelector('.main-container .panel').style.display = 'none';
-      } else if (!LESSON.tabs.includes('upload')) {
-        // 기본 활성 탭(upload)이 허용되지 않으면 첫 허용 탭으로 전환
-        const first = document.querySelector('.tabButton[data-tab="' + LESSON.tabs[0] + '"]');
-        if (first) first.click();
-      }
-      updateProgress();
-    }
-
-    /* ----- 차시 목록 (?lesson=list) ----- */
-    if (LESSON_INDEX_MODE) {
-      document.querySelector('.subheader').style.display = 'none';
-      document.querySelector('.tab-prompt-row').style.display = 'none';
-      document.querySelector('.main-container').style.display = 'none';
-      document.querySelector('.h-subject .title').innerText = T('lessonListTitle');
-      const idx = document.createElement('div');
-      idx.className = 'lesson-index';
-      idx.innerHTML = Object.entries(LESSON_LIST).map(([slug, l]) =>
-        `<a class="lesson-card" href="?lesson=${slug}">
-           <span class="no">${UI[LANG].lessonNo(l.no)}</span>
-           <span class="t">${lTitle(l)}</span>
-           <span class="m">${l.models.map(mName).join(', ')}</span>
-         </a>`
-      ).join('');
-      document.body.appendChild(idx);
-      document.body.style.overflow = 'auto';
-    }
 
     const fileInput = document.getElementById('fileInput');
     const uploadPlaceholder = document.getElementById('uploadPlaceholder');
@@ -1831,7 +1660,6 @@
         alert("Error: " + res.error);
       } else if (res.result === 'ok') {
         showStamp();
-        if (LESSON) { missionCount++; updateProgress(); }
       }
       showEasy(res);
       sysReport(res, 0);
