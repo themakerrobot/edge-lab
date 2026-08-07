@@ -295,29 +295,6 @@ class FaceEngine:
 
 
 # ---------------------------------------------------------------- 변환 계열 (gan)
-class AnimeGAN:
-    """AnimeGANv3 onnx — NHWC float32 [-1,1], HW는 8의 배수."""
-
-    def __init__(self, onnx_path, device):
-        self.compiled = core.compile_model(core.read_model(onnx_path), device)
-        self.lock = threading.Lock()
-
-    def predict(self, bgr, max_side=960):
-        h, w = bgr.shape[:2]
-        scale = min(1.0, max_side / max(h, w))
-        nh, nw = max(8, int(h * scale) // 8 * 8), max(8, int(w * scale) // 8 * 8)
-        rgb = cv2.cvtColor(cv2.resize(bgr, (nw, nh)), cv2.COLOR_BGR2RGB)
-        blob = (rgb.astype(np.float32) / 127.5 - 1.0)[None]
-        with self.lock:
-            out = list(self.compiled({0: blob}).values())[0]
-        out = np.squeeze(out)
-        if out.ndim == 3 and out.shape[0] == 3:  # NCHW 방어
-            out = out.transpose(1, 2, 0)
-        out = ((out + 1.0) * 127.5).clip(0, 255).astype(np.uint8)
-        out = cv2.cvtColor(out, cv2.COLOR_RGB2BGR)
-        return cv2.resize(out, (w, h))
-
-
 class U2Net:
     """u2net onnx — 배경 제거. 입력 [1,3,320,320] RGB normalize."""
 
@@ -373,8 +350,6 @@ class SuperRes:
 
 class GanEngine:
     def __init__(self):
-        self.cartoon = AnimeGAN(MODELS / "gan/AnimeGANv3_Hayao_36.onnx", DEV_GAN)
-        self.style = AnimeGAN(MODELS / "gan/AnimeGANv3_Shinkai_37.onnx", DEV_GAN)
         self.bgremove = U2Net(DEV_GAN)
         self.sr = SuperRes(DEV_GAN)
 
@@ -522,8 +497,7 @@ class Engines:
                               self.face.emotion.predict(face),
                               self.face.head_pose.predict(face),
                               self.face.mask.predict(face))),
-            ("gan", lambda: (self.gan.cartoon.predict(face), self.gan.style.predict(face),
-                             self.gan.bgremove.predict(face), self.gan.sr.predict(face))),
+            ("gan", lambda: (self.gan.bgremove.predict(face), self.gan.sr.predict(face))),
             ("vlm", lambda: self.vlm.generate(face, "hi", 1)),
         ]
         for name, fn in steps:

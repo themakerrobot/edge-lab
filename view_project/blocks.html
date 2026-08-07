@@ -320,7 +320,7 @@
       o_fire: "불", o_ball: "공", o_number: "숫자", o_fall: "낙상", o_helmet: "안전모", o_box: "박스",
       o_emotion: "감정", o_age: "나이", o_gender: "성별", o_dir: "방향",
       o_place: "장소", o_time: "시간", o_weather: "날씨", o_tag: "태그",
-      o_cartoon: "만화", o_sketch: "감성 그림", o_portrait: "배경 제거", o_sr: "화질 개선",
+      o_portrait: "배경 제거", o_sr: "화질 개선",
       o_hand: "손 모양", o_dist: "얼굴 거리",
 
       /* --- 사진 편집 --- */
@@ -499,7 +499,7 @@
       o_fire: "fire", o_ball: "ball", o_number: "numbers", o_fall: "a fall", o_helmet: "helmets", o_box: "boxes",
       o_emotion: "emotion", o_age: "age", o_gender: "gender", o_dir: "direction",
       o_place: "place", o_time: "time of day", o_weather: "weather", o_tag: "tags",
-      o_cartoon: "a cartoon", o_sketch: "a sketch", o_portrait: "no background", o_sr: "higher quality",
+      o_portrait: "no background", o_sr: "higher quality",
       o_hand: "hand gesture", o_dist: "face distance",
       /* --- Photo editing --- */
       cat_edit: "Photo Editing",
@@ -929,7 +929,7 @@
           options: opt(["place","time","weather","tag"]) } ] },
       { type: "ai_transform", message0: t("b_transform"), output: "String", colour: C_VLM,
         args0: [ IMG, { type: "field_dropdown", name: "KIND",
-          options: opt(["cartoon","sketch","portrait","sr"]) } ],
+          options: opt(["portrait","sr"]) } ],
         tooltip: t("b_transform_tip") },
       // 판단 도우미
       { type: "ai_beats", message0: t("b_beats"), output: "Boolean", colour: C_JUDGE,

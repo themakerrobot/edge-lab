@@ -63,10 +63,16 @@ def open_browser():
             try:
                 # 전용 프로필을 쓰면 이미 열려 있는 브라우저 창과 섞이지 않는다.
                 profile = os.path.abspath(os.path.join("models", ".appwin"))
-                subprocess.Popen([exe, f"--app={url}",
-                                  f"--user-data-dir={profile}",
-                                  "--window-size=1400,900",
-                                  "--no-first-run", "--no-default-browser-check"])
+                args = [exe, f"--app={url}",
+                        f"--user-data-dir={profile}",
+                        "--window-size=1400,900",
+                        "--no-first-run", "--no-default-browser-check"]
+                # 화면 확대: VAPI_ZOOM=1.25 처럼 지정하면 처음부터 그 배율로 뜬다.
+                # (미지정 시 브라우저 기본 — Ctrl + '+' 로 맞춘 배율도 프로필에 저장되어 유지된다)
+                zoom = os.environ.get("VAPI_ZOOM", "").strip()
+                if zoom:
+                    args.append(f"--force-device-scale-factor={zoom}")
+                subprocess.Popen(args)
                 print("[browser] 앱 창으로 실행:", os.path.basename(exe))
                 return
             except Exception as ex:
@@ -108,7 +114,7 @@ def build_device_map():
     vlm = {"caption", "caption_place_e", "caption_time_e", "caption_weather_e",
            "caption_question_e", "caption_tag_e", "vlm_inference_e",
            "object_cls_e", "face_attribute"}
-    gan = {"cartoon", "sketch", "portrait", "sr"}
+    gan = {"portrait", "sr"}
     face = {"face_detect_e", "face_analyze_e", "face_analyze", "face_emotion_e",
             "face_age_gender_e", "face_pose_e"}
     # 실측: 각 그룹의 대표 모델에게 직접 물어본다
@@ -131,7 +137,7 @@ def build_device_map():
         DEVICE_OF[k] = "CPU"
 
     print(f"[devices] face={DEVICE_OF.get('face_analyze_e')} "
-          f"gan={DEVICE_OF.get('cartoon')} vlm={DEVICE_OF.get('caption')} "
+          f"gan={DEVICE_OF.get('portrait')} vlm={DEVICE_OF.get('caption')} "
           f"yolo={DEVICE_OF.get('object_search_e')} code=CPU  (런타임 보고값)")
 
 
@@ -484,20 +490,6 @@ def vlm_inference_e(path, prompt: str = "", lang: str = "ko"):
 
 
 # ---------------------------------------------------------------- gan (변환 계열)
-@app.post("/gan/cartoon", tags=["gan"], summary="카툰화 (AnimeGANv3 Hayao)")
-@service("cartoon")
-def gan_cartoon(path):
-    from engines import to_b64_jpg
-    return to_b64_jpg(eng.gan.cartoon.predict(read_bgr(path)))
-
-
-@app.post("/gan/sketch", tags=["gan"], summary="스타일 변환 (AnimeGANv3 Shinkai)")
-@service("sketch")
-def gan_sketch(path):
-    from engines import to_b64_jpg
-    return to_b64_jpg(eng.gan.style.predict(read_bgr(path)))
-
-
 @app.post("/gan/portrait", tags=["gan"], summary="배경 제거 (U2Net)")
 @service("portrait")
 def gan_portrait(path):
@@ -584,7 +576,7 @@ async def system():
         "ready": eng is not None,
         "devices": E.core.available_devices,
         "assign": {"vlm": DEVICE_OF.get("caption", E.DEV_VLM),
-                   "vision": DEVICE_OF.get("cartoon", E.DEV_GAN),
+                   "vision": DEVICE_OF.get("portrait", E.DEV_GAN),
                    "face": DEVICE_OF.get("face_analyze_e", E.DEV_FACE),
                    "code": "CPU"},
         "assign_requested": {"vlm": E.DEV_VLM, "vision": E.DEV_GAN, "face": E.DEV_FACE},
