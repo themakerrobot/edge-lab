@@ -594,6 +594,7 @@
       upHint: "책상에 앉은 채로 해요. 얼굴·어깨·팔 관절 11개만 학습해서 옷 색이나 배경에 흔들리지 않아요.",
       bodyHint: "온몸이 보이도록 뒤로 물러서 주세요. 관절 17개 위치만 학습해요.",
       bodyOk: "자세 인식됨", bodyNo: "사람 없음",
+      bodyPart: "전신이 안 보여요", upPart: "어깨가 안 보여요",
       skippedBody: "자세가 안 잡혀서 %1장은 건너뛰었어요.",
       allSkippedBody: "자세를 못 찾아서 한 장도 넣지 못했어요. 몸이 화면에 다 보이게 서 주세요.",
       faceHint: "얼굴을 화면에 크게 보여 주세요. 입꼬리·눈썹 같은 표정 값 52개만 학습해서 배경·거리에 흔들리지 않아요.",
@@ -685,6 +686,7 @@
       upHint: "You can stay seated. Only 11 joints (face, shoulders, arms) are learned, so clothes and background matter less.",
       bodyHint: "Step back so your whole body is visible. Only the 17 joint positions are learned.",
       bodyOk: "pose detected", bodyNo: "no person",
+      bodyPart: "full body not visible", upPart: "shoulders not visible",
       skippedBody: "Skipped %1 photos with no pose.",
       allSkippedBody: "No pose found, so nothing was added. Make sure your body is fully visible.",
       faceHint: "Show your face clearly. Only 52 expression values (smile, brow raise...) are learned, so distance and background matter less.",
@@ -1175,12 +1177,15 @@
     if (k === "body") return t("bodyHint");
     return t("q2guide");
   }
-  function poseBadge(ok) {
+  function poseBadge(ok, partial) {
     $("cambox").classList.toggle("handOk", !!ok);
     const on = FEAT_KIND === "face" ? t("faceOk") : isBody() ? t("bodyOk") : t("handOk");
     const off = FEAT_KIND === "face" ? t("faceNo") : isBody() ? t("bodyNo") : t("handNo");
-    $("poseBadge").textContent = ok ? on : off;
+    /* 몸 모드: 사람은 잡혔지만 기준 관절이 흐리면 "없음" 대신 이유를 보여준다 */
+    const part = FEAT_KIND === "body" ? t("bodyPart") : t("upPart");
+    $("poseBadge").textContent = ok ? on : (partial && isBody() ? part : off);
   }
+  let bodyPartial = false;                 // 사람은 잡혔지만 기준 관절이 흐린 상태
   const probeNow = () => (FEAT_KIND === "face" ? probeFace()
                         : isBody() ? probeBody() : probeHand());
 
@@ -1221,6 +1226,7 @@
     if (j.device) sysEl.exec.textContent = j.device;
     if (j.result !== "ok") { drawBody(null); return false; }
     drawBody(j.data.points, j.data.edges);
+    bodyPartial = !j.data.found && (j.data.points || []).length > 0;
     return !!j.data.found;
   }
   /* MediaPipe 손 골격 연결 (손목-엄지-검지-중지-약지-새끼) */
@@ -1316,7 +1322,7 @@
     while (poseWatchOn && SKELETON.includes(FEAT_KIND)) {
       const t0 = performance.now();
       if (stream && !holding && !busy) {
-        try { poseBadge(await probeNow()); } catch (e) { poseBadge(false); }
+        try { poseBadge(await probeNow(), bodyPartial); } catch (e) { poseBadge(false); }
       }
       const spent = performance.now() - t0;
       poseFps = poseFps ? poseFps * 0.8 + (1000 / Math.max(spent, 1)) * 0.2
