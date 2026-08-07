@@ -58,7 +58,7 @@ echo.
 echo === [4/8] install packages into pylib ===
 python -m pip install --upgrade pip --quiet
 python -m pip install --target %BUILD%\pylib ^
-    openvino openvino-genai fastapi "uvicorn[standard]" ^
+    "openvino==2026.2.*" "openvino-genai==2026.2.*" fastapi "uvicorn[standard]" ^
     ultralytics opencv-python pillow numpy easyocr python-multipart mediapipe
 if errorlevel 1 (echo [ERROR] package install failed & exit /b 1)
 REM pyzbar is optional (QR works via OpenCV)

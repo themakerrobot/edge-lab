@@ -26,7 +26,7 @@ if ($LASTEXITCODE -ne 0) { throw "venv has no pip - delete venv folder and retry
 & $PY -m pip install --upgrade pip --quiet
 
 Write-Host "=== [2/5] packages ===" -ForegroundColor Cyan
-& $PY -m pip install openvino openvino-genai fastapi "uvicorn[standard]" `
+& $PY -m pip install "openvino==2026.2.*" "openvino-genai==2026.2.*" fastapi "uvicorn[standard]" `
     ultralytics opencv-python pillow numpy easyocr python-multipart huggingface_hub mediapipe
 if ($LASTEXITCODE -ne 0) { throw "package install failed" }
 & $PY -m pip install pyzbar 2>$null | Out-Null   # optional (1D barcodes)
