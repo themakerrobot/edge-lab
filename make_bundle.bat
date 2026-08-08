@@ -92,7 +92,7 @@ if exist launcher.py if exist themaker.ico (
 
 echo.
 echo === [6/8] copy sources and models ===
-for %%F in (main.py engines.py prompts.py mp_routes.py train_routes.py stats_routes.py code_routes.py speech_routes.py themaker.py runner.py check.py smoke_test.py README.md) do (
+for %%F in (main.py engines.py prompts.py paths.py mp_routes.py train_routes.py stats_routes.py code_routes.py speech_routes.py themaker.py runner.py check.py smoke_test.py README.md) do (
   copy /y %%F %BUILD%\ >nul
   if errorlevel 1 (echo [ERROR] copy failed: %%F & exit /b 1)
 )
@@ -104,16 +104,14 @@ xcopy /e /i /q /y view_project %BUILD%\view_project >nul
 echo   copying models\ (several GB, takes a few minutes) ...
 xcopy /e /i /q /y models %BUILD%\models >nul
 if errorlevel 1 (echo [ERROR] models copy failed & exit /b 1)
-REM models\user 는 학생 결과물 - 빈 폴더만 둔다
+REM data\ 는 실행하면서 생기는 작업 파일 - 배포본에는 넣지 않는다 (빈 폴더만)
 if exist %BUILD%\models\user rmdir /s /q %BUILD%\models\user
-mkdir %BUILD%\models\user
 if exist %BUILD%\models\project rmdir /s /q %BUILD%\models\project
-mkdir %BUILD%\models\project
 if exist %BUILD%\models\stats rmdir /s /q %BUILD%\models\stats
-mkdir %BUILD%\models\stats
-if exist %BUILD%\models\.appwin rmdir /s /q %BUILD%\models\.appwin
 if exist %BUILD%\models\pycode rmdir /s /q %BUILD%\models\pycode
-mkdir %BUILD%\models\pycode
+if exist %BUILD%\models\.appwin rmdir /s /q %BUILD%\models\.appwin
+mkdir %BUILD%\data 2>nul
+for %%D in (user project pycode stats tmp) do mkdir %BUILD%\data\%%D 2>nul
 
 REM bundle launcher (ASCII only, CRLF via echo)
 > %BUILD%\run.bat (

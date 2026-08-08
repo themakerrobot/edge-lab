@@ -33,12 +33,12 @@ if ($LASTEXITCODE -ne 0) { throw "package install failed" }
 $global:LASTEXITCODE = 0
 
 # 설치된 패키지 버전을 남긴다 — 나중에 "언제부터 안 되기 시작했는지" 를 찾는 근거가 된다
-New-Item -ItemType Directory -Force -Path models | Out-Null
+New-Item -ItemType Directory -Force -Path data | Out-Null
 $stamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-"# installed by setup_deploy.ps1 at $stamp" | Out-File -Encoding utf8 models\installed-packages.txt
-& $PY -c "import sys; print('# python ' + sys.version.split()[0])" | Out-File -Append -Encoding utf8 models\installed-packages.txt
-& $PY -m pip freeze | Out-File -Append -Encoding utf8 models\installed-packages.txt
-Write-Host "  package versions -> models\installed-packages.txt" -ForegroundColor DarkGray
+"# installed by setup_deploy.ps1 at $stamp" | Out-File -Encoding utf8 data\installed-packages.txt
+& $PY -c "import sys; print('# python ' + sys.version.split()[0])" | Out-File -Append -Encoding utf8 data\installed-packages.txt
+& $PY -m pip freeze | Out-File -Append -Encoding utf8 data\installed-packages.txt
+Write-Host "  package versions -> data\installed-packages.txt" -ForegroundColor DarkGray
 
 Write-Host "=== [3/5] models from HF ===" -ForegroundColor Cyan
 & "venv\Scripts\hf.exe" download leeyunjai/vapi-od --local-dir models --exclude "models.7z"

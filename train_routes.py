@@ -6,8 +6,8 @@
 #
 # 모델 파일:
 #   models/backbone/mobilenetv2_feat.xml / .bin / .json   (HF에서 배포)
-#   models/user/<slug>/model.zip + meta.json               (학생이 만든 AI)
-#   models/project/<slug>.zip                              (작업 중인 작품 — 사진 포함)
+#   data/user/<slug>/model.zip + meta.json                 (학생이 만든 AI)
+#   data/project/<slug>.zip                                (작업 중인 작품 — 사진 포함)
 #
 # 특징(feature) 두 가지를 지원한다:
 #   kind="image" : MobileNetV2 1280차원 (OpenVINO)
@@ -34,10 +34,9 @@ from fastapi.responses import FileResponse
 router = APIRouter()
 
 BACKBONE_XML = "models/backbone/mobilenetv2_feat.xml"
-USER_DIR = "models/user"
-PROJECT_DIR = "models/project"
-REPORTS_PATH = "models/stats/reports.json"
-IMAGE_DIR = "image_temp/"
+from paths import (USER_DIR, PROJECT_DIR, PYCODE_DIR, REPORTS_PATH,   # noqa: E402
+                   TMP_DIR)
+IMAGE_DIR = TMP_DIR + os.sep
 IMAGE_DIM = 1280
 POSE_DIM = 63                       # 21점 × (x,y,z)
 FACE_DIM = 52                       # MediaPipe 블렌드셰이프 계수
@@ -795,8 +794,9 @@ async def custom_clear_all(request: Request,
     def fn():
         if confirm != "yes":
             raise ValueError("confirm=yes 가 필요합니다")
+        # data/ 안의 작업 파일만 지운다 — models/(AI 모델)은 건드리지 않는다
         n = 0
-        for root in (USER_DIR, PROJECT_DIR):
+        for root in (USER_DIR, PROJECT_DIR, PYCODE_DIR):
             if os.path.isdir(root):
                 n += len(os.listdir(root))
                 shutil.rmtree(root)

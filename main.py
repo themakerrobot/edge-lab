@@ -18,8 +18,8 @@ import prompts as P
 
 HOST = os.environ.get("VAPI_HOST", "0.0.0.0")
 PORT = int(os.environ.get("VAPI_PORT", "57711"))
-IMAGE_DIR = "image_temp/"
-os.makedirs(IMAGE_DIR, exist_ok=True)
+from paths import TMP_DIR, APPWIN_DIR, DATA_DIR   # noqa: E402  (폴더 규칙은 paths.py 한 곳에)
+IMAGE_DIR = TMP_DIR + os.sep
 
 eng = None
 
@@ -62,7 +62,7 @@ def open_browser():
         if exe:
             try:
                 # 전용 프로필을 쓰면 이미 열려 있는 브라우저 창과 섞이지 않는다.
-                profile = os.path.abspath(os.path.join("models", ".appwin"))
+                profile = APPWIN_DIR
                 args = [exe, f"--app={url}",
                         f"--user-data-dir={profile}",
                         "--window-size=1400,900",
@@ -603,7 +603,7 @@ async def system_packages():
         except Exception:
             pkgs[name] = "?"
 
-    snap = os.path.join("models", "installed-packages.txt")
+    snap = os.path.join(DATA_DIR, "installed-packages.txt")
     saved = ""
     if os.path.exists(snap):
         try:

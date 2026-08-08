@@ -22,14 +22,15 @@ import threading
 import subprocess
 from pathlib import Path
 
-from fastapi import APIRouter, Body, Query
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, Body, File, Query, UploadFile
+from fastapi.responses import FileResponse, Response
 
 router = APIRouter()
 
 ROOT = Path(__file__).resolve().parent
-WORK_DIR = ROOT / "models" / "pycode"          # 저장한 작품
-RUN_DIR = ROOT / "models" / "pycode" / ".run"  # 실행용 임시 파일
+from paths import PYCODE_DIR                   # noqa: E402
+WORK_DIR = Path(PYCODE_DIR)                    # 저장한 작품
+RUN_DIR = WORK_DIR / ".run"                    # 실행용 임시 파일
 MAX_OUTPUT = 200_000                           # 세션당 출력 버퍼 상한(문자)
 MAX_SESSIONS = 4
 
@@ -95,6 +96,7 @@ def pycode_run(code: str = Body(..., embed=True)):
     env["PYTHONPATH"] = str(ROOT) + os.pathsep + env.get("PYTHONPATH", "")
     env["PYTHONIOENCODING"] = "utf-8"
     env["PYTHONUNBUFFERED"] = "1"
+    env["THEMAKER_SID"] = sid          # show() 가 결과를 화면으로 보내는 통로
 
     kw = {}
     if os.name == "nt":
@@ -110,7 +112,8 @@ def pycode_run(code: str = Body(..., embed=True)):
 
     with _lock:
         _sessions[sid] = {"proc": proc, "buf": "", "done": False, "exit": None,
-                          "stopped": False, "t0": time.time(), "file": str(path)}
+                          "stopped": False, "t0": time.time(), "file": str(path),
+                          "frame": None, "seq": 0, "caption": ""}
     threading.Thread(target=_reader, args=(sid, proc), daemon=True).start()
     return _ok({"sid": sid})
 
@@ -150,8 +153,41 @@ def pycode_output(sid: str = Query(...), pos: int = Query(0)):
         buf = s["buf"]
         done, code, stopped = s["done"], s["exit"], s.get("stopped", False)
     pos = max(0, min(pos, len(buf)))
+    with _lock:
+        s2 = _sessions.get(sid) or {}
+        seq, cap = s2.get("seq", 0), s2.get("caption", "")
     return _ok({"text": buf[pos:], "pos": len(buf), "done": done, "exit": code,
-                "stopped": stopped})
+                "stopped": stopped, "seq": seq, "caption": cap})
+
+
+# ---------------------------------------------------------------- 화면(그림) 보기
+@router.post("/pycode/frame", tags=["pycode"], summary="show() 결과를 화면으로 보내기")
+def pycode_frame(sid: str = Query(...), caption: str = Query(""),
+                 uploadFile: UploadFile = File(...)):
+    """학생 코드의 show() 가 그린 그림을 받아 둔다. 화면은 폴링하며 가져간다."""
+    raw = uploadFile.file.read()
+    if len(raw) > 8_000_000:
+        return _fail("그림이 너무 커요.")
+    with _lock:
+        s = _sessions.get(sid)
+        if s is None:
+            return _fail("no such session")
+        s["frame"] = raw
+        s["seq"] += 1
+        s["caption"] = caption[:60]
+        seq = s["seq"]
+    return _ok({"seq": seq})
+
+
+@router.get("/pycode/frame", tags=["pycode"], summary="화면 그림 가져오기")
+def pycode_frame_get(sid: str = Query(...)):
+    with _lock:
+        s = _sessions.get(sid)
+        raw = s.get("frame") if s else None
+    if not raw:
+        return _fail("no frame")
+    return Response(content=raw, media_type="image/jpeg",
+                    headers={"Cache-Control": "no-store"})
 
 
 # ---------------------------------------------------------------- 작품 저장
@@ -187,7 +223,7 @@ def pycode_work(name: str = Query(...)):
 
 
 # ---------------------------------------------------------------- 배포 (zip)
-DEPLOY_DIR = ROOT / "models" / "pycode" / ".deploy"
+DEPLOY_DIR = WORK_DIR / ".deploy"
 
 _README = """{name} — The Maker 로 만든 프로그램
 

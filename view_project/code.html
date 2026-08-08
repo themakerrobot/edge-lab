@@ -8,6 +8,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
   <link href="/lib/cm/codemirror.css" rel="stylesheet">
+  <link href="/lib/cm/show-hint.css" rel="stylesheet">
   <style>
     /* ===== 디자인 토큰 : 다른 페이지와 동일 ===== */
     :root {
@@ -104,6 +105,9 @@
     .ph-row { display: flex; align-items: center; flex-wrap: wrap; }
     .ph-tools { margin: 12px 12px 16px auto; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
     .ph-tools button { padding: 7px 12px; font-size: .9rem; }
+    #guideButton.on {
+      background: var(--cyan); border-color: var(--cyan-d); color: #fff; font-weight: 700;
+    }
     #runButton { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; font-weight: 700; }
     #runButton:hover:not(:disabled) { background: var(--pen-blue-d); }
     #stopButton { color: var(--pen-red); border-color: var(--pen-red); }
@@ -117,6 +121,68 @@
     .cm-s-default .cm-keyword { color: var(--pen-blue-d); }
     .cm-s-default .cm-string { color: #b26a00; }
     .cm-s-default .cm-comment { color: #7a8896; }
+
+    /* 좁은 화면: 세로로 쌓고, 도움말은 편집기 아래로 */
+    @media (max-width: 1200px) {
+      .out-panel { min-width: 260px; }
+      .help-panel { flex: 0 0 250px; min-width: 220px; }
+    }
+    @media (max-width: 980px) {
+      body { height: auto; overflow: auto; }
+      .main { flex-direction: column; }
+      .ed-panel { min-height: 46vh; }
+      .out-panel, .help-panel { min-width: 0; }
+      .out-panel { min-height: 30vh; }
+      .help-panel.open { max-height: 45vh; }
+      .ph-tools { margin-left: 12px; }
+    }
+
+    /* ===== 도움말 패널 (열어 둔 채로 코딩한다) ===== */
+    .help-panel { flex: 0 0 300px; min-width: 260px; display: none; }
+    .help-panel.open { display: flex; }
+    #helpSearch { margin: 0 12px 8px; width: calc(100% - 24px); flex: 0 0 auto; }
+    #helpScroll { flex: 1 1 auto; min-height: 0; overflow: auto; }
+    #helpList { padding: 0 12px 4px; }
+    .h-item {
+      border: 1.5px solid var(--line); border-radius: var(--r);
+      padding: 8px 10px; margin-bottom: 6px; cursor: pointer;
+    }
+    .h-item:hover { border-color: var(--pen-blue); background: var(--paper); }
+    .h-item code {
+      font-family: Menlo, Consolas, ui-monospace, monospace; font-size: .84rem;
+      color: var(--pen-blue-d); font-weight: 700;
+    }
+    .h-item .d { color: var(--ink-2); font-size: .82rem; margin-top: 2px; }
+    .h-detail {
+      margin-top: 7px; padding-top: 7px; border-top: 1px dashed var(--line);
+      font-size: .8rem; color: var(--ink); display: none;
+    }
+    .h-item.open .h-detail { display: block; }
+    .h-detail dt { color: var(--cyan-d); font-weight: 700; margin-top: 5px; }
+    .h-detail dd { margin: 1px 0 0; color: var(--ink-2); }
+    .h-detail pre {
+      background: var(--paper); border-radius: 4px; padding: 6px 8px; margin-top: 5px;
+      font-family: Menlo, Consolas, ui-monospace, monospace; font-size: .76rem;
+      white-space: pre-wrap; color: var(--ink);
+    }
+    .h-item .more {
+      float: right; margin-right: 6px; font-size: .74rem; color: var(--ink-2);
+      border: 1px solid var(--line); border-radius: 3px; padding: 1px 6px;
+    }
+    .h-item .put {
+      float: right; font-size: .74rem; color: var(--ink-2);
+      border: 1px solid var(--line); border-radius: 3px; padding: 1px 6px;
+    }
+    .h-group { font-size: .78rem; color: var(--cyan-d); font-weight: 700;
+               margin: 10px 0 5px; letter-spacing: .04em; }
+    .h-more { margin: 0 12px 12px; font-size: .82rem; }
+    .h-more summary { cursor: pointer; color: var(--pen-blue-d); }
+    .h-more table { border-collapse: collapse; width: 100%; margin-top: 8px; font-size: .78rem; }
+    .h-more th, .h-more td { border: 1px solid var(--line); padding: 4px 6px; text-align: left; }
+    .h-more th { background: var(--paper); }
+    .h-more code { background: var(--paper); padding: 1px 4px; border-radius: 3px;
+                   font-family: Menlo, Consolas, ui-monospace, monospace; font-size: .92em; }
+    .CodeMirror-hints { z-index: 80; font-family: Menlo, Consolas, ui-monospace, monospace; }
 
     #output {
       flex: 1 1 auto; min-height: 0; overflow: auto;
@@ -146,6 +212,7 @@
     }
     .ex-card:hover { border-color: var(--pen-blue); background: var(--paper); }
     .ex-card b { color: var(--ink); }
+    .ex-card .del:hover { background: var(--pen-red); color: #fff; }
     .ex-card .d { color: var(--ink-2); font-size: .86rem; }
     .modal table { border-collapse: collapse; width: 100%; font-size: .88rem; }
     .modal th, .modal td { border: 1px solid var(--line); padding: 6px 9px; text-align: left; }
@@ -193,8 +260,8 @@
           <button id="saveButton">저장</button>
           <button id="loadButton">불러오기</button>
           <button id="deployButton">배포</button>
-          <button id="runButton"><span id="runLabel">실행 ▶</span></button>
-          <button id="stopButton">정지</button>
+          <button id="runButton" title="Ctrl + Enter"><span id="runLabel">실행 ▶</span></button>
+          <button id="stopButton" title="Esc">정지</button>
         </div>
       </div>
       <textarea id="editor"></textarea>
@@ -208,8 +275,40 @@
           <button id="clearButton">지우기</button>
         </div>
       </div>
+      <div id="stageWrap" style="display:none;margin:0 12px 8px;">
+        <img id="stageImg" alt="" style="width:100%;max-height:44vh;object-fit:contain;
+             background:#fff;border:1.5px solid var(--line);border-radius:var(--r);">
+        <div id="stageCap" style="font-size:.78rem;color:var(--ink-2);margin-top:3px;"></div>
+      </div>
       <div id="output"></div>
-      <div class="hintline" id="txtHint">show() 창은 별도 창으로 떠요. 아무 키나 누르면 닫혀요. input() 은 지원하지 않아요.</div>
+      <div class="hintline" id="txtHint">show() 결과는 위 칸에 나와요. 배포한 프로그램에서는 창으로 떠요. input() 은 지원하지 않아요.</div>
+    </div>
+
+    <!-- 도움말 (열어 둔 채로 코딩) -->
+    <div class="panel help-panel" id="helpPanel">
+      <div class="ph-row">
+        <div class="panel-head" id="txtHelpHead">도움말</div>
+        <div class="ph-tools">
+          <button id="helpClose" title="닫기">✕</button>
+        </div>
+      </div>
+      <input id="helpSearch" placeholder="찾기 (예: 얼굴, 소리)">
+      <div id="helpScroll">
+        <div id="helpList"></div>
+        <details class="h-more">
+          <summary id="txtHelpMore">기능 이름 · 종류 표 보기</summary>
+          <div id="guideBody"></div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <!-- 저장한 작품 모달 -->
+  <div class="modal-bg" id="workModal">
+    <div class="modal">
+      <button class="close" onclick="document.getElementById('workModal').classList.remove('show')">✕</button>
+      <h3 id="txtWorkTitle">저장한 작품</h3>
+      <div id="workList"></div>
     </div>
   </div>
 
@@ -222,19 +321,11 @@
     </div>
   </div>
 
-  <!-- 가이드 모달 -->
-  <div class="modal-bg" id="guideModal">
-    <div class="modal">
-      <button class="close" onclick="document.getElementById('guideModal').classList.remove('show')">✕</button>
-      <h3 id="txtGuideTitle">themaker 함수 가이드</h3>
-      <div id="guideBody"></div>
-    </div>
-  </div>
-
   <script src="/lib/cm/codemirror.js"></script>
   <script src="/lib/cm/python.js"></script>
   <script src="/lib/cm/matchbrackets.js"></script>
   <script src="/lib/cm/closebrackets.js"></script>
+  <script src="/lib/cm/show-hint.js"></script>
   <script>
     /* =============================== 한/영 사전 =============================== */
     const DICT = {
@@ -243,13 +334,22 @@
         eyebrow: "파이썬으로 AI를 불러 봐요 · 인터넷 없이 내 컴퓨터에서",
         homeLink: "The Maker (홈)", langBtn: "EN",
         edHead: "파이썬 코드를 써요", outHead: "결과를 확인해요",
-        guide: "가이드", example: "예제", save: "저장", load: "불러오기", deploy: "배포",
+        guide: "도움말", guideOff: "도움말 ✕", example: "예제", save: "저장", load: "불러오기", deploy: "배포",
+        helpHead: "도움말", helpMore: "기능 이름 · 종류 표 보기", helpSearch: "찾기 (예: 얼굴, 소리)",
+        put: "넣기", detail: "설명", noHit: "찾는 것이 없어요.",
+        argsK: "넣는 것", retK: "돌려주는 것", exK: "예시 (눌러서 넣기)",
+        g_basic: "기본", g_ai: "AI 로 보기", g_my: "내가 만든 AI",
+        g_sound: "소리", g_flow: "반복 · 조건",
         run: "실행 ▶", running: "실행 중...", stop: "정지", clear: "지우기",
         runStateK: "상태", stReady: "준비됨", stRun: "실행 중", stDone: "끝남", stStop: "정지됨",
-        hint: "show() 창은 별도 창으로 떠요. 아무 키나 누르면 닫혀요. input() 은 지원하지 않아요.",
+        hint: "show() 결과는 위 칸에 나와요. 배포한 프로그램에서는 창으로 떠요. input() 은 지원하지 않아요.",
         exTitle: "예제 프로그램", guideTitle: "themaker 함수 가이드",
         savePrompt: "저장할 이름을 입력하세요", loadPrompt: "불러올 작품 번호를 입력하세요",
         deployPrompt: "배포할 이름을 입력하세요",
+        workTitle: "저장한 작품", savedAs: "저장했어요 · ", del: "삭제", delAsk: "지울까요? ",
+        waitTts: "[소리 모델을 여는 중이에요. 처음 한 번만 몇 초 걸려요]",
+        waitStt: "[음성 인식 모델을 여는 중이에요. 처음 한 번만 몇 초 걸려요]",
+        waitYolo: "[모델 파일을 읽는 중이에요. 처음 한 번만 걸려요]",
         deployDone: "배포 파일을 내려받았어요. 압축을 풀고 실행 파일을 두 번 누르면 돼요.\n(The Maker 가 깔린 컴퓨터에서 동작해요)",
         deployFail: "배포 파일을 만들지 못했어요: ",
         noWorks: "저장된 작품이 없어요.", started: "[실행 시작]",
@@ -262,13 +362,22 @@
         eyebrow: "call AI from Python · runs on this computer",
         homeLink: "The Maker (home)", langBtn: "한",
         edHead: "Write Python code", outHead: "Check the result",
-        guide: "Guide", example: "Examples", save: "Save", load: "Load", deploy: "Share",
+        guide: "Help", guideOff: "Help ✕", example: "Examples", save: "Save", load: "Load", deploy: "Share",
+        helpHead: "Help", helpMore: "Kinds & tables", helpSearch: "search (e.g. face, sound)",
+        put: "insert", detail: "what?", noHit: "Nothing found.",
+        argsK: "takes", retK: "returns", exK: "example (click to insert)",
+        g_basic: "Basics", g_ai: "See with AI", g_my: "Your own AI",
+        g_sound: "Sound", g_flow: "Repeat · If",
         run: "Run ▶", running: "Running...", stop: "Stop", clear: "Clear",
         runStateK: "state", stReady: "ready", stRun: "running", stDone: "done", stStop: "stopped",
-        hint: "show() opens a separate window; press any key to close. input() is not supported.",
+        hint: "show() draws above; a shared program opens a window instead. input() is not supported.",
         exTitle: "Example programs", guideTitle: "themaker functions",
         savePrompt: "Name to save as", loadPrompt: "Enter the number of the work to load",
         deployPrompt: "Name for the shared file",
+        workTitle: "Saved works", savedAs: "Saved · ", del: "delete", delAsk: "Delete? ",
+        waitTts: "[opening the voice model - a few seconds, only the first time]",
+        waitStt: "[opening the speech model - a few seconds, only the first time]",
+        waitYolo: "[reading the model file - only the first time]",
         deployDone: "Downloaded. Unzip it and double-click the runner.\n(Works on a PC with The Maker installed)",
         deployFail: "Could not build the package: ",
         noWorks: "No saved works yet.", started: "[started]",
@@ -314,10 +423,20 @@ show(img, r)                # 결과를 창으로 보기
       document.getElementById("runLabel").textContent = running ? t("running") : t("run");
     }
 
+    /* 소리·음성은 첫 호출에 모델을 여느라 시간이 걸린다 — 미리 알려 준다 */
+    let WARNED = { tts: false, stt: false, yolo: false };
+    function notePreload(code) {
+      if (!WARNED.tts && /\bspeak\s*\(/.test(code)) { WARNED.tts = true; print(t("waitTts") + "\n", "sys"); }
+      if (!WARNED.stt && /\b(listen|stt)\s*\(/.test(code)) { WARNED.stt = true; print(t("waitStt") + "\n", "sys"); }
+      if (!WARNED.yolo && /\bdetect\s*\(/.test(code)) { WARNED.yolo = true; print(t("waitYolo") + "\n", "sys"); }
+    }
+
     async function run() {
       if (SID) return;
-      out.textContent = ""; outPos = 0;
+      out.textContent = ""; outPos = 0; lastSeq = 0;
+      document.getElementById("stageWrap").style.display = "none";
       print(t("started") + "\n", "sys");
+      notePreload(cm.getValue());
       setState("stRun");
       try {
         const j = await (await fetch("/pycode/run", {
@@ -330,6 +449,7 @@ show(img, r)                # 결과를 창으로 보기
       } catch (e) { print(String(e) + "\n", "err"); setState("stReady"); }
     }
 
+    let lastSeq = 0;
     let polling = false;                 // 응답이 늦으면 폴링이 겹쳐 메시지가 여러 번 찍힌다
     async function poll() {
       if (!SID || polling) return;
@@ -341,6 +461,13 @@ show(img, r)                # 결과를 창으로 보기
         if (j.result !== "ok") return;
         if (j.data.text) print(j.data.text);
         outPos = j.data.pos;
+        if (j.data.seq && j.data.seq !== lastSeq) {      // show() 결과가 새로 왔다
+          lastSeq = j.data.seq;
+          document.getElementById("stageWrap").style.display = "";
+          document.getElementById("stageImg").src =
+            `/pycode/frame?sid=${sid}&v=${lastSeq}`;
+          document.getElementById("stageCap").textContent = j.data.caption || "";
+        }
         if (j.data.done) {
           clearInterval(pollTimer); pollTimer = null;
           SID = null;
@@ -379,27 +506,63 @@ show(img, r)                # 결과를 창으로 보기
 
     document.getElementById("runButton").onclick = run;
     document.getElementById("stopButton").onclick = stop;
-    document.getElementById("clearButton").onclick = () => { out.textContent = ""; };
+    document.getElementById("clearButton").onclick = () => {
+      out.textContent = "";
+      document.getElementById("stageWrap").style.display = "none";
+    };
 
     /* =============================== 저장/불러오기 =============================== */
+    let LAST_NAME = "";
     document.getElementById("saveButton").onclick = async () => {
-      const name = prompt(t("savePrompt"));
+      const name = prompt(t("savePrompt"), LAST_NAME);
       if (!name) return;
-      await fetch("/pycode/save", {
+      const j = await (await fetch("/pycode/save", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, code: cm.getValue() }),
-      });
+      })).json();
+      if (j.result === "ok") {
+        LAST_NAME = name;
+        print("\n" + t("savedAs") + j.data.saved + "\n", "sys");   // 저장됐다는 확인
+      }
     };
+
+    /* 목록에서 눌러 고른다 (번호 입력은 초등학생에게 어렵다) */
     document.getElementById("loadButton").onclick = async () => {
       const j = await (await fetch("/pycode/works")).json();
       const list = (j.data || []);
-      if (!list.length) { alert(t("noWorks")); return; }
-      const menu = list.map((w, i) => `${i + 1}. ${w.name}`).join("\n");
-      const pick = prompt(menu + "\n\n" + t("loadPrompt"));
-      const idx = parseInt(pick, 10) - 1;
-      if (isNaN(idx) || !list[idx]) return;
-      const w = await (await fetch(`/pycode/work?name=${encodeURIComponent(list[idx].name)}`)).json();
-      if (w.result === "ok") cm.setValue(w.data.code);
+      const box = document.getElementById("workList");
+      box.innerHTML = "";
+      if (!list.length) {
+        const e = document.createElement("div");
+        e.className = "h-item"; e.textContent = t("noWorks");
+        box.appendChild(e);
+      }
+      list.forEach(w => {
+        const d = document.createElement("div");
+        d.className = "ex-card";
+        d.innerHTML = '<b></b><span class="del"></span>';
+        d.querySelector("b").textContent = w.name;
+        const del = d.querySelector(".del");
+        del.textContent = t("del");
+        del.style.cssText = "float:right;font-size:.78rem;color:var(--pen-red);"
+          + "border:1px solid var(--pen-red);border-radius:3px;padding:1px 6px;";
+        del.onclick = async ev => {
+          ev.stopPropagation();
+          if (!confirm(t("delAsk") + w.name)) return;
+          await fetch("/pycode/delete", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: w.name }),
+          });
+          document.getElementById("loadButton").onclick();
+        };
+        d.onclick = async () => {
+          const r = await (await fetch(`/pycode/work?name=${encodeURIComponent(w.name)}`)).json();
+          if (r.result === "ok") { cm.setValue(r.data.code); LAST_NAME = w.name; }
+          document.getElementById("workModal").classList.remove("show");
+        };
+        box.appendChild(d);
+      });
+      document.getElementById("workModal").classList.add("show");
     };
 
     /* =============================== 배포 =============================== */
@@ -448,17 +611,16 @@ faces = vision("face", img)
 print("얼굴 수:", len(faces))
 show(img, faces)
 ` },
-      { ko: ["배경 지우기", "사진에서 배경을 지워 저장해요."],
-        en: ["Remove background", "Remove the background and save."],
+      { ko: ["배경 지우기", "사진에서 배경을 지워 보고 저장해요."],
+        en: ["Remove background", "Cut out the background and save it."],
         code: `from themaker import *
-import base64, cv2, numpy as np
 
 img = camera()
-r = vision("bg_remove", img)         # base64 이미지가 돌아와요
-raw = base64.b64decode(r)
-png = cv2.imdecode(np.frombuffer(raw, np.uint8), cv2.IMREAD_UNCHANGED)
-cv2.imwrite("no_bg.png", png)
-print("no_bg.png 저장 완료")
+cut = vision("bg_remove", img)   # 배경이 지워진 사진
+
+show(cut)                        # 화면에서 확인
+save(cut, "no_bg.png")           # png 로 저장하면 투명하게 남아요
+print("저장했어요: no_bg.png")
 ` },
       { ko: ["내가 가르친 AI 쓰기", "가르치기에서 저장한 모델로 분류해요."],
         en: ["Use my trained AI", "Classify with a model saved in Train."],
@@ -558,131 +720,79 @@ for i in range(5):
     };
 
     /* =============================== 가이드 =============================== */
+    /* 항목마다 설명이 붙었으므로, 여기엔 "표로 봐야 편한 것"만 남긴다 */
     const GUIDE = {
       ko: `
-<p style="margin-bottom:8px;"><b>기본 함수</b></p>
+<p style="margin-bottom:6px;"><b>vision() 기능 이름 — 영문이 기본, 한글도 돼요</b></p>
 <table>
-<tr><th>함수</th><th>설명</th></tr>
-<tr><td><code>camera()</code></td><td>웹캠에서 사진 한 장을 찍어요. 캠이 2개면 <code>camera(1)</code> 처럼 번호로 골라요.</td></tr>
-<tr><td><code>load(r"C:\\사진.jpg")</code></td><td>이미지 파일을 열어요. 윈도우 경로는 <code>r"..."</code> 로 쓰세요.</td></tr>
-<tr><td><code>vision(kind, img)</code></td><td>AI 를 실행하고 결과를 돌려줘요.</td></tr>
-<tr><td><code>vision("question", img, prompt="...")</code></td><td>사진에 대해 질문해요.</td></tr>
-<tr><td><code>vision("my:이름", img)</code></td><td>가르치기에서 만든 내 AI 를 써요.</td></tr>
-<tr><td><code>my_models()</code></td><td>내가 저장한 모델 이름들을 알려줘요.</td></tr>
-<tr><td><code>show(img, r)</code></td><td>결과 박스를 그려서 창으로 보여줘요. (아무 키나 누르면 닫혀요)</td></tr>
-<tr><td><code>draw(img, r)</code></td><td>박스를 그린 이미지를 돌려줘요 (창 없음).</td></tr>
-<tr><td><code>save(img, "name.jpg")</code></td><td>이미지를 파일로 저장해요.</td></tr>
-<tr><td><code>detect("내모델.pt", img)</code></td><td>내가 학습한 YOLO 파일로 인식해요 (경로 지정).</td></tr>
-<tr><td><code>listen(4)</code></td><td>마이크로 4초 듣고 글자로 바꿔 줘요 (음성 인식).</td></tr>
-<tr><td><code>stt("소리.wav")</code></td><td>WAV 파일을 글자로 바꿔 줘요.</td></tr>
-<tr><td><code>speak("안녕하세요")</code></td><td>글자를 소리로 읽어 줘요 (음성 합성).<br>목소리 <code>voice="M1"</code> (F1~F5 여자 · M1~M5 남자), <code>lang="en"</code>, <code>save_as="a.wav"</code></td></tr>
+<tr><th>kind</th><th>한글</th><th>하는 일</th></tr>
+<tr><td><code>object</code></td><td>사물</td><td>사물·사람 찾기</td></tr>
+<tr><td><code>face</code></td><td>얼굴</td><td>얼굴 찾기</td></tr>
+<tr><td><code>face_attr</code></td><td>얼굴분석</td><td>나이·성별·감정</td></tr>
+<tr><td><code>distance</code></td><td>얼굴거리</td><td>얼굴 거리·방향</td></tr>
+<tr><td><code>hand</code></td><td>손</td><td>손동작</td></tr>
+<tr><td><code>pose</code></td><td>자세</td><td>몸 관절</td></tr>
+<tr><td><code>seg</code></td><td>분할</td><td>영역 나누기</td></tr>
+<tr><td><code>caption</code></td><td>설명</td><td>사진 설명</td></tr>
+<tr><td><code>question</code></td><td>질문</td><td>사진에 질문</td></tr>
+<tr><td><code>tag</code></td><td>태그</td><td>주제어 뽑기 (글자)</td></tr>
+<tr><td><code>classify</code></td><td>분류</td><td>자유 분류</td></tr>
+<tr><td><code>ocr</code></td><td>글자</td><td>글자 읽기</td></tr>
+<tr><td><code>qr</code></td><td>큐알</td><td>QR 읽기</td></tr>
+<tr><td><code>bg_remove</code></td><td>배경제거</td><td>배경 지우기</td></tr>
+<tr><td><code>sr</code></td><td>화질개선</td><td>4배 선명하게</td></tr>
+<tr><td><code>mask</code></td><td>마스크</td><td>마스크 착용</td></tr>
 </table>
-<p style="margin:12px 0 8px;"><b>vision() 기능 — 영문이 기본, 한글도 그대로 돼요</b></p>
-<table>
-<tr><th>kind</th><th>한글</th><th>하는 일</th><th>돌려주는 것</th></tr>
-<tr><td><code>object</code></td><td>사물</td><td>사물·사람 찾기</td><td>[{name, score, box}, ...]</td></tr>
-<tr><td><code>face</code></td><td>얼굴</td><td>얼굴 찾기</td><td>[{box, ...}, ...]</td></tr>
-<tr><td><code>face_attr</code></td><td>얼굴분석</td><td>나이·성별·감정</td><td>[{age, gender, emotion, ...}]</td></tr>
-<tr><td><code>distance</code></td><td>얼굴거리</td><td>얼굴 거리·방향</td><td>{distance_cm, yaw, ...}</td></tr>
-<tr><td><code>hand</code></td><td>손</td><td>손동작 인식</td><td>{gesture, ...}</td></tr>
-<tr><td><code>pose</code></td><td>자세</td><td>몸 관절 위치</td><td>관절 좌표</td></tr>
-<tr><td><code>caption</code></td><td>설명</td><td>사진을 한 줄로 설명</td><td>문자열</td></tr>
-<tr><td><code>question</code></td><td>질문</td><td>사진에 대한 질문·답</td><td>문자열</td></tr>
-<tr><td><code>tag</code></td><td>태그</td><td>주제어 뽑기</td><td>문자열/목록</td></tr>
-<tr><td><code>classify</code></td><td>분류</td><td>자유 프롬프트 분류</td><td>문자열</td></tr>
-<tr><td><code>ocr</code></td><td>글자</td><td>글자 읽기</td><td>[{text, score, box}, ...]</td></tr>
-<tr><td><code>qr</code></td><td>큐알</td><td>QR 코드 읽기</td><td>내용</td></tr>
-<tr><td><code>bg_remove</code></td><td>배경제거</td><td>배경 지우기</td><td>이미지(base64)</td></tr>
-<tr><td><code>sr</code></td><td>화질개선</td><td>4배 선명하게</td><td>이미지(base64)</td></tr>
-<tr><td><code>mask</code></td><td>마스크</td><td>마스크 착용 판단</td><td>{mask: 0/1}</td></tr>
-</table>
-<p style="margin:12px 0 8px;"><b>특별 훈련된 AI 7종 — 특정 물건만 콕 집어 찾아요</b></p>
+<p style="margin:10px 0 6px;"><b>특별 훈련된 AI 7종</b></p>
 <table>
 <tr><th>kind</th><th>한글</th><th>찾는 것</th></tr>
-<tr><td><code>fire</code></td><td>불</td><td>불·연기 (화재 감지)</td></tr>
-<tr><td><code>fall</code></td><td>쓰러짐</td><td>사람이 넘어진 상태</td></tr>
-<tr><td><code>ball</code></td><td>공</td><td>공 (운동·놀이)</td></tr>
-<tr><td><code>rps</code></td><td>가위바위보</td><td>가위 · 바위 · 보 손모양</td></tr>
+<tr><td><code>fire</code></td><td>불</td><td>불·연기</td></tr>
+<tr><td><code>fall</code></td><td>쓰러짐</td><td>넘어진 사람</td></tr>
+<tr><td><code>ball</code></td><td>공</td><td>공</td></tr>
+<tr><td><code>rps</code></td><td>가위바위보</td><td>가위·바위·보</td></tr>
 <tr><td><code>number</code></td><td>숫자</td><td>숫자 0~9</td></tr>
-<tr><td><code>helmet</code></td><td>안전모</td><td>안전모 쓴 얼굴 / 안 쓴 얼굴</td></tr>
-<tr><td><code>box</code></td><td>상자</td><td>상자 (물류·정리)</td></tr>
+<tr><td><code>helmet</code></td><td>안전모</td><td>안전모 착용/미착용</td></tr>
+<tr><td><code>box</code></td><td>상자</td><td>상자</td></tr>
 </table>
-<p>돌려주는 것은 <code>object</code> 와 같아요 — [{name, score, box}, ...].
-예: <code>vision("fire", camera())</code> · <code>vision("불", img)</code> 도 돼요.</p>
-
-<p style="margin:12px 0 8px;"><b>내가 학습한 YOLO 모델 파일 쓰기 — <code>detect(경로, img)</code></b></p>
-<pre style="background:var(--paper);padding:8px 10px;border-radius:4px;font-size:.84em;">from themaker import *
-
-r = detect(r"C:\\내모델\\cat.pt", camera())   # .pt 파일 경로
-print(r)                                     # [{'name':'cat','score':0.88,'box':[...]}]
-show(camera(), r)</pre>
-<p>OpenVINO 로 변환한 폴더(<code>*_openvino_model</code>)도 그대로 넣을 수 있어요.
-상대경로는 실행 폴더(<code>models\\pycode</code>) 기준이라, 다른 곳의 파일은 절대경로로 쓰세요.
-같은 모델을 반복해서 쓰면 처음 한 번만 읽고 다음부터는 빨라져요.
-낮은 점수를 빼려면 <code>detect(경로, img, conf=0.5)</code>.</p>
-
-<p style="margin:12px 0 8px;"><b>내가 가르친 AI 쓰기 — <code>vision("my:이름", img)</code></b></p>
-<p>가르치기에서 <b>저장할 때 입력한 이름</b>을 그대로 쓰면 돼요.
-정확한 이름이 헷갈리면 <code>my_models()</code> 로 확인하세요.</p>
-<pre style="background:var(--paper);padding:8px 10px;border-radius:4px;font-size:.84em;">>>> my_models()
-[{'name': '가위바위보', 'title': '가위바위보', 'kind': '손모양', 'classes': ['가위','바위','보']},
- {'name': '우리-반-얼굴', 'title': '우리 반 얼굴', 'kind': '사진', 'classes': ['민수','지연']}]
->>> vision("my:가위바위보", camera())
-[{'name': '가위', 'score': 0.91}, {'name': '바위', 'score': 0.06}, ...]
->>> vision("my:우리 반 얼굴", camera())     # 띄어쓴 제목 그대로도 돼요</pre>
-<p>저장 이름(<code>name</code>)은 띄어쓰기가 <code>-</code> 로 바뀌지만,
-입력한 제목(<code>title</code>) 으로 써도 찾아 줘요. 없는 이름을 쓰면 가지고 있는 목록을 알려줘요.</p>
-<p>입력은 어느 종류든 사진 한 장이지만, <b>종류(kind)에 따라 AI가 보는 것</b>이 달라요 —
-가르치기에서 학습한 종류와 같은 장면을 찍어야 잘 맞아요.</p>
+<p style="margin:10px 0 6px;"><b>내가 가르친 AI — 종류에 따라 보는 것이 달라요</b></p>
 <table>
 <tr><th>종류</th><th>AI 가 보는 것</th><th>찍을 때</th></tr>
 <tr><td>사진</td><td>화면 전체의 생김새</td><td>학습 때와 비슷한 구도로</td></tr>
-<tr><td>손모양</td><td>손 관절 21곳의 모양</td><td>손이 잘 보이게</td></tr>
-<tr><td>표정</td><td>얼굴 표정(52가지 움직임)</td><td>얼굴이 정면에 보이게</td></tr>
-<tr><td>상반신</td><td>어깨~팔 11관절의 자세</td><td>앉아서도 OK, 어깨가 보이게</td></tr>
-<tr><td>전신</td><td>온몸 17관절의 자세</td><td>뒤로 물러나 전신이 보이게</td></tr>
+<tr><td>손모양</td><td>손 관절 21곳</td><td>손이 잘 보이게</td></tr>
+<tr><td>표정</td><td>얼굴 표정 52가지</td><td>얼굴이 정면에</td></tr>
+<tr><td>상반신</td><td>어깨~팔 11관절</td><td>앉아서도 OK</td></tr>
+<tr><td>전신</td><td>온몸 17관절</td><td>뒤로 물러나서</td></tr>
 </table>
-<p>돌려주는 것: 내가 정한 클래스별 확신도(0~1), 높은 순. 해당 종류의 손/얼굴/몸이 안 보이면 빈 목록 <code>[]</code> 이 와요.</p>
-<p style="margin-top:10px;">상대경로의 기준(실행 폴더)은 <code>models\\pycode</code> 예요 — 다른 곳의 파일은 절대경로로 여세요. <code>save()</code> 결과도 거기에 생겨요.<br>결과가 궁금하면 일단 <code>print(r)</code> 해 보세요.
-cv2 · numpy 도 그대로 쓸 수 있어요 — <code>import cv2</code></p>`,
+<p style="margin:10px 0 6px;"><b>답을 다른 형태로 받고 싶을 때</b></p>
+<p>설명·질문·태그는 읽기 쉽게 <b>글자 하나</b>로 와요. 영어판이나 서버가 준 값 전체가 필요하면:</p>
+<pre style="background:var(--paper);padding:8px 10px;border-radius:4px;font-size:.84em;">vision("caption", img)              # 고양이가 앉아 있어요
+vision("caption", img, lang="en")   # a cat is sitting
+vision("caption", img, raw=True)    # {'caption': ..., 'caption_en': ...}</pre>
+<p style="margin-top:8px;">이름이 헷갈리면 <code>my_models()</code> 로 확인하세요.
+띄어쓴 제목(<code>"my:우리 반 얼굴"</code>)도 그대로 돼요.<br>
+상대경로 기준 폴더는 <code>models\\pycode</code> 예요. cv2 · numpy 도 쓸 수 있어요.</p>`,
       en: `
-<p style="margin-bottom:8px;"><b>Basic functions</b></p>
+<p style="margin-bottom:6px;"><b>vision() kinds (Korean names also work)</b></p>
 <table>
-<tr><th>Function</th><th>What it does</th></tr>
-<tr><td><code>camera()</code></td><td>Take one photo. With two cams, pick one like <code>camera(1)</code>.</td></tr>
-<tr><td><code>load(r"C:\\photo.jpg")</code></td><td>Open an image file. Use <code>r"..."</code> for Windows paths.</td></tr>
-<tr><td><code>vision(kind, img)</code></td><td>Run an AI and return the result.</td></tr>
-<tr><td><code>vision("question", img, prompt="...")</code></td><td>Ask about the photo.</td></tr>
-<tr><td><code>vision("my:name", img)</code></td><td>Use a model you trained in Train.</td></tr>
-<tr><td><code>my_models()</code></td><td>List your saved models.</td></tr>
-<tr><td><code>show(img, r)</code></td><td>Draw boxes and open a window. (press any key to close)</td></tr>
-<tr><td><code>draw(img, r)</code></td><td>Return the image with boxes (no window).</td></tr>
-<tr><td><code>save(img, "name.jpg")</code></td><td>Save the image to a file.</td></tr>
-<tr><td><code>detect("model.pt", img)</code></td><td>Run your own YOLO model file (by path).</td></tr>
-<tr><td><code>listen(4)</code></td><td>Record 4s from the mic and transcribe it.</td></tr>
-<tr><td><code>stt("sound.wav")</code></td><td>Transcribe a WAV file.</td></tr>
-<tr><td><code>speak("Hello")</code></td><td>Speak the text aloud. <code>voice="M1"</code> (F1-F5 / M1-M5), <code>lang="en"</code>, <code>save_as="a.wav"</code></td></tr>
+<tr><th>kind</th><th>What it does</th></tr>
+<tr><td><code>object</code></td><td>objects &amp; people</td></tr>
+<tr><td><code>face</code></td><td>faces</td></tr>
+<tr><td><code>face_attr</code></td><td>age · gender · emotion</td></tr>
+<tr><td><code>distance</code></td><td>face distance</td></tr>
+<tr><td><code>hand</code></td><td>hand gesture</td></tr>
+<tr><td><code>pose</code></td><td>body joints</td></tr>
+<tr><td><code>seg</code></td><td>segmentation</td></tr>
+<tr><td><code>caption</code></td><td>describe</td></tr>
+<tr><td><code>question</code></td><td>ask about the photo</td></tr>
+<tr><td><code>tag</code></td><td>keywords</td></tr>
+<tr><td><code>classify</code></td><td>free classify</td></tr>
+<tr><td><code>ocr</code></td><td>read text</td></tr>
+<tr><td><code>qr</code></td><td>read QR</td></tr>
+<tr><td><code>bg_remove</code></td><td>remove background</td></tr>
+<tr><td><code>sr</code></td><td>upscale 4x</td></tr>
+<tr><td><code>mask</code></td><td>mask on/off</td></tr>
 </table>
-<p style="margin:12px 0 8px;"><b>vision() kinds</b></p>
-<table>
-<tr><th>kind</th><th>What it does</th><th>Returns</th></tr>
-<tr><td><code>object</code></td><td>detect objects & people</td><td>[{name, score, box}, ...]</td></tr>
-<tr><td><code>face</code></td><td>detect faces</td><td>[{box, ...}, ...]</td></tr>
-<tr><td><code>face_attr</code></td><td>age · gender · emotion</td><td>[{age, gender, emotion, ...}]</td></tr>
-<tr><td><code>distance</code></td><td>face distance & direction</td><td>{distance_cm, yaw, ...}</td></tr>
-<tr><td><code>hand</code></td><td>hand gesture</td><td>{gesture, ...}</td></tr>
-<tr><td><code>pose</code></td><td>body joints</td><td>keypoints</td></tr>
-<tr><td><code>caption</code></td><td>describe the photo</td><td>string</td></tr>
-<tr><td><code>question</code></td><td>Q&A about the photo</td><td>string</td></tr>
-<tr><td><code>tag</code></td><td>extract keywords</td><td>string/list</td></tr>
-<tr><td><code>classify</code></td><td>free-prompt classify</td><td>string</td></tr>
-<tr><td><code>ocr</code></td><td>read text</td><td>[{text, score, box}, ...]</td></tr>
-<tr><td><code>qr</code></td><td>read QR code</td><td>content</td></tr>
-<tr><td><code>bg_remove</code></td><td>remove background</td><td>image (base64)</td></tr>
-<tr><td><code>sr</code></td><td>upscale 4x</td><td>image (base64)</td></tr>
-<tr><td><code>mask</code></td><td>mask on/off</td><td>{mask: 0/1}</td></tr>
-</table>
-<p style="margin:12px 0 8px;"><b>Specially trained models (7)</b></p>
+<p style="margin:10px 0 6px;"><b>Specially trained (7)</b></p>
 <table>
 <tr><th>kind</th><th>Finds</th></tr>
 <tr><td><code>fire</code></td><td>fire &amp; smoke</td></tr>
@@ -690,44 +800,265 @@ cv2 · numpy 도 그대로 쓸 수 있어요 — <code>import cv2</code></p>`,
 <tr><td><code>ball</code></td><td>balls</td></tr>
 <tr><td><code>rps</code></td><td>rock · paper · scissors</td></tr>
 <tr><td><code>number</code></td><td>digits 0-9</td></tr>
-<tr><td><code>helmet</code></td><td>face with / without a helmet</td></tr>
+<tr><td><code>helmet</code></td><td>helmet on/off</td></tr>
 <tr><td><code>box</code></td><td>boxes</td></tr>
 </table>
-<p>Same return shape as <code>object</code> — [{name, score, box}, ...].</p>
-
-<p style="margin:12px 0 8px;"><b>Your own YOLO file — <code>detect(path, img)</code></b></p>
-<pre style="background:var(--paper);padding:8px 10px;border-radius:4px;font-size:.84em;">r = detect(r"C:\\models\\cat.pt", camera())
-show(camera(), r)</pre>
-<p>A converted <code>*_openvino_model</code> folder works too. Relative paths resolve from
-<code>models\\pycode</code>. The model is cached after the first run. Use
-<code>conf=0.5</code> to drop low scores.</p>
-
-<p style="margin:12px 0 8px;"><b>Using your trained AI — <code>vision("my:name", img)</code></b></p>
-<p>Use the name you typed when saving in Train. Check exact names with <code>my_models()</code>:</p>
-<pre style="background:var(--paper);padding:8px 10px;border-radius:4px;font-size:.84em;">>>> my_models()
-[{'name': 'rps', 'title': 'rps', 'kind': '손모양', 'classes': ['가위','바위','보']}]
->>> vision("my:rps", camera())
-[{'name': '가위', 'score': 0.91}, ...]</pre>
-<p>Spaces in the saved <code>name</code> become <code>-</code>, but the original
-<code>title</code> works too. An unknown name lists what you actually have.</p>
-<p>The input is always one photo, but <b>what the AI looks at depends on the kind</b> —
-shoot the same kind of scene you trained with.</p>
+<p style="margin:10px 0 6px;"><b>Your trained AI — kinds</b></p>
 <table>
-<tr><th>Kind</th><th>What it looks at</th><th>Tip</th></tr>
-<tr><td>사진 (image)</td><td>the whole picture</td><td>frame it like the training shots</td></tr>
-<tr><td>손모양 (hand)</td><td>21 hand joints</td><td>keep your hand visible</td></tr>
-<tr><td>표정 (face)</td><td>52 facial movements</td><td>face the camera</td></tr>
-<tr><td>상반신 (upper)</td><td>11 upper-body joints</td><td>sitting is fine, show shoulders</td></tr>
-<tr><td>전신 (body)</td><td>17 full-body joints</td><td>step back, show your whole body</td></tr>
+<tr><th>Kind</th><th>What it looks at</th></tr>
+<tr><td>사진 image</td><td>the whole picture</td></tr>
+<tr><td>손모양 hand</td><td>21 hand joints</td></tr>
+<tr><td>표정 face</td><td>52 facial movements</td></tr>
+<tr><td>상반신 upper</td><td>11 upper-body joints</td></tr>
+<tr><td>전신 body</td><td>17 full-body joints</td></tr>
 </table>
-<p>Returns your classes with confidence (0~1), best first. If the hand/face/body is not visible you get an empty list <code>[]</code>.</p>
-<p style="margin-top:10px;">The working directory is <code>models\\pycode</code> — use absolute paths for files elsewhere; <code>save()</code> writes there too.<br>Korean kind names also work ("사물", "얼굴", ...).
-When unsure, just <code>print(r)</code>. cv2 and numpy work as usual.</p>`,
+<p style="margin-top:8px;">Check names with <code>my_models()</code>. Relative paths resolve from
+<code>models\\pycode</code>. cv2 and numpy work as usual.</p>`,
     };
-    document.getElementById("guideButton").onclick = () => {
-      document.getElementById("guideBody").innerHTML = GUIDE[LANG] || GUIDE.ko;
-      document.getElementById("guideModal").classList.add("show");
-    };
+
+    /* ---------------- 도움말 패널 : 항목을 누르면 커서 자리에 코드가 들어간다 ---------------- */
+    /* d=하는 일, a=넣는 것, r=돌려주는 것, x=예시 — 항목의 [설명] 을 누르면 펼쳐진다 */
+    const API = [
+      { g: "basic", n: "camera()", ins: "camera()",
+        ko: { d: "웹캠으로 사진 한 장 찍기", a: "번호 (캠이 2개면 camera(1))", r: "사진 (이미지)" },
+        en: { d: "take one webcam photo", a: "index (camera(1) for a 2nd cam)", r: "image" },
+        x: 'img = camera()\nshow(img)' },
+      { g: "basic", n: 'load("사진.jpg")', ins: 'load(r"사진.jpg")',
+        ko: { d: "이미지 파일 열기", a: "파일 경로 (윈도우는 r\"C:\\\\...\" )", r: "사진 (이미지)" },
+        en: { d: "open an image file", a: "file path", r: "image" },
+        x: 'img = load(r"C:\\사진\\cat.jpg")' },
+      { g: "basic", n: "show(img, r)", ins: "show(img, r)",
+        ko: { d: "결과를 화면에 보여주기 (배포한 프로그램에서는 창으로)", a: "사진, (선택) 인식 결과, window=True 면 항상 창", r: "박스를 그린 사진" },
+        en: { d: "show the result (a shared program opens a window)", a: "image, (optional) result, window=True", r: "the drawn image" },
+        x: 'r = vision("object", img)\nshow(img, r)' },
+      { g: "basic", n: 'save(img, "결과.jpg")', ins: 'save(img, "결과.jpg")',
+        ko: { d: "이미지를 파일로 저장", a: "사진, 파일 이름", r: "저장한 파일 이름" },
+        en: { d: "save the image", a: "image, file name", r: "the file name" },
+        x: 'save(draw(img, r), "결과.jpg")' },
+      { g: "basic", n: "print(r)", ins: "print(r)",
+        ko: { d: "결과를 글자로 확인 — 무엇이 왔는지 모를 땐 이걸 먼저", a: "아무 값", r: "없음 (화면에 찍힘)" },
+        en: { d: "print the result — use it when unsure", a: "any value", r: "nothing" },
+        x: 'r = vision("face", img)\nprint(r)' },
+
+      { g: "ai", n: 'vision("object", img)', ins: 'vision("object", img)',
+        ko: { d: "사물과 사람 찾기", a: "기능 이름, 사진", r: "목록 [{name 이름, score 확신도, box 위치}, ...]" },
+        en: { d: "find objects and people", a: "kind, image", r: "list of {name, score, box}" },
+        x: 'r = vision("object", img)\nfor it in r:\n    print(it["name"], it["score"])' },
+      { g: "ai", n: 'vision("face", img)', ins: 'vision("face", img)',
+        ko: { d: "얼굴 찾기", a: "기능 이름, 사진", r: "목록 [{box 위치}, ...] — len(r) 이 얼굴 수" },
+        en: { d: "find faces", a: "kind, image", r: "list of {box} — len(r) is the count" },
+        x: 'faces = vision("face", img)\nprint("얼굴 수:", len(faces))' },
+      { g: "ai", n: 'vision("face_attr", img)', ins: 'vision("face_attr", img)',
+        ko: { d: "나이·성별·감정 알아보기", a: "기능 이름, 사진", r: "목록 [{age 나이, gender 성별, emotion 감정}, ...]" },
+        en: { d: "age, gender, emotion", a: "kind, image", r: "list of {age, gender, emotion}" },
+        x: 'r = vision("face_attr", img)\nif r:\n    print(r[0]["age"], r[0]["emotion"])' },
+      { g: "ai", n: 'vision("caption", img)', ins: 'vision("caption", img)',
+        ko: { d: "사진을 한 줄로 설명", a: "기능 이름, 사진, lang=\"en\" 영어로, raw=True 전체 값", r: "설명 (글자)" },
+        en: { d: "describe the photo", a: "kind, image, lang=, raw=", r: "the caption (text)" },
+        x: 'print(vision("caption", camera()))\nprint(vision("caption", img, lang="en"))\nprint(vision("caption", img, raw=True))' },
+      { g: "ai", n: 'vision("question", img, prompt="...")',
+        ins: 'vision("question", img, prompt="사람이 몇 명이야?")',
+        ko: { d: "사진에 대해 질문하기", a: "기능 이름, 사진, prompt=질문", r: "답 (글자)" },
+        en: { d: "ask about the photo", a: "kind, image, prompt=question", r: "the answer (text)" },
+        x: 'answer = vision("question", img, prompt="무슨 색이야?")\nprint(answer)\nspeak(answer)' },
+      { g: "ai", n: 'vision("ocr", img)', ins: 'vision("ocr", img)',
+        ko: { d: "사진 속 글자 읽기", a: "기능 이름, 사진", r: "목록 [{text 글자, score 확신도, box 위치}, ...]" },
+        en: { d: "read text in the photo", a: "kind, image", r: "list of {text, score, box}" },
+        x: 'for it in vision("ocr", img):\n    print(it["text"])' },
+      { g: "ai", n: 'vision("qr", img)', ins: 'vision("qr", img)',
+        ko: { d: "QR 코드 읽기", a: "기능 이름, 사진", r: "QR 안의 내용 (글자) — 없으면 빈 글자" },
+        en: { d: "read a QR code", a: "kind, image", r: "the QR text (empty if none)" },
+        x: 'print(vision("qr", camera()))' },
+      { g: "ai", n: 'vision("hand", img)', ins: 'vision("hand", img)',
+        ko: { d: "손동작 알아보기", a: "기능 이름, 사진", r: "목록 [{gesture 손모양, score, box}, ...] — 손이 없으면 []" },
+        en: { d: "hand gesture", a: "kind, image", r: "list of {gesture, score, box} — empty if no hand" },
+        x: 'r = vision("hand", camera())\nif r:\n    print(r[0]["gesture"])' },
+      { g: "ai", n: 'vision("pose", img)', ins: 'vision("pose", img)',
+        ko: { d: "몸 관절 위치 찾기", a: "기능 이름, 사진", r: "관절 좌표 목록" },
+        en: { d: "body joints", a: "kind, image", r: "keypoints" },
+        x: 'print(vision("pose", camera()))' },
+      { g: "ai", n: 'vision("bg_remove", img)', ins: 'vision("bg_remove", img)',
+        ko: { d: "배경 지우기", a: "기능 이름, 사진", r: "배경이 지워진 사진 — show·save 에 바로 넣을 수 있어요" },
+        en: { d: "remove the background", a: "kind, image", r: "the cut-out image (use with show/save)" },
+        x: 'cut = vision("bg_remove", camera())\nshow(cut)\nsave(cut, "no_bg.png")   # png 로 저장하면 투명하게' },
+      { g: "ai", n: 'vision("sr", img)', ins: 'vision("sr", img)',
+        ko: { d: "흐린 사진을 4배 선명하게", a: "기능 이름, 사진", r: "선명해진 사진 — show·save 에 바로 넣을 수 있어요" },
+        en: { d: "upscale 4x", a: "kind, image", r: "the upscaled image" },
+        x: 'big = vision("sr", img)\nshow(big)\nsave(big, "big.jpg")' },
+      { g: "ai", n: 'vision("fire", img)', ins: 'vision("fire", img)',
+        ko: { d: "불·연기 찾기 (특별 훈련된 AI)", a: "기능 이름, 사진", r: "목록 — 없으면 빈 목록 []" },
+        en: { d: "find fire and smoke", a: "kind, image", r: "list — empty if none" },
+        x: 'if vision("fire", camera()):\n    print("불이야!")' },
+      { g: "ai", n: 'vision("rps", img)', ins: 'vision("rps", img)',
+        ko: { d: "가위바위보 알아보기 (특별 훈련된 AI)", a: "기능 이름, 사진", r: "목록 [{name 가위/바위/보, score, box}]" },
+        en: { d: "rock paper scissors", a: "kind, image", r: "list of {name, score, box}" },
+        x: 'r = vision("rps", camera())\nif r:\n    print(r[0]["name"])' },
+
+      { g: "my", n: "my_models()", ins: "my_models()",
+        ko: { d: "가르치기에서 만든 내 AI 목록 보기", a: "없음", r: "목록 [{name 이름, kind 종류, classes 클래스들}, ...]" },
+        en: { d: "list your trained AIs", a: "none", r: "list of {name, kind, classes}" },
+        x: 'for m in my_models():\n    print(m["name"], m["kind"], m["classes"])' },
+      { g: "my", n: 'vision("my:이름", img)', ins: 'vision("my:이름", img)',
+        ko: { d: "내가 가르친 AI 로 분류하기", a: "my: + 저장한 이름, 사진", r: "목록 [{name 클래스, score 확신도}, ...] 확신도 높은 순" },
+        en: { d: "classify with your AI", a: "my: + saved name, image", r: "list of {name, score}, best first" },
+        x: 'r = vision("my:가위바위보", camera())\nif r:\n    print(r[0]["name"], round(r[0]["score"]*100), "%")' },
+      { g: "my", n: 'detect("내모델.pt", img)', ins: 'detect(r"내모델.pt", img)',
+        ko: { d: "내가 학습한 YOLO 파일로 인식하기", a: "모델 파일 경로, 사진, conf=낮은 점수 자르기", r: "목록 [{name, score, box}, ...]" },
+        en: { d: "run your own YOLO file", a: "model path, image, conf=", r: "list of {name, score, box}" },
+        x: 'r = detect(r"C:\\모델\\best.pt", img, conf=0.5)\nshow(img, r)' },
+
+      { g: "sound", n: 'speak("안녕하세요")', ins: 'speak("안녕하세요")',
+        ko: { d: "글자를 소리로 읽어 주기", a: "글자, voice=목소리(F1~F5 여자·M1~M5 남자), lang=\"en\", save_as=\"a.wav\"", r: "없음 (save_as 를 주면 파일 이름)" },
+        en: { d: "speak the text aloud", a: "text, voice=, lang=, save_as=", r: "nothing (or the file name)" },
+        x: 'speak("반가워요", voice="M1")' },
+      { g: "sound", n: "listen(4)", ins: "listen(4)",
+        ko: { d: "마이크로 듣고 글자로 바꾸기", a: "듣는 초, lang=\"en\"", r: "들은 말 (글자)" },
+        en: { d: "listen and transcribe", a: "seconds, lang=", r: "the text you said" },
+        x: 'text = listen(4)\nprint("들은 말:", text)' },
+
+      { g: "flow", n: "from themaker import *", ins: "from themaker import *\n",
+        ko: { d: "맨 위에 한 번 쓰기 — 이게 있어야 위 함수들을 쓸 수 있어요", a: "없음", r: "없음" },
+        en: { d: "put this at the top", a: "none", r: "nothing" },
+        x: 'from themaker import *' },
+      { g: "flow", n: "for i in range(5):", ins: "for i in range(5):\n    ",
+        ko: { d: "5번 반복하기", a: "반복할 횟수", r: "없음" },
+        en: { d: "repeat 5 times", a: "count", r: "nothing" },
+        x: 'for i in range(5):\n    print(i, vision("object", camera()))' },
+      { g: "flow", n: "if ...:", ins: "if r:\n    ",
+        ko: { d: "조건이 맞을 때만 실행 — 목록이 비어 있으면 거짓", a: "조건", r: "없음" },
+        en: { d: "run only if the condition is true", a: "condition", r: "nothing" },
+        x: 'r = vision("face", camera())\nif r:\n    speak("얼굴을 찾았어요")' },
+      { g: "flow", n: "time.sleep(2)", ins: "time.sleep(2)",
+        ko: { d: "2초 기다리기 (맨 위에 import time 필요)", a: "기다릴 초", r: "없음" },
+        en: { d: "wait 2 seconds (needs import time)", a: "seconds", r: "nothing" },
+        x: 'import time\ntime.sleep(2)' },
+    ];
+
+    function renderHelp(q) {
+      const box = document.getElementById("helpList");
+      const key = (q || "").trim().toLowerCase();
+      box.innerHTML = "";
+      let lastGroup = "", shown = 0;
+      API.forEach(it => {
+        const info = (LANG === "en" ? it.en : it.ko) || it.ko;
+        if (key && !(it.n.toLowerCase().includes(key) || info.d.toLowerCase().includes(key)))
+          return;
+        shown++;
+        if (it.g !== lastGroup) {
+          lastGroup = it.g;
+          const h = document.createElement("div");
+          h.className = "h-group"; h.textContent = t("g_" + it.g);
+          box.appendChild(h);
+        }
+        const d = document.createElement("div");
+        d.className = "h-item";
+        d.innerHTML =
+          `<span class="put"></span><span class="more"></span><code></code><div class="d"></div>
+           <div class="h-detail"><dl>
+             <dt class="k1"></dt><dd class="v1"></dd>
+             <dt class="k2"></dt><dd class="v2"></dd>
+           </dl><pre></pre></div>`;
+        d.querySelector("code").textContent = it.n;
+        d.querySelector(".d").textContent = info.d;
+        d.querySelector(".put").textContent = t("put");
+        d.querySelector(".more").textContent = t("detail");
+        d.querySelector(".k1").textContent = t("argsK");
+        d.querySelector(".v1").textContent = info.a;
+        d.querySelector(".k2").textContent = t("retK");
+        d.querySelector(".v2").textContent = info.r;
+        d.querySelector("pre").textContent = it.x;
+
+        d.querySelector(".put").onclick = ev => { ev.stopPropagation(); insertSnippet(it.ins); };
+        d.querySelector(".more").onclick = ev => { ev.stopPropagation(); d.classList.toggle("open"); };
+        d.querySelector("pre").onclick = ev => { ev.stopPropagation(); insertSnippet(it.x); };
+        d.onclick = () => insertSnippet(it.ins);   /* 카드를 눌러도 넣기 */
+        box.appendChild(d);
+      });
+      if (!shown) {
+        const e = document.createElement("div");
+        e.className = "h-item"; e.textContent = t("noHit");
+        box.appendChild(e);
+      }
+    }
+
+    function insertSnippet(code) {
+      const doc = cm.getDoc();
+      const cur = doc.getCursor();
+      const line = doc.getLine(cur.line);
+      /* 줄에 이미 글이 있으면 아랫줄에 넣는다 (덮어쓰지 않게) */
+      if (line.trim() && cur.ch >= line.length) {
+        doc.replaceRange("\n" + code, cur);
+      } else {
+        doc.replaceRange(code, cur);
+      }
+      cm.focus();
+    }
+
+    /* 버튼 하나로 열고 닫는다 — 열려 있으면 버튼에 표시가 남아 다시 누르면 닫힌다는 걸 알 수 있다 */
+    function setHelp(open) {
+      const p = document.getElementById("helpPanel");
+      const btn = document.getElementById("guideButton");
+      p.classList.toggle("open", open);
+      btn.classList.toggle("on", open);
+      btn.textContent = open ? t("guideOff") : t("guide");
+      if (open) {
+        document.getElementById("guideBody").innerHTML = GUIDE[LANG] || GUIDE.ko;
+        renderHelp(document.getElementById("helpSearch").value);
+      }
+      setTimeout(() => cm.refresh(), 50);
+    }
+    document.getElementById("guideButton").onclick = () =>
+      setHelp(!document.getElementById("helpPanel").classList.contains("open"));
+    document.getElementById("helpClose").onclick = () => setHelp(false);
+    document.getElementById("helpSearch").addEventListener("input", e => renderHelp(e.target.value));
+
+    /* ---------------- 자동완성 ---------------- */
+    const KINDS = ["object", "face", "face_attr", "distance", "hand", "pose", "seg",
+                   "caption", "question", "tag", "classify", "ocr", "qr",
+                   "bg_remove", "sr", "mask", "fire", "fall", "ball", "rps",
+                   "number", "helmet", "box"];
+    const FUNCS = ["camera", "load", "save", "show", "draw", "vision", "detect",
+                   "speak", "listen", "stt", "my_models", "print", "range",
+                   "len", "for", "if", "else", "while", "import", "from"];
+
+    function themakerHint(editor) {
+      const cur = editor.getCursor();
+      const line = editor.getLine(cur.line).slice(0, cur.ch);
+      /* 따옴표 안이면 기능 이름을 제안한다: vision(" 까지 쳤을 때 */
+      const q = line.match(/["']([\w:]*)$/);
+      if (q && /vision\s*\(\s*["']?[\w:]*$/.test(line)) {
+        const typed = q[1];
+        const list = KINDS.filter(k => k.startsWith(typed));
+        if (list.length) {
+          return { list, from: CodeMirror.Pos(cur.line, cur.ch - typed.length),
+                   to: cur };
+        }
+      }
+      const w = line.match(/[\w_]+$/);
+      if (!w) return null;
+      const typed = w[0];
+      const list = FUNCS.filter(f => f.startsWith(typed) && f !== typed);
+      if (!list.length) return null;
+      return { list, from: CodeMirror.Pos(cur.line, cur.ch - typed.length), to: cur };
+    }
+
+    cm.setOption("extraKeys", Object.assign({}, cm.getOption("extraKeys"), {
+      "Ctrl-Space": c => c.showHint({ hint: themakerHint, completeSingle: false }),
+      "Ctrl-Enter": () => { if (!SID) run(); },      // 실행
+      "Cmd-Enter": () => { if (!SID) run(); },
+      "Shift-Ctrl-Enter": () => stop(),
+    }));
+    /* 편집기 밖에서도 되게 */
+    document.addEventListener("keydown", e => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); if (!SID) run(); }
+      else if (e.key === "Escape" && SID) { e.preventDefault(); stop(); }
+    });
+    cm.on("inputRead", (editor, ch) => {
+      if (!ch.text || !ch.text[0]) return;
+      if (/[\w_"']/.test(ch.text[0])) {
+        editor.showHint({ hint: themakerHint, completeSingle: false });
+      }
+    });
 
     /* =============================== 상태바 칩 =============================== */
     (async function initChips() {
@@ -748,10 +1079,21 @@ When unsure, just <code>print(r)</code>. cv2 and numpy work as usual.</p>`,
       const set = (id, k) => { const el = document.getElementById(id); if (el) el.textContent = t(k); };
       set("txtTitle", "title"); set("txtEyebrow", "eyebrow");
       set("txtEdHead", "edHead"); set("txtOutHead", "outHead");
-      set("guideButton", "guide"); set("exampleButton", "example");
+      const helpOpen = document.getElementById("helpPanel").classList.contains("open");
+      document.getElementById("guideButton").textContent = t(helpOpen ? "guideOff" : "guide");
+      set("exampleButton", "example");
       set("saveButton", "save"); set("loadButton", "load"); set("deployButton", "deploy");
       set("stopButton", "stop"); set("clearButton", "clear");
-      set("txtHint", "hint"); set("txtExTitle", "exTitle"); set("txtGuideTitle", "guideTitle");
+      set("txtHint", "hint"); set("txtExTitle", "exTitle");
+      set("txtHelpHead", "helpHead"); set("txtHelpMore", "helpMore");
+      set("txtWorkTitle", "workTitle");
+      const hs = document.getElementById("helpSearch");
+      if (hs) hs.placeholder = t("helpSearch");
+      if (typeof renderHelp === "function"
+          && document.getElementById("helpPanel").classList.contains("open")) {
+        document.getElementById("guideBody").innerHTML = GUIDE[LANG] || GUIDE.ko;
+        renderHelp(hs ? hs.value : "");
+      }
       set("txtRunState", "runStateK"); set("langButton", "langBtn");
       document.getElementById("runLabel").textContent = SID ? t("running") : t("run");
       const hl = document.getElementById("homeLink");

@@ -20,7 +20,8 @@ router = APIRouter()
 
 MP_DIR = "models/mediapipe"
 CALIB_PATH = os.path.join(MP_DIR, "calib.json")
-IMAGE_DIR = "image_temp/"
+from paths import TMP_DIR  # noqa: E402
+IMAGE_DIR = TMP_DIR + os.sep
 IRIS_MM = 11.7                      # 사람 홍채 실지름(거의 일정)
 PROC_W = 640                        # 처리 해상도 고정 (f_px 일관성)
 

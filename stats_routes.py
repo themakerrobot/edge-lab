@@ -19,7 +19,7 @@ from fastapi import APIRouter, Body, Query, Request
 
 router = APIRouter()
 
-STATS_DIR = "models/stats"
+from paths import STATS_DIR  # noqa: E402
 STATS_PATH = os.path.join(STATS_DIR, "usage.json")
 FLUSH_EVERY = 20          # 이만큼 쌓이면 저장
 FLUSH_SECONDS = 15        # 또는 이만큼 지나면 저장

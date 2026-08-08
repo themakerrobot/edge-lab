@@ -42,9 +42,19 @@ powershell -ExecutionPolicy Bypass -File setup_deploy.ps1 -Token hf_xxxx
 | `stats_routes.py` | 사용 통계 수집 |
 | `view_project/` | 프론트 4페이지 (`index` 써보기 · `blocks` 만들기 · `train` 가르치기 · `options` 설정) |
 | `run.bat` / `launcher.py` | 실행 (launcher는 themaker.exe 빌드용) |
+| `paths.py` | 폴더 규칙 — `models/`(AI 모델) / `data/`(작업 파일) 분리·자동 이전 |
 | `setup_deploy.ps1` | 설치 — 패키지 + 모델 다운로드 |
 | `make_bundle.bat` / `bundle_check.bat` | 포터블 zip 번들 생성·점검 |
 | `check.py` / `smoke_test.py` | 모델 로드·API 검증 |
+
+## 폴더
+| 폴더 | 내용 | 지워도 되나 |
+|---|---|---|
+| `models/` | 허깅페이스에서 받은 AI 모델만 | 다시 받으면 됨 |
+| `data/` | 실행하면서 생기는 것 — 학습한 AI(`user`), 작품(`project`·`pycode`), 통계(`stats`), 임시(`tmp`) | **지우면 복구 불가** |
+
+"전체 초기화"는 `data/` 안만 지운다. 예전 설치본에서 `models/user` 처럼 섞여 있던 파일은
+서버가 처음 뜰 때 `data/` 로 자동으로 옮긴다.
 
 ## 모델
 | 용도 | 모델 | 디바이스 |

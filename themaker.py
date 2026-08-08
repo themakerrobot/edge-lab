@@ -92,6 +92,29 @@ def _post(url, data=None, files=None, timeout=120):
             "The Maker 서버에 연결할 수 없어요. run.bat 이 켜져 있는지 확인하세요. (%s)" % ex)
 
 
+def _b64_to_image(b64):
+    """base64 글자 -> 이미지(numpy). 투명(알파) 정보가 있으면 살린다."""
+    import base64
+    raw = b64.split(",", 1)[-1]                  # data:image/png;base64,... 형태도 허용
+    try:
+        buf = np.frombuffer(base64.b64decode(raw), np.uint8)
+    except Exception:
+        raise TheMakerError("이미지를 읽을 수 없어요.")
+    img = cv2.imdecode(buf, cv2.IMREAD_UNCHANGED)
+    if img is None:
+        raise TheMakerError("이미지를 읽을 수 없어요.")
+    return img
+
+
+def _flatten(image):
+    """투명한 이미지는 흰 바탕 위에 올려 준다 (jpg 로 보낼 때 필요)."""
+    if isinstance(image, np.ndarray) and image.ndim == 3 and image.shape[2] == 4:
+        bgr = image[:, :, :3].astype(np.float32)
+        a = (image[:, :, 3:4].astype(np.float32)) / 255.0
+        return (bgr * a + 255.0 * (1 - a)).astype(np.uint8)
+    return image
+
+
 def _to_jpg(image):
     """경로 문자열 / numpy 배열 -> jpg bytes."""
     if isinstance(image, str):
@@ -102,7 +125,7 @@ def _to_jpg(image):
         img = image
     else:
         raise TheMakerError("image 는 파일 경로나 camera() 결과여야 해요.")
-    ok, buf = cv2.imencode(".jpg", img)
+    ok, buf = cv2.imencode(".jpg", _flatten(img))
     if not ok:
         raise TheMakerError("이미지 인코딩 실패")
     return buf.tobytes()
@@ -131,12 +154,17 @@ def _resolve_model(name):
     return name                    # 목록을 못 받아온 경우엔 그대로 시도
 
 
-def vision(kind, image, prompt=None, **params):
+def vision(kind, image, prompt=None, raw=False, **params):
     """AI 실행. kind: "object","face","caption","question","ocr","bg_remove" 등 (한글도 가능).
 
     >>> r = vision("object", img)
     >>> r = vision("question", img, prompt="사람이 몇 명이야?")
+    >>> r = vision("caption", img, lang="en")    # 영어로 답 받기
+    >>> r = vision("caption", img, raw=True)     # 서버가 준 것 그대로 (사전)
     >>> r = vision("my:my-ai", img)              # 가르치기에서 저장한 모델
+
+    설명·질문·태그는 읽기 쉽게 글자 하나로 돌려준다.
+    영어판 등 다른 값까지 보고 싶으면 raw=True 를 준다.
     """
     kind = str(kind).strip()
     kind = _ALIAS_KO.get(kind, kind)
@@ -159,6 +187,20 @@ def vision(kind, image, prompt=None, **params):
     if j.get("result") != "ok":
         raise TheMakerError("AI 실행 실패: %s" % j.get("data"))
     data = j.get("data")
+    if raw:
+        return data                              # 서버가 준 것 그대로 (사전·목록)
+    # 배경제거·화질개선은 base64 글자로 오는데, 학생이 다루기 어렵다 —
+    # 여기서 풀어서 곧바로 이미지로 돌려준다 (save·show 에 그대로 넣을 수 있게).
+    if kind in ("bg_remove", "sr") and isinstance(data, str):
+        return _b64_to_image(data)
+    # 글로 답하는 기능은 사전 대신 글자 하나로 준다 —
+    # r["answer"] 같은 걸 몰라도 print(r) 로 바로 읽히게.
+    _TEXT_OF = {"caption": "caption", "question": "answer", "tag": "tag"}
+    if kind in _TEXT_OF and isinstance(data, dict):
+        return str(data.get(_TEXT_OF[kind], "")).strip()
+    # QR 은 보통 하나만 찍으니 내용만 준다 (없으면 빈 글자)
+    if kind == "qr" and isinstance(data, list):
+        return str(data[0].get("data", "")) if data else ""
     # 사물 인식은 {person:[], object:[]} 로 오므로 하나의 리스트로 합쳐 준다.
     if kind == "object" and isinstance(data, dict):
         data = (data.get("object") or []) + (data.get("person") or [])
@@ -213,14 +255,15 @@ def load(path):
 
 
 def save(image, path="result.jpg"):
-    """이미지를 파일로 저장."""
-    cv2.imwrite(path, image)
+    """이미지를 파일로 저장. png 로 저장하면 투명 배경도 그대로 남는다."""
+    img = image if str(path).lower().endswith(".png") else _flatten(image)
+    cv2.imwrite(path, img)
     return path
 
 
 def draw(image, result):
     """인식 결과(박스/이름)를 이미지에 그려서 돌려준다."""
-    img = image.copy()
+    img = _flatten(image).copy()
     items = result if isinstance(result, list) else [result]
     for it in items:
         if not isinstance(it, dict):
@@ -241,13 +284,25 @@ def draw(image, result):
     return img
 
 
-def show(image, result=None, title="The Maker", wait=True):
-    """이미지를 창으로 보기. result 를 주면 박스를 그려서 보여준다.
+def show(image, result=None, title="The Maker", wait=True, window=False):
+    """결과를 보여준다. result 를 주면 박스를 그려서 보여준다.
 
-    wait=True 면 아무 키나 누를 때까지 기다린다.
+    파이썬 페이지에서 실행하면 화면(결과 칸)에 바로 나온다.
+    배포한 프로그램(exe)으로 실행하면 따로 창이 떠서 보여준다.
+    window=True 를 주면 어디서든 창으로 띄운다.
     """
     img = draw(image, result) if result is not None else image
-    cv2.imshow(title, img)
+    sid = os.environ.get("THEMAKER_SID", "")
+    if sid and not window:
+        try:
+            _post("/pycode/frame?sid=" + urllib.parse.quote(sid)
+                  + "&caption=" + urllib.parse.quote(str(title)),
+                  files={"uploadFile": ("f.jpg", _to_jpg(img), "image/jpeg")},
+                  timeout=20)
+            return img
+        except Exception:
+            pass                      # 화면으로 못 보내면 창으로 대신 띄운다
+    cv2.imshow(title, _flatten(img))
     if wait:
         cv2.waitKey(0)
         cv2.destroyAllWindows()
@@ -370,7 +425,7 @@ def detect(model_path, image, conf=0.3):
     >>> show(camera(), r)
 
     model_path : .pt 파일, 또는 OpenVINO 로 변환한 폴더(*_openvino_model)
-                 상대경로는 실행 폴더(models/pycode) 기준이다.
+                 상대경로는 실행 폴더(data/pycode) 기준이다.
     conf       : 이 확신도보다 낮은 결과는 버린다 (0~1).
     돌려주는 것: [{"name": 이름, "score": 0~1, "box": [x1,y1,x2,y2]}, ...]
     """
