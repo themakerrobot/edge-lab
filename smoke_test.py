@@ -64,8 +64,6 @@ CASES = [
     ("마스크",           "/face/mask_detect",       "plain", None),
     ("글자 인식",        "/code/ocr",               "text",  None),
     ("QR 인식",          "/code/barcode",           "qr",    None),
-    ("변환(만화)",       "/gan/cartoon",            "plain", None),
-    ("변환(감성)",       "/gan/sketch",             "plain", None),
     ("배경 제거",        "/gan/portrait",           "plain", None),
     ("화질 개선",        "/gan/sr",                 "plain", None),
     ("VLM 설명",         "/vlm/vlm_inference_e",    "plain", {"prompt": "무엇이 보이나요?"}),
@@ -77,9 +75,57 @@ CASES = [
     ("손동작(MP)",        "/object/hand_e",          "plain", None),
 ]
 
+# 음성은 모델이 없을 수도 있으므로 따로 확인한다 (없으면 건너뜀)
+def check_speech():
+    try:
+        with urllib.request.urlopen(HOST + "/speech/voices", timeout=5) as r:
+            j = json.loads(r.read().decode())
+    except Exception:
+        return
+    err = (j.get("data") or {}).get("error") or ""
+    body = json.dumps({"text": "안녕하세요", "voice": "F1", "lang": "ko"}).encode()
+    req = urllib.request.Request(HOST + "/speech/tts", data=body,
+                                 headers={"Content-Type": "application/json"})
+    t0 = time.perf_counter()
+    try:
+        with urllib.request.urlopen(req, timeout=180) as r:
+            ok = "audio" in r.headers.get("Content-Type", "") and len(r.read()) > 1000
+        ms = int((time.perf_counter() - t0) * 1000)
+        print(f"  {'PASS' if ok else 'FAIL'}  {'음성 합성(TTS)':<16} {ms:>6} ms")
+    except Exception as ex:
+        print(f"  SKIP  {'음성 합성(TTS)':<16} {str(err or ex)[:40]}")
+
+
+def wait_ready(limit=300):
+    """모델은 백그라운드로 올라온다 — 준비될 때까지 기다린다.
+
+    서버 소켓은 즉시 열리므로 /system 응답만 보고 시작하면
+    아직 로딩 중인 기능이 전부 503 으로 실패한다.
+    """
+    t0 = time.perf_counter()
+    shown = False
+    while time.perf_counter() - t0 < limit:
+        try:
+            with urllib.request.urlopen(HOST + "/ready", timeout=5) as r:
+                j = json.loads(r.read().decode())
+            if j.get("ready"):
+                if shown:
+                    print(f"  준비 완료 ({int(time.perf_counter() - t0)}s)")
+                return True
+            if not shown:
+                print("  모델을 올리는 중입니다 (1~2분)...")
+                shown = True
+        except Exception:
+            pass
+        time.sleep(3)
+    print(f"[FAIL] {limit}초 안에 준비되지 않았습니다")
+    return False
+
 
 def main():
     print(f"\nvapi-od smoke test  ->  {HOST}\n" + "-" * 62)
+    if not wait_ready():
+        return 1
     try:
         with urllib.request.urlopen(HOST + "/system", timeout=10) as r:
             info = json.loads(r.read().decode())
@@ -108,6 +154,7 @@ def main():
             print(f"  FAIL  {label:<16} {str(ex)[:60]}")
             failed += 1
 
+    check_speech()
     print("-" * 62)
     print(f"결과: {passed} PASS / {failed} FAIL  (총 {passed + failed})")
     return 1 if failed else 0

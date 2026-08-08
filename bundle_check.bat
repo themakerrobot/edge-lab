@@ -38,9 +38,9 @@ set /a WAIT=0
 :waitloop
 timeout /t 5 /nobreak >nul
 set /a WAIT+=5
-curl -s -o nul -m 3 http://localhost:57711/system && goto :ready
+curl -s -m 3 http://localhost:57711/ready | findstr /c:"\"ready\":true" >nul && goto :ready
 if %WAIT% geq 300 (echo [FAIL] server did not start within 300s & goto :fail)
-echo   waiting ... %WAIT%s
+echo   loading models ... %WAIT%s
 goto :waitloop
 
 :ready
