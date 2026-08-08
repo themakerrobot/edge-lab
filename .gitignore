@@ -1,5 +1,9 @@
 # models / weights (HF로 관리, git에 올리지 않음)
 models/
+
+# data / 실행하면서 생기는 작업 파일 (학생 결과물·통계·임시)
+data/
+image_temp/
 *.pt
 *.onnx
 *.xml
