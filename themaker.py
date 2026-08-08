@@ -154,17 +154,17 @@ def _resolve_model(name):
     return name                    # 목록을 못 받아온 경우엔 그대로 시도
 
 
-def vision(kind, image, prompt=None, raw=False, **params):
+def vision(kind, image, prompt=None, **params):
     """AI 실행. kind: "object","face","caption","question","ocr","bg_remove" 등 (한글도 가능).
 
     >>> r = vision("object", img)
     >>> r = vision("question", img, prompt="사람이 몇 명이야?")
     >>> r = vision("caption", img, lang="en")    # 영어로 답 받기
-    >>> r = vision("caption", img, raw=True)     # 서버가 준 것 그대로 (사전)
     >>> r = vision("my:my-ai", img)              # 가르치기에서 저장한 모델
 
-    설명·질문·태그는 읽기 쉽게 글자 하나로 돌려준다.
-    영어판 등 다른 값까지 보고 싶으면 raw=True 를 준다.
+    서버가 준 값을 그대로 돌려준다 (사전 또는 목록).
+    무엇이 왔는지 모를 땐 print(r) 로 확인하면 된다.
+    그림으로 오는 기능(배경제거·화질개선·분할)만 바로 쓸 수 있게 이미지로 풀어 준다.
     """
     kind = str(kind).strip()
     kind = _ALIAS_KO.get(kind, kind)
@@ -187,27 +187,10 @@ def vision(kind, image, prompt=None, raw=False, **params):
     if j.get("result") != "ok":
         raise TheMakerError("AI 실행 실패: %s" % j.get("data"))
     data = j.get("data")
-    if raw:
-        return data                              # 서버가 준 것 그대로 (사전·목록)
-    # 배경제거·화질개선은 base64 글자로 오는데, 학생이 다루기 어렵다 —
-    # 여기서 풀어서 곧바로 이미지로 돌려준다 (save·show 에 그대로 넣을 수 있게).
-    if kind in ("bg_remove", "sr") and isinstance(data, str):
+    # 그림으로 오는 기능은 base64 글자 대신 이미지로 풀어 준다 (show·save 에 바로 넣게)
+    if kind in ("bg_remove", "sr", "seg") and isinstance(data, str):
         return _b64_to_image(data)
-    # 글로 답하는 기능은 사전 대신 글자 하나로 준다 —
-    # r["answer"] 같은 걸 몰라도 print(r) 로 바로 읽히게.
-    _TEXT_OF = {"caption": "caption", "question": "answer", "tag": "tag"}
-    if kind in _TEXT_OF and isinstance(data, dict):
-        return str(data.get(_TEXT_OF[kind], "")).strip()
-    # QR 은 보통 하나만 찍으니 내용만 준다 (없으면 빈 글자)
-    if kind == "qr" and isinstance(data, list):
-        return str(data[0].get("data", "")) if data else ""
-    # 사물 인식은 {person:[], object:[]} 로 오므로 하나의 리스트로 합쳐 준다.
-    if kind == "object" and isinstance(data, dict):
-        data = (data.get("object") or []) + (data.get("person") or [])
-    # 특별 훈련 YOLO 는 {"object": [...]} 로 온다
-    elif isinstance(data, dict) and set(data) == {"object"}:
-        data = data.get("object") or []
-    return data
+    return data                                  # 그 밖에는 서버가 준 그대로
 
 
 _KIND_KO = {"image": "사진", "pose": "손모양", "face": "표정",
@@ -261,15 +244,40 @@ def save(image, path="result.jpg"):
     return path
 
 
+def _boxes_of(result):
+    """어떤 모양으로 와도 박스가 든 항목들을 찾아낸다.
+
+    목록 [{box...}, ...] 도 되고,
+    사전 {"person": [...], "object": [...]} 처럼 안에 목록이 든 것도 된다.
+    """
+    if isinstance(result, dict):
+        out = []
+        for key, val in result.items():
+            if str(key).endswith("_en"):          # 영어판은 같은 내용이라 건너뛴다
+                continue
+            if isinstance(val, list):
+                out += [v for v in val if isinstance(v, dict)]
+        if out:
+            return out
+        return [result]                           # 항목 하나짜리 사전
+    if isinstance(result, list):
+        return [v for v in result if isinstance(v, dict)]
+    return []
+
+
 def draw(image, result):
-    """인식 결과(박스/이름)를 이미지에 그려서 돌려준다."""
+    """인식 결과(박스/이름)를 이미지에 그려서 돌려준다.
+
+    vision() 이 준 값을 그대로 넣으면 된다 — 목록이든 사전이든 알아서 찾는다.
+    """
     img = _flatten(image).copy()
-    items = result if isinstance(result, list) else [result]
+    items = _boxes_of(result)
     for it in items:
         if not isinstance(it, dict):
             continue
         box = it.get("box") or it.get("bbox")
-        name = it.get("name") or it.get("label") or it.get("class") or ""
+        name = (it.get("name") or it.get("label") or it.get("class")
+                or it.get("gesture") or it.get("text") or it.get("emotion") or "")
         score = it.get("score") or it.get("conf")
         if box and len(box) == 4:
             x1, y1, x2, y2 = [int(v) for v in box]

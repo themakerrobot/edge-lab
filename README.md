@@ -40,7 +40,11 @@ powershell -ExecutionPolicy Bypass -File setup_deploy.ps1 -Token hf_xxxx
 | `mp_routes.py` | MediaPipe — 얼굴 거리·방향, 손 제스처 |
 | `train_routes.py` | 나만의 AI 학습 API — 특징 추출(5모드)·모델 저장·작품·성적표 |
 | `stats_routes.py` | 사용 통계 수집 |
-| `view_project/` | 프론트 4페이지 (`index` 써보기 · `blocks` 만들기 · `train` 가르치기 · `options` 설정) |
+| `code_routes.py` | 파이썬 IDE API — 실행·정지·출력·작품 저장·배포 zip |
+| `speech_routes.py` | 음성 인식(STT)·음성 합성(TTS) API |
+| `themaker.py` | 학생 코드용 라이브러리 — `vision()`·`camera()`·`speak()` 등 |
+| `runner.py` | 배포한 작품 실행기 (themaker-run.exe 로 빌드) |
+| `view_project/` | 프론트 5페이지 (`index` 써보기 · `blocks` 블록 코딩 · `code` 파이썬 · `train` 가르치기 · `options` 설정) |
 | `run.bat` / `launcher.py` | 실행 (launcher는 themaker.exe 빌드용) |
 | `paths.py` | 폴더 규칙 — `models/`(AI 모델) / `data/`(작업 파일) 분리·자동 이전 |
 | `setup_deploy.ps1` | 설치 — 패키지 + 모델 다운로드 |

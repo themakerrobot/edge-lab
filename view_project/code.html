@@ -394,8 +394,8 @@
 
 img = camera()              # 웹캠 한 장 찍기
 r = vision("object", img)   # AI 로 사물 인식 (vision("사물", img) 도 돼요)
-print(r)
-show(img, r)                # 결과를 창으로 보기
+print(r["object"])          # 찾은 사물 목록
+show(img, r)                # 결과를 화면에서 보기 (박스가 그려져요)
 `;
     const cm = CodeMirror.fromTextArea(document.getElementById("editor"), {
       mode: "python", lineNumbers: true, indentUnit: 4,
@@ -590,8 +590,8 @@ show(img, r)                # 결과를 창으로 보기
 
 img = camera()
 r = vision("object", img)
-for it in r:
-    print(it.get("name"), it.get("score"))
+for it in r["object"]:                # 사물은 r["object"], 사람은 r["person"]
+    print(it["name"], it["score"])
 show(img, r)
 ` },
       { ko: ["사진에게 질문하기", "VLM 에게 사진에 대해 물어봐요."],
@@ -599,8 +599,8 @@ show(img, r)
         code: `from themaker import *
 
 img = camera()
-answer = vision("question", img, prompt="사람이 몇 명이야?")
-print(answer)
+r = vision("question", img, prompt="사람이 몇 명이야?")
+print(r["answer"])
 ` },
       { ko: ["얼굴 세기", "얼굴을 찾아 몇 명인지 세요."],
         en: ["Count faces", "Detect faces and count them."],
@@ -655,7 +655,7 @@ import time
 
 for i in range(10):
     img = camera()
-    r = vision("fire", img)
+    r = vision("fire", img)["object"]
     if r:
         print("불을 찾았어요!", r[0]["name"])
         show(img, r)
@@ -672,7 +672,7 @@ print("들은 말:", text)
 
 if "사진" in text:              # 말로 시키기
     img = camera()
-    print(vision("caption", img))
+    print(vision("caption", img)["caption"])
 ` },
       { ko: ["말로 묻고 말로 답하기", "듣고 → AI 로 보고 → 소리로 읽어 줘요."],
         en: ["Ask and answer by voice", "Listen, look, then speak the answer."],
@@ -683,7 +683,7 @@ question = listen(4)
 print("질문:", question)
 
 img = camera()
-answer = vision("question", img, prompt=question)
+answer = vision("question", img, prompt=question)["answer"]
 print("대답:", answer)
 speak(answer)
 ` },
@@ -695,7 +695,7 @@ import time
 for i in range(5):
     img = camera()
     r = vision("object", img)
-    names = [it.get("name") for it in r]
+    names = [it["name"] for it in r["object"]]
     print(i + 1, "번째:", names)
     time.sleep(3)
 ` },
@@ -763,11 +763,12 @@ for i in range(5):
 <tr><td>상반신</td><td>어깨~팔 11관절</td><td>앉아서도 OK</td></tr>
 <tr><td>전신</td><td>온몸 17관절</td><td>뒤로 물러나서</td></tr>
 </table>
-<p style="margin:10px 0 6px;"><b>답을 다른 형태로 받고 싶을 때</b></p>
-<p>설명·질문·태그는 읽기 쉽게 <b>글자 하나</b>로 와요. 영어판이나 서버가 준 값 전체가 필요하면:</p>
-<pre style="background:var(--paper);padding:8px 10px;border-radius:4px;font-size:.84em;">vision("caption", img)              # 고양이가 앉아 있어요
-vision("caption", img, lang="en")   # a cat is sitting
-vision("caption", img, raw=True)    # {'caption': ..., 'caption_en': ...}</pre>
+<p style="margin:10px 0 6px;"><b>결과는 서버가 준 그대로 와요</b></p>
+<p>어떤 모양인지 모를 땐 <code>print(r)</code> 로 먼저 확인하고, 필요한 값을 이름으로 꺼내세요.</p>
+<pre style="background:var(--paper);padding:8px 10px;border-radius:4px;font-size:.84em;">r = vision("caption", img)
+print(r)              # {'caption': '고양이가 앉아 있어요', 'caption_en': 'a cat...'}
+print(r["caption"])   # 고양이가 앉아 있어요
+print(vision("caption", img, lang="en")["caption"])   # 영어로 받기</pre>
 <p style="margin-top:8px;">이름이 헷갈리면 <code>my_models()</code> 로 확인하세요.
 띄어쓴 제목(<code>"my:우리 반 얼굴"</code>)도 그대로 돼요.<br>
 상대경로 기준 폴더는 <code>models\\pycode</code> 예요. cv2 · numpy 도 쓸 수 있어요.</p>`,
@@ -818,6 +819,8 @@ vision("caption", img, raw=True)    # {'caption': ..., 'caption_en': ...}</pre>
 
     /* ---------------- 도움말 패널 : 항목을 누르면 커서 자리에 코드가 들어간다 ---------------- */
     /* d=하는 일, a=넣는 것, r=돌려주는 것, x=예시 — 항목의 [설명] 을 누르면 펼쳐진다 */
+    /* d=하는 일, a=넣는 것, r=돌려주는 것, x=예시 — 항목의 [설명] 을 누르면 펼쳐진다.
+       r 은 서버가 실제로 주는 모양 그대로 적는다 (vision 은 손대지 않고 그대로 돌려준다). */
     const API = [
       { g: "basic", n: "camera()", ins: "camera()",
         ko: { d: "웹캠으로 사진 한 장 찍기", a: "번호 (캠이 2개면 camera(1))", r: "사진 (이미지)" },
@@ -828,78 +831,91 @@ vision("caption", img, raw=True)    # {'caption': ..., 'caption_en': ...}</pre>
         en: { d: "open an image file", a: "file path", r: "image" },
         x: 'img = load(r"C:\\사진\\cat.jpg")' },
       { g: "basic", n: "show(img, r)", ins: "show(img, r)",
-        ko: { d: "결과를 화면에 보여주기 (배포한 프로그램에서는 창으로)", a: "사진, (선택) 인식 결과, window=True 면 항상 창", r: "박스를 그린 사진" },
-        en: { d: "show the result (a shared program opens a window)", a: "image, (optional) result, window=True", r: "the drawn image" },
-        x: 'r = vision("object", img)\nshow(img, r)' },
+        ko: { d: "결과를 화면에 보여주기 (배포한 프로그램에서는 창으로)", a: "사진, (선택) vision 결과 그대로, window=True 면 항상 창", r: "박스를 그린 사진" },
+        en: { d: "show the result", a: "image, (optional) result, window=True", r: "the drawn image" },
+        x: 'r = vision("face", img)\nshow(img, r)' },
       { g: "basic", n: 'save(img, "결과.jpg")', ins: 'save(img, "결과.jpg")',
-        ko: { d: "이미지를 파일로 저장", a: "사진, 파일 이름", r: "저장한 파일 이름" },
+        ko: { d: "이미지를 파일로 저장", a: "사진, 파일 이름 (.png 면 투명 유지)", r: "저장한 파일 이름" },
         en: { d: "save the image", a: "image, file name", r: "the file name" },
-        x: 'save(draw(img, r), "결과.jpg")' },
+        x: 'save(img, "결과.jpg")' },
       { g: "basic", n: "print(r)", ins: "print(r)",
         ko: { d: "결과를 글자로 확인 — 무엇이 왔는지 모를 땐 이걸 먼저", a: "아무 값", r: "없음 (화면에 찍힘)" },
         en: { d: "print the result — use it when unsure", a: "any value", r: "nothing" },
-        x: 'r = vision("face", img)\nprint(r)' },
+        x: 'r = vision("caption", img)\nprint(r)' },
 
       { g: "ai", n: 'vision("object", img)', ins: 'vision("object", img)',
-        ko: { d: "사물과 사람 찾기", a: "기능 이름, 사진", r: "목록 [{name 이름, score 확신도, box 위치}, ...]" },
-        en: { d: "find objects and people", a: "kind, image", r: "list of {name, score, box}" },
-        x: 'r = vision("object", img)\nfor it in r:\n    print(it["name"], it["score"])' },
+        ko: { d: "사물과 사람 찾기", a: "기능 이름, 사진", r: '{"person": [...], "object": [{name 이름, score 확신도, box 위치}, ...]} — 사람과 사물이 따로 와요' },
+        en: { d: "find objects and people", a: "kind, image", r: '{"person": [...], "object": [{name, score, box}, ...]}' },
+        x: 'r = vision("object", img)\nfor it in r["object"]:\n    print(it["name"], it["score"])\nprint("사람 수:", len(r["person"]))' },
       { g: "ai", n: 'vision("face", img)', ins: 'vision("face", img)',
         ko: { d: "얼굴 찾기", a: "기능 이름, 사진", r: "목록 [{box 위치}, ...] — len(r) 이 얼굴 수" },
         en: { d: "find faces", a: "kind, image", r: "list of {box} — len(r) is the count" },
-        x: 'faces = vision("face", img)\nprint("얼굴 수:", len(faces))' },
+        x: 'faces = vision("face", img)\nprint("얼굴 수:", len(faces))\nshow(img, faces)' },
       { g: "ai", n: 'vision("face_attr", img)', ins: 'vision("face_attr", img)',
-        ko: { d: "나이·성별·감정 알아보기", a: "기능 이름, 사진", r: "목록 [{age 나이, gender 성별, emotion 감정}, ...]" },
-        en: { d: "age, gender, emotion", a: "kind, image", r: "list of {age, gender, emotion}" },
-        x: 'r = vision("face_attr", img)\nif r:\n    print(r[0]["age"], r[0]["emotion"])' },
+        ko: { d: "나이·성별·감정 알아보기", a: "기능 이름, 사진", r: "목록 [{age 나이, gender 성별, emotion 감정, box}, ...]" },
+        en: { d: "age, gender, emotion", a: "kind, image", r: "list of {age, gender, emotion, box}" },
+        x: 'r = vision("face_attr", img)\nif r:\n    print(r[0]["age"], r[0]["gender"], r[0]["emotion"])' },
+      { g: "ai", n: 'vision("distance", img)', ins: 'vision("distance", img)',
+        ko: { d: "얼굴이 얼마나 가까운지·어디를 보는지", a: "기능 이름, 사진", r: "목록 [{distance 센티미터, direction 방향, box}, ...]" },
+        en: { d: "face distance and direction", a: "kind, image", r: "list of {distance, direction, box}" },
+        x: 'r = vision("distance", camera())\nif r:\n    print(r[0]["distance"], "cm", r[0]["direction"])' },
       { g: "ai", n: 'vision("caption", img)', ins: 'vision("caption", img)',
-        ko: { d: "사진을 한 줄로 설명", a: "기능 이름, 사진, lang=\"en\" 영어로, raw=True 전체 값", r: "설명 (글자)" },
-        en: { d: "describe the photo", a: "kind, image, lang=, raw=", r: "the caption (text)" },
-        x: 'print(vision("caption", camera()))\nprint(vision("caption", img, lang="en"))\nprint(vision("caption", img, raw=True))' },
+        ko: { d: "사진을 한 줄로 설명", a: "기능 이름, 사진, lang=\"en\" 이면 영어", r: '{"caption": 한국어 설명, "caption_en": 영어 설명}' },
+        en: { d: "describe the photo", a: "kind, image, lang=", r: '{"caption": ..., "caption_en": ...}' },
+        x: 'r = vision("caption", img)\nprint(r["caption"])\nspeak(r["caption"])' },
       { g: "ai", n: 'vision("question", img, prompt="...")',
         ins: 'vision("question", img, prompt="사람이 몇 명이야?")',
-        ko: { d: "사진에 대해 질문하기", a: "기능 이름, 사진, prompt=질문", r: "답 (글자)" },
-        en: { d: "ask about the photo", a: "kind, image, prompt=question", r: "the answer (text)" },
-        x: 'answer = vision("question", img, prompt="무슨 색이야?")\nprint(answer)\nspeak(answer)' },
+        ko: { d: "사진에 대해 질문하기", a: "기능 이름, 사진, prompt=질문", r: '{"answer": 한국어 답, "answer_en": 영어 답}' },
+        en: { d: "ask about the photo", a: "kind, image, prompt=question", r: '{"answer": ..., "answer_en": ...}' },
+        x: 'r = vision("question", img, prompt="무슨 색이야?")\nprint(r["answer"])\nspeak(r["answer"])' },
+      { g: "ai", n: 'vision("tag", img)', ins: 'vision("tag", img)',
+        ko: { d: "사진의 주제어 뽑기", a: "기능 이름, 사진", r: '{"tag": "고양이, 소파", "tag_en": "cat, sofa"}' },
+        en: { d: "extract keywords", a: "kind, image", r: '{"tag": ..., "tag_en": ...}' },
+        x: 'print(vision("tag", img)["tag"])' },
+      { g: "ai", n: 'vision("classify", img, prompt="...")',
+        ins: 'vision("classify", img, prompt="강아지 / 고양이 / 사람")',
+        ko: { d: "내가 정한 보기 중에서 고르게 하기", a: "기능 이름, 사진, prompt=보기들", r: '{"answer": 고른 것}' },
+        en: { d: "classify into your own choices", a: "kind, image, prompt=choices", r: '{"answer": ...}' },
+        x: 'r = vision("classify", img, prompt="강아지 / 고양이 / 사람")\nprint(r["answer"])' },
       { g: "ai", n: 'vision("ocr", img)', ins: 'vision("ocr", img)',
         ko: { d: "사진 속 글자 읽기", a: "기능 이름, 사진", r: "목록 [{text 글자, score 확신도, box 위치}, ...]" },
         en: { d: "read text in the photo", a: "kind, image", r: "list of {text, score, box}" },
         x: 'for it in vision("ocr", img):\n    print(it["text"])' },
       { g: "ai", n: 'vision("qr", img)', ins: 'vision("qr", img)',
-        ko: { d: "QR 코드 읽기", a: "기능 이름, 사진", r: "QR 안의 내용 (글자) — 없으면 빈 글자" },
-        en: { d: "read a QR code", a: "kind, image", r: "the QR text (empty if none)" },
-        x: 'print(vision("qr", camera()))' },
+        ko: { d: "QR 코드 읽기", a: "기능 이름, 사진", r: '목록 [{"data": 내용, "type": 종류, box}, ...] — 없으면 []' },
+        en: { d: "read a QR code", a: "kind, image", r: 'list of {"data", "type", box} — empty if none' },
+        x: 'r = vision("qr", camera())\nif r:\n    print(r[0]["data"])' },
       { g: "ai", n: 'vision("hand", img)', ins: 'vision("hand", img)',
-        ko: { d: "손동작 알아보기", a: "기능 이름, 사진", r: "목록 [{gesture 손모양, score, box}, ...] — 손이 없으면 []" },
-        en: { d: "hand gesture", a: "kind, image", r: "list of {gesture, score, box} — empty if no hand" },
+        ko: { d: "손동작 알아보기", a: "기능 이름, 사진", r: "목록 [{gesture 손모양, score, hand 왼/오른, box, points 관절}, ...]" },
+        en: { d: "hand gesture", a: "kind, image", r: "list of {gesture, score, hand, box, points}" },
         x: 'r = vision("hand", camera())\nif r:\n    print(r[0]["gesture"])' },
       { g: "ai", n: 'vision("pose", img)', ins: 'vision("pose", img)',
-        ko: { d: "몸 관절 위치 찾기", a: "기능 이름, 사진", r: "관절 좌표 목록" },
-        en: { d: "body joints", a: "kind, image", r: "keypoints" },
-        x: 'print(vision("pose", camera()))' },
+        ko: { d: "몸 관절 위치 찾기", a: "기능 이름, 사진", r: "목록 [{score, box, points 관절 17개 좌표}, ...]" },
+        en: { d: "body joints", a: "kind, image", r: "list of {score, box, points}" },
+        x: 'r = vision("pose", camera())\nif r:\n    print("관절 수:", len(r[0]["points"]))' },
       { g: "ai", n: 'vision("bg_remove", img)', ins: 'vision("bg_remove", img)',
         ko: { d: "배경 지우기", a: "기능 이름, 사진", r: "배경이 지워진 사진 — show·save 에 바로 넣을 수 있어요" },
-        en: { d: "remove the background", a: "kind, image", r: "the cut-out image (use with show/save)" },
+        en: { d: "remove the background", a: "kind, image", r: "the cut-out image" },
         x: 'cut = vision("bg_remove", camera())\nshow(cut)\nsave(cut, "no_bg.png")   # png 로 저장하면 투명하게' },
       { g: "ai", n: 'vision("sr", img)', ins: 'vision("sr", img)',
-        ko: { d: "흐린 사진을 4배 선명하게", a: "기능 이름, 사진", r: "선명해진 사진 — show·save 에 바로 넣을 수 있어요" },
+        ko: { d: "흐린 사진을 4배 선명하게", a: "기능 이름, 사진", r: "선명해진 사진" },
         en: { d: "upscale 4x", a: "kind, image", r: "the upscaled image" },
         x: 'big = vision("sr", img)\nshow(big)\nsave(big, "big.jpg")' },
       { g: "ai", n: 'vision("fire", img)', ins: 'vision("fire", img)',
-        ko: { d: "불·연기 찾기 (특별 훈련된 AI)", a: "기능 이름, 사진", r: "목록 — 없으면 빈 목록 []" },
-        en: { d: "find fire and smoke", a: "kind, image", r: "list — empty if none" },
-        x: 'if vision("fire", camera()):\n    print("불이야!")' },
+        ko: { d: "불·연기 찾기 (특별 훈련된 AI)", a: "기능 이름, 사진", r: '{"object": [{name, score, box}, ...]} — 없으면 목록이 비어요' },
+        en: { d: "find fire and smoke", a: "kind, image", r: '{"object": [...]}' },
+        x: 'r = vision("fire", camera())\nif r["object"]:\n    print("불이야!")\n    show(camera(), r)' },
       { g: "ai", n: 'vision("rps", img)', ins: 'vision("rps", img)',
-        ko: { d: "가위바위보 알아보기 (특별 훈련된 AI)", a: "기능 이름, 사진", r: "목록 [{name 가위/바위/보, score, box}]" },
-        en: { d: "rock paper scissors", a: "kind, image", r: "list of {name, score, box}" },
-        x: 'r = vision("rps", camera())\nif r:\n    print(r[0]["name"])' },
+        ko: { d: "가위바위보 알아보기 (특별 훈련된 AI)", a: "기능 이름, 사진", r: '{"object": [{name 가위/바위/보, score, box}, ...]}' },
+        en: { d: "rock paper scissors", a: "kind, image", r: '{"object": [{name, score, box}, ...]}' },
+        x: 'r = vision("rps", camera())["object"]\nif r:\n    print(r[0]["name"])' },
 
       { g: "my", n: "my_models()", ins: "my_models()",
         ko: { d: "가르치기에서 만든 내 AI 목록 보기", a: "없음", r: "목록 [{name 이름, kind 종류, classes 클래스들}, ...]" },
         en: { d: "list your trained AIs", a: "none", r: "list of {name, kind, classes}" },
         x: 'for m in my_models():\n    print(m["name"], m["kind"], m["classes"])' },
       { g: "my", n: 'vision("my:이름", img)', ins: 'vision("my:이름", img)',
-        ko: { d: "내가 가르친 AI 로 분류하기", a: "my: + 저장한 이름, 사진", r: "목록 [{name 클래스, score 확신도}, ...] 확신도 높은 순" },
+        ko: { d: "내가 가르친 AI 로 분류하기", a: "my: + 저장한 이름, 사진", r: "목록 [{name 클래스, score 확신도}, ...] 확신도 높은 순 — 대상이 안 보이면 []" },
         en: { d: "classify with your AI", a: "my: + saved name, image", r: "list of {name, score}, best first" },
         x: 'r = vision("my:가위바위보", camera())\nif r:\n    print(r[0]["name"], round(r[0]["score"]*100), "%")' },
       { g: "my", n: 'detect("내모델.pt", img)', ins: 'detect(r"내모델.pt", img)',
@@ -923,7 +939,7 @@ vision("caption", img, raw=True)    # {'caption': ..., 'caption_en': ...}</pre>
       { g: "flow", n: "for i in range(5):", ins: "for i in range(5):\n    ",
         ko: { d: "5번 반복하기", a: "반복할 횟수", r: "없음" },
         en: { d: "repeat 5 times", a: "count", r: "nothing" },
-        x: 'for i in range(5):\n    print(i, vision("object", camera()))' },
+        x: 'for i in range(5):\n    print(vision("caption", camera())["caption"])' },
       { g: "flow", n: "if ...:", ins: "if r:\n    ",
         ko: { d: "조건이 맞을 때만 실행 — 목록이 비어 있으면 거짓", a: "조건", r: "없음" },
         en: { d: "run only if the condition is true", a: "condition", r: "nothing" },
