@@ -43,13 +43,11 @@ powershell -ExecutionPolicy Bypass -File setup_deploy.ps1 -Token hf_xxxx
 | `code_routes.py` | 파이썬 IDE API — 실행·정지·출력·작품 저장·배포 zip |
 | `speech_routes.py` | 음성 인식(STT)·음성 합성(TTS) API |
 | `themaker.py` | 학생 코드용 라이브러리 — `vision()`·`camera()`·`speak()` 등 |
-| `runner.py` | 배포한 작품 실행기 (themaker-run.exe 로 빌드) |
 | `view_project/` | 프론트 5페이지 (`index` 써보기 · `blocks` 블록 코딩 · `code` 파이썬 · `train` 가르치기 · `options` 설정) |
-| `run.bat` / `launcher.py` | 실행 (launcher는 themaker.exe 빌드용) |
 | `paths.py` | 폴더 규칙 — `models/`(AI 모델) / `data/`(작업 파일) 분리·자동 이전 |
+| `run.bat` | 실행 |
 | `setup_deploy.ps1` | 설치 — 패키지 + 모델 다운로드 |
-| `make_bundle.bat` / `bundle_check.bat` | 포터블 zip 번들 생성·점검 |
-| `check.py` / `smoke_test.py` | 모델 로드·API 검증 |
+| `tools/` | 개발·점검용 — 모델 변환(`setup.ps1`·`setup.sh`), 번들 생성(`make_bundle.bat`), 점검(`check.py`·`smoke_test.py`·`bundle_check.bat`), 폰트, 런처 소스 |
 
 ## 폴더
 | 폴더 | 내용 | 지워도 되나 |
@@ -111,7 +109,7 @@ git clone https://github.com/themakerrobot/vapi-od.git
 cd vapi-od
 python -m venv venv && venv\Scripts\activate      # linux: source venv/bin/activate
 :: 커스텀 pt 8종을 models\org\ 에 복사
-powershell -ExecutionPolicy Bypass -File setup.ps1   # linux: bash setup.sh
-python check.py                                       # fail = 0 이어야 함
+powershell -ExecutionPolicy Bypass -File tools\setup.ps1   # linux: bash tools/setup.sh
+python tools\check.py                                 # fail = 0 이어야 함
 ```
 변환이 모두 성공하면 `models/org/`는 자동 삭제되고, 결과를 HF repo에 업로드해 두면 이후 기기는 내려받기만 하면 된다.

@@ -48,12 +48,12 @@ Write-Host "=== [4/5] fonts ===" -ForegroundColor Cyan
 if (Test-Path "view_project\fonts\fonts.css") {
   Write-Host "  fonts already in repo - skip"
 } else {
-  & $PY fonts_download.py
+  & $PY tools\fonts_download.py
   if ($LASTEXITCODE -ne 0) { throw "font download failed" }
 }
 
 Write-Host "=== [5/5] verify ===" -ForegroundColor Cyan
-& $PY check.py
+& $PY tools\check.py
 if ($LASTEXITCODE -ne 0) { throw "model verification failed" }
 
 Write-Host ""
