@@ -1,0 +1,31 @@
+# The Maker — 실행에 필요한 패키지
+#
+# 여기 적힌 것은 "이 범위면 동작한다"는 최소 안전선이다.
+# 배포 기기를 전부 같은 환경으로 맞추려면 requirements.lock.txt 를 쓴다:
+#   검증이 끝난 PC 에서  powershell -File tools\freeze.ps1
+#   -> requirements.lock.txt 생성 -> git 에 커밋 -> 이후 setup_deploy 가 그것을 우선 사용
+#
+# 버전을 올릴 때는 반드시 tools\bundle_check.bat 로 전 기능을 확인한 뒤 잠글 것.
+# (2026.3 으로 올라갔을 때 VLM 이 JSON 지시를 무시한 전례가 있다)
+
+# --- 추론 런타임 (버전에 민감, 반드시 고정) ---
+openvino==2026.2.*
+openvino-genai==2026.2.*
+onnxruntime==1.23.*
+
+# --- 모델 ---
+ultralytics
+mediapipe
+easyocr
+
+# --- 서버 ---
+fastapi
+uvicorn[standard]
+python-multipart
+huggingface_hub
+
+# --- 영상 / 소리 ---
+opencv-python
+pillow
+numpy
+sounddevice

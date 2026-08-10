@@ -26,8 +26,15 @@ if ($LASTEXITCODE -ne 0) { throw "venv has no pip - delete venv folder and retry
 & $PY -m pip install --upgrade pip --quiet
 
 Write-Host "=== [2/5] packages ===" -ForegroundColor Cyan
-& $PY -m pip install "openvino==2026.2.*" "openvino-genai==2026.2.*" fastapi "uvicorn[standard]" sounddevice "onnxruntime==1.23.*" `
-    ultralytics opencv-python pillow numpy easyocr python-multipart huggingface_hub mediapipe
+# requirements.lock.txt 가 있으면 그 버전 그대로 설치한다 (배포 기기 전부 동일한 환경).
+# 없으면 requirements.txt(범위 고정)로 설치한 뒤, 검증이 끝나면 tools\freeze.ps1 로 잠근다.
+if (Test-Path "requirements.lock.txt") {
+  Write-Host "  requirements.lock.txt 사용 (버전 고정)" -ForegroundColor DarkGray
+  & $PY -m pip install -r requirements.lock.txt
+} else {
+  Write-Host "  requirements.txt 사용 — 검증 후 tools\freeze.ps1 로 잠그세요" -ForegroundColor Yellow
+  & $PY -m pip install -r requirements.txt
+}
 if ($LASTEXITCODE -ne 0) { throw "package install failed" }
 # pyinstaller: 배포용 exe 빌드(tools\make_bundle.bat)에만 필요 — 실패해도 무방
 & $PY -m pip install pyinstaller 2>$null | Out-Null

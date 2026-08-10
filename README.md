@@ -47,7 +47,26 @@ powershell -ExecutionPolicy Bypass -File setup_deploy.ps1 -Token hf_xxxx
 | `paths.py` | 폴더 규칙 — `models/`(AI 모델) / `data/`(작업 파일) 분리·자동 이전 |
 | `run.bat` | 실행 |
 | `setup_deploy.ps1` | 설치 — 패키지 + 모델 다운로드 |
-| `tools/` | 개발·점검용 — 모델 변환(`setup.ps1`·`setup.sh`), 번들 생성(`make_bundle.bat`), 점검(`check.py`·`smoke_test.py`·`bundle_check.bat`), 폰트, 런처 소스 |
+| `requirements.txt` | 패키지 목록 (lock 파일이 있으면 그쪽 우선) |
+| `tools/` | 개발·점검용 — 모델 변환(`setup.ps1`·`setup.sh`), 번들 생성(`make_bundle.bat`), 점검(`check.py`·`smoke_test.py`·`bundle_check.bat`), 버전 잠금(`freeze.ps1`)·업그레이드 시험(`upgrade_check.ps1`), 폰트, 런처 소스 |
+
+## 패키지 버전
+| 파일 | 내용 |
+|---|---|
+| `requirements.txt` | 동작이 확인된 범위. 추론 런타임(openvino·onnxruntime)은 반드시 고정 |
+| `requirements.lock.txt` | 검증된 PC 에서 뽑은 완전 고정본. 있으면 설치가 이것을 우선 사용 |
+
+배포 기기를 전부 같은 환경으로 맞추려면, 설치·점검이 끝난 PC 에서
+`powershell -File tools\freeze.ps1` 을 돌려 lock 파일을 만들고 커밋한다.
+
+버전을 올려 보고 싶을 때(개발 PC 전용):
+```
+powershell -File tools\upgrade_check.ps1     # 최신으로 올린다 (이전 상태 자동 백업)
+run.bat  →  tools\bundle_check.bat           # 전 기능 확인
+powershell -File tools\freeze.ps1            # 이상 없으면 lock 갱신 후 커밋
+powershell -File tools\upgrade_check.ps1 -Rollback   # 문제가 있으면 되돌리기
+```
+추론 런타임(openvino·onnxruntime)은 사고 이력이 있어 기본으로 제외한다 — 함께 올리려면 `-Runtime`.
 
 ## 폴더
 | 폴더 | 내용 | 지워도 되나 |

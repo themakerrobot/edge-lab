@@ -13,9 +13,7 @@ foreach ($d in "org","vlm","object","face","gan","code","stt","tts") {
 }
 
 Write-Host "=== [1/6] python packages ===" -ForegroundColor Cyan
-pip install "openvino==2026.2.*" "openvino-genai==2026.2.*" fastapi "uvicorn[standard]" `
-    ultralytics opencv-python pillow numpy easyocr python-multipart `
-    sounddevice "onnxruntime==1.23.*" huggingface_hub
+pip install -r requirements.txt        # 실행에 필요한 것 (루트의 목록)
 pip install "optimum[openvino]" nncf torchvision
 pip install mediapipe
 pip install pyinstaller   # make_bundle.bat 의 런처 exe 빌드용 (개발 PC 전용)

@@ -12,9 +12,7 @@ mkdir -p "$MODELS"/{org,vlm,object,face,gan,code}
 
 echo "=== [1/6] packages ==="
 sudo apt-get update -qq && sudo apt-get install -y -qq wget
-pip install "openvino==2026.2.*" "openvino-genai==2026.2.*" fastapi "uvicorn[standard]" \
-    ultralytics opencv-python pillow numpy easyocr python-multipart \
-    sounddevice "onnxruntime==1.23.*" huggingface_hub
+pip install -r requirements.txt        # 실행에 필요한 것 (루트의 목록)
 pip install "optimum[openvino]" nncf torchvision
 pip install mediapipe
 

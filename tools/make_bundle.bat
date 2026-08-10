@@ -59,9 +59,12 @@ REM rewrite ._pth so bundled pylib is on the module path
 echo.
 echo === [4/8] install packages into pylib ===
 python -m pip install --upgrade pip --quiet
-python -m pip install --target %BUILD%\pylib ^
-    "openvino==2026.2.*" "openvino-genai==2026.2.*" fastapi "uvicorn[standard]" sounddevice "onnxruntime==1.23.*" ^
-    ultralytics opencv-python pillow numpy easyocr python-multipart mediapipe
+rem 루트의 requirements 로 설치한다 — 개발 PC 와 같은 버전이 번들에 들어가게
+if exist "%ROOT%requirements.lock.txt" (
+  python -m pip install --target %BUILD%\pylib -r "%ROOT%requirements.lock.txt"
+) else (
+  python -m pip install --target %BUILD%\pylib -r "%ROOT%requirements.txt"
+)
 if errorlevel 1 (echo [ERROR] package install failed & exit /b 1)
 
 REM 번들에 들어간 패키지 버전을 남긴다 (문제 생겼을 때 비교용)
