@@ -29,7 +29,8 @@ Write-Host "=== [2/5] packages ===" -ForegroundColor Cyan
 & $PY -m pip install "openvino==2026.2.*" "openvino-genai==2026.2.*" fastapi "uvicorn[standard]" sounddevice "onnxruntime==1.23.*" `
     ultralytics opencv-python pillow numpy easyocr python-multipart huggingface_hub mediapipe
 if ($LASTEXITCODE -ne 0) { throw "package install failed" }
-& $PY -m pip install pyzbar 2>$null | Out-Null   # optional (1D barcodes)
+# pyinstaller: 배포용 exe 빌드(tools\make_bundle.bat)에만 필요 — 실패해도 무방
+& $PY -m pip install pyinstaller 2>$null | Out-Null
 $global:LASTEXITCODE = 0
 
 # 설치된 패키지 버전을 남긴다 — 나중에 "언제부터 안 되기 시작했는지" 를 찾는 근거가 된다

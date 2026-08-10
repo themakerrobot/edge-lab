@@ -378,14 +378,15 @@ class CodeEngine:
 
     @staticmethod
     def barcode(image_path):
-        """QR 우선: OpenCV 디코더(외부 DLL 불필요) → 실패 시 pyzbar(1D 바코드 지원).
-        pyzbar는 Windows에서 VC++ 2013 재배포 패키지를 요구하므로 보조로만 사용."""
+        """QR 인식 — OpenCV QRCodeDetector 만 사용한다 (외부 DLL 없음).
+
+        1D 바코드는 지원하지 않는다. 필요해지면 pyzbar 를 추가하면 되지만,
+        Windows 에서 VC++ 2013 재배포 패키지를 요구해 기본에서는 제외했다.
+        """
         image = cv2.imread(image_path)
         if image is None:
             raise ValueError("invalid image")
         res = []
-
-        # 1) OpenCV QRCodeDetector (의존성 없음)
         try:
             det = cv2.QRCodeDetector()
             ok, texts, pts, _ = det.detectAndDecodeMulti(image)
@@ -398,21 +399,7 @@ class CodeEngine:
                                 "box": [int(xs.min()), int(ys.min()),
                                         int(xs.max()), int(ys.max())]})
         except Exception as ex:
-            print("[barcode] opencv decoder failed:", ex)
-
-        if res:
-            return res
-
-        # 2) pyzbar (QR 외 바코드 / OpenCV가 못 읽은 경우)
-        try:
-            from pyzbar import pyzbar
-            for code in pyzbar.decode(image):
-                x, y, bw, bh = code.rect
-                res.append({"type": code.type,
-                            "data": code.data.decode("utf-8", "ignore"),
-                            "box": [int(x), int(y), int(x + bw), int(y + bh)]})
-        except Exception as ex:
-            print("[barcode] pyzbar unavailable:", ex)
+            print("[barcode] qr decoder failed:", ex)
         return res
 
 

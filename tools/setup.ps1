@@ -19,10 +19,6 @@ pip install "openvino==2026.2.*" "openvino-genai==2026.2.*" fastapi "uvicorn[sta
 pip install "optimum[openvino]" nncf torchvision
 pip install mediapipe
 pip install pyinstaller   # make_bundle.bat 의 런처 exe 빌드용 (개발 PC 전용)
-# pyzbar: 1D 바코드 전용(선택). QR은 OpenCV 디코더로 동작하므로 실패해도 무방.
-# Windows에서 pyzbar를 쓰려면 VC++ 2013 재배포 패키지(x64)가 필요하다.
-pip install pyzbar
-if ($LASTEXITCODE -ne 0) { Write-Host "pyzbar skipped (QR은 OpenCV로 동작)" -ForegroundColor Yellow }
 $global:LASTEXITCODE = 0
 
 Write-Host "=== [2/6] VLM: Qwen2.5-VL-3B INT4 export ===" -ForegroundColor Cyan

@@ -17,8 +17,6 @@ pip install "openvino==2026.2.*" "openvino-genai==2026.2.*" fastapi "uvicorn[sta
     sounddevice "onnxruntime==1.23.*" huggingface_hub
 pip install "optimum[openvino]" nncf torchvision
 pip install mediapipe
-# pyzbar: 1D 바코드 전용(선택). QR은 OpenCV 디코더로 동작한다.
-sudo apt-get install -y -qq libzbar0 && pip install pyzbar || echo "pyzbar skipped"
 
 echo "=== [2/6] VLM: Qwen2.5-VL-3B INT4 export ==="
 rm -rf "$MODELS/vlm/qwen2.5-vl-3b-int4"

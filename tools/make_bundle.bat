@@ -63,8 +63,6 @@ python -m pip install --target %BUILD%\pylib ^
     "openvino==2026.2.*" "openvino-genai==2026.2.*" fastapi "uvicorn[standard]" sounddevice "onnxruntime==1.23.*" ^
     ultralytics opencv-python pillow numpy easyocr python-multipart mediapipe
 if errorlevel 1 (echo [ERROR] package install failed & exit /b 1)
-REM pyzbar is optional (QR works via OpenCV)
-python -m pip install --target %BUILD%\pylib pyzbar >nul 2>&1
 
 REM 번들에 들어간 패키지 버전을 남긴다 (문제 생겼을 때 비교용)
 > %BUILD%\installed-packages.txt echo # bundled by make_bundle.bat %DATE% %TIME%
