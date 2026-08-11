@@ -377,6 +377,8 @@ def speak(text, voice="F1", lang="ko", speed=1.0, wait=True, save_as=None):
     >>> speak("안녕", save_as="hello.wav")     # 파일로 저장만
     voice : F1~F5(여자), M1~M5(남자)
     """
+    if not str(text).strip():
+        return None                          # 할 말이 없으면 그냥 넘어간다
     req = json.dumps({"text": str(text), "voice": voice,
                       "lang": lang, "speed": float(speed)}).encode("utf-8")
     r = urllib.request.Request(SERVER + "/speech/tts", data=req,
