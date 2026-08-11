@@ -7,22 +7,49 @@
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
+  <script>
+    /* 밝은 곳 모드: 화면이 그려지기 전에 적용해야 깜빡이지 않는다 */
+    try { if (localStorage.getItem("vapi-hc") === "1")
+            document.documentElement.classList.add("hc"); } catch (e) {}
+  </script>
   <style>
     /* ===== 디자인 토큰 : 체험툴/블록툴과 동일 ===== */
     :root {
-      --paper:    #f5f8fb;
+      --paper:    #fbf7ef;
       --box:      #ffffff;
-      --ink:      #26303c;
-      --ink-2:    #64707e;
-      --cyan:     #29b8e5;
-      --cyan-d:   #0f93c0;
-      --pen-blue: #2b4bd8;
-      --pen-blue-d:#1f3ab0;
-      --pen-red:  #d94141;
-      --line:     #ccd6e0;
-      --line-d:   #2c4a7c;
+      --ink:      #2a2620;
+      --ink-2:    #4a423a;
+      --cyan:     #1f5f7a;
+      --cyan-d:   #17475c;
+      --pen-blue: #1f5f7a;
+      --pen-blue-d:#12455c;
+      --pen-red:  #b4451c;
+      --line:     #9a8f7d;
+      --line-d:   #4a3f2e;
       --r: 6px;
     }
+
+    /* ===== 밝은 곳 모드 (설정·점검에서 켠다) =====
+       색 토큰만 덮어써서 대비를 끌어올린다. 배치는 그대로다. */
+    html.hc {
+      --paper:    #fffdf8;
+      --box:      #ffffff;
+      --ink:      #1a1712;
+      --ink-2:    #332d26;
+      --cyan:     #114558;
+      --cyan-d:   #0c3444;
+      --pen-blue: #123f52;
+      --pen-blue-d:#0a2c3a;
+      --pen-red:  #8f3312;
+      --line:     #7a6f5d;
+      --line-d:   #2e281c;
+    }
+    html.hc body { background-image: none; }          /* 배경 무늬 제거 */
+    html.hc .sysbar { background: #fffdf6; }
+    html.hc select, html.hc input, html.hc button,
+    html.hc .panel, html.hc .q, html.hc .card { border-width: 2px; }
+    html.hc .panel-head { border-width: 3px; }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
@@ -59,7 +86,7 @@
       padding: 10px 16px;
     }
     .h-subject .eyebrow {
-      font-size: .7rem; letter-spacing: .14em; color: var(--ink-2);
+      font-size: 0.82rem; letter-spacing: .14em; color: var(--ink-2);
     }
     .h-subject .title {
       font-family: "Gowun Batang", serif;
@@ -76,7 +103,7 @@
       border-radius: 3px;
       padding: 7px 14px;
       font-family: "Menlo", "Consolas", ui-monospace, monospace;
-      font-size: .76rem; letter-spacing: .02em;
+      font-size: 0.82rem; letter-spacing: .02em;
       color: var(--ink-2);
       box-shadow: 0 1px 0 rgba(44,74,124,.15);
       transform: rotate(-.25deg);          /* 붙여놓은 스티커 느낌 */
@@ -86,7 +113,7 @@
       content: "";
       position: absolute; top: -7px; left: 26px;
       width: 54px; height: 13px;
-      background: rgba(41, 184, 229, .38); /* 활동지 시안 */
+      background: rgba(31, 95, 122, .38); /* 활동지 시안 */
       border-left: 1px solid rgba(38,38,46,.12);
       border-right: 1px solid rgba(38,38,46,.12);
       transform: rotate(-2deg);
@@ -96,21 +123,21 @@
     .chip {
       display: inline-flex; align-items: center; gap: 6px;
       background: #fff; border: 1.5px solid var(--line); border-radius: 999px;
-      padding: 2px 10px; color: #a3a094;
+      padding: 2px 10px; color: #6b6255;
     }
-    .chip .dot { width: 7px; height: 7px; border-radius: 50%; background: #d8d5c8; }
+    .chip .dot { width: 7px; height: 7px; border-radius: 50%; background: #cfc7b8; }
     .chip.on { color: var(--ink); border-color: var(--ink); }
-    .chip.on .dot { background: var(--cyan); box-shadow: 0 0 5px rgba(41,184,229,.6); }
+    .chip.on .dot { background: var(--cyan); box-shadow: 0 0 5px rgba(31, 95, 122,.6); }
     .chip.busy { border-color: var(--pen-red); color: var(--pen-red); }
     .chip.busy .dot { background: var(--pen-red); animation: blink 1s infinite; }
     @keyframes blink { 50% { opacity: .35; } }
-    .chip .st { color: #a3a094; font-variant-numeric: tabular-nums; }
+    .chip .st { color: #6b6255; font-variant-numeric: tabular-nums; }
     .chip.on .st { color: var(--ink-2); }
     .chip.hit { border-color: var(--cyan); }
     .chip.hit .st { color: var(--cyan-d); }
     .sysbar .sep { color: var(--line); }
     .sysbar .meter { margin-left: auto; display: flex; align-items: center; gap: 12px; }
-    .sysbar .meter .k { color: #a3a094; }
+    .sysbar .meter .k { color: #6b6255; }
     .sysbar .meter .v { color: var(--pen-blue-d); font-variant-numeric: tabular-nums; font-weight: 700; }
     @media (prefers-reduced-motion: reduce) { .chip.busy .dot { animation: none; } }
 
@@ -197,7 +224,7 @@
     .cls .ch .name input { width: 100%; border: none; background: transparent; font-weight: 700; padding: 2px; }
     .cls .ch .name input:focus { outline: 1px solid var(--cyan); border-radius: 3px; }
     .cls .ch .cnt {
-      font-size: .78rem; color: #fff; background: var(--line-d);
+      font-size: 0.82rem; color: #fff; background: var(--line-d);
       border-radius: 10px; padding: 1px 8px; font-weight: 700;
     }
     .cls .cb { padding: 8px 10px; display: flex; flex-direction: column; gap: 8px; }
@@ -207,7 +234,7 @@
       border: 1px dashed var(--line); border-radius: 4px; padding: 4px; min-height: 46px;
     }
     .grid img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 3px; display: block; }
-    .grid .empty { grid-column: 1/-1; color: var(--ink-2); font-size: .8rem; text-align: center; padding: 10px 0; }
+    .grid .empty { grid-column: 1/-1; color: var(--ink-2); font-size: 0.82rem; text-align: center; padding: 10px 0; }
     .cls .tools { display: flex; gap: 6px; flex-wrap: wrap; }
 
     /* ----- 웹캠 ----- */
@@ -224,24 +251,24 @@
     .cambox.poseOn #overlay { display: block; }
     .cambox .badge {
       position: absolute; left: 8px; top: 8px; background: rgba(217,65,65,.9);
-      color: #fff; font-size: .74rem; font-weight: 700; padding: 2px 8px;
+      color: #fff; font-size: 0.82rem; font-weight: 700; padding: 2px 8px;
       border-radius: 10px; display: none;
     }
     .cambox.rec .badge { display: block; }
     .cambox .pose {
       position: absolute; right: 8px; top: 8px; display: none;
-      background: rgba(217,65,65,.9); color: #fff; font-size: .74rem; font-weight: 700;
+      background: rgba(217,65,65,.9); color: #fff; font-size: 0.82rem; font-weight: 700;
       padding: 2px 9px; border-radius: 10px;
     }
     .cambox.poseOn .pose { display: block; }
-    .cambox.poseOn.handOk .pose { background: rgba(41,184,229,.92); }
+    .cambox.poseOn.handOk .pose { background: rgba(31, 95, 122,.92); }
     .camside { flex: 1 1 260px; display: flex; flex-direction: column; gap: 8px; }
 
     /* ----- 진행바 ----- */
     .bar { height: 12px; background: #e6eef6; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
     .bar > i { display: block; height: 100%; width: 0; background: var(--cyan); transition: width .2s; }
     .log {
-      font-family: 'Consolas', 'D2Coding', monospace; font-size: .78rem; color: var(--ink-2);
+      font-family: 'Consolas', 'D2Coding', monospace; font-size: 0.82rem; color: var(--ink-2);
       background: #f7fafd; border: 1px dashed var(--line); border-radius: 4px;
       padding: 6px 8px; max-height: 96px; overflow-y: auto; white-space: pre-wrap;
     }
@@ -271,14 +298,14 @@
     .charts { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
     .chart { flex: 1 1 240px; border: 1.5px solid var(--line); border-radius: var(--r);
              background: #fff; padding: 8px 10px; min-width: 220px; }
-    .chart .ct { font-size: .8rem; color: var(--ink-2); margin-bottom: 4px; font-weight: 700; }
+    .chart .ct { font-size: 0.82rem; color: var(--ink-2); margin-bottom: 4px; font-weight: 700; }
     .chart canvas { width: 100%; display: block; }
     .neighbors { display: flex; gap: 8px; margin-top: 10px; align-items: flex-start; flex-wrap: wrap; }
-    .neighbors .nlabel { font-size: .8rem; color: var(--ink-2); font-weight: 700; flex: 0 0 100%; }
+    .neighbors .nlabel { font-size: 0.82rem; color: var(--ink-2); font-weight: 700; flex: 0 0 100%; }
     .neighbors figure { border: 1.5px solid var(--line); border-radius: 4px; overflow: hidden;
                         background: #fff; width: 76px; }
     .neighbors img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
-    .neighbors figcaption { font-size: .66rem; text-align: center; padding: 2px 1px; line-height: 1.3; }
+    .neighbors figcaption { font-size: 0.82rem; text-align: center; padding: 2px 1px; line-height: 1.3; }
     .privacy { display: flex; align-items: center; gap: 7px; margin-top: 6px;
                font-size: .82rem; color: var(--ink-2); }
     .privacy .lock { color: var(--cyan-d); font-size: 1rem; }
@@ -319,7 +346,7 @@
              gap: 6px; margin-top: 8px; }
     .wrong figure { border: 1.5px solid var(--pen-red); border-radius: 4px; overflow: hidden; background: #fff; }
     .wrong img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
-    .wrong figcaption { font-size: .66rem; text-align: center; padding: 2px 1px; line-height: 1.25; }
+    .wrong figcaption { font-size: 0.82rem; text-align: center; padding: 2px 1px; line-height: 1.25; }
     .wrong figcaption b { color: var(--pen-red); }
 
     /* ----- 편향 실습 ----- */
@@ -1198,7 +1225,7 @@
     g.clearRect(0, 0, w, h);
     if (!points || !points.length) return;
     const vis = p => p && p[2] >= 0.5;
-    g.strokeStyle = "rgba(41,184,229,.95)";
+    g.strokeStyle = "rgba(31, 95, 122,.95)";
     g.lineWidth = 3; g.lineCap = "round";
     (edges || []).forEach(([a, b]) => {
       if (!vis(points[a]) || !vis(points[b])) return;
@@ -1245,7 +1272,7 @@
     g.clearRect(0, 0, w, h);
     if (!points || !points.length) return;
     const P = points.map(p => [p[0] * w, p[1] * h]);
-    g.strokeStyle = "rgba(41,184,229,.95)";
+    g.strokeStyle = "rgba(31, 95, 122,.95)";
     g.lineWidth = 2.5; g.lineCap = "round";
     HAND_LINKS.forEach(([a, b]) => {
       if (!P[a] || !P[b]) return;
@@ -1254,7 +1281,7 @@
     P.forEach(([x, y], i) => {
       g.beginPath();
       g.arc(x, y, i === 0 ? 5 : 3.5, 0, Math.PI * 2);
-      g.fillStyle = (i === 0) ? "#d94141" : "#fff";
+      g.fillStyle = (i === 0) ? "#b4451c" : "#fff";
       g.fill();
       g.lineWidth = 1.5; g.strokeStyle = "rgba(15,147,192,.9)"; g.stroke();
     });
@@ -1274,7 +1301,7 @@
     const g = cv.getContext("2d");
     g.clearRect(0, 0, w, h);
     if (!lines || !lines.length) return;
-    g.strokeStyle = "rgba(41,184,229,.95)";
+    g.strokeStyle = "rgba(31, 95, 122,.95)";
     g.lineWidth = 2; g.lineJoin = "round";
     lines.forEach(pts => {
       if (!pts || pts.length < 2) return;
@@ -1399,8 +1426,8 @@
   }
 
   /* ---------------- 그래프 그리기 ---------------- */
-  const CLS_COLORS = ["#2b4bd8", "#d94141", "#2fa35c", "#d97b2b", "#7b3fbf",
-                      "#0f93c0", "#b0326e", "#5f6b3a"];
+  const CLS_COLORS = ["#1f5f7a", "#b4451c", "#2fa35c", "#d97b2b", "#7b3fbf",
+                      "#17475c", "#b0326e", "#5f6b3a"];
   function fitCanvas(cv) {
     const w = cv.clientWidth || cv.parentElement.clientWidth || 300;
     if (cv.width !== w) cv.width = w;
@@ -1415,7 +1442,7 @@
     [0, .5, 1].forEach(v => {
       const y = H - PAD - v * (H - PAD * 2);
       g.beginPath(); g.moveTo(PAD, y); g.lineTo(W - 4, y); g.stroke();
-      g.fillStyle = "#a3a094"; g.font = "10px sans-serif";
+      g.fillStyle = "#6b6255"; g.font = "10px sans-serif";
       g.fillText(Math.round(v * 100) + "%", 0, y + 3);
     });
     const line = (arr, color) => {
@@ -1428,8 +1455,8 @@
       });
       g.stroke();
     };
-    line(hist.train, "#29b8e5");
-    line(hist.val, "#d94141");
+    line(hist.train, "#1f5f7a");
+    line(hist.val, "#b4451c");
   }
   /* A2: PCA 2성분 산점도 — 파워 반복법 (외부 라이브러리 불필요) */
   function pca2(rows) {
@@ -1484,7 +1511,7 @@
     useable.forEach((c, ci) => {
       g.fillStyle = CLS_COLORS[ci % CLS_COLORS.length];
       g.fillRect(6, 6 + ci * 13, 8, 8);
-      g.fillStyle = "#64707e";
+      g.fillStyle = "#4a423a";
       g.fillText(c.name.slice(0, 10), 17, 13 + ci * 13);
     });
   }
@@ -1497,7 +1524,7 @@
     g.strokeStyle = "#e6eef6";
     g.beginPath(); g.moveTo(0, H * .4); g.lineTo(W, H * .4); g.stroke();  // 60% 기준선
     if (SPARK.length < 2) return;
-    g.strokeStyle = "#29b8e5"; g.lineWidth = 2; g.beginPath();
+    g.strokeStyle = "#1f5f7a"; g.lineWidth = 2; g.beginPath();
     SPARK.forEach((v, i) => {
       const x = i / (SPARK.length - 1) * W;
       const y = H - v * H;

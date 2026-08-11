@@ -7,18 +7,23 @@
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
+  <script>
+    /* 밝은 곳 모드: 화면이 그려지기 전에 적용해야 깜빡이지 않는다 */
+    try { if (localStorage.getItem("vapi-hc") === "1")
+            document.documentElement.classList.add("hc"); } catch (e) {}
+  </script>
   <style>
     /* ---------------- 부팅(로딩) 화면 ---------------- */
     #boot {
       position: fixed; inset: 0; z-index: 100; display: flex;
       align-items: center; justify-content: center; padding: 20px;
-      background: #f5f8fb;
-      background-image: radial-gradient(rgba(41,184,229,.10) 1px, transparent 1px);
+      background: #fbf7ef;
+      background-image: radial-gradient(rgba(31, 95, 122,.07) 1px, transparent 1px);
       background-size: 22px 22px;
     }
     #boot.done { display: none; }
     .boot-card {
-      width: min(680px, 100%); background: #fff; border: 2px solid #2c4a7c;
+      width: min(680px, 100%); background: #fff; border: 2px solid #4a3f2e;
       border-radius: 4px; box-shadow: 0 2px 0 rgba(44,74,124,.2);
       padding: 22px 26px 18px; display: flex; flex-direction: column; gap: 16px;
     }
@@ -26,35 +31,35 @@
     .boot-brand img { height: 44px; }
     .boot-brand b { display: block; font-family: "Gowun Batang", serif;
                     font-size: 1.25rem; line-height: 1.2; }
-    .boot-brand i { font-style: normal; font-size: .78rem; color: #64707e; }
+    .boot-brand i { font-style: normal; font-size: 0.82rem; color: #4a423a; }
     .boot-slide { display: flex; align-items: center; gap: 18px; min-height: 132px; }
     .boot-art { flex: 0 0 132px; height: 116px; }
     .boot-art svg { width: 100%; height: 100%; }
     .boot-text h2 { font-family: "Gowun Dodum", sans-serif; font-size: 1.08rem;
-                    color: #0f93c0; margin-bottom: 6px; }
-    .boot-text p { font-size: .92rem; color: #26303c; line-height: 1.65; }
+                    color: #17475c; margin-bottom: 6px; }
+    .boot-text p { font-size: .92rem; color: #2a2620; line-height: 1.65; }
     .boot-slide.fade { opacity: 0; }
     .boot-slide { transition: opacity .35s; }
     .boot-dots { display: flex; gap: 6px; justify-content: center; }
-    .boot-dots span { width: 7px; height: 7px; border-radius: 50%; background: #ccd6e0; }
-    .boot-dots span.on { background: #29b8e5; }
+    .boot-dots span { width: 7px; height: 7px; border-radius: 50%; background: #9a8f7d; }
+    .boot-dots span.on { background: #1f5f7a; }
     .boot-progress { display: flex; flex-direction: column; gap: 5px; }
     .boot-bar { height: 12px; background: #e6eef6; border-radius: 6px; overflow: hidden; }
     .boot-bar > i { display: block; height: 100%; width: 0;
-                    background: linear-gradient(90deg, #29b8e5, #2b4bd8);
+                    background: linear-gradient(90deg, #1f5f7a, #1f5f7a);
                     transition: width .4s; }
     .boot-status { display: flex; font-family: "Menlo","Consolas",monospace;
-                   font-size: .74rem; color: #64707e; }
+                   font-size: 0.82rem; color: #4a423a; }
     .boot-status span:last-child { margin-left: auto; font-variant-numeric: tabular-nums; }
     .boot-actions { display: flex; gap: 8px; }
     .boot-actions button {
       font-family: inherit; font-size: .95rem; font-weight: 600; cursor: pointer;
-      border: 1.5px solid #2c4a7c; border-radius: 6px; padding: 9px 18px;
-      background: #2b4bd8; color: #fff; margin-left: auto;
+      border: 1.5px solid #4a3f2e; border-radius: 6px; padding: 9px 18px;
+      background: #1f5f7a; color: #fff; margin-left: auto;
     }
-    .boot-actions button:disabled { background: #aab6c4; border-color: #aab6c4; cursor: default; }
-    .boot-actions button.ghost { background: #fff; color: #64707e;
-                                 border-color: #ccd6e0; margin-left: 0; }
+    .boot-actions button:disabled { background: #c4b9a5; border-color: #c4b9a5; cursor: default; }
+    .boot-actions button.ghost { background: #fff; color: #4a423a;
+                                 border-color: #9a8f7d; margin-left: 0; }
     @media (max-width: 560px) {
       .boot-slide { flex-direction: column; text-align: center; }
       .boot-art { flex: 0 0 auto; height: 92px; }
@@ -62,20 +67,42 @@
 
     /* ===== 디자인 토큰 : "학습지" (줄노트 + 시험지 머리표 + 빨간펜) ===== */
     :root {
-      --paper:    #f5f8fb;                 /* 흰 활동지 */
+      --paper:    #fbf7ef;                 /* 흰 활동지 */
       --rule:     transparent;
       --box:      #ffffff;
-      --ink:      #26303c;
-      --ink-2:    #64707e;
-      --cyan:     #29b8e5;                 /* 활동지 섹션 타이틀 */
-      --cyan-d:   #0f93c0;
-      --pen-blue: #2b4bd8;
-      --pen-blue-d:#1f3ab0;
-      --pen-red:  #d94141;
-      --line:     #ccd6e0;
-      --line-d:   #2c4a7c;                 /* 활동지 표 네이비 괘선 */
+      --ink:      #2a2620;
+      --ink-2:    #4a423a;
+      --cyan:     #1f5f7a;                 /* 활동지 섹션 타이틀 */
+      --cyan-d:   #17475c;
+      --pen-blue: #1f5f7a;
+      --pen-blue-d:#12455c;
+      --pen-red:  #b4451c;
+      --line:     #9a8f7d;
+      --line-d:   #4a3f2e;                 /* 활동지 표 네이비 괘선 */
       --r: 6px;
     }
+
+    /* ===== 밝은 곳 모드 (설정·점검에서 켠다) =====
+       색 토큰만 덮어써서 대비를 끌어올린다. 배치는 그대로다. */
+    html.hc {
+      --paper:    #fffdf8;
+      --box:      #ffffff;
+      --ink:      #1a1712;
+      --ink-2:    #332d26;
+      --cyan:     #114558;
+      --cyan-d:   #0c3444;
+      --pen-blue: #123f52;
+      --pen-blue-d:#0a2c3a;
+      --pen-red:  #8f3312;
+      --line:     #7a6f5d;
+      --line-d:   #2e281c;
+    }
+    html.hc body { background-image: none; }          /* 배경 무늬 제거 */
+    html.hc .sysbar { background: #fffdf6; }
+    html.hc select, html.hc input, html.hc button,
+    html.hc .panel, html.hc .q, html.hc .card { border-width: 2px; }
+    html.hc .panel-head { border-width: 3px; }
+
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; }
@@ -129,7 +156,7 @@
       padding: 10px 16px;
     }
     .h-subject .eyebrow {
-      font-size: .7rem; letter-spacing: .14em; color: var(--ink-2);
+      font-size: 0.82rem; letter-spacing: .14em; color: var(--ink-2);
     }
     .h-subject .title {
       font-family: "Gowun Batang", serif;
@@ -147,7 +174,7 @@
       white-space: nowrap;
     }
     .h-env { gap: 4px; }
-    .h-env .k { font-size: .78rem; color: var(--ink-2); }
+    .h-env .k { font-size: 0.82rem; color: var(--ink-2); }
     .h-tools { flex-direction: row !important; align-items: center; gap: 8px; margin-left: auto; }
 
 
@@ -160,7 +187,7 @@
       border-radius: 3px;
       padding: 7px 14px;
       font-family: "Menlo", "Consolas", ui-monospace, monospace;
-      font-size: .76rem; letter-spacing: .02em;
+      font-size: 0.82rem; letter-spacing: .02em;
       color: var(--ink-2);
       box-shadow: 0 1px 0 rgba(44,74,124,.15);
       transform: rotate(-.25deg);          /* 붙여놓은 스티커 느낌 */
@@ -170,7 +197,7 @@
       content: "";
       position: absolute; top: -7px; left: 26px;
       width: 54px; height: 13px;
-      background: rgba(41, 184, 229, .38); /* 활동지 시안 */
+      background: rgba(31, 95, 122, .38); /* 활동지 시안 */
       border-left: 1px solid rgba(38,38,46,.12);
       border-right: 1px solid rgba(38,38,46,.12);
       transform: rotate(-2deg);
@@ -180,24 +207,24 @@
     .chip {
       display: inline-flex; align-items: center; gap: 6px;
       background: #fff; border: 1.5px solid var(--line); border-radius: 999px;
-      padding: 2px 10px; color: #a3a094;
+      padding: 2px 10px; color: #6b6255;
     }
     .chip .dot {
       width: 7px; height: 7px; border-radius: 50%;
-      background: #d8d5c8;
+      background: #cfc7b8;
     }
     .chip.on { color: var(--ink); border-color: var(--ink); }
-    .chip.on .dot { background: var(--cyan); box-shadow: 0 0 5px rgba(41,184,229,.6); }
+    .chip.on .dot { background: var(--cyan); box-shadow: 0 0 5px rgba(31, 95, 122,.6); }
     .chip.busy { border-color: var(--pen-red); color: var(--pen-red); }
     .chip.busy .dot { background: var(--pen-red); animation: blink 1s infinite; }
     @keyframes blink { 50% { opacity: .35; } }
-    .chip .st { color: #a3a094; font-variant-numeric: tabular-nums; }
+    .chip .st { color: #6b6255; font-variant-numeric: tabular-nums; }
     .chip.on .st { color: var(--ink-2); }
     .chip.hit { border-color: var(--cyan); }
     .chip.hit .st { color: var(--cyan-d); }
     .sysbar .sep { color: var(--line); }
     .sysbar .meter { margin-left: auto; display: flex; align-items: center; gap: 12px; }
-    .sysbar .meter .k { color: #a3a094; }
+    .sysbar .meter .k { color: #6b6255; }
     .sysbar .meter .v { color: var(--pen-blue-d); font-variant-numeric: tabular-nums; font-weight: 700; }
     @media (prefers-reduced-motion: reduce) { .chip.busy .dot { animation: none; } }
 
@@ -306,7 +333,7 @@
     .history .item:hover { border-color: var(--pen-blue); }
     .history .item img { width: 100%; height: 62px; object-fit: cover; border-radius: 3px; display: block; }
     .history .item .cap {
-      font-size: .68rem; color: var(--ink-2); margin-top: 3px;
+      font-size: 0.82rem; color: var(--ink-2); margin-top: 3px;
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
 
@@ -353,7 +380,7 @@
       padding: 14px;
     }
     .upload-container:hover { border-color: var(--pen-blue); color: var(--ink); background: #f7f8ff; }
-    .upload-container .hint { font-size: .8rem; margin-top: 6px; color: #a3a094; }
+    .upload-container .hint { font-size: 0.82rem; margin-top: 6px; color: #6b6255; }
     #uploadPreview {
       max-width: 100%; max-height: 100%; height: auto;
       object-fit: contain; display: none; border-radius: 3px;
@@ -429,7 +456,7 @@
       border-radius: 50%;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       gap: 1px;
-      font-family: "Gowun Batang", serif; font-weight: 700; font-size: .78rem;
+      font-family: "Gowun Batang", serif; font-weight: 700; font-size: 0.82rem;
       color: var(--pen-red);
       background: rgba(255,255,255,.72);
       transform: rotate(-12deg) scale(0);
@@ -528,13 +555,13 @@
       white-space: pre-wrap; word-wrap: break-word;
       color: #3a3a42;
     }
-    .scratchpad pre:empty::before { content: "실행하면 결과 데이터가 여기에 적혀요."; color: #a3a094; }
+    .scratchpad pre:empty::before { content: "실행하면 결과 데이터가 여기에 적혀요."; color: #6b6255; }
     html[lang="en"] .scratchpad pre:empty::before { content: "Run once and the result data shows up here."; }
 
     /* 스크롤바 */
     .panel-body::-webkit-scrollbar, .scratchpad pre::-webkit-scrollbar { width: 10px; }
     .panel-body::-webkit-scrollbar-thumb, .scratchpad pre::-webkit-scrollbar-thumb {
-      background: #d8d5c8; border-radius: 999px;
+      background: #cfc7b8; border-radius: 999px;
     }
 
     /* ===== 반응형 ===== */
@@ -865,11 +892,11 @@
        모델을 올리는 동안 이 툴이 무엇을 하는지 짧게 안내한다.
        그림은 전부 인라인 SVG — 파일을 더 받지 않는다. */
     const ART = {
-      offline: '<svg viewBox="0 0 120 105"><rect x="14" y="18" width="92" height="60" rx="5" fill="#fff" stroke="#2c4a7c" stroke-width="3"/><rect x="24" y="28" width="72" height="40" rx="3" fill="#eaf6fb"/><path d="M44 88h32l4 9H40z" fill="#ccd6e0"/><circle cx="60" cy="48" r="13" fill="none" stroke="#29b8e5" stroke-width="3"/><path d="M60 41v9M60 55h.01" stroke="#0f93c0" stroke-width="3" stroke-linecap="round"/><path d="M96 14 22 90" stroke="#d94141" stroke-width="5" stroke-linecap="round"/></svg>',
-      models: '<svg viewBox="0 0 120 105"><g fill="none" stroke="#2c4a7c" stroke-width="3"><rect x="10" y="14" width="30" height="24" rx="4"/><rect x="45" y="14" width="30" height="24" rx="4"/><rect x="80" y="14" width="30" height="24" rx="4"/><rect x="10" y="44" width="30" height="24" rx="4"/><rect x="45" y="44" width="30" height="24" rx="4"/><rect x="80" y="44" width="30" height="24" rx="4"/></g><rect x="10" y="44" width="30" height="24" rx="4" fill="#29b8e5" opacity=".35"/><rect x="45" y="14" width="30" height="24" rx="4" fill="#29b8e5" opacity=".35"/><rect x="80" y="44" width="30" height="24" rx="4" fill="#29b8e5" opacity=".35"/><path d="M22 84h76" stroke="#ccd6e0" stroke-width="8" stroke-linecap="round"/><path d="M22 84h44" stroke="#2b4bd8" stroke-width="8" stroke-linecap="round"/></svg>',
-      chips: '<svg viewBox="0 0 120 105"><rect x="26" y="26" width="68" height="56" rx="6" fill="#fff" stroke="#2c4a7c" stroke-width="3"/><rect x="38" y="38" width="44" height="32" rx="3" fill="#eaf6fb" stroke="#0f93c0" stroke-width="2"/><g stroke="#2c4a7c" stroke-width="3" stroke-linecap="round"><path d="M40 26v-9M60 26v-9M80 26v-9M40 82v9M60 82v9M80 82v9M26 42h-9M26 60h-9M94 42h9M94 60h9"/></g><text x="60" y="59" font-size="13" font-family="monospace" fill="#0f93c0" text-anchor="middle">NPU</text></svg>',
-      menus: '<svg viewBox="0 0 120 105"><rect x="8" y="24" width="32" height="56" rx="5" fill="#fff" stroke="#2c4a7c" stroke-width="3"/><rect x="44" y="24" width="32" height="56" rx="5" fill="#fff" stroke="#2c4a7c" stroke-width="3"/><rect x="80" y="24" width="32" height="56" rx="5" fill="#fff" stroke="#2c4a7c" stroke-width="3"/><circle cx="24" cy="44" r="7" fill="#29b8e5"/><path d="M15 66h18M15 72h12" stroke="#ccd6e0" stroke-width="3" stroke-linecap="round"/><rect x="52" y="38" width="16" height="9" rx="2" fill="#2fa35c"/><rect x="52" y="50" width="16" height="9" rx="2" fill="#d97b2b"/><path d="M51 66h18M51 72h12" stroke="#ccd6e0" stroke-width="3" stroke-linecap="round"/><path d="M88 52l6 6 12-14" stroke="#2b4bd8" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M87 66h18M87 72h12" stroke="#ccd6e0" stroke-width="3" stroke-linecap="round"/></svg>',
-      go: '<svg viewBox="0 0 120 105"><circle cx="60" cy="52" r="34" fill="#eaf6fb" stroke="#29b8e5" stroke-width="3"/><path d="M46 52l10 11 20-24" stroke="#2b4bd8" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+      offline: '<svg viewBox="0 0 120 105"><rect x="14" y="18" width="92" height="60" rx="5" fill="#fff" stroke="#4a3f2e" stroke-width="3"/><rect x="24" y="28" width="72" height="40" rx="3" fill="#eaf6fb"/><path d="M44 88h32l4 9H40z" fill="#9a8f7d"/><circle cx="60" cy="48" r="13" fill="none" stroke="#1f5f7a" stroke-width="3"/><path d="M60 41v9M60 55h.01" stroke="#17475c" stroke-width="3" stroke-linecap="round"/><path d="M96 14 22 90" stroke="#b4451c" stroke-width="5" stroke-linecap="round"/></svg>',
+      models: '<svg viewBox="0 0 120 105"><g fill="none" stroke="#4a3f2e" stroke-width="3"><rect x="10" y="14" width="30" height="24" rx="4"/><rect x="45" y="14" width="30" height="24" rx="4"/><rect x="80" y="14" width="30" height="24" rx="4"/><rect x="10" y="44" width="30" height="24" rx="4"/><rect x="45" y="44" width="30" height="24" rx="4"/><rect x="80" y="44" width="30" height="24" rx="4"/></g><rect x="10" y="44" width="30" height="24" rx="4" fill="#1f5f7a" opacity=".35"/><rect x="45" y="14" width="30" height="24" rx="4" fill="#1f5f7a" opacity=".35"/><rect x="80" y="44" width="30" height="24" rx="4" fill="#1f5f7a" opacity=".35"/><path d="M22 84h76" stroke="#9a8f7d" stroke-width="8" stroke-linecap="round"/><path d="M22 84h44" stroke="#1f5f7a" stroke-width="8" stroke-linecap="round"/></svg>',
+      chips: '<svg viewBox="0 0 120 105"><rect x="26" y="26" width="68" height="56" rx="6" fill="#fff" stroke="#4a3f2e" stroke-width="3"/><rect x="38" y="38" width="44" height="32" rx="3" fill="#eaf6fb" stroke="#17475c" stroke-width="2"/><g stroke="#4a3f2e" stroke-width="3" stroke-linecap="round"><path d="M40 26v-9M60 26v-9M80 26v-9M40 82v9M60 82v9M80 82v9M26 42h-9M26 60h-9M94 42h9M94 60h9"/></g><text x="60" y="59" font-size="13" font-family="monospace" fill="#17475c" text-anchor="middle">NPU</text></svg>',
+      menus: '<svg viewBox="0 0 120 105"><rect x="8" y="24" width="32" height="56" rx="5" fill="#fff" stroke="#4a3f2e" stroke-width="3"/><rect x="44" y="24" width="32" height="56" rx="5" fill="#fff" stroke="#4a3f2e" stroke-width="3"/><rect x="80" y="24" width="32" height="56" rx="5" fill="#fff" stroke="#4a3f2e" stroke-width="3"/><circle cx="24" cy="44" r="7" fill="#1f5f7a"/><path d="M15 66h18M15 72h12" stroke="#9a8f7d" stroke-width="3" stroke-linecap="round"/><rect x="52" y="38" width="16" height="9" rx="2" fill="#2fa35c"/><rect x="52" y="50" width="16" height="9" rx="2" fill="#d97b2b"/><path d="M51 66h18M51 72h12" stroke="#9a8f7d" stroke-width="3" stroke-linecap="round"/><path d="M88 52l6 6 12-14" stroke="#1f5f7a" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M87 66h18M87 72h12" stroke="#9a8f7d" stroke-width="3" stroke-linecap="round"/></svg>',
+      go: '<svg viewBox="0 0 120 105"><circle cx="60" cy="52" r="34" fill="#eaf6fb" stroke="#1f5f7a" stroke-width="3"/><path d="M46 52l10 11 20-24" stroke="#1f5f7a" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     };
     const SLIDES = [
       { art: "offline", key: "s1" }, { art: "models", key: "s2" },

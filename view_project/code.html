@@ -9,22 +9,49 @@
   <link href="/fonts/fonts.css" rel="stylesheet">
   <link href="/lib/cm/codemirror.css" rel="stylesheet">
   <link href="/lib/cm/show-hint.css" rel="stylesheet">
+  <script>
+    /* 밝은 곳 모드: 화면이 그려지기 전에 적용해야 깜빡이지 않는다 */
+    try { if (localStorage.getItem("vapi-hc") === "1")
+            document.documentElement.classList.add("hc"); } catch (e) {}
+  </script>
   <style>
     /* ===== 디자인 토큰 : 다른 페이지와 동일 ===== */
     :root {
-      --paper:    #f5f8fb;
+      --paper:    #fbf7ef;
       --box:      #ffffff;
-      --ink:      #26303c;
-      --ink-2:    #64707e;
-      --cyan:     #29b8e5;
-      --cyan-d:   #0f93c0;
-      --pen-blue: #2b4bd8;
-      --pen-blue-d:#1f3ab0;
-      --pen-red:  #d94141;
-      --line:     #ccd6e0;
-      --line-d:   #2c4a7c;
+      --ink:      #2a2620;
+      --ink-2:    #4a423a;
+      --cyan:     #1f5f7a;
+      --cyan-d:   #17475c;
+      --pen-blue: #1f5f7a;
+      --pen-blue-d:#12455c;
+      --pen-red:  #b4451c;
+      --line:     #9a8f7d;
+      --line-d:   #4a3f2e;
       --r: 6px;
     }
+
+    /* ===== 밝은 곳 모드 (설정·점검에서 켠다) =====
+       색 토큰만 덮어써서 대비를 끌어올린다. 배치는 그대로다. */
+    html.hc {
+      --paper:    #fffdf8;
+      --box:      #ffffff;
+      --ink:      #1a1712;
+      --ink-2:    #332d26;
+      --cyan:     #114558;
+      --cyan-d:   #0c3444;
+      --pen-blue: #123f52;
+      --pen-blue-d:#0a2c3a;
+      --pen-red:  #8f3312;
+      --line:     #7a6f5d;
+      --line-d:   #2e281c;
+    }
+    html.hc body { background-image: none; }          /* 배경 무늬 제거 */
+    html.hc .sysbar { background: #fffdf6; }
+    html.hc select, html.hc input, html.hc button,
+    html.hc .panel, html.hc .q, html.hc .card { border-width: 2px; }
+    html.hc .panel-head { border-width: 3px; }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       display: flex; flex-direction: column; height: 100dvh; overflow: hidden;
@@ -50,7 +77,7 @@
       box-shadow: 0 1px 0 rgba(44,74,124,.18);
     }
     .header > div { display: flex; flex-direction: column; justify-content: center; padding: 10px 16px; }
-    .eyebrow { font-size: .78rem; color: var(--ink-2); letter-spacing: .04em; }
+    .eyebrow { font-size: 0.82rem; color: var(--ink-2); letter-spacing: .04em; }
     .title { font-family: "Gowun Dodum", sans-serif; font-weight: 700; font-size: 1.35rem; color: var(--ink); }
     .h-tools { flex-direction: row !important; align-items: center !important; gap: 8px; margin-left: auto; }
 
@@ -60,13 +87,13 @@
       background: #fffdf6; border: 1.5px solid var(--line-d); border-radius: 3px;
       padding: 7px 14px;
       font-family: "Menlo", "Consolas", ui-monospace, monospace;
-      font-size: .76rem; letter-spacing: .02em; color: var(--ink-2);
+      font-size: 0.82rem; letter-spacing: .02em; color: var(--ink-2);
       box-shadow: 0 1px 0 rgba(44,74,124,.15);
       transform: rotate(-.25deg); position: relative;
     }
     .sysbar::before {
       content: ""; position: absolute; top: -7px; left: 26px; width: 54px; height: 13px;
-      background: rgba(41,184,229,.38);
+      background: rgba(31, 95, 122,.38);
       border-left: 1px solid rgba(38,38,46,.12); border-right: 1px solid rgba(38,38,46,.12);
       transform: rotate(-2deg);
     }
@@ -74,14 +101,14 @@
     .chip {
       display: inline-flex; align-items: center; gap: 6px;
       background: #fff; border: 1.5px solid var(--line); border-radius: 999px;
-      padding: 2px 10px; color: #a3a094;
+      padding: 2px 10px; color: #6b6255;
     }
-    .chip .dot { width: 7px; height: 7px; border-radius: 50%; background: #d8d5c8; }
+    .chip .dot { width: 7px; height: 7px; border-radius: 50%; background: #cfc7b8; }
     .chip.on { color: var(--ink); border-color: var(--ink); }
-    .chip.on .dot { background: var(--cyan); box-shadow: 0 0 5px rgba(41,184,229,.6); }
+    .chip.on .dot { background: var(--cyan); box-shadow: 0 0 5px rgba(31, 95, 122,.6); }
     .sep { color: var(--line-d); opacity: .5; }
     .meter { margin-left: auto; display: flex; gap: 14px; }
-    .meter .k { color: #a3a094; } .meter .v { color: var(--ink); font-weight: 700; }
+    .meter .k { color: #6b6255; } .meter .v { color: var(--ink); font-weight: 700; }
 
     /* ===== 본문 2단 ===== */
     .main { flex: 1 1 auto; min-height: 0; display: flex; gap: 10px; }
@@ -120,7 +147,7 @@
     }
     .cm-s-default .cm-keyword { color: var(--pen-blue-d); }
     .cm-s-default .cm-string { color: #b26a00; }
-    .cm-s-default .cm-comment { color: #7a8896; }
+    .cm-s-default .cm-comment { color: #7c7264; }
 
     /* 좁은 화면: 세로로 쌓고, 도움말은 편집기 아래로 */
     @media (max-width: 1200px) {
@@ -155,29 +182,29 @@
     .h-item .d { color: var(--ink-2); font-size: .82rem; margin-top: 2px; }
     .h-detail {
       margin-top: 7px; padding-top: 7px; border-top: 1px dashed var(--line);
-      font-size: .8rem; color: var(--ink); display: none;
+      font-size: 0.82rem; color: var(--ink); display: none;
     }
     .h-item.open .h-detail { display: block; }
     .h-detail dt { color: var(--cyan-d); font-weight: 700; margin-top: 5px; }
     .h-detail dd { margin: 1px 0 0; color: var(--ink-2); }
     .h-detail pre {
       background: var(--paper); border-radius: 4px; padding: 6px 8px; margin-top: 5px;
-      font-family: Menlo, Consolas, ui-monospace, monospace; font-size: .76rem;
+      font-family: Menlo, Consolas, ui-monospace, monospace; font-size: 0.82rem;
       white-space: pre-wrap; color: var(--ink);
     }
     .h-item .more {
-      float: right; margin-right: 6px; font-size: .74rem; color: var(--ink-2);
+      float: right; margin-right: 6px; font-size: 0.82rem; color: var(--ink-2);
       border: 1px solid var(--line); border-radius: 3px; padding: 1px 6px;
     }
     .h-item .put {
-      float: right; font-size: .74rem; color: var(--ink-2);
+      float: right; font-size: 0.82rem; color: var(--ink-2);
       border: 1px solid var(--line); border-radius: 3px; padding: 1px 6px;
     }
-    .h-group { font-size: .78rem; color: var(--cyan-d); font-weight: 700;
+    .h-group { font-size: 0.82rem; color: var(--cyan-d); font-weight: 700;
                margin: 10px 0 5px; letter-spacing: .04em; }
     .h-more { margin: 0 12px 12px; font-size: .82rem; }
     .h-more summary { cursor: pointer; color: var(--pen-blue-d); }
-    .h-more table { border-collapse: collapse; width: 100%; margin-top: 8px; font-size: .78rem; }
+    .h-more table { border-collapse: collapse; width: 100%; margin-top: 8px; font-size: 0.82rem; }
     .h-more th, .h-more td { border: 1px solid var(--line); padding: 4px 6px; text-align: left; }
     .h-more th { background: var(--paper); }
     .h-more code { background: var(--paper); padding: 1px 4px; border-radius: 3px;
@@ -192,7 +219,7 @@
       font-size: .87rem; line-height: 1.5; white-space: pre-wrap; word-break: break-all;
     }
     #output .err { color: #ff9a9a; }
-    #output .sys { color: #7fd1ea; }
+    #output .sys { color: #8fd0a8; }
     .hintline { margin: 0 12px 10px; color: var(--ink-2); font-size: .84rem; }
 
     /* ===== 예제/가이드 모달 ===== */
@@ -278,7 +305,7 @@
       <div id="stageWrap" style="display:none;margin:0 12px 8px;">
         <img id="stageImg" alt="" style="width:100%;max-height:44vh;object-fit:contain;
              background:#fff;border:1.5px solid var(--line);border-radius:var(--r);">
-        <div id="stageCap" style="font-size:.78rem;color:var(--ink-2);margin-top:3px;"></div>
+        <div id="stageCap" style="font-size:0.82rem;color:var(--ink-2);margin-top:3px;"></div>
       </div>
       <div id="output"></div>
       <div class="hintline" id="txtHint">show() 결과는 위 칸에 나와요. 배포한 프로그램에서는 창으로 떠요. input() 은 지원하지 않아요.</div>
@@ -544,7 +571,7 @@ show(img, r)                # 결과를 화면에서 보기 (박스가 그려져
         d.querySelector("b").textContent = w.name;
         const del = d.querySelector(".del");
         del.textContent = t("del");
-        del.style.cssText = "float:right;font-size:.78rem;color:var(--pen-red);"
+        del.style.cssText = "float:right;font-size:0.82rem;color:var(--pen-red);"
           + "border:1px solid var(--pen-red);border-radius:3px;padding:1px 6px;";
         del.onclick = async ev => {
           ev.stopPropagation();

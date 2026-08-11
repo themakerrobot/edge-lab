@@ -7,14 +7,41 @@
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
+  <script>
+    /* 밝은 곳 모드: 화면이 그려지기 전에 적용해야 깜빡이지 않는다 */
+    try { if (localStorage.getItem("vapi-hc") === "1")
+            document.documentElement.classList.add("hc"); } catch (e) {}
+  </script>
   <style>
     :root {
-      --paper: #f5f8fb; --rule: transparent; --box: #fff;
-      --ink: #26303c; --ink-2: #64707e;
-      --cyan: #29b8e5; --cyan-d: #0f93c0;
-      --pen-blue: #2b4bd8; --pen-blue-d: #1f3ab0; --pen-red: #d94141;
-      --line: #ccd6e0; --line-d: #2c4a7c; --r: 6px;
+      --paper: #fbf7ef; --rule: transparent; --box: #fff;
+      --ink: #2a2620; --ink-2: #4a423a;
+      --cyan: #1f5f7a; --cyan-d: #17475c;
+      --pen-blue: #1f5f7a; --pen-blue-d: #12455c; --pen-red: #b4451c;
+      --line: #9a8f7d; --line-d: #4a3f2e; --r: 6px;
     }
+
+    /* ===== 밝은 곳 모드 (설정·점검에서 켠다) =====
+       색 토큰만 덮어써서 대비를 끌어올린다. 배치는 그대로다. */
+    html.hc {
+      --paper:    #fffdf8;
+      --box:      #ffffff;
+      --ink:      #1a1712;
+      --ink-2:    #332d26;
+      --cyan:     #114558;
+      --cyan-d:   #0c3444;
+      --pen-blue: #123f52;
+      --pen-blue-d:#0a2c3a;
+      --pen-red:  #8f3312;
+      --line:     #7a6f5d;
+      --line-d:   #2e281c;
+    }
+    html.hc body { background-image: none; }          /* 배경 무늬 제거 */
+    html.hc .sysbar { background: #fffdf6; }
+    html.hc select, html.hc input, html.hc button,
+    html.hc .panel, html.hc .q, html.hc .card { border-width: 2px; }
+    html.hc .panel-head { border-width: 3px; }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; }
     body {
@@ -38,7 +65,7 @@
       border-radius: 3px;
       padding: 7px 14px; margin-bottom: 8px;
       font-family: "Menlo", "Consolas", ui-monospace, monospace;
-      font-size: .76rem; letter-spacing: .02em;
+      font-size: 0.82rem; letter-spacing: .02em;
       color: var(--ink-2);
       box-shadow: 0 1px 0 rgba(44,74,124,.15);
       transform: rotate(-.25deg);
@@ -48,7 +75,7 @@
       content: "";
       position: absolute; top: -7px; left: 26px;
       width: 54px; height: 13px;
-      background: rgba(41, 184, 229, .38);
+      background: rgba(31, 95, 122, .38);
       border-left: 1px solid rgba(44,74,124,.15);
       border-right: 1px solid rgba(44,74,124,.15);
       transform: rotate(-2deg);
@@ -62,7 +89,7 @@
     }
     .devbar .chip .dot { width: 7px; height: 7px; border-radius: 50%; background: #d9e0e8; }
     .devbar .chip.on { color: var(--ink); border-color: var(--ink); }
-    .devbar .chip.on .dot { background: var(--cyan); box-shadow: 0 0 5px rgba(41,184,229,.6); }
+    .devbar .chip.on .dot { background: var(--cyan); box-shadow: 0 0 5px rgba(31, 95, 122,.6); }
     .devbar .chip.busy { border-color: var(--pen-red); color: var(--pen-red); }
     .devbar .chip.busy .dot { background: var(--pen-red); animation: devblink 1s infinite; }
     .devbar .chip .st { color: #a3aebc; font-variant-numeric: tabular-nums; }
@@ -80,9 +107,9 @@
       box-shadow: 0 1px 0 rgba(44,74,124,.18); padding: 10px 16px;
     }
     .h-title { display: flex; flex-direction: column; }
-    .h-title .eyebrow { font-size: .7rem; letter-spacing: .14em; color: var(--ink-2); }
+    .h-title .eyebrow { font-size: 0.82rem; letter-spacing: .14em; color: var(--ink-2); }
     .h-title .title { font-family: "Gowun Batang", serif; font-size: 1.3rem; font-weight: 700; }
-    .h-title .title .od { font-size: .8rem; color: var(--pen-red); }
+    .h-title .title .od { font-size: 0.82rem; color: var(--pen-red); }
     .h-tools {
       margin-left: auto; display: flex; flex-direction: row;
       gap: 8px; align-items: center; flex-wrap: wrap;
@@ -148,19 +175,19 @@
       padding: 8px 14px; font-size: 1rem; display: none;
     }
     .stage-tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-    .stage-tools .hint { font-size: .8rem; color: var(--ink-2); }
+    .stage-tools .hint { font-size: 0.82rem; color: var(--ink-2); }
     #logBox {
       flex: 0 0 auto; background: #fdfcf8; border: 1.5px solid var(--line); border-radius: var(--r);
-      padding: 8px 12px; font-family: "Menlo","Consolas",ui-monospace,monospace; font-size: .78rem;
+      padding: 8px 12px; font-family: "Menlo","Consolas",ui-monospace,monospace; font-size: 0.82rem;
       max-height: 120px; overflow-y: auto; color: #3a3a42; white-space: pre-wrap;
     }
-    #logBox:empty::before { content: "실행하면 진행 상황이 여기에 적혀요."; color: #a3a094; }
+    #logBox:empty::before { content: "실행하면 진행 상황이 여기에 적혀요."; color: #6b6255; }
     html[lang="en"] #logBox:empty::before { content: "Run your blocks and progress shows up here."; }
     details.codeview { flex: 0 0 auto; }
     details.codeview summary { cursor: pointer; font-family: "Gowun Batang", serif; font-weight: 700; font-size: .9rem; color: var(--ink-2); }
     details.codeview pre {
       margin-top: 6px; background: #fdfcf8; border: 1.5px solid var(--line); border-radius: var(--r);
-      padding: 10px; font-size: .75rem; max-height: 180px; overflow: auto; white-space: pre-wrap;
+      padding: 10px; font-size: 0.82rem; max-height: 180px; overflow: auto; white-space: pre-wrap;
     }
     @media (max-width: 900px) {
       body { overflow: auto; height: auto; min-height: 100dvh; }
@@ -230,7 +257,7 @@
         </div>
         <div id="varsBox" style="display:none;border:1.5px dashed var(--line);
              border-radius:var(--r);padding:6px 10px;font-size:.82rem;background:#fffdf6;">
-          <b id="txtVarsTitle" style="color:var(--ink-2);font-size:.76rem;">변수 값</b>
+          <b id="txtVarsTitle" style="color:var(--ink-2);font-size:0.82rem;">변수 값</b>
           <div id="varsBody" style="font-variant-numeric:tabular-nums;"></div>
         </div>
         <div id="logBox"></div>
@@ -689,9 +716,9 @@
   const opt = keys => keys.map(k => [t("o_" + k), k]);
   const POS9 = () => opt(["tl", "tc", "tr", "ml", "mc", "mr", "bl", "bc", "br"]);
   const EDCOLORS = () => [
-    [t("o_cRed"), "#e0342e"], [t("o_cBlue"), "#2b4bd8"], [t("o_cYellow"), "#f4c522"],
+    [t("o_cRed"), "#e0342e"], [t("o_cBlue"), "#1f5f7a"], [t("o_cYellow"), "#f4c522"],
     [t("o_cGreen"), "#2fa35c"], [t("o_cWhite"), "#ffffff"], [t("o_cBlack"), "#26262e"],
-    [t("o_cCyan"), "#29b8e5"]];
+    [t("o_cCyan"), "#1f5f7a"]];
 
   function defineBlocks() {
     Blockly.defineBlocksWithJsonArray([
@@ -1253,7 +1280,7 @@
       const el = document.createElement("button");
       el.style.cssText = "text-align:left;border:1.5px solid var(--line);background:#fff;" +
         "border-radius:6px;padding:10px 12px;cursor:pointer;font-family:inherit;";
-      el.innerHTML = "<b>" + ex.name + "</b><div style='font-size:.8rem;color:var(--ink-2);'>" +
+      el.innerHTML = "<b>" + ex.name + "</b><div style='font-size:0.82rem;color:var(--ink-2);'>" +
         ex.desc + "</div>";
       el.addEventListener("click", () => {
         try {
@@ -1460,8 +1487,8 @@
     return j.data;
   }
 
-  const COLOR = { face: "#2b4bd8", objects: "#2e9e5b", text: "#e08a1e", custom: "#d94141" };
-  const COLORS = { face: "#2b4bd8", objects: "#2e8b57", text: "#d97b2b", custom: "#d94141" };
+  const COLOR = { face: "#1f5f7a", objects: "#2e9e5b", text: "#e08a1e", custom: "#b4451c" };
+  const COLORS = { face: "#1f5f7a", objects: "#2e8b57", text: "#d97b2b", custom: "#b4451c" };
   const AI = {
     lastBoxes: [],
     layers: { img: null, items: [] },
@@ -2170,7 +2197,7 @@
       octx.lineWidth = 3 * k;
       octx.font = (18 * k) + "px 'Gowun Dodum', sans-serif";
       AI.lastBoxes.forEach(({ box, label, color }) => {
-        const c = color || "#2b4bd8";
+        const c = color || "#1f5f7a";
         const [x1, y1, x2, y2] = box;
         octx.strokeStyle = c;
         octx.strokeRect(x1, y1, x2 - x1, y2 - y1);

@@ -7,12 +7,39 @@
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
+  <script>
+    /* 밝은 곳 모드: 화면이 그려지기 전에 적용해야 깜빡이지 않는다 */
+    try { if (localStorage.getItem("vapi-hc") === "1")
+            document.documentElement.classList.add("hc"); } catch (e) {}
+  </script>
   <style>
     :root {
-      --paper:#f5f8fb; --box:#fff; --ink:#26303c; --ink-2:#64707e;
-      --cyan:#29b8e5; --cyan-d:#0f93c0; --pen-blue:#2b4bd8; --pen-blue-d:#1f3ab0;
-      --pen-red:#d94141; --line:#ccd6e0; --line-d:#2c4a7c; --r:6px;
+      --paper:#fbf7ef; --box:#fff; --ink:#2a2620; --ink-2:#4a423a;
+      --cyan:#1f5f7a; --cyan-d:#17475c; --pen-blue:#1f5f7a; --pen-blue-d:#12455c;
+      --pen-red:#b4451c; --line:#9a8f7d; --line-d:#4a3f2e; --r:6px;
     }
+
+    /* ===== 밝은 곳 모드 (설정·점검에서 켠다) =====
+       색 토큰만 덮어써서 대비를 끌어올린다. 배치는 그대로다. */
+    html.hc {
+      --paper:    #fffdf8;
+      --box:      #ffffff;
+      --ink:      #1a1712;
+      --ink-2:    #332d26;
+      --cyan:     #114558;
+      --cyan-d:   #0c3444;
+      --pen-blue: #123f52;
+      --pen-blue-d:#0a2c3a;
+      --pen-red:  #8f3312;
+      --line:     #7a6f5d;
+      --line-d:   #2e281c;
+    }
+    html.hc body { background-image: none; }          /* 배경 무늬 제거 */
+    html.hc .sysbar { background: #fffdf6; }
+    html.hc select, html.hc input, html.hc button,
+    html.hc .panel, html.hc .q, html.hc .card { border-width: 2px; }
+    html.hc .panel-head { border-width: 3px; }
+
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
       display:flex; flex-direction:column; height:100dvh; overflow:hidden;
@@ -32,7 +59,7 @@
       box-shadow:0 1px 0 rgba(44,74,124,.18);
     }
     .header > div { display:flex; flex-direction:column; justify-content:center; padding:10px 16px; }
-    .h-subject .eyebrow { font-size:.7rem; letter-spacing:.14em; color:var(--ink-2); }
+    .h-subject .eyebrow { font-size:0.82rem; letter-spacing:.14em; color:var(--ink-2); }
     .h-subject .title { font-family:"Gowun Batang",serif; font-size:1.4rem; font-weight:700; line-height:1.2; }
     .h-tools { flex-direction:row !important; align-items:center; gap:8px; margin-left:auto; }
     /* 링크만 굵게 — 버튼은 다른 페이지와 같은 기본 스타일을 따른다 */
@@ -46,18 +73,18 @@
       flex:0 0 auto; display:flex; align-items:center; gap:6px 14px; flex-wrap:wrap;
       background:#fffdf6; border:1.5px solid var(--line-d); border-radius:3px;
       padding:7px 14px; font-family:"Menlo","Consolas",ui-monospace,monospace;
-      font-size:.76rem; letter-spacing:.02em; color:var(--ink-2);
+      font-size:0.82rem; letter-spacing:.02em; color:var(--ink-2);
       box-shadow:0 1px 0 rgba(44,74,124,.15); transform:rotate(-.25deg); position:relative;
     }
     .sysbar::before {
       content:""; position:absolute; top:-7px; left:26px; width:54px; height:13px;
-      background:rgba(41,184,229,.38); border-left:1px solid rgba(38,38,46,.12);
+      background:rgba(31, 95, 122,.38); border-left:1px solid rgba(38,38,46,.12);
       border-right:1px solid rgba(38,38,46,.12); transform:rotate(-2deg);
     }
     .sysbar .brand b { color:var(--ink); font-weight:700; letter-spacing:.08em; }
     .sysbar .sep { color:var(--line); }
     .sysbar .meter { margin-left:auto; display:flex; gap:12px; }
-    .sysbar .meter .k { color:#a3a094; }
+    .sysbar .meter .k { color:#6b6255; }
     .sysbar .meter .v { color:var(--pen-blue-d); font-weight:700; font-variant-numeric:tabular-nums; }
     /* 레이아웃 */
     .main-container { flex:1 1 auto; min-height:0; display:flex; gap:12px; max-width:2200px; margin:0 auto; width:100%; }
@@ -89,7 +116,7 @@
     .chk { display:flex; align-items:center; gap:10px; border:1.5px solid var(--line);
            border-radius:var(--r); padding:8px 12px; background:#fff; }
     .chk .mark { width:22px; height:22px; flex:0 0 auto; border-radius:50%; color:#fff;
-                 display:inline-flex; align-items:center; justify-content:center; font-weight:700; font-size:.8rem;
+                 display:inline-flex; align-items:center; justify-content:center; font-weight:700; font-size:0.82rem;
                  background:#c9d3dd; }
     .chk.ok .mark { background:var(--cyan); }
     .chk.no .mark { background:var(--pen-red); }
@@ -102,22 +129,22 @@
     table { width:100%; border-collapse:collapse; font-size:.9rem; }
     th, td { border-bottom:1px dashed var(--line); padding:7px 6px; text-align:left; }
     th { color:var(--ink-2); font-weight:700; font-size:.82rem; }
-    td .lbl { color:var(--ink-2); font-size:.8rem; }
+    td .lbl { color:var(--ink-2); font-size:0.82rem; }
     .empty { color:var(--ink-2); font-size:.88rem; padding:10px 0; }
     /* 결과 도표 */
     .cards { display:flex; gap:10px; flex-wrap:wrap; }
     .card { flex:1 1 130px; border:1.5px solid var(--line); border-radius:var(--r);
             padding:10px 12px; background:#fffdf6; }
-    .card .k { font-size:.76rem; color:var(--ink-2); letter-spacing:.02em; }
+    .card .k { font-size:0.82rem; color:var(--ink-2); letter-spacing:.02em; }
     .card .v { font-size:1.6rem; font-weight:800; color:var(--pen-blue-d);
                font-variant-numeric:tabular-nums; line-height:1.2; }
     .rep { border:1.5px solid var(--line); border-radius:var(--r); padding:10px 12px; background:#fff; }
     .rep + .rep { margin-top:8px; }
     .rep .rh { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:6px; }
     .rep .rh b { font-size:1rem; }
-    .rep .rh .tag { font-size:.72rem; color:#fff; background:var(--cyan-d);
+    .rep .rh .tag { font-size:0.82rem; color:#fff; background:var(--cyan-d);
                     border-radius:10px; padding:1px 7px; }
-    .rep .rh .when { margin-left:auto; color:var(--ink-2); font-size:.78rem; }
+    .rep .rh .when { margin-left:auto; color:var(--ink-2); font-size:0.82rem; }
     .rep .big { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
     .rep .big .pb { flex:1 1 auto; height:16px; background:#e6eef6; border-radius:8px; overflow:hidden; }
     .rep .big .pb > i { display:block; height:100%; background:var(--pen-blue); }
@@ -129,12 +156,12 @@
     .rep .row .pb { flex:1 1 auto; height:11px; background:#e6eef6; border-radius:6px; overflow:hidden; }
     .rep .row .pb > i { display:block; height:100%; background:var(--cyan); }
     .rep .row.bad .pb > i { background:var(--pen-red); }
-    .rep .row .sc { flex:0 0 118px; font-size:.8rem; color:var(--ink-2); }
+    .rep .row .sc { flex:0 0 118px; font-size:0.82rem; color:var(--ink-2); }
 
     .mini { display:flex; align-items:flex-end; gap:3px; height:54px; margin-top:6px; }
     .mini div { flex:1 1 0; background:var(--cyan); border-radius:2px 2px 0 0; min-height:2px; }
     .mini div span { display:none; }
-    .dates { display:flex; gap:3px; font-size:.62rem; color:var(--ink-2); margin-top:2px; }
+    .dates { display:flex; gap:3px; font-size:0.82rem; color:var(--ink-2); margin-top:2px; }
     .dates span { flex:1 1 0; text-align:center; overflow:hidden; }
 
     @media print {
@@ -192,6 +219,16 @@
           수업 시작 5분 전에 한 번 눌러 주세요. 모델·디바이스·저장 폴더·웹캠을 한꺼번에 확인합니다.
         </div>
         <div class="checks" id="checks"><div class="empty" id="txtNotRun">아직 점검하지 않았어요.</div></div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <b style="font-size:.9rem;" id="txtHcTitle">밝은 곳 모드</b>
+            <button class="btn" id="hcToggle" style="padding:5px 12px;font-size:.86rem;">
+              <span id="txtHcBtn">켜기</span></button>
+            <span class="hint" id="txtHcHint" style="margin:0;">
+              창가나 조명이 밝은 곳에서 글씨가 흐릴 때 켜세요. 색이 진해집니다.</span>
+          </div>
+        </div>
+
         <div style="margin-top:12px;">
           <div style="display:flex;align-items:center;gap:8px;">
             <b style="font-size:.9rem;" id="txtVerTitle">설치 버전</b>
@@ -202,7 +239,7 @@
             문제가 생겼을 때 예전과 무엇이 달라졌는지 비교하는 데 씁니다.
           </div>
           <div id="verBox" style="font-family:Menlo,Consolas,ui-monospace,monospace;
-               font-size:.8rem;color:var(--ink-2);white-space:pre-wrap;line-height:1.6;">—</div>
+               font-size:0.82rem;color:var(--ink-2);white-space:pre-wrap;line-height:1.6;">—</div>
         </div>
         <div class="camwrap" id="camwrap" style="display:none;">
           <video id="cam" autoplay muted playsinline></video>
@@ -288,6 +325,8 @@
       pgName: { index: "써보기", blocks: "블록 코딩", train: "가르치기",
                 code: "파이썬", options: "설정 · 점검", etc: "기타" },
       notRun: "아직 점검하지 않았어요.", none: "아직 없어요.",
+      hcTitle: "밝은 곳 모드", hcOn: "켜기", hcOff: "끄기",
+      hcHint: "창가나 조명이 밝은 곳에서 글씨가 흐릴 때 켜세요. 색이 진해집니다.",
       verTitle: "설치 버전", verCopy: "복사", verCopied: "복사했어요",
       verHint: "문제가 생겼을 때 예전과 무엇이 달라졌는지 비교하는 데 씁니다.",
       verMissing: "설치 기록이 없어요 (setup 을 다시 돌리면 남습니다)",
@@ -330,6 +369,8 @@
       pgName: { index: "Use", blocks: "Blocks", train: "Train",
                 code: "Python", options: "Settings", etc: "Other" },
       notRun: "Not checked yet.", none: "Nothing yet.",
+      hcTitle: "High contrast", hcOn: "Turn on", hcOff: "Turn off",
+      hcHint: "Turn this on when text looks faint in bright light.",
       verTitle: "Installed versions", verCopy: "Copy", verCopied: "Copied",
       verHint: "Use this to compare what changed when something breaks.",
       verMissing: "No install record (run setup again to create one)",
@@ -352,6 +393,16 @@
   const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
   /* ---------------- 상태바 ---------------- */
+  /* ---------------- 밝은 곳 모드 ---------------- */
+  function hcOn() { return document.documentElement.classList.contains("hc"); }
+  function paintHc() { $("txtHcBtn").textContent = t(hcOn() ? "hcOff" : "hcOn"); }
+  $("hcToggle").addEventListener("click", () => {
+    const on = !hcOn();
+    document.documentElement.classList.toggle("hc", on);
+    try { localStorage.setItem("vapi-hc", on ? "1" : "0"); } catch (e) {}
+    paintHc();
+  });
+
   /* ---------------- 설치 버전 ---------------- */
   let VER_TEXT = "";
   (async function loadVersions() {
@@ -650,6 +701,8 @@
     set("txtQ3", t("q3")); set("txtPrintReport", t("printReport"));
     set("txtQ4", t("q4")); set("txtStatReset", t("statReset"));
     set("txtNotRun", t("notRun"));
+    set("txtHcTitle", t("hcTitle")); set("txtHcHint", t("hcHint"));
+    if (typeof paintHc === "function") paintHc();
     set("txtVerTitle", t("verTitle")); set("txtVerCopy", t("verCopy"));
     set("txtVerHint", t("verHint"));
   })();
