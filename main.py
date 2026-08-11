@@ -317,13 +317,17 @@ async def object_custom_e(request: Request, uploadFile: UploadFile = File(...),
                           detect_mode: str = "fire"):
     name = "object_custom_e"
     path = save_upload(uploadFile, name)
+    dev = DEVICE_OF.get(name, "CPU")
+    t0 = time.perf_counter()
     try:
         data = eng.custom.predict(detect_mode, path)
         return {"type": name, "result": "ok", "detect_mode": detect_mode,
-                "data": {"object": data}}
+                "data": {"object": data},
+                "elapsed_ms": int((time.perf_counter() - t0) * 1000), "device": dev}
     except Exception as ex:
         return {"type": name, "result": "fail", "detect_mode": detect_mode,
-                "data": "Inference error:" + str(ex)}
+                "data": "Inference error:" + str(ex),
+                "elapsed_ms": int((time.perf_counter() - t0) * 1000), "device": dev}
     finally:
         os.path.exists(path) and os.remove(path)
 

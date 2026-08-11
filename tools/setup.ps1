@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # vapi-ondevice setup - Windows (PowerShell) - always full install, no skip
 # Usage: put 8 custom pt files in models\org\ then run:
 #   powershell -ExecutionPolicy Bypass -File .\tools\setup.ps1
