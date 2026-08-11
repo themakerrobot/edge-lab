@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 REM ==========================================================================
 REM  vapi-od : build portable bundle (Windows)
 REM  output : dist\vapi-od-<VERSION>.zip   (extract -> run.bat, no python needed)
@@ -122,6 +123,7 @@ for %%D in (user project pycode stats tmp) do mkdir %BUILD%\data\%%D 2>nul
 REM bundle launcher (ASCII only, CRLF via echo)
 > %BUILD%\run.bat (
   echo @echo off
+  echo chcp 65001 ^>nul
   echo cd /d "%%~dp0"
   echo set PYTHONPATH=%%~dp0pylib
   echo set HF_HUB_OFFLINE=1

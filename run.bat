@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 cd /d "%~dp0"
 
 REM use venv python directly (no activation needed; works even if activate.bat is missing)

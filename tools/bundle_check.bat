@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 REM ==========================================================================
 REM  The Maker : 전체 점검 — 배포 번들에서도, 개발 설치(tools\ 안)에서도 돈다.
 REM   1) python/packages  2) model load  3) start server  4) call all services
