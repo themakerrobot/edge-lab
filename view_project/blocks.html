@@ -1040,7 +1040,7 @@
     return {
       generate(workspace) {
         needTime = false; needCam = false; needRandom = false;
-        voice = "F1"; speed = 1.05; lastShown = "img"; hasResult = false;
+        lastShown = "img"; hasResult = false;
         const tops = workspace.getTopBlocks(true).filter(b => !b.outputConnection);
         const bodyLines = tops.map(b => chain(b, 0)).filter(s => s.trim()).join("\n");
         if (!bodyLines.trim()) return "from themaker import *\n\n# 블록을 조립해 보세요\n";
