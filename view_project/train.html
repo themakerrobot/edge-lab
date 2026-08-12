@@ -529,39 +529,20 @@
           </div>
         </div>
 
-        <!-- 4-2 : 편향 실습 -->
-        <div class="sect">
-          <div class="head">
-            <span class="q"><span class="qnum">5</span><span class="qtext" id="txtQ6">AI를 속여 보세요</span></span>
-            <span class="right">
-              <button class="btn" id="biasBtn" disabled><span id="txtBias">속이기 시작</span></button>
-            </span>
-          </div>
-          <div class="lab">
-            <span class="hint" id="txtBiasHint">AI가 틀리게 만드는 방법을 찾아보세요. 왜 틀렸는지 생각해 보면 데이터의 중요성을 알 수 있어요.</span>
-            <ul id="biasList">
-              <li id="txtBias1">배경을 바꿔 보세요 (다른 벽, 다른 책상)</li>
-              <li id="txtBias2">조명을 바꿔 보세요 (불 끄기, 창가로 이동)</li>
-              <li id="txtBias3">각도와 거리를 바꿔 보세요 (기울이기, 멀리/가까이)</li>
-              <li id="txtBias4">옷 색깔이나 손을 함께 찍어 보세요</li>
-            </ul>
-            <div class="trophy" id="biasTrophy" style="display:none;"></div>
-          </div>
-        </div>
-
         <!-- 5 : 저장 -->
         <div class="sect">
           <div class="head">
-            <span class="q"><span class="qnum">6</span><span class="qtext" id="txtQ5">내 컴퓨터에 저장해요</span></span>
+            <span class="q"><span class="qnum">5</span><span class="qtext" id="txtQ5">만든 AI 를 저장해요 — 다른 데서 쓰려고</span></span>
             <span class="right">
               <input type="text" id="modelTitle" placeholder="모델 이름" style="width:150px;">
-              <button class="btn primary" id="saveBtn" disabled><span id="txtSave">서버에 저장</span></button>
+              <button class="btn primary" id="saveBtn" disabled><span id="txtSave">저장하기</span></button>
               <button class="btn" id="downloadBtn" disabled><span id="txtDownload">파일로 내려받기</span></button>
               <button class="btn" id="printBtn"><span id="txtPrint">활동지 인쇄</span></button>
             </span>
           </div>
           <div class="hint" id="txtQ5Hint" style="margin-bottom:10px;">
-            저장하면 [써보기]·[블록 코딩]·[파이썬]에서 내가 가르친 AI로 바로 쓸 수 있어요.
+            저장하면 [써보기]·[블록 코딩]·[파이썬]에서 <b>내가 가르친 AI</b>로 골라 쓸 수 있어요.
+            사진은 들어 있지 않아서 이어서 학습할 수는 없어요 — 그건 아래 6번이에요.
           </div>
           <div class="saved" id="savedList"></div>
         </div>
@@ -569,14 +550,19 @@
         <!-- 7 : 작품 저장 / 이어서 하기 -->
         <div class="sect">
           <div class="head">
-            <span class="q"><span class="qnum">7</span><span class="qtext" id="txtQ7">작품을 저장하고 다음 시간에 이어 해요</span></span>
+            <span class="q"><span class="qnum">6</span><span class="qtext" id="txtQ7">하던 것을 그대로 보관해요 — 다음 시간에 이어 하려고</span></span>
             <span class="right">
-              <button class="btn" id="projSaveBtn"><span id="txtProjSave">작품 저장</span></button>
+              <button class="btn" id="projSaveBtn"><span id="txtProjSave">이 컴퓨터에 보관</span></button>
+              <button class="btn" id="projDownBtn"><span id="txtProjDown">파일로 보관</span></button>
               <button class="btn" id="projFileBtn"><span id="txtProjFile">파일에서 열기</span></button>
             </span>
           </div>
           <div class="hint" id="txtQ7Hint" style="margin-bottom:10px;">
-            사진과 클래스까지 통째로 저장돼요. 학습을 안 끝냈어도 저장할 수 있어요.
+            모은 <b>사진과 클래스가 통째로</b>, 학습까지 마쳤으면 <b>학습 결과도 함께</b> 보관돼요.
+            [이 컴퓨터에 보관]은 이 PC 안에, [파일로 보관]은 USB 로 옮길 수 있는 파일로 만들어요.
+          </div>
+          <div class="hint" id="txtProjListT" style="margin:0 0 6px;">
+            보관한 것 — [이어서 하기] 를 누르면 그때 사진 그대로 다시 시작해요.
           </div>
           <div class="saved" id="projList"></div>
         </div>
@@ -628,17 +614,18 @@
       faceOk: "얼굴 인식됨", faceNo: "얼굴 없음",
       skippedFace: "얼굴이 안 보여서 %1장은 건너뛰었어요.",
       allSkippedFace: "얼굴을 못 찾아서 한 장도 넣지 못했어요. 얼굴을 화면에 크게 보여 주세요.",
-      q6: "AI를 속여 보세요", q7: "작품을 저장하고 다음 시간에 이어 해요",
-      q7hint: "사진과 클래스까지 통째로 저장돼요. 학습을 안 끝냈어도 저장할 수 있어요.",
+      q7: "하던 것을 그대로 보관해요 — 다음 시간에 이어 하려고",
+      q5hint: "저장하면 [써보기]·[블록 코딩]·[파이썬]에서 <b>내가 가르친 AI</b>로 골라 쓸 수 있어요. [불러오기]를 누르면 여기서 다시 확인해 볼 수도 있어요. 사진은 들어 있지 않아서 이어서 학습할 수는 없어요 — 그건 아래 6번이에요.",
+      modelOpen: "불러오기",
+      modelLoaded: "저장한 AI 를 불러왔어요 (%1). 사진은 없으니 4번에서 확인만 해 보세요.",
       holdout: "시험지 따로 두기(20%)",
-      bias: "속이기 시작", biasStop: "속이기 그만",
-      biasHint: "AI가 틀리게 만드는 방법을 찾아보세요. 왜 틀렸는지 생각해 보면 데이터의 중요성을 알 수 있어요.",
-      bias1: "배경을 바꿔 보세요 (다른 벽, 다른 책상)",
-      bias2: "조명을 바꿔 보세요 (불 끄기, 창가로 이동)",
-      bias3: "각도와 거리를 바꿔 보세요 (기울이기, 멀리/가까이)",
-      bias4: "옷 색깔이나 손을 함께 찍어 보세요",
-      biasWin: "AI를 %1번 속였어요! 이 사진들을 클래스에 추가해서 다시 학습해 보세요.",
       print: "활동지 인쇄", projSave: "작품 저장", projFile: "파일에서 열기",
+      projSave2: "이 컴퓨터에 보관", projDown: "파일로 보관", projOpen: "이어서 하기",
+      projModel: "학습 결과까지 같이 돌아왔어요. 바로 4번에서 확인해 보세요.",
+      projModelFail: "사진은 돌아왔지만 학습 결과는 못 살렸어요 (%1). 3번에서 다시 학습해 주세요.",
+      projDowned: "하던 것을 파일로 보관했어요.",
+      projListT: "보관한 것 — [이어서 하기] 를 누르면 그때 사진 그대로 다시 시작해요.",
+      q7hintFull: "모은 <b>사진과 클래스가 통째로</b>, 학습까지 마쳤으면 <b>학습 결과도 함께</b> 보관돼요. [이 컴퓨터에 보관]은 이 PC 안에, [파일로 보관]은 USB 로 옮길 수 있는 파일로 만들어요.",
       scoreTitle: "시험 결과 — 처음 보는 사진 %1장 중 %2장 맞힘",
       scoreNone: "시험지를 따로 두지 않아서 채점은 못 했어요. 4번에서 직접 확인해 보세요.",
       wrongTitle: "틀린 사진",
@@ -659,7 +646,8 @@
       printResult: "시험 결과", printSamples: "모은 사진 예시",
       printThink: "AI가 틀린 이유는 무엇일까요?",
       q1: "무엇과 무엇을 구별할지 정해요", q2: "사진을 모아요",
-      q3: "AI를 학습시켜요", q4: "잘 배웠는지 확인해요", q5: "내 컴퓨터에 저장해요",
+      q3: "AI를 학습시켜요", q4: "잘 배웠는지 확인해요",
+      q5: "만든 AI 를 저장해요 — 다른 데서 쓰려고",
       q1hint: "이름을 정하고, 오른쪽 2번에서 사진을 모아요. 클래스는 2개 이상이어야 학습할 수 있어요.",
       q2hint: "클래스마다 30장쯤 모으면 좋아요",
       q2count: "사진 %1장 · 클래스 %2개 (클래스마다 30장쯤 모으면 좋아요)",
@@ -677,13 +665,12 @@
       chkImbalance: "사진 수가 많이 달라요 (%1). 적은 클래스가 불리해질 수 있어요.",
       chkDup: "%1 에 거의 똑같은 사진이 많아요. 다양한 각도·배경으로 찍으면 더 잘 배워요.",
       chkOverfit: "반복이 많을수록 시험 점수가 떨어지면 '외우기'가 시작된 거예요. 곡선을 확인해 보세요.",
-      q5hint: "저장하면 [써보기]·[블록 코딩]·[파이썬]에서 내가 가르친 AI로 바로 쓸 수 있어요.",
       addClass: "클래스 추가", reset: "전체 지우기", targetClass: "모을 클래스",
       holdShot: "연속 촬영 (누르고 있기)", oneShot: "한 장 찍기", shotGap: "촬영 간격(ms)",
       camOff: "웹캠 끄기", camOn: "웹캠 켜기",
       epochs: "반복 학습 횟수", train: "학습 시작", training: "학습 중...",
       testOnce: "지금 화면으로 확인", testLive: "계속 확인",
-      save: "서버에 저장", saving: "저장 중...", download: "파일로 내려받기",
+      save: "저장하기", saving: "저장 중...", download: "파일로 내려받기",
       modelTitlePh: "모델 이름",
       clsPh: "클래스 이름", addImgs: "사진 넣기", addZip: "압축파일 넣기",
       clsClear: "사진 비우기", clsDel: "클래스 삭제", empty: "아직 사진이 없어요",
@@ -720,17 +707,18 @@
       faceOk: "face detected", faceNo: "no face",
       skippedFace: "Skipped %1 photos with no face.",
       allSkippedFace: "No face found, so nothing was added. Show your face clearly.",
-      q6: "Try to fool your AI", q7: "Save your work and continue next time",
-      q7hint: "Photos and classes are saved together. You can save before training too.",
+      q7: "Keep everything as it is — to continue next time",
+      q5hint: "Once saved, you can pick <b>your own AI</b> in [Use]·[Blocks]·[Python]. Press [Load] to try it again here. It has no photos, so you cannot keep training from it — that is step 6.",
+      modelOpen: "Load",
+      modelLoaded: "Loaded your saved AI (%1). It has no photos, so you can only check it in step 4.",
       holdout: "Keep a test set (20%)",
-      bias: "Start fooling", biasStop: "Stop",
-      biasHint: "Find ways to make the AI wrong. Thinking about why it failed shows why data matters.",
-      bias1: "Change the background (another wall, another desk)",
-      bias2: "Change the lighting (lights off, move to a window)",
-      bias3: "Change angle and distance (tilt, move closer/farther)",
-      bias4: "Include your clothes or hands in the shot",
-      biasWin: "You fooled the AI %1 times! Add these photos to a class and train again.",
       print: "Print worksheet", projSave: "Save work", projFile: "Open from file",
+      projSave2: "Keep on this PC", projDown: "Save as file", projOpen: "Continue",
+      projModel: "The trained result came back too — try it in step 4.",
+      projModelFail: "Photos are back, but the trained result could not be restored (%1). Train again in step 3.",
+      projDowned: "Kept your work as a file.",
+      projListT: "Kept work — press [Continue] to pick up with the same photos.",
+      q7hintFull: "Your <b>photos and classes</b> are kept together, and the <b>trained result</b> too if you finished training. [Keep on this PC] stores it here; [Save as file] makes a file you can carry on a USB stick.",
       scoreTitle: "Test result — %2 of %1 unseen photos correct",
       scoreNone: "No test set was kept, so there is no score. Check it yourself in step 4.",
       wrongTitle: "Wrong answers",
@@ -751,7 +739,8 @@
       printResult: "Test result", printSamples: "Sample photos",
       printThink: "Why did the AI get it wrong?",
       q1: "Decide what to tell apart", q2: "Collect photos",
-      q3: "Train your AI", q4: "Check what it learned", q5: "Save it on this computer",
+      q3: "Train your AI", q4: "Check what it learned",
+      q5: "Save your AI — to use it elsewhere",
       q1hint: "Name each class, then collect photos in step 2 on the right. You need at least 2 classes.",
       q2hint: "About 30 photos per class works well",
       q2count: "%1 photos · %2 classes (about 30 per class works well)",
@@ -769,13 +758,12 @@
       chkImbalance: "Class sizes differ a lot (%1). Small classes may lose out.",
       chkDup: "%1 has many near-identical photos. Vary angle and background to learn better.",
       chkOverfit: "If test accuracy drops as epochs grow, the AI started memorizing. Check the curve.",
-      q5hint: "Once saved, you can use it in [Use], [Blocks] and [Python].",
       addClass: "Add class", reset: "Clear all", targetClass: "Collect into",
       holdShot: "Burst capture (hold)", oneShot: "Take one", shotGap: "Interval (ms)",
       camOff: "Webcam off", camOn: "Webcam on",
       epochs: "Epochs", train: "Start training", training: "Training...",
       testOnce: "Check this frame", testLive: "Keep checking",
-      save: "Save to server", saving: "Saving...", download: "Download file",
+      save: "Save", saving: "Saving...", download: "Download file",
       modelTitlePh: "Model name",
       clsPh: "Class name", addImgs: "Add images", addZip: "Add zip",
       clsClear: "Clear photos", clsDel: "Delete class", empty: "No photos yet",
@@ -1067,7 +1055,7 @@
       CLASSES.forEach(c => { c.feats = []; c.thumbs = []; });
       model = null; trainedLabels = []; HOLDOUT = null;
       $("saveBtn").disabled = $("downloadBtn").disabled = true;
-      $("testOnce").disabled = $("testLive").disabled = $("biasBtn").disabled = true;
+      $("testOnce").disabled = $("testLive").disabled = true;
       $("score").style.display = $("wrong").style.display = "none";
       $("txtQ2Guide").innerHTML = modeHint(k);
       if (SKELETON.includes(k)) poseWatch(); else poseWatchStop();
@@ -1735,7 +1723,7 @@
       bar(1); log(t("logDone"));
       openSect(4);
       $("pred").innerHTML = '<div class="hint">' + t("q4ready") + '</div>';
-      $("testOnce").disabled = $("testLive").disabled = $("biasBtn").disabled = false;
+      $("testOnce").disabled = $("testLive").disabled = false;
       $("saveBtn").disabled = $("downloadBtn").disabled = false;
       if (!$("modelTitle").value.trim()) $("modelTitle").value = trainedLabels.join(" / ");
     } catch (e) {
@@ -1761,13 +1749,6 @@
     $("sayText").innerHTML = p0 >= 0.6
       ? t("sayTop", esc(trainedLabels[i0]), Math.round(p0 * 100))
       : t("sayLow", esc(trainedLabels[i0]), Math.round(p0 * 100));
-    if (BIAS_ON && p0 < 0.6) {                 /* 확신이 낮으면 "속였다"로 센다 */
-      biasHits++;
-      if (window.vapiStat) vapiStat("bias_hit");
-      const el = $("biasTrophy");
-      el.style.display = "block";
-      el.textContent = t("biasWin", biasHits);
-    }
     return { top: i0, score: p0 };
   }
   async function testOnce() {
@@ -1800,18 +1781,6 @@
     }
   });
 
-  /* ---------------- 편향 실습 ("AI 속이기") ---------------- */
-  let BIAS_ON = false, biasHits = 0;
-  $("biasBtn").addEventListener("click", async () => {
-    BIAS_ON = !BIAS_ON;
-    $("txtBias").textContent = BIAS_ON ? t("biasStop") : t("bias");
-    if (!BIAS_ON) return;
-    biasHits = 0;
-    $("biasTrophy").style.display = "none";
-    $("testLive").checked = true;
-    $("testLive").dispatchEvent(new Event("change"));
-  });
-
   /* ---------------- 저장 ---------------- */
   async function buildZip() {
     const artifacts = await model.save(tf.io.withSaveHandler(async a => a));
@@ -1824,6 +1793,37 @@
     if (REPORT) zip.file("report.json", JSON.stringify(REPORT));
     return await zip.generateAsync({ type: "blob" });
   }
+  /* 저장한 모델을 다시 불러온다 — 사진은 들어 있지 않아 확인·시험만 할 수 있다 */
+  async function loadModelZip(blob) {
+    const zip = await JSZip.loadAsync(blob);
+    const need = ["model.json", "weightsSpecs.json", "weights.bin", "labels.txt"];
+    for (const n of need) {
+      if (!zip.file(n)) throw new Error("모델 파일이 아니에요: " + n);
+    }
+    const topology = JSON.parse(await zip.file("model.json").async("string"));
+    const specs = JSON.parse(await zip.file("weightsSpecs.json").async("string"));
+    const u8 = await zip.file("weights.bin").async("uint8array");
+    const labels = (await zip.file("labels.txt").async("string"))
+      .split("\n").map(x => x.trim()).filter(Boolean);
+    const kind = zip.file("kind.txt")
+      ? (await zip.file("kind.txt").async("string")).trim() : "image";
+
+    if (DIM_OF[kind]) {                       // 학습에 쓴 특징 종류로 맞춘다
+      FEAT_KIND = kind;
+      document.querySelectorAll("#modeSw button")
+        .forEach(x => x.classList.toggle("on", x.dataset.kind === FEAT_KIND));
+    }
+    if (model) { try { model.dispose(); } catch (e) {} }
+    model = await tf.loadLayersModel(tf.io.fromMemory(topology, specs,
+                                                      u8.slice().buffer));
+    trainedLabels = labels;
+    HOLDOUT = null; REPORT = null;
+    $("score").style.display = $("wrong").style.display = "none";
+    $("testOnce").disabled = $("testLive").disabled = false;
+    $("saveBtn").disabled = $("downloadBtn").disabled = false;
+    log(t("modelLoaded", labels.join(", ")));
+  }
+
   $("saveBtn").addEventListener("click", async () => {
     const title = $("modelTitle").value.trim();
     if (!title) { alert(t("aNeedTitle")); return; }
@@ -1861,13 +1861,24 @@
       el.className = "item";
       el.innerHTML = '<b>' + esc(m.title) + '</b>' +
         '<span class="lbl">' + esc((m.labels || []).join(", ")) + '</span>';
+      const open = document.createElement("button");
+      open.className = "btn sm"; open.textContent = t("modelOpen");
+      open.addEventListener("click", async () => {
+        try {
+          const r = await fetch("/custom/models/" + encodeURIComponent(m.slug) + "/file");
+          const blob = await r.blob();
+          if (blob.type.includes("json")) throw new Error(await blob.text());
+          await loadModelZip(blob);
+          $("modelTitle").value = m.title || "";
+        } catch (err) { alert(t("aServer") + cleanErr(err)); }
+      });
       const b = document.createElement("button");
       b.className = "btn sm danger"; b.textContent = "×";
       b.addEventListener("click", async () => {
         await fetch("/custom/models/" + encodeURIComponent(m.slug), { method: "DELETE" });
         loadSaved();
       });
-      el.appendChild(b);
+      el.appendChild(open); el.appendChild(b);
       $("savedList").appendChild(el);
     });
   }
@@ -1877,9 +1888,19 @@
   async function buildProjectZip() {
     const zip = new JSZip();
     zip.file("project.json", JSON.stringify({
-      v: 1, kind: FEAT_KIND,
+      v: 2, kind: FEAT_KIND, trained: !!model,
       classes: CLASSES.map(c => ({ name: c.name, count: c.feats.length })),
     }, null, 2));
+    /* 학습까지 마쳤으면 그 결과도 함께 넣는다 — 불러오면 바로 확인할 수 있게 */
+    if (model) {
+      const art = await model.save(tf.io.withSaveHandler(async a => a));
+      zip.file("model/model.json", JSON.stringify(art.modelTopology));
+      zip.file("model/weightsSpecs.json", JSON.stringify(art.weightSpecs));
+      zip.file("model/weights.bin", new Uint8Array(art.weightData));
+      zip.file("model/labels.txt", trainedLabels.join("\n"));
+      zip.file("model/kind.txt", FEAT_KIND);
+      if (REPORT) zip.file("model/report.json", JSON.stringify(REPORT));
+    }
     CLASSES.forEach((c, ci) => {
       const buf = new Float32Array(c.feats.length * FEAT_DIM());
       c.feats.forEach((f, i) => buf.set(f, i * FEAT_DIM()));
@@ -1919,10 +1940,31 @@
     }
     model = null; trainedLabels = []; HOLDOUT = null;
     $("saveBtn").disabled = $("downloadBtn").disabled = true;
-    $("testOnce").disabled = $("testLive").disabled = $("biasBtn").disabled = true;
+    $("testOnce").disabled = $("testLive").disabled = true;
     $("score").style.display = $("wrong").style.display = "none";
     renderClasses(); saveDraft();
     log(t("projLoaded"));
+
+    /* 학습 결과가 같이 들어 있으면 되살린다 — 다시 학습하지 않아도 된다 */
+    if (zip.file("model/model.json")) {
+      try {
+        const topology = JSON.parse(await zip.file("model/model.json").async("string"));
+        const specs = JSON.parse(await zip.file("model/weightsSpecs.json").async("string"));
+        const u8 = await zip.file("model/weights.bin").async("uint8array");
+        trainedLabels = (await zip.file("model/labels.txt").async("string"))
+          .split("\n").map(x => x.trim()).filter(Boolean);
+        model = await tf.loadLayersModel(tf.io.fromMemory(topology, specs,
+                                                          u8.slice().buffer));
+        if (zip.file("model/report.json")) {
+          REPORT = JSON.parse(await zip.file("model/report.json").async("string"));
+        }
+        $("testOnce").disabled = $("testLive").disabled = false;
+        $("saveBtn").disabled = $("downloadBtn").disabled = false;
+        log(t("projModel"));
+      } catch (e) {
+        log(t("projModelFail", cleanErr(e)));    // 사진은 이미 돌아왔으니 학습만 다시 하면 된다
+      }
+    }
   }
 
   $("projSaveBtn").addEventListener("click", async () => {
@@ -1939,6 +1981,19 @@
       log(t("projSaved"));
       if (window.vapiStat) vapiStat("project_saved");
       loadProjects();
+    } catch (e) { alert(t("aServer") + cleanErr(e)); }
+  });
+  $("projDownBtn").addEventListener("click", async () => {
+    try {
+      const blob = await buildProjectZip();
+      const name = ($("modelTitle").value.trim() ||
+                    CLASSES.map(c => c.name).join("-") || "my-work") + ".zip";
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      log(t("projDowned"));
     } catch (e) { alert(t("aServer") + cleanErr(e)); }
   });
   $("projFileBtn").addEventListener("click", () => $("fileProject").click());
@@ -1961,8 +2016,7 @@
       el.className = "item";
       el.innerHTML = '<b>' + esc(m.title) + '</b><span class="lbl">' + esc(m.saved || "") + '</span>';
       const open = document.createElement("button");
-      open.className = "btn sm"; open.textContent = "↺";
-      open.title = t("projFile");
+      open.className = "btn sm"; open.textContent = t("projOpen");
       open.addEventListener("click", async () => {
         try {
           const r = await fetch("/custom/project/" + encodeURIComponent(m.slug));
@@ -2052,17 +2106,16 @@
     set("txtModeFace", t("modeFace"));
     set("txtModeUp", t("modeUp")); set("txtModeBody", t("modeBody"));
     set("txtHoldout", t("holdout")); set("txtQ6", t("q6")); set("txtQ7", t("q7"));
-    set("txtQ7Hint", t("q7hint")); set("txtBias", t("bias")); set("txtBiasHint", t("biasHint"));
-    set("txtBias1", t("bias1")); set("txtBias2", t("bias2"));
-    set("txtBias3", t("bias3")); set("txtBias4", t("bias4"));
     set("txtPrint", t("print"));
-    set("txtProjSave", t("projSave")); set("txtProjFile", t("projFile"));
+    set("txtProjSave", t("projSave2")); set("txtProjFile", t("projFile"));
+    set("txtProjDown", t("projDown")); set("txtProjListT", t("projListT"));
+    html("txtQ5Hint", t("q5hint")); html("txtQ7Hint", t("q7hintFull"));
     set("langButton", t("langBtn"));
     set("txtQ1", t("q1")); set("txtQ2", t("q2")); set("txtQ3", t("q3"));
     set("txtQ4", t("q4")); set("txtQ5", t("q5"));
     set("txtQ1Hint", t("q1hint")); set("txtQ2Hint", t("q2hint"));
     html("txtQ2Guide", t("q2guide")); set("txtQ2Upload", t("q2upload"));
-    set("txtQ4Hint", t("q4hint")); set("txtQ5Hint", t("q5hint"));
+    set("txtQ4Hint", t("q4hint"));
     set("txtAddClass", t("addClass")); set("txtReset", t("reset"));
     set("txtTargetClass", t("targetClass"));
     set("txtHoldShot", t("holdShot")); set("txtOneShot", t("oneShot"));

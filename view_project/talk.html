@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>대화 — The Maker</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+  <link href="/fonts/fonts.css" rel="stylesheet">
+  <script>
+    /* 밝은 곳 모드: 화면이 그려지기 전에 적용해야 깜빡이지 않는다 */
+    try { if (localStorage.getItem("vapi-hc") === "1")
+            document.documentElement.classList.add("hc"); } catch (e) {}
+  </script>
+  <style>
+    :root {
+      --paper:#fbf7ef; --box:#fff; --ink:#2a2620; --ink-2:#4a423a;
+      --cyan:#1f5f7a; --cyan-d:#17475c; --pen-blue:#1f5f7a; --pen-blue-d:#12455c;
+      --pen-red:#b4451c; --line:#9a8f7d; --line-d:#4a3f2e; --r:6px;
+    }
+    html.hc {
+      --paper:#fffdf8; --box:#ffffff; --ink:#1a1712; --ink-2:#332d26;
+      --cyan:#114558; --cyan-d:#0c3444; --pen-blue:#123f52; --pen-blue-d:#0a2c3a;
+      --pen-red:#8f3312; --line:#7a6f5d; --line-d:#2e281c;
+    }
+    html.hc .panel, html.hc button, html.hc select, html.hc input, html.hc textarea
+      { border-width:2px; }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      display:flex; flex-direction:column; height:100dvh; overflow:hidden;
+      color:var(--ink); background:var(--paper); padding:12px; gap:10px;
+      font-family:"Gowun Dodum","Apple SD Gothic Neo",system-ui,sans-serif; line-height:1.55;
+    }
+    a { color:var(--pen-blue-d); text-decoration:none; }
+    button, select, input, textarea {
+      font-family:inherit; font-size:.92rem; color:var(--ink); background:#fff;
+      border:1.5px solid var(--line-d); border-radius:var(--r); padding:7px 12px;
+    }
+    button { cursor:pointer; font-weight:600; }
+    button:disabled { opacity:.45; cursor:default; }
+    button.primary { background:var(--pen-blue); color:#fff; border-color:var(--pen-blue-d); }
+    button.sm { padding:4px 9px; font-size:.82rem; }
+    button.danger { color:var(--pen-red); }
+
+    .header { display:flex; align-items:center; gap:12px; flex:0 0 auto; }
+    .header .title { font-weight:700; font-size:1.15rem; }
+    .header .eyebrow { font-size:.8rem; color:var(--ink-2); }
+    .h-tools { margin-left:auto; display:flex; gap:8px; align-items:center; }
+    .h-tools a {
+      display:inline-flex; align-items:center; gap:6px; background:#fff;
+      border:1.5px solid var(--line-d); color:var(--ink); font-weight:600;
+      padding:8px 13px; border-radius:var(--r); font-size:.92rem;
+    }
+
+    .main { flex:1 1 auto; min-height:0; display:flex; gap:12px; }
+    .panel {
+      background:var(--box); border:1.5px solid var(--line); border-radius:var(--r);
+      display:flex; flex-direction:column; overflow:hidden;
+    }
+    .panel > .head {
+      flex:0 0 auto; display:flex; align-items:center; gap:9px; flex-wrap:wrap;
+      padding:10px 14px; border-bottom:1.5px dashed var(--line);
+    }
+    .q { position:relative; border:2.5px solid var(--cyan); background:#fff;
+         padding:5px 14px 5px 11px; border-radius:2px; display:inline-flex;
+         align-items:center; gap:6px; font-weight:700; color:var(--cyan-d); }
+    .side { flex:0 0 300px; }
+    .talk { flex:1 1 auto; min-width:0; }
+    .body { flex:1 1 auto; min-height:0; overflow-y:auto; padding:14px; }
+    .body > * { flex:0 0 auto; }
+
+    /* ----- 말풍선 ----- */
+    .msg { display:flex; gap:9px; margin-bottom:14px; align-items:flex-start; }
+    .msg.me { flex-direction:row-reverse; }
+    .who { flex:0 0 auto; width:34px; display:flex; align-items:center; justify-content:center; }
+    .who img { width:30px; height:30px; object-fit:contain; }
+    .who .me-mark { font-size:.75rem; color:var(--ink-2); }
+    .bubble {
+      max-width:min(78%, 720px); padding:10px 13px; border-radius:12px;
+      border:1.5px solid var(--line); background:#fff; white-space:pre-wrap; word-break:break-word;
+    }
+    .msg.me .bubble { background:#eef4f7; border-color:var(--cyan); }
+    .bubble img { max-width:220px; border-radius:8px; display:block; margin-bottom:7px; }
+    .bubble .from { margin-top:8px; font-size:.8rem; color:var(--ink-2);
+                    border-top:1px dashed var(--line); padding-top:6px; }
+    .bubble .from summary { cursor:pointer; font-weight:700; color:var(--cyan-d);
+                            user-select:none; list-style:none; }
+    .bubble .from summary::before { content:"\25B8  "; }        /* ▸ */
+    .bubble .from[open] summary::before { content:"\25BE  "; }  /* ▾ */
+    .bubble .from summary::-webkit-details-marker { display:none; }
+    .thinking { color:var(--ink-2); font-style:italic; }
+    .empty { color:var(--ink-2); font-size:.9rem; }
+
+    /* ----- 입력 ----- */
+    .ask { flex:0 0 auto; display:flex; gap:8px; padding:10px 12px;
+           border-top:1.5px dashed var(--line); align-items:flex-end; }
+    .ask textarea { flex:1 1 auto; resize:none; height:44px; max-height:120px; line-height:1.4; }
+
+    /* ----- 옆 칸 ----- */
+    .side .body { display:flex; flex-direction:column; gap:14px; }
+    .camwrap { border:1.5px solid var(--line-d); border-radius:var(--r);
+               overflow:hidden; background:#000; }
+    .camwrap video { width:100%; display:block; aspect-ratio:4/3; object-fit:cover; }
+    .row { display:flex; gap:7px; align-items:center; flex-wrap:wrap; }
+    .lbl { font-weight:700; font-size:.9rem; }
+    .hint { font-size:.82rem; color:var(--ink-2); }
+    .dbitem { display:flex; align-items:center; gap:7px; padding:6px 8px;
+              border:1.5px solid var(--line); border-radius:var(--r); background:#fff;
+              font-size:.86rem; }
+    .dbitem b { flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .dbitem.on { border-color:var(--cyan); background:#eef4f7; }
+
+    /* ----- 자료 추가 창 ----- */
+    .modal { position:fixed; inset:0; background:rgba(0,0,0,.35); display:none;
+             align-items:center; justify-content:center; padding:20px; z-index:40; }
+    .modal.show { display:flex; }
+    .modal .card { background:var(--box); border:2px solid var(--line-d);
+                   border-radius:var(--r); padding:16px; width:min(620px,100%);
+                   display:flex; flex-direction:column; gap:10px; }
+    .modal textarea { width:100%; height:230px; resize:vertical; }
+
+    @media (max-width:960px) {
+      body { height:auto; min-height:100dvh; overflow:auto; }
+      .main { flex-direction:column; }
+      .side { flex:0 0 auto; }
+      .talk .body { min-height:50vh; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img src="/assets/pibo-hello.png" alt="" style="height:42px;">
+    <span style="display:flex;flex-direction:column;">
+      <span class="eyebrow" id="txtEyebrow">AI와 이야기해요 · 인터넷 없이 내 컴퓨터에서</span>
+      <span class="title" id="txtTitle">대화</span>
+    </span>
+    <div class="h-tools">
+      <a href="/" id="homeLink" title="홈">&#8962; <span id="txtHome">홈</span></a>
+      <button id="langButton" title="한국어 / English" style="min-width:46px;">EN</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- 왼쪽: 대화 -->
+    <div class="panel talk">
+      <div class="head">
+        <span class="q"><span id="txtQ1">이야기해요</span></span>
+        <span class="hint" id="txtMode">그냥 대화</span>
+        <span class="hint" id="ttsState"></span>
+        <span style="margin-left:auto;display:flex;gap:7px;">
+          <button class="sm" id="newTalk"><span id="txtNew">새 대화</span></button>
+        </span>
+      </div>
+      <div class="body" id="log">
+        <div class="empty" id="txtEmpty">무엇이든 물어보세요. 사진을 켜면 사진을 보고 답해요.</div>
+      </div>
+      <div class="ask">
+        <button id="micBtn" title="말로 묻기 (4초)">&#127908;</button>
+        <textarea id="q" rows="1" placeholder="물어볼 말을 적어요"></textarea>
+        <button class="primary" id="send"><span id="txtSend">보내기</span></button>
+      </div>
+    </div>
+
+    <!-- 오른쪽: 사진 · 자료 -->
+    <div class="panel side">
+      <div class="head"><span class="q"><span id="txtQ2">사진 · 자료</span></span></div>
+      <div class="body">
+        <div>
+          <div class="row">
+            <span class="lbl" id="txtCamTitle">사진</span>
+            <button class="sm" id="camBtn"><span id="txtCamOn">사진 켜기</span></button>
+            <span class="hint" id="camState"></span>
+          </div>
+          <div class="camwrap" id="camwrap" style="display:none;margin-top:8px;">
+            <video id="cam" autoplay muted playsinline></video>
+          </div>
+          <div class="hint" id="txtCamHint" style="margin-top:6px;">
+            켜면 물어볼 때 지금 보이는 화면을 함께 보내요.
+          </div>
+        </div>
+
+        <div style="border-top:1px dashed var(--line);padding-top:12px;">
+          <div class="row">
+            <span class="lbl" id="txtSndTitle">소리</span>
+            <label class="row" style="gap:5px;cursor:pointer;">
+              <input type="checkbox" id="ttsChk" style="width:16px;height:16px;padding:0;">
+              <span id="txtTts">답을 읽어주기</span>
+            </label>
+          </div>
+          <div class="row" style="margin-top:7px;">
+            <span class="hint" id="txtVoice">목소리</span>
+            <select id="voiceSel" style="flex:1 1 auto;"></select>
+            <button class="sm" id="voiceTry" title="들어보기">&#9654;</button>
+          </div>
+        </div>
+
+        <div style="border-top:1px dashed var(--line);padding-top:12px;">
+          <div class="row">
+            <span class="lbl" id="txtDbTitle">내 자료</span>
+            <button class="sm" id="dbAdd"><span id="txtDbAdd">자료 넣기</span></button>
+            <span style="margin-left:auto;display:flex;align-items:center;gap:5px;">
+              <span class="hint" id="txtTopk">찾을 조각</span>
+              <select id="topkSel">
+                <option>1</option><option>2</option><option>3</option>
+                <option selected>4</option><option>6</option><option>8</option>
+              </select>
+            </span>
+          </div>
+          <div class="hint" id="txtDbHint" style="margin:6px 0 8px;">
+            자료를 고르면 그 안에서 찾아 답해요. 없는 내용은 없다고 말해요.
+          </div>
+          <div id="dbList" style="display:flex;flex-direction:column;gap:6px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 자료 넣기 -->
+  <div class="modal" id="dbModal">
+    <div class="card">
+      <b id="txtDbModalTitle">자료 넣기</b>
+      <div class="hint" id="txtDbModalHint">
+        책이나 글을 붙여 넣거나, txt 파일을 골라요. AI 는 이 안에서만 찾아 답해요.
+      </div>
+      <input id="dbTitle" placeholder="자료 이름 (예: 삼국지)">
+      <textarea id="dbText" placeholder="여기에 글을 붙여 넣어요"></textarea>
+      <div class="row">
+        <input type="file" id="dbFile" accept=".txt,text/plain">
+        <button class="sm" id="dbSample"><span id="txtDbSample">예시 자료 넣기</span></button>
+        <span class="hint" id="dbState" style="margin-left:auto;"></span>
+      </div>
+      <div class="row" style="justify-content:flex-end;">
+        <button id="dbCancel"><span id="txtCancel">취소</span></button>
+        <button class="primary" id="dbSave"><span id="txtSave">만들기</span></button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  let LANG = "ko";
+  try { LANG = localStorage.getItem("vapiLang") || "ko"; } catch (e) {}
+  document.documentElement.lang = LANG;
+
+  const I18N = {
+    ko: {
+      titleTag:"대화 — The Maker", title:"대화",
+      eyebrow:"AI와 이야기해요 · 인터넷 없이 내 컴퓨터에서",
+      home:"홈", langBtn:"EN", q1:"이야기해요", q2:"사진 · 자료",
+      send:"보내기", newTalk:"새 대화",
+      camOn:"사진 켜기", camOff:"사진 끄기", camTitle:"사진", dbTitle:"내 자료",
+      sndTitle:"소리", tts:"답을 읽어주기", voice:"목소리",
+      voiceSample:"안녕! 나는 이 목소리로 말해요.",
+      camHint:"켜면 물어볼 때 지금 보이는 화면을 함께 보내요.",
+      dbHint:"자료를 고르면 그 안에서 찾아 답해요. 없는 내용은 없다고 말해요.",
+      dbAdd:"자료 넣기", dbModalTitle:"자료 넣기", topk:"찾을 조각",
+      dbSample:"예시 자료 넣기",
+      sampleTitle:"우리 반 이야기", sampleFilled:"예시 자료를 넣었어요. [만들기] 를 눌러요.",
+      dbModalHint:"책이나 글을 붙여 넣거나, txt 파일을 골라요. AI 는 이 안에서만 찾아 답해요.",
+      cancel:"취소", save:"만들기", empty:"무엇이든 물어보세요. 사진을 켜면 사진을 보고 답해요.",
+      ph:"물어볼 말을 적어요", dbTitlePh:"자료 이름 (예: 삼국지)", dbTextPh:"여기에 글을 붙여 넣어요",
+      me:"나", ai:"AI",
+      modePlain:"그냥 대화", modePhoto:"사진 보고 대화", modeDb:"자료에서 찾아 답하기",
+      modeBoth:"사진 보고 · 자료에서 찾기",
+      thinking:"생각하는 중...", listening:"듣는 중... (4초)", sttFail:"잘 못 들었어요.",
+      askEmpty:"물어볼 말을 적어 주세요.",
+      from:"찾은 곳", fromN:"곳", noDb:"아직 자료가 없어요.",
+      dbNeedTitle:"자료 이름을 적어 주세요.", dbNeedText:"자료로 쓸 글을 넣어 주세요.",
+      dbSaving:"자료를 읽는 중...", dbSaved:"자료를 만들었어요.",
+      dbDelAsk:"이 자료를 지울까요?", chunks:"조각",
+      camDenied:"카메라를 쓸 수 없어요. 권한을 확인해 주세요.",
+      camBusy:"다른 프로그램이 카메라를 쓰고 있어요.",
+      err:"앗, 잘 안 됐어요.",
+      ttsWait:"소리 만드는 중...", ttsFail:"소리를 내지 못했어요 (설정·점검에서 소리 시험)",
+    },
+    en: {
+      titleTag:"Talk — The Maker", title:"Talk",
+      eyebrow:"Talk with the AI · runs on your computer, no internet",
+      home:"Home", langBtn:"한", q1:"Let's talk", q2:"Photo · Material",
+      send:"Send", newTalk:"New talk",
+      camOn:"Turn photo on", camOff:"Turn photo off", camTitle:"Photo", dbTitle:"My material",
+      sndTitle:"Sound", tts:"Read the answer aloud", voice:"Voice",
+      voiceSample:"Hi! This is how I sound.",
+      camHint:"When on, what you see now is sent with your question.",
+      dbHint:"Pick a material and the AI answers from it only.",
+      dbAdd:"Add material", dbModalTitle:"Add material", topk:"Chunks",
+      dbSample:"Use the sample",
+      sampleTitle:"Our class story", sampleFilled:"Sample text is in. Press [Create].",
+      dbModalHint:"Paste a text or pick a .txt file. The AI answers from this only.",
+      cancel:"Cancel", save:"Create", empty:"Ask me anything. Turn the photo on to ask about what you see.",
+      ph:"Type your question", dbTitlePh:"Name (e.g. Three Kingdoms)", dbTextPh:"Paste the text here",
+      me:"me", ai:"AI",
+      modePlain:"plain talk", modePhoto:"talk about the photo", modeDb:"answer from material",
+      modeBoth:"photo + material",
+      thinking:"thinking...", listening:"listening... (4s)", sttFail:"I could not hear it.",
+      askEmpty:"Type your question first.",
+      from:"found in", fromN:" places", noDb:"No material yet.",
+      dbNeedTitle:"Give the material a name.", dbNeedText:"Put in some text.",
+      dbSaving:"reading...", dbSaved:"Material created.",
+      dbDelAsk:"Delete this material?", chunks:"pieces",
+      camDenied:"Cannot use the camera. Check the permission.",
+      camBusy:"Another program is using the camera.",
+      err:"Sorry, that did not work.",
+      ttsWait:"making sound...", ttsFail:"Could not play (try the sound test in Settings)",
+    },
+  };
+  const T = k => (I18N[LANG][k] !== undefined ? I18N[LANG][k] : I18N.ko[k]);
+  const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+  /* ---------------- 상태 ---------------- */
+  let camStream = null, ttsOn = false, busy = false;
+  let pickedDb = "";
+  try { pickedDb = localStorage.getItem("vapi-db") || ""; } catch (e) {}
+  function topK() { return parseInt($("topkSel").value, 10) || 4; }
+  try {
+    const k = localStorage.getItem("vapi-topk");
+    if (k) $("topkSel").value = k;
+  } catch (e) {}
+  $("topkSel").addEventListener("change", function () {
+    try { localStorage.setItem("vapi-topk", this.value); } catch (e) {}
+  });
+
+  function pickDb(slug) {
+    pickedDb = slug || "";
+    try { localStorage.setItem("vapi-db", pickedDb); } catch (e) {}
+  }
+
+  function modeText() {
+    if (camStream && pickedDb) return T("modeBoth");
+    if (camStream) return T("modePhoto");
+    if (pickedDb) return T("modeDb");
+    return T("modePlain");
+  }
+  function paintMode() { $("txtMode").textContent = modeText(); }
+
+  /* ---------------- 말풍선 ---------------- */
+  function bubble(who, html) {
+    const empty = $("txtEmpty");
+    if (empty) empty.remove();
+    const wrap = document.createElement("div");
+    wrap.className = "msg" + (who === "me" ? " me" : "");
+    const face = who === "me"
+      ? '<span class="me-mark">' + T("me") + "</span>"
+      : '<img src="/assets/pibo-hello.png" alt="AI" title="' + T("ai") + '">';
+    wrap.innerHTML = '<div class="who">' + face + '</div><div class="bubble">' + html + '</div>';
+    $("log").appendChild(wrap);
+    $("log").scrollTop = $("log").scrollHeight;
+    return wrap.querySelector(".bubble");
+  }
+
+  /* ---------------- 웹캠 ---------------- */
+  async function camOn() {
+    try {
+      camStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+      $("cam").srcObject = camStream;
+      $("camwrap").style.display = "block";
+      $("txtCamOn").textContent = T("camOff");
+      $("camState").textContent = "";
+    } catch (e) {
+      camStream = null;
+      $("camState").textContent =
+        (e && e.name === "NotReadableError") ? T("camBusy") : T("camDenied");
+    }
+    paintMode();
+  }
+  function camOff() {
+    if (camStream) camStream.getTracks().forEach(t => t.stop());
+    camStream = null;
+    $("camwrap").style.display = "none";
+    $("txtCamOn").textContent = T("camOn");
+    paintMode();
+  }
+  $("camBtn").addEventListener("click", () => (camStream ? camOff() : camOn()));
+
+  function snap() {
+    const v = $("cam");
+    const c = document.createElement("canvas");
+    c.width = v.videoWidth || 640; c.height = v.videoHeight || 480;
+    c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
+    return c.toDataURL("image/jpeg", 0.85);
+  }
+  function toBlob(dataURL) {
+    const [head, b64] = dataURL.split(",");
+    const bin = atob(b64), buf = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+    return new Blob([buf], { type: head.match(/:(.*?);/)[1] });
+  }
+
+  /* ---------------- 자료 목록 ---------------- */
+  async function loadDbs() {
+    let list = [];
+    try {
+      const j = await (await fetch("/chat/db")).json();
+      if (j.result === "ok") list = j.data;
+    } catch (e) {}
+    const box = $("dbList");
+    box.innerHTML = "";
+    if (!list.length) {
+      box.innerHTML = '<span class="hint">' + T("noDb") + "</span>";
+      pickDb(""); paintMode(); return;
+    }
+    if (pickedDb && !list.some(d => d.slug === pickedDb)) pickDb("");   // 지워진 자료
+    if (!pickedDb && list.length === 1) pickDb(list[0].slug);           // 하나뿐이면 그걸로
+    list.forEach(d => {
+      const el = document.createElement("div");
+      el.className = "dbitem" + (pickedDb === d.slug ? " on" : "");
+      el.innerHTML = (pickedDb === d.slug ? "&#10003; " : "") +
+                     "<b>" + esc(d.title) + '</b><span class="hint">' +
+                     d.count + T("chunks") + "</span>";
+      el.addEventListener("click", () => {          // 눌러서 고르기 / 끄기
+        pickDb(pickedDb === d.slug ? "" : d.slug);
+        loadDbs();
+      });
+      const del = document.createElement("button");
+      del.className = "sm danger"; del.textContent = "×";
+      del.addEventListener("click", async ev => {
+        ev.stopPropagation();
+        if (!confirm(T("dbDelAsk") + " " + d.title)) return;
+        await fetch("/chat/db/" + encodeURIComponent(d.slug), { method: "DELETE" });
+        if (pickedDb === d.slug) pickDb("");
+        loadDbs();
+      });
+      el.appendChild(del);
+      box.appendChild(el);
+    });
+    paintMode();
+  }
+
+  /* ---------------- 자료 넣기 ---------------- */
+  $("dbAdd").addEventListener("click", () => {
+    $("dbTitle").value = ""; $("dbText").value = "";
+    $("dbFile").value = ""; $("dbState").textContent = "";
+    $("dbModal").classList.add("show");
+    $("dbTitle").focus();
+  });
+  $("dbCancel").addEventListener("click", () => $("dbModal").classList.remove("show"));
+  $("dbFile").addEventListener("change", async function () {
+    const f = this.files[0];
+    if (!f) return;
+    $("dbState").textContent = T("dbSaving");
+    $("dbText").value = await f.text();
+    if (!$("dbTitle").value.trim()) $("dbTitle").value = f.name.replace(/\.[^.]+$/, "");
+    $("dbState").textContent = f.name;
+  });
+  /* 예시 자료: 붙여 넣을 글이 없어도 바로 해 볼 수 있게 한 번 눌러 만든다 */
+  async function addSample() {
+    const state = $("dbState");
+    try {
+      state.textContent = T("dbSaving");
+      const text = await (await fetch("/assets/sample-db.txt")).text();
+      $("dbTitle").value = T("sampleTitle");   // 내용을 보여 주고 [만들기]를 누르게 한다
+      $("dbText").value = text;
+      state.textContent = T("sampleFilled");
+      return;
+    } catch (e) {
+      alert(T("err") + " (" + (e.message || e) + ")");
+    } finally {
+      state.textContent = "";
+    }
+  }
+  $("dbSample").addEventListener("click", addSample);
+
+  $("dbSave").addEventListener("click", async () => {
+    const title = $("dbTitle").value.trim();
+    const text = $("dbText").value.trim();
+    if (!title) { alert(T("dbNeedTitle")); return; }
+    if (!text) { alert(T("dbNeedText")); return; }
+    $("dbSave").disabled = true; $("dbState").textContent = T("dbSaving");
+    try {
+      const fd = new FormData();
+      fd.append("title", title); fd.append("text", text);
+      const j = await (await fetch("/chat/db", { method: "POST", body: fd })).json();
+      if (j.result !== "ok") throw new Error(j.data);
+      $("dbModal").classList.remove("show");
+      pickDb(j.data.slug);                          // 방금 만든 자료를 바로 고른다
+      await loadDbs();
+    } catch (e) {
+      $("dbState").textContent = String(e.message || e);
+    }
+    $("dbSave").disabled = false;
+  });
+
+  /* ---------------- 소리 (TTS) ---------------- */
+  $("ttsChk").addEventListener("change", function () {
+    ttsOn = this.checked;
+    if (!ttsOn) { stopSpeak(); $("ttsState").textContent = ""; }
+  });
+
+  /* 목소리 목록은 서버에서 읽어 온다 — 여자 5 · 남자 5 */
+  const VOICE_KO = { F: "여자", M: "남자" };
+  async function loadVoices() {
+    let list = ["F1", "F2", "F3", "F4", "F5", "M1", "M2", "M3", "M4", "M5"];
+    try {
+      const j = await (await fetch("/speech/voices")).json();
+      if (j.result === "ok" && j.data.voices && j.data.voices.length) list = j.data.voices;
+    } catch (e) {}
+    const sel = $("voiceSel");
+    sel.innerHTML = "";
+    list.forEach(v => {
+      const o = document.createElement("option");
+      o.value = v;
+      o.text = (LANG === "en") ? (v[0] === "F" ? "female " : "male ") + v.slice(1)
+                               : (VOICE_KO[v[0]] || "") + " " + v.slice(1);
+      sel.appendChild(o);
+    });
+    try { sel.value = localStorage.getItem("vapi-voice") || list[0]; } catch (e) {}
+    if (!sel.value) sel.value = list[0];
+  }
+  $("voiceSel").addEventListener("change", function () {
+    try { localStorage.setItem("vapi-voice", this.value); } catch (e) {}
+  });
+  $("voiceTry").addEventListener("click", async () => {   // 골라 보고 바로 들어보기
+    const was = ttsOn;
+    ttsOn = true;
+    await speak(T("voiceSample"));
+    ttsOn = was;
+  });
+  /* 소리는 "나왔다 안 나왔다" 가 제일 나쁘다 — 원인을 셋으로 나눠 잡는다.
+     ① 앞 소리가 아직 재생 중 → 끊고 새로 튼다
+     ② Audio 객체를 지역 변수로 두면 재생 전에 사라질 수 있다 → 밖에 붙잡아 둔다
+     ③ 첫 요청은 모델을 여느라 몇 초 걸린다 → 늦게 온 답은 버린다(순서 꼬임 방지) */
+  let player = null, sayNo = 0;
+  function stopSpeak() {
+    try { if (player) { player.pause(); player.src = ""; } } catch (e) {}
+    player = null;
+    try { speechSynthesis.cancel(); } catch (e) {}
+  }
+  async function speak(text) {
+    if (!ttsOn || !text) return;
+    const my = ++sayNo;
+    stopSpeak();
+    $("ttsState").textContent = T("ttsWait");
+    try {
+      const r = await fetch("/speech/tts", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: text, lang: LANG === "en" ? "en" : "ko",
+                               voice: $("voiceSel").value || "F1", speed: 1.05 }),
+      });
+      if (my !== sayNo || !ttsOn) return;              // 그 사이 새 질문이 오면 버린다
+      if (!r.ok || !(r.headers.get("Content-Type") || "").includes("audio")) {
+        let why = "";
+        try { why = (await r.json()).data || ""; } catch (e) {}
+        throw new Error(why || "TTS " + r.status);
+      }
+      const url = URL.createObjectURL(await r.blob());
+      player = new Audio(url);                          // 밖에 붙잡아 둔다
+      player.onended = player.onerror = () => { URL.revokeObjectURL(url); };
+      $("ttsState").textContent = "";
+      await player.play();
+    } catch (e) {
+      if (my !== sayNo) return;
+      $("ttsState").textContent = T("ttsFail");
+      try { speechSynthesis.speak(new SpeechSynthesisUtterance(text)); } catch (e2) {}
+    }
+  }
+
+  /* ---------------- 마이크 (STT) ---------------- */
+  $("micBtn").addEventListener("click", async () => {
+    if (busy) return;
+    const box = bubble("me", '<span class="thinking">' + T("listening") + "</span>");
+    try {
+      const wav = await record(4);
+      const fd = new FormData();
+      fd.append("uploadFile", new Blob([wav], { type: "audio/wav" }), "a.wav");
+      const j = await (await fetch("/speech/stt?lang=" + (LANG === "en" ? "en" : "ko"),
+                                   { method: "POST", body: fd })).json();
+      const text = (j.result === "ok" && j.data && j.data.text) || "";
+      box.parentElement.remove();
+      if (!String(text).trim()) { bubble("ai", T("sttFail")); return; }
+      $("q").value = String(text).trim();
+      send();
+    } catch (e) {
+      box.innerHTML = esc(T("sttFail"));
+    }
+  });
+
+  async function record(seconds) {
+    /* 서버 STT 는 WAV 만 받는다 — PCM 을 모아 44바이트 헤더를 직접 붙인다 */
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const src = ctx.createMediaStreamSource(stream);
+    const node = ctx.createScriptProcessor(4096, 1, 1);
+    const chunks = [];
+    node.onaudioprocess = e => chunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+    src.connect(node); node.connect(ctx.destination);
+    await new Promise(res => setTimeout(res, seconds * 1000));
+    node.disconnect(); src.disconnect(); node.onaudioprocess = null;
+    stream.getTracks().forEach(t => t.stop());
+
+    const total = chunks.reduce((n, c) => n + c.length, 0);
+    const pcm = new Float32Array(total);
+    let at = 0;
+    for (const c of chunks) { pcm.set(c, at); at += c.length; }
+    const sr = ctx.sampleRate;
+    const buf = new ArrayBuffer(44 + pcm.length * 2);
+    const dv = new DataView(buf);
+    const put = (off, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(off + i, s.charCodeAt(i)); };
+    put(0, "RIFF"); dv.setUint32(4, 36 + pcm.length * 2, true); put(8, "WAVEfmt ");
+    dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+    dv.setUint32(24, sr, true); dv.setUint32(28, sr * 2, true);
+    dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
+    put(36, "data"); dv.setUint32(40, pcm.length * 2, true);
+    for (let i = 0; i < pcm.length; i++) {
+      const v = Math.max(-1, Math.min(1, pcm[i]));
+      dv.setInt16(44 + i * 2, v * 32767, true);
+    }
+    try { ctx.close(); } catch (e) {}
+    return buf;
+  }
+
+  /* ---------------- 보내기 ----------------
+     사진 켜짐 → /vlm/look (사진과 함께)
+     자료 골랐음 → /chat/rag (그 자료에서 찾아서)
+     둘 다 아니면 → /chat/ask
+     사진과 자료를 함께 고르면 사진 쪽을 쓴다 — 사진을 보는 AI 는 자료를 함께 읽지 못한다. */
+  async function send() {
+    if (busy) return;
+    const text = $("q").value.trim();
+    if (!text) { $("q").focus(); return; }
+
+    const shot = camStream ? snap() : null;
+    bubble("me", (shot ? '<img src="' + shot + '" alt="">' : "") + esc(text));
+    $("q").value = "";
+    const box = bubble("ai", '<span class="thinking">' + T("thinking") + "</span>");
+    busy = true; $("send").disabled = true;
+
+    try {
+      let j;
+      if (shot) {
+        const fd = new FormData();
+        fd.append("uploadFile", toBlob(shot), "shot.jpg");
+        j = await (await fetch("/vlm/look?" + new URLSearchParams({ prompt: text, lang: LANG }),
+                               { method: "POST", body: fd })).json();
+      } else if (pickedDb) {
+        j = await (await fetch("/chat/rag?" + new URLSearchParams(
+          { db: pickedDb, prompt: text, lang: LANG, top_k: topK() }),
+          { method: "POST" })).json();
+      } else {
+        j = await (await fetch("/chat/ask?" + new URLSearchParams({ prompt: text, lang: LANG }),
+                               { method: "POST" })).json();
+      }
+      if (j.result !== "ok") throw new Error(j.data);
+      const answer = j.data.answer || "";
+      let html = esc(answer);
+      if (j.data.found && j.data.found.length) {    // 어디서 가져왔는지 — 접어 두고 눌러서 본다
+        html += '<details class="from"><summary>' + T("from") +
+                " (" + j.data.found.length + T("fromN") + ")</summary>" +
+                j.data.found.map(f => '<span class="hint">' + Number(f.score).toFixed(2) +
+                    "</span> " + esc(f.text.slice(0, 90)) + "…").join("<br>") +
+                "</details>";
+      }
+      box.innerHTML = html;
+      speak(answer);
+    } catch (e) {
+      box.innerHTML = esc(T("err") + " (" + (e.message || e) + ")");
+    }
+    busy = false; $("send").disabled = false;
+    $("log").scrollTop = $("log").scrollHeight;
+    $("q").focus();
+  }
+  $("send").addEventListener("click", send);
+  $("q").addEventListener("keydown", e => {          // Enter 보내기 / Shift+Enter 줄바꿈
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
+  });
+  $("newTalk").addEventListener("click", () => {
+    $("log").innerHTML = '<div class="empty" id="txtEmpty">' + T("empty") + "</div>";
+    stopSpeak();
+  });
+
+  /* ---------------- 언어 ---------------- */
+  (function applyStatic() {
+    const set = (id, v) => { const el = $(id); if (el) el.textContent = v; };
+    document.title = T("titleTag");
+    set("txtTitle", T("title")); set("txtEyebrow", T("eyebrow"));
+    set("txtHome", T("home")); set("langButton", T("langBtn"));
+    set("txtQ1", T("q1")); set("txtQ2", T("q2"));
+    set("txtSend", T("send")); set("txtNew", T("newTalk"));
+    set("txtTts", T("tts")); set("txtSndTitle", T("sndTitle")); set("txtVoice", T("voice"));
+    set("txtCamOn", camStream ? T("camOff") : T("camOn"));
+    set("txtCamTitle", T("camTitle")); set("txtCamHint", T("camHint"));
+    set("txtDbTitle", T("dbTitle")); set("txtDbHint", T("dbHint"));
+    set("txtDbAdd", T("dbAdd")); set("txtDbSample", T("dbSample"));
+    set("txtTopk", T("topk")); set("txtDbModalTitle", T("dbModalTitle"));
+    set("txtDbModalHint", T("dbModalHint"));
+    set("txtCancel", T("cancel")); set("txtSave", T("save"));
+    set("txtEmpty", T("empty"));
+    $("q").placeholder = T("ph");
+    $("dbTitle").placeholder = T("dbTitlePh");
+    $("dbText").placeholder = T("dbTextPh");
+    paintMode();
+  })();
+  $("langButton").addEventListener("click", () => {
+    try { localStorage.setItem("vapiLang", LANG === "ko" ? "en" : "ko"); } catch (e) {}
+    location.reload();                               // 대화는 남기지 않는다
+  });
+
+  loadVoices();
+  loadDbs();
+  $("q").focus();
+</script>
+<script src="/lib/usage.js" data-page="talk"></script>
+</body>
+</html>

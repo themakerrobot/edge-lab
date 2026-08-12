@@ -25,39 +25,58 @@ import numpy as np
 
 SERVER = os.environ.get("THEMAKER_SERVER", "http://127.0.0.1:57711")
 
+# AI 가 돌려주는 이름의 언어. 파이썬 페이지에서 실행하면 화면 언어를 따라오고,
+# 배포한 프로그램에서는 한국어가 기본이다. language("en") 으로 바꿀 수 있다.
+LANG = (os.environ.get("THEMAKER_LANG") or "ko").strip().lower()[:2]
+
+
+def language(code=None):
+    """AI 가 돌려주는 이름의 언어를 정한다. language("en") / language("ko").
+
+    >>> language("en")
+    >>> vision("object", img)      # name 이 영어로 온다
+    """
+    global LANG
+    if code:
+        LANG = str(code).strip().lower()[:2]
+    return LANG
+
 # 기능명(영문 기본) -> (엔드포인트, 기본 파라미터)
 _API = {
-    "object":     ("/object/object_search_e", {}),
-    "pose":       ("/object/object_pose_e", {}),
-    "seg":        ("/object/object_seg_e", {}),
-    "hand":       ("/object/hand_e", {}),
-    "face":       ("/face/face_detect_e", {}),
-    "face_attr":  ("/face/face_analyze_e", {}),
-    "distance":   ("/face/mesh_e", {}),
-    "caption":    ("/caption/caption", {}),
-    "question":   ("/caption/caption_question_e", {}),
-    "tag":        ("/caption/caption_tag_e", {}),
-    "classify":   ("/vlm/vlm_inference_e", {}),
+    "object":     ("/object/object_search", {}),
+    "pose":       ("/object/object_pose", {}),
+    "seg":        ("/object/object_seg", {}),
+    "hand":       ("/object/hand", {}),
+    "face":       ("/face/face_detect", {}),
+    "face_attr":  ("/face/face_analyze", {}),
+    "distance":   ("/face/mesh", {}),
+    # 사진을 보고 답한다 — 물으면 그 질문에, 안 물으면 사진 설명
+    "look":       ("/vlm/look", {}),
+    "place":      ("/vlm/place", {}),
+    "time":       ("/vlm/time", {}),
+    "weather":    ("/vlm/weather", {}),
+    "tag":        ("/vlm/tag", {}),
     "ocr":        ("/code/ocr", {}),
     "qr":         ("/code/barcode", {}),
     "bg_remove":  ("/gan/portrait", {}),
     "sr":         ("/gan/sr", {}),
     "mask":       ("/face/mask_detect", {}),
-    # 특별 훈련된 YOLO 7종 (detect_mode 로 구분)
-    "fire":       ("/object/object_custom_e", {"detect_mode": "fire"}),
-    "fall":       ("/object/object_custom_e", {"detect_mode": "fall"}),
-    "ball":       ("/object/object_custom_e", {"detect_mode": "ball"}),
-    "rps":        ("/object/object_custom_e", {"detect_mode": "rps"}),
-    "number":     ("/object/object_custom_e", {"detect_mode": "number"}),
-    "helmet":     ("/object/object_custom_e", {"detect_mode": "helmet"}),
-    "box":        ("/object/object_custom_e", {"detect_mode": "box"}),
+    # 개별 인식 YOLO 7종 (detect_mode 로 구분)
+    "fire":       ("/object/object_custom", {"detect_mode": "fire"}),
+    "fall":       ("/object/object_custom", {"detect_mode": "fall"}),
+    "ball":       ("/object/object_custom", {"detect_mode": "ball"}),
+    "rps":        ("/object/object_custom", {"detect_mode": "rps"}),
+    "number":     ("/object/object_custom", {"detect_mode": "number"}),
+    "helmet":     ("/object/object_custom", {"detect_mode": "helmet"}),
+    "box":        ("/object/object_custom", {"detect_mode": "box"}),
 }
 
 # 한글 이름도 그대로 쓸 수 있다
 _ALIAS_KO = {
     "사물": "object", "자세": "pose", "분할": "seg", "손": "hand",
     "얼굴": "face", "얼굴분석": "face_attr", "얼굴거리": "distance",
-    "설명": "caption", "질문": "question", "태그": "tag", "분류": "classify",
+    "보기": "look", "설명": "look", "질문": "look", "태그": "tag",
+    "장소": "place", "시간": "time", "날씨": "weather",
     "글자": "ocr", "큐알": "qr", "배경제거": "bg_remove", "화질개선": "sr",
     "마스크": "mask",
     "불": "fire", "화재": "fire", "쓰러짐": "fall", "공": "ball",
@@ -84,6 +103,36 @@ def _post(url, data=None, files=None, timeout=120):
     req = urllib.request.Request(
         SERVER + url, data=body,
         headers={"Content-Type": "multipart/form-data; boundary=" + boundary})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return json.loads(r.read().decode("utf-8"))
+    except urllib.error.URLError as ex:
+        code = getattr(ex, "code", None)
+        if code == 404:
+            raise TheMakerError(
+                "그런 기능이 서버에 없어요: %s\n"
+                "The Maker 를 최신으로 올렸는지 확인해 주세요." % url)
+        if code == 503:
+            raise TheMakerError("AI 를 준비하는 중이에요. 조금만 기다렸다 다시 실행해 주세요.")
+        if code:
+            raise TheMakerError("서버가 오류를 냈어요 (%s): %s" % (code, url))
+        raise TheMakerError(
+            "The Maker 서버에 연결할 수 없어요. run.bat 이 켜져 있는지 확인하세요. (%s)" % ex)
+
+
+def _get(url, timeout=30):
+    """GET 요청 (목록 같은 것)."""
+    try:
+        with urllib.request.urlopen(SERVER + url, timeout=timeout) as r:
+            return json.loads(r.read().decode("utf-8"))
+    except urllib.error.URLError as ex:
+        raise TheMakerError(
+            "The Maker 서버에 연결할 수 없어요. run.bat 이 켜져 있는지 확인하세요. (%s)" % ex)
+
+
+def _delete(url, timeout=30):
+    """DELETE 요청 (지우기)."""
+    req = urllib.request.Request(SERVER + url, method="DELETE")
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             return json.loads(r.read().decode("utf-8"))
@@ -155,16 +204,17 @@ def _resolve_model(name):
 
 
 def vision(kind, image, prompt=None, **params):
-    """AI 실행. kind: "object","face","caption","question","ocr","bg_remove" 등 (한글도 가능).
+    """AI 실행. kind: "object","face","look","tag","ocr","bg_remove" 등 (한글도 가능).
 
     >>> r = vision("object", img)
-    >>> r = vision("question", img, prompt="사람이 몇 명이야?")
-    >>> r = vision("caption", img, lang="en")    # 영어로 답 받기
+    >>> r = vision("look", img, prompt="사람이 몇 명이야?")
+    >>> r = vision("look", img)                  # 안 물으면 사진 설명 {"answer": "..."}
     >>> r = vision("my:my-ai", img)              # 가르치기에서 저장한 모델
 
     서버가 준 값을 그대로 돌려준다 (사전 또는 목록).
     무엇이 왔는지 모를 땐 print(r) 로 확인하면 된다.
-    그림으로 오는 기능(배경제거·화질개선·분할)만 바로 쓸 수 있게 이미지로 풀어 준다.
+    그림으로 오는 기능(배경제거·화질개선)은 바로 쓸 수 있게 이미지로 풀어 준다.
+    분할은 {"image": 칠한 그림, "object": [찾은 것들]} 로 온다 — show(r["image"]).
     """
     kind = str(kind).strip()
     kind = _ALIAS_KO.get(kind, kind)
@@ -180,21 +230,92 @@ def vision(kind, image, prompt=None, **params):
                             % (kind, ", ".join(sorted(_API))))
     if prompt is not None:
         data["prompt"] = prompt
+    data.setdefault("lang", LANG)             # 화면·라이브러리 언어를 서버에 함께 알린다
     data.update({k: str(v) for k, v in params.items()})
 
-    j = _post(url, data=data,
-              files={"uploadFile": ("input.jpg", _to_jpg(image), "image/jpeg")})
+    # 서버는 이 값들을 주소(쿼리)로 받는다 — 본문에 넣으면 조용히 무시된다.
+    # (prompt·lang·detect_mode 가 안 먹던 원인)
+    if data:
+        url += ("&" if "?" in url else "?") + urllib.parse.urlencode(data)
+    j = _post(url, files={"uploadFile": ("input.jpg", _to_jpg(image), "image/jpeg")})
     if j.get("result") != "ok":
         raise TheMakerError("AI 실행 실패: %s" % j.get("data"))
     data = j.get("data")
     # 그림으로 오는 기능은 base64 글자 대신 이미지로 풀어 준다 (show·save 에 바로 넣게)
-    if kind in ("bg_remove", "sr", "seg") and isinstance(data, str):
+    if kind in ("bg_remove", "sr") and isinstance(data, str):
         return _b64_to_image(data)
+    # 분할은 칠한 그림과 찾은 이름을 함께 준다 — 그림만 이미지로 풀어 준다
+    if kind == "seg" and isinstance(data, dict) and isinstance(data.get("image"), str):
+        return dict(data, image=_b64_to_image(data["image"]))
     return data                                  # 그 밖에는 서버가 준 그대로
 
 
 _KIND_KO = {"image": "사진", "pose": "손모양", "face": "표정",
             "body_up": "상반신", "body": "전신"}
+
+
+def chat(text, db=None, lang=None):
+    """사진 없이 물어보기 — 같은 AI 에게 글로만 묻는다.
+
+    >>> print(chat("무지개는 왜 생겨?"))
+    >>> print(chat("제갈량은 누구야?", db="삼국지"))   # 내가 만든 자료에서 찾아 답하기
+    앞에 한 말은 기억하지 않는다 (한 번 묻고 한 번 답한다).
+    """
+    q = str(text).strip()
+    if not q:
+        raise TheMakerError("물어볼 말을 적어 주세요.")
+    args = {"prompt": q, "lang": lang or LANG}
+    if db:
+        args["db"] = str(db)
+    url = ("/chat/rag?" if db else "/chat/ask?") + urllib.parse.urlencode(args)
+    j = _post(url)
+    if j.get("result") != "ok":
+        raise TheMakerError("AI 실행 실패: %s" % j.get("data"))
+    return j["data"]["answer"]
+
+
+def db_add(title, text):
+    """자료 만들기 — 이 글에서 찾아 답하게 한다.
+
+    >>> db_add("삼국지", open("삼국지.txt", encoding="utf-8").read())
+    """
+    body = str(text).strip()
+    if not body:
+        raise TheMakerError("자료로 쓸 글을 넣어 주세요.")
+    j = _post("/chat/db", data={"title": str(title), "text": body})
+    if j.get("result") != "ok":
+        raise TheMakerError("자료를 만들지 못했어요: %s" % j.get("data"))
+    return j["data"]
+
+
+def db_list():
+    """만들어 둔 자료 목록."""
+    j = _get("/chat/db")
+    return j.get("data") if j.get("result") == "ok" else []
+
+
+def db_delete(db):
+    """자료 지우기.
+
+    >>> db_delete("삼국지")
+    """
+    name = str(db).strip()
+    if not name:
+        raise TheMakerError("지울 자료 이름을 적어 주세요.")
+    j = _delete("/chat/db/" + urllib.parse.quote(name))
+    if j.get("result") != "ok":
+        raise TheMakerError("지우지 못했어요: %s" % j.get("data"))
+    return j["data"]
+
+
+def db_find(question, db, top_k=4):
+    """답을 만들지 않고, 자료에서 비슷한 곳만 찾아 본다 (어디서 가져오는지 보기)."""
+    url = "/chat/find?" + urllib.parse.urlencode(
+        {"db": str(db), "prompt": str(question), "top_k": int(top_k)})
+    j = _post(url)
+    if j.get("result") != "ok":
+        raise TheMakerError("찾지 못했어요: %s" % j.get("data"))
+    return j["data"]["found"]
 
 
 def my_models():
@@ -248,13 +369,11 @@ def _boxes_of(result):
     """어떤 모양으로 와도 박스가 든 항목들을 찾아낸다.
 
     목록 [{box...}, ...] 도 되고,
-    사전 {"person": [...], "object": [...]} 처럼 안에 목록이 든 것도 된다.
+    사전 {"object": [...]} 처럼 안에 목록이 든 것도 된다.
     """
     if isinstance(result, dict):
         out = []
         for key, val in result.items():
-            if str(key).endswith("_en"):          # 영어판은 같은 내용이라 건너뛴다
-                continue
             if isinstance(val, list):
                 out += [v for v in val if isinstance(v, dict)]
         if out:
@@ -287,8 +406,12 @@ def draw(image, result):
                 tag = "%s %.0f%%" % (name, pct)
             else:
                 tag = str(name)
-            cv2.putText(img, tag, (x1, max(18, y1 - 6)),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 176, 46), 2)
+            # 한글이 섞이면 PIL 로 그린다 — cv2.putText 는 한글을 네모로 그린다
+            if any("\uac00" <= ch <= "\ud7a3" for ch in tag):
+                img = _put_text(img, tag, x1, max(0, y1 - 24), 20, "orange", 0, center=False)
+            else:
+                cv2.putText(img, tag, (x1, max(18, y1 - 6)),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 176, 46), 2)
     return img
 
 
@@ -362,7 +485,7 @@ def wav_to_text(wav, lang="ko"):
         raw = bytes(wav)
     else:
         raise TheMakerError("wav 는 .wav 파일 경로이거나 WAV 데이터여야 해요.")
-    j = _post("/speech/wav_to_text?lang=" + urllib.parse.quote(lang),
+    j = _post("/speech/stt?lang=" + urllib.parse.quote(lang),
               files={"uploadFile": ("a.wav", raw, "audio/wav")}, timeout=180)
     if j.get("result") != "ok":
         raise TheMakerError("음성 인식 실패: %s" % j.get("data"))
@@ -419,7 +542,11 @@ def _play_wav(raw, wait=True):
     a = a.astype(np.float32) / 32768.0
     if ch > 1:
         a = a.reshape(-1, ch)
-    sd.play(a, sr)
+    try:
+        sd.play(a, sr, device=_out_device())
+    except Exception:
+        _audio["dev"] = None
+        sd.play(a, sr)
     if wait:
         sd.wait()
 
@@ -483,7 +610,11 @@ __all__ = [
     # 이미지 살펴보기
     "size_of", "color_at", "color_at_xy", "main_color",
     # 소리 만들기
-    "play_note", "beep", "play_melody", "play_hz",
+    "play_note", "beep", "play_melody", "play_hz", "speaker",
+    # 사진 없이 대화 · 내 자료에서 찾아 답하기
+    "chat", "db_add", "db_list", "db_find", "db_delete",
+    # 설정
+    "language",
     "SERVER", "TheMakerError",
 ]
 
@@ -932,13 +1063,80 @@ _NOTES = {"도": 261.63, "레": 293.66, "미": 329.63, "파": 349.23,
 _SR = 22050
 
 
+_audio = {"dev": "?"}          # 한 번 고르면 기억해 둔다
+
+
+def _out_device():
+    """소리를 낼 장치를 고른다.
+
+    PortAudio 의 기본값(MME)은 윈도우 기본 장치와 다를 때가 많다 — 모니터
+    HDMI 오디오가 잡히면 소리가 모니터로 나가 조용해 보인다. 그래서 윈도우
+    기본 장치를 그대로 따르는 WASAPI 쪽 기본 출력을 우선 쓴다.
+    THEMAKER_AUDIO 로 번호나 이름을 직접 줄 수도 있다."""
+    if _audio["dev"] != "?":
+        return _audio["dev"]
+    dev = None
+    try:
+        import sounddevice as sd
+        forced = (os.environ.get("THEMAKER_AUDIO") or "").strip()
+        if forced:
+            dev = int(forced) if forced.isdigit() else forced
+        else:
+            for api in sd.query_hostapis():                 # 윈도우: WASAPI = 기본 장치
+                if "WASAPI" in str(api.get("name", "")).upper():
+                    i = api.get("default_output_device", -1)
+                    if i is not None and i >= 0:
+                        dev = i
+                    break
+            if dev is None:                                 # 그 밖의 OS·구형 윈도우
+                i = sd.default.device[1] if isinstance(sd.default.device, (list, tuple)) \
+                    else sd.default.device
+                dev = i if isinstance(i, int) and i >= 0 else None
+    except Exception:
+        dev = None
+    _audio["dev"] = dev
+    return dev
+
+
+def speaker(which=None):
+    """소리가 안 들릴 때 스피커를 직접 고른다.
+
+    >>> speaker()        # 쓸 수 있는 스피커 목록을 보여줘요
+    >>> speaker(4)       # 4번으로 정해요
+    >>> speaker("Realtek")   # 이름 일부로도 돼요
+    """
+    try:
+        import sounddevice as sd
+    except ImportError:
+        raise TheMakerError("소리를 내려면 sounddevice 가 필요해요.\n"
+                            "설치: pip install sounddevice")
+    if which is None:
+        print("[스피커] 지금 쓰는 것:", _out_device())
+        for i, d in enumerate(sd.query_devices()):
+            if d.get("max_output_channels", 0) > 0:
+                print("  %2d  %s" % (i, d.get("name", "")))
+        print("speaker(번호) 로 골라요.")
+        return _out_device()
+    _audio["dev"] = int(which) if str(which).isdigit() else which
+    return _audio["dev"]
+
+
 def _play(wave_f32, wait=True):
     try:
         import sounddevice as sd
     except ImportError:
         raise TheMakerError("소리를 내려면 sounddevice 가 필요해요.\n"
                             "설치: pip install sounddevice")
-    sd.play(wave_f32, _SR)
+    try:
+        sd.play(wave_f32, _SR, device=_out_device())
+    except Exception as ex:                     # 고른 장치가 안 되면 기본값으로 한 번 더
+        _audio["dev"] = None
+        try:
+            sd.play(wave_f32, _SR)
+        except Exception:
+            raise TheMakerError(
+                "스피커로 소리를 낼 수 없어요 (%s)\n"
+                "speaker() 로 목록을 보고 speaker(번호) 로 골라 보세요." % ex)
     if wait:
         sd.wait()
 

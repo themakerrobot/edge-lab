@@ -16,6 +16,8 @@ import uuid
 import cv2
 from fastapi import APIRouter, File, Request, UploadFile
 
+import hub
+
 router = APIRouter()
 
 MP_DIR = "models/mediapipe"
@@ -109,35 +111,64 @@ def _iris_px(lms, w, h):
     return sum(vals) / len(vals) if vals else 0
 
 
-def _face_items(bgr):
+def _mesh_boxes(bgr):
+    """MediaPipe 얼굴 메시로 홍채 지름을 잰다 — 거리 계산에만 쓴다.
+    돌려주는 것: [(박스, 홍채픽셀), ...]"""
     h, w = bgr.shape[:2]
     with _lock:
         res = _face.detect(_mp_image(bgr))
-    items = []
+    out = []
     if not (res and res.face_landmarks):
-        return items
-    f_px = _f_px(w)
+        return out
     for lms in res.face_landmarks:
         xs = [p.x * w for p in lms]
         ys = [p.y * h for p in lms]
         box = [int(max(0, min(xs))), int(max(0, min(ys))),
                int(min(w, max(xs))), int(min(h, max(ys)))]
-        # 거리: 홍채 지름 픽셀 → 핀홀 공식
-        iris = _iris_px(lms, w, h)
+        out.append((box, _iris_px(lms, w, h)))
+    return out
+
+
+def _center_in(box, outer):
+    """box 의 가운데가 outer 안에 있으면 같은 얼굴로 본다."""
+    cx, cy = (box[0] + box[2]) / 2, (box[1] + box[3]) / 2
+    return outer[0] <= cx <= outer[2] and outer[1] <= cy <= outer[3]
+
+
+def _face_items(bgr, lang="ko"):
+    """얼굴 하나에 대해 거리와 방향을 함께 낸다.
+
+    얼굴 찾기와 방향은 OpenVINO 얼굴 스위트(NPU)를 쓴다 — 각도를 직접 내는
+    모델이라 코끝 위치로 어림하던 것보다 정확하다.
+    MediaPipe 는 홍채 지름(거리)만 맡는다. 박스는 OpenVINO 것으로 통일해
+    거리·방향·박스가 늘 같은 얼굴을 가리키게 한다."""
+    eng = hub.engines()                           # 엔진은 main 이 들고 있다
+
+    h, w = bgr.shape[:2]
+    f_px = _f_px(w)
+    meshes = _mesh_boxes(bgr)                     # 거리용 (전체 이미지 기준 — f_px 일관성)
+
+    items = []
+    for face in eng.face.detect.predict(bgr):
+        box = face["box"]
+        x1, y1, x2, y2 = box
+        pose = eng.face.head_pose.predict(bgr[y1:y2, x1:x2], lang)
+
+        iris = 0
+        for mbox, m_iris in meshes:               # 가운데가 겹치는 메시를 짝지어 준다
+            if _center_in(mbox, box):
+                iris = m_iris
+                break
         distance_cm = int(f_px * IRIS_MM / iris / 10) if iris > 0 else 0
-        # 방향: 코끝(1)의 얼굴 박스 중심 대비 오프셋 (기존 L/R/T/B/C 표기 유지)
-        cx, cy = (box[0] + box[2]) / 2, (box[1] + box[3]) / 2
-        bw, bh = max(1, box[2] - box[0]), max(1, box[3] - box[1])
-        dx = (lms[1].x * w - cx) / bw
-        dy = (lms[1].y * h - cy) / bh
-        d = ("L" if dx < -0.06 else "R" if dx > 0.06 else "C")
-        d += ("T" if dy < -0.10 else "B" if dy > 0.10 else "C")
-        items.append({"distance": distance_cm, "direction": d, "box": box,
+
+        items.append({"box": box, "distance": distance_cm,
+                      "direction": pose["direction"],
+                      "direction_en": pose["direction_en"],
                       "iris_px": round(iris, 1)})
     return items
 
 
-def _hand_items(bgr):
+def _hand_items(bgr, lang="ko"):
     h, w = bgr.shape[:2]
     with _lock:
         res = _hand.recognize(_mp_image(bgr))
@@ -157,7 +188,9 @@ def _hand_items(bgr):
         if res.handedness and i < len(res.handedness) and res.handedness[i]:
             handed = res.handedness[i][0].category_name  # Left / Right
         items.append({
-            "gesture": GESTURE_KO.get(gesture, gesture), "gesture_en": gesture,
+            "gesture": (GESTURE_KO.get(gesture, gesture)
+                        if str(lang).startswith("ko") else gesture),
+            "gesture_en": gesture,          # MediaPipe 코드 — 값 비교용 (Thumb_Up 등)
             "score": score, "hand": handed, "box": box,
             "points": [(int(p.x * w), int(p.y * h)) for p in lms],
         })
@@ -187,14 +220,16 @@ def _run(name: str, upload: UploadFile, fn):
             os.remove(path)
 
 
-@router.post("/face/mesh_e", tags=["face"], summary="얼굴 거리/방향 (MediaPipe)")
-async def face_mesh_e(request: Request, uploadFile: UploadFile = File(...)):
-    return _run("mesh_e", uploadFile, _face_items)
+@router.post("/face/mesh", tags=["face"], summary="얼굴 거리/방향 (MediaPipe)")
+async def face_mesh(request: Request, uploadFile: UploadFile = File(...),
+                    lang: str = "ko"):
+    return _run("mesh", uploadFile, lambda img: _face_items(img, lang))
 
 
-@router.post("/object/hand_e", tags=["object"], summary="손동작 인식 (MediaPipe)")
-async def object_hand_e(request: Request, uploadFile: UploadFile = File(...)):
-    return _run("hand_e", uploadFile, _hand_items)
+@router.post("/object/hand", tags=["object"], summary="손동작 인식 (MediaPipe)")
+async def object_hand(request: Request, uploadFile: UploadFile = File(...),
+                      lang: str = "ko"):
+    return _run("hand", uploadFile, lambda img: _hand_items(img, lang))
 
 
 @router.post("/face/mesh_calibrate", tags=["face"],

@@ -24,6 +24,7 @@ def pick(*prefer):
 
 DEV_FACE = pick("NPU", "GPU")
 DEV_GAN = pick("GPU")
+VERBOSE = bool(os.environ.get("VAPI_VERBOSE"))   # 자세한 로그 (기본은 조용히)
 DEV_VLM = pick("GPU")
 
 
@@ -58,17 +59,17 @@ class Yolo:
 
 COCO_EN = [
     'person', 'bicycle', 'car', 'motorbike', 'aeroplane', 'bus',
-    'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign',
-    'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
+    'train', 'truck', 'boat', 'traffic-light', 'fire-hydrant', 'stop-sign',
+    'parking-meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
     'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella',
-    'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball',
-    'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket',
-    'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl',
-    'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza',
-    'donut', 'cake', 'chair', 'sofa', 'potted plant', 'bed', 'dining table',
-    'toilet', 'tvmonitor', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone',
+    'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports-ball',
+    'kite', 'baseball-bat', 'baseball-glove', 'skateboard', 'surfboard', 'tennis-racket',
+    'bottle', 'wine-glass', 'cup', 'fork', 'knife', 'spoon', 'bowl',
+    'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot-dog', 'pizza',
+    'donut', 'cake', 'chair', 'sofa', 'potted-plant', 'bed', 'dining-table',
+    'toilet', 'tvmonitor', 'laptop', 'mouse', 'remote', 'keyboard', 'cell-phone',
     'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book',
-    'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'
+    'clock', 'vase', 'scissors', 'teddy-bear', 'hair-drier', 'toothbrush'
 ]
 COCO_KO = [
     '사람', '자전거', '자동차', '오토바이', '비행기', '버스',
@@ -99,27 +100,31 @@ class ObjectEngine:
         p += "T" if cy < 300 else ("B" if cy > 500 else "C")
         return p
 
-    def search(self, image_path):
+    def search(self, image_path, lang="ko"):
+        """사람과 사물을 한 목록으로 돌려준다.
+
+        예전에는 person 과 object 를 따로 담았는데, 사람도 COCO 80종 중 하나라
+        나눌 이유가 없었다. 사람만 세고 싶으면 name_en == "person" 으로 거른다."""
         image = cv2.imread(image_path)
         h, w = image.shape[:2]
         r = self.det(image, conf=0.7)[0]
-        o_ko, o_en, p_ko, p_en = [], [], [], []
+        names = COCO_KO if str(lang).startswith("ko") else COCO_EN
+        found = []
         for box in (r.boxes or []):
+            if len(found) >= 15:
+                break
             cls_id = int(box.cls[0])
             conf = float(box.conf[0])
             x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
             nx1, ny1 = x1 * self.image_size / w, y1 * self.image_size / h
             nx2, ny2 = x2 * self.image_size / w, y2 * self.image_size / h
-            pos = self._pos(int(nx1 + (nx2 - nx1) / 2), int(ny1 + (ny2 - ny1) / 2))
-            item = {"score": int(conf * 100), "percent": int(conf * 100),
-                    "pos": pos, "box": [int(x1), int(y1), int(x2), int(y2)]}
-            if COCO_EN[cls_id] == "person" and len(p_en) < 5:
-                p_en.append(dict(item, name=COCO_EN[cls_id]))
-                p_ko.append(dict(item, name=COCO_KO[cls_id]))
-            elif COCO_EN[cls_id] != "person" and len(o_en) < 10:
-                o_en.append(dict(item, name=COCO_EN[cls_id]))
-                o_ko.append(dict(item, name=COCO_KO[cls_id]))
-        return o_ko, o_en, p_ko, p_en
+            found.append({
+                "name": names[cls_id], "name_en": COCO_EN[cls_id],
+                "score": int(conf * 100), "percent": int(conf * 100),
+                "pos": self._pos(int(nx1 + (nx2 - nx1) / 2), int(ny1 + (ny2 - ny1) / 2)),
+                "box": [int(x1), int(y1), int(x2), int(y2)],
+            })
+        return found
 
     def points(self, image_path):
         frame = cv2.imread(image_path)
@@ -141,9 +146,39 @@ class ObjectEngine:
                 })
         return out
 
-    def segment(self, image_path):
+    def segment(self, image_path, lang="ko"):
+        """영역을 칠한 그림 + 무엇을 칠했는지 이름·박스.
+
+        seg 모델은 박스·이름·점수를 다 내므로 그림만 돌려주면 아까웠다.
+        화면의 "풀이" 문장도 이 이름 목록으로 만든다."""
         r = self.seg(image_path)[0]
-        return to_b64_jpg(r.plot())
+        names = COCO_KO if str(lang).startswith("ko") else COCO_EN
+        found = []
+        for box in (r.boxes or []):
+            score = float(box.conf[0])
+            if score < 0.3:
+                continue
+            x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
+            cls_id = int(box.cls[0])
+            found.append({"name": names[cls_id], "name_en": COCO_EN[cls_id],
+                          "score": int(score * 100),
+                          "box": [int(x1), int(y1), int(x2), int(y2)]})
+        # 라벨·박스는 그리지 않는다 — Ultralytics 가 새기는 글씨는 영문 클래스 이름이라
+        # 화면 언어와 어긋난다. 색칠만 받고, 이름은 화면·라이브러리가 그린다.
+        return {"image": to_b64_jpg(r.plot(labels=False, boxes=False)), "object": found}
+
+
+# 개별 인식 모델이 내는 영문 클래스 이름 -> 한국어. 없으면 영문을 그대로 쓴다
+# (숫자 모델의 "0"~"9", "+" 같은 것은 번역할 게 없다)
+CUSTOM_KO = {
+    "fire": "불", "smoke": "연기", "fall": "낙상", "fallen": "낙상",
+    "person": "사람", "helmet": "안전모", "head": "맨머리", "box": "박스",
+    "rock": "바위", "paper": "보", "scissors": "가위",
+    "red": "빨강공", "yellow": "노랑공", "green": "초록공", "blue": "파랑공",
+    "ball": "공",
+}
+# 모델마다 표기가 갈리는 것들을 한 이름으로 모은다 (Scissor / Scissors 등)
+CUSTOM_EN_NORM = {"scissor": "scissors", "fallen": "fall"}
 
 
 class CustomEngine:
@@ -156,10 +191,11 @@ class CustomEngine:
             self.models[m] = Yolo(MODELS / f"object/{m}-11s_openvino_model",
                                   task=self.TASKS.get(m, "detect"))
 
-    def predict(self, mode, image_path):
+    def predict(self, mode, image_path, lang="ko"):
         if mode not in self.models:
             return []
         r = self.models[mode](image_path)[0]
+        ko = str(lang).startswith("ko")
         data = []
         for box in (r.boxes or []):
             score = float(box.conf[0])
@@ -167,9 +203,12 @@ class CustomEngine:
                 continue
             x1, y1, x2, y2 = map(int, box.xyxy[0])
             names = r.names
-            name = names.get(int(box.cls[0]), "Unknown") if isinstance(names, dict) \
+            raw = names.get(int(box.cls[0]), "Unknown") if isinstance(names, dict) \
                 else names[int(box.cls[0])]
-            data.append({"name": name, "percent": int(score * 100),
+            en = str(raw).strip().lower().replace(" ", "-")
+            en = CUSTOM_EN_NORM.get(en, en)
+            data.append({"name": CUSTOM_KO.get(en, en) if ko else en, "name_en": en,
+                         "percent": int(score * 100),
                          "score": int(score * 100), "box": (x1, y1, x2, y2)})
         return data
 
@@ -248,13 +287,30 @@ class Emotion(OVModel):
         return EMO_KO[idx], EMO_EN[idx]
 
 
+# 얼굴이 보는 쪽: 코드(CC·LT…)는 값 비교용으로 그대로 두고, 사람이 읽을 낱말을 함께 준다
+DIRECTION = {
+    "CC": ("정면", "front"),
+    "LC": ("왼쪽", "left"), "RC": ("오른쪽", "right"),
+    "CT": ("위", "up"), "CB": ("아래", "down"),
+    "LT": ("왼쪽 위", "left up"), "LB": ("왼쪽 아래", "left down"),
+    "RT": ("오른쪽 위", "right up"), "RB": ("오른쪽 아래", "right down"),
+}
+
+
+def direction_words(code, lang="ko"):
+    """{"direction": 낱말, "direction_en": 코드} — 코드는 언어를 바꿔도 안 변한다."""
+    ko, en = DIRECTION.get(code, (code, code))
+    return {"direction": ko if str(lang).startswith("ko") else en,
+            "direction_en": code}
+
+
 class HeadPose(OVModel):
     """head-pose-estimation-adas-0001 — 입력 [1,3,60,60] BGR, yaw/pitch/roll(도)."""
 
     def __init__(self, device):
         super().__init__(MODELS / "face/head-pose-estimation-adas-0001.xml", device)
 
-    def predict(self, face_bgr):
+    def predict(self, face_bgr, lang="ko"):
         blob = cv2.resize(face_bgr, (60, 60)).transpose(2, 0, 1)[None].astype(np.float32)
         with self.lock:
             req = self.compiled.create_infer_request()
@@ -269,7 +325,8 @@ class HeadPose(OVModel):
         y3 = cos(yaw_r) * sin(pitch_r)
         res = ("R" if x3 > 0.15 else ("L" if x3 < -0.15 else "C"))
         res += ("B" if y3 > 0.15 else ("T" if y3 < -0.15 else "C"))
-        return {"direction": res, "pitch": pitch_r, "yaw": yaw_r, "roll": roll_r}
+        return dict(direction_words(res, lang),
+                    pitch=pitch_r, yaw=yaw_r, roll=roll_r)
 
 
 class MaskCls:
@@ -278,11 +335,14 @@ class MaskCls:
     def __init__(self):
         self.model = Yolo(MODELS / "object/mask-11s-cls_openvino_model", task="classify")
 
-    def predict(self, face_bgr):
+    def predict(self, face_bgr, lang="ko"):
         r = self.model(face_bgr, imgsz=224)[0]
         idx = int(r.probs.top1)
         name = r.names[idx] if not isinstance(r.names, dict) else r.names.get(idx, "")
-        return {"mask": 1 if name == "with_mask" else 0,
+        on = 1 if name == "with_mask" else 0
+        ko, en = ("마스크 씀", "mask") if on else ("맨얼굴", "no-mask")
+        return {"mask": on, "name": ko if str(lang).startswith("ko") else en,
+                "name_en": en,
                 "score": round(float(r.probs.top1conf) * 100, 2)}
 
 
@@ -456,12 +516,102 @@ class VlmEngine:
                                      generation_config=cfg)
         return str(out).strip()
 
+    def generate_text(self, prompt, max_new_tokens=256):
+        """사진 없이 글만 준다 — 같은 파이프라인을 쓰므로 모델이 늘지 않는다."""
+        import openvino_genai as og
+        cfg = og.GenerationConfig()
+        cfg.max_new_tokens = max_new_tokens
+        cfg.repetition_penalty = 1.15
+        cfg.do_sample = False
+        with self.lock:
+            out = self.pipe.generate(prompt, generation_config=cfg)
+        return str(out).strip()
+
+
+# ---------------------------------------------------------------- 임베딩 (자료 찾기용)
+class Embed:
+    """multilingual-e5-small(INT8) — 글을 숫자 목록(384개)으로 바꾼다.
+
+    무거운 편은 아니지만 쓰는 수업에서만 필요하므로 **첫 요청 때 올린다**.
+    CPU 로 돌린다 — GPU 는 VLM 이 쓰고 있고, 이 모델은 CPU 로도 충분히 빠르다.
+
+    e5 계열은 접두사를 붙여야 성능이 나온다 — 자료는 "passage: ", 질문은 "query: ".
+    """
+
+    DIM = 384
+
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.model = None
+        self.tok = None
+        self.err = ""
+
+    def ready(self):
+        return self.model is not None
+
+    def load(self):
+        if self.model is not None or self.err:
+            return
+        with self.lock:
+            if self.model is not None or self.err:
+                return
+            try:
+                d = MODELS / "embed/e5-small-int8"
+                if not (d / "openvino_model.xml").exists():
+                    raise RuntimeError("models/embed/e5-small-int8 가 없어요 "
+                                       "(setup_deploy.ps1 로 모델을 받으세요)")
+                # 토크나이저 IR 은 openvino-tokenizers 확장이 있어야 열린다.
+                # (없으면 "Cannot create SpecialTokensSplit layer ... unsupported opset")
+                # 확장은 import 뒤에 만든 Core 에만 붙으므로 여기서 새로 만든다.
+                try:
+                    import openvino_tokenizers  # noqa: F401
+                except ImportError:
+                    raise RuntimeError(
+                        "openvino-tokenizers 가 설치돼 있지 않아요. "
+                        "venv 에서 pip install \"openvino-tokenizers==2026.2.*\" 를 하세요")
+                tcore = ov.Core()                 # 확장이 붙은 새 Core
+                try:                              # 먼저 만들어 둔 core 에도 붙여 둔다
+                    core.add_extension(str(openvino_tokenizers._ext_path))
+                except Exception:
+                    pass
+                self.tok = tcore.compile_model(str(d / "openvino_tokenizer.xml"), "CPU")
+                self.model = tcore.compile_model(str(d / "openvino_model.xml"), "CPU")
+                print("[embed] multilingual-e5-small loaded (CPU)")
+            except Exception as ex:
+                self.err = str(ex)
+                print("[embed]", ex)
+
+    def encode(self, texts, kind="passage"):
+        """글 목록 -> 벡터 목록(정규화됨). kind: passage(자료) / query(질문)"""
+        self.load()
+        if self.model is None:                      # 긴 OpenVINO 오류를 그대로 띄우면 못 읽는다
+            first = (self.err or "models/embed").split("\n")[0].strip()
+            raise RuntimeError("자료 찾기 모델을 열지 못했어요 — %s" % first[:140])
+        items = [("%s: %s" % (kind, str(t).strip())) for t in texts]
+        out = []
+        with self.lock:
+            for i in range(0, len(items), 16):                # 16개씩 나눠 넣는다
+                batch = items[i:i + 16]
+                tk = self.tok(batch)
+                ids = tk["input_ids"]
+                mask = tk["attention_mask"]
+                feed = {"input_ids": ids, "attention_mask": mask}
+                names = {p.any_name for p in self.model.inputs}
+                if "token_type_ids" in names:                 # 이 모델은 셋을 요구한다
+                    feed["token_type_ids"] = np.zeros_like(ids)
+                res = self.model(feed)[self.model.output(0)]   # [배치, 토큰, 384]
+                m = np.asarray(mask, dtype=np.float32)[..., None]
+                vec = (res * m).sum(1) / np.maximum(m.sum(1), 1e-9)   # 마스크 평균 풀링
+                vec /= np.maximum(np.linalg.norm(vec, axis=1, keepdims=True), 1e-9)
+                out.extend(vec.astype(np.float32))
+        return out
+
 
 # ---------------------------------------------------------------- 로딩
 # 로딩 단계 정의 — 화면(진행바)과 순서를 맞추기 위해 여기에 모아 둔다.
 LOAD_STEPS = [
     ("object", "사물 찾기", "Object detection"),
-    ("custom", "특별 인식 8종", "8 special detectors"),
+    ("custom", "개별 인식 8종", "8 individual detectors"),
     ("face", "얼굴 분석", "Face analysis"),
     ("gan", "그림 바꾸기", "Image transform"),
     ("code", "글자 · 코드 읽기", "Text & code"),
@@ -469,7 +619,7 @@ LOAD_STEPS = [
 ]
 WARM_STEPS = [
     ("w_yolo", "사물 찾기 준비", "Warming up detection"),
-    ("w_custom", "특별 인식 준비", "Warming up detectors"),
+    ("w_custom", "개별 인식 준비", "Warming up detectors"),
     ("w_face", "얼굴 분석 준비", "Warming up face"),
     ("w_gan", "그림 바꾸기 준비", "Warming up transform"),
     ("w_vlm", "그림 보고 말하기 준비", "Warming up vision language"),
@@ -488,6 +638,7 @@ class Engines:
         for key, cls in builders:
             self._step(key)
             setattr(self, key, cls())
+        self.embed = Embed()          # 지연 로딩 — 자료 찾기 수업에서만 올라온다
         print("[engines] all models loaded")
         if warmup:
             self.warmup()
@@ -517,7 +668,8 @@ class Engines:
             self._step("w_" + name)
             try:
                 fn()
-                print(f"[warmup] {name} ready")
+                if VERBOSE:
+                    print(f"[warmup] {name} ready")
             except Exception as ex:
                 print(f"[warmup] {name} skipped: {ex}")
         print("[engines] warmup done")

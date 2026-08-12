@@ -48,9 +48,16 @@
     .boot-bar > i { display: block; height: 100%; width: 0;
                     background: linear-gradient(90deg, #1f5f7a, #1f5f7a);
                     transition: width .4s; }
-    .boot-status { display: flex; font-family: "Menlo","Consolas",monospace;
+    .boot-status { display: flex; align-items: baseline; gap: 10px;
+                   font-family: "Menlo","Consolas",monospace;
                    font-size: 0.82rem; color: #4a423a; }
-    .boot-status span:last-child { margin-left: auto; font-variant-numeric: tabular-nums; }
+    .boot-status #bootNow { flex: 1 1 auto; min-width: 0;
+                            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    /* 진행 수치는 오른쪽에 모아 둔다 — 숫자 폭을 고정해 갱신될 때 흔들리지 않게 */
+    .boot-meter { flex: 0 0 auto; display: flex; align-items: baseline; gap: 7px;
+                  font-variant-numeric: tabular-nums; }
+    .boot-meter .sep { color: #9a8f7d; }
+    .boot-meter #bootTime { color: #6b6255; }
     .boot-actions { display: flex; gap: 8px; }
     .boot-actions button {
       font-family: inherit; font-size: .95rem; font-weight: 600; cursor: pointer;
@@ -611,8 +618,11 @@
         <div class="boot-bar"><i id="bootBar"></i></div>
         <div class="boot-status">
           <span id="bootNow">준비하는 중...</span>
-          <span id="bootCount">0 / 0<span id="bootTime" style="margin-left:8px;
-                font-variant-numeric:tabular-nums;color:var(--ink-2);"></span></span>
+          <span class="boot-meter">
+            <span id="bootCount">0 / 0</span>
+            <span class="sep">·</span>
+            <span id="bootTime">0초</span>
+          </span>
         </div>
       </div>
 
@@ -633,11 +643,16 @@
     </span>
     </div>
     <div class="h-tools">
+      <a href="/talk" id="talkLink" title="대화 — AI와 이야기해요" style="
+        display:inline-flex;align-items:center;gap:7px;background:#fff;
+        border:1.5px solid var(--line-d);color:var(--ink);font-weight:600;
+        padding:8px 14px;border-radius:var(--r);text-decoration:none;font-size:.95rem;">
+        &#128172; <span id="txtTalkLink">대화</span></a>
       <a href="/blocks" id="blocksLink" title="블록 코딩 — 블록으로 나만의 프로그램" style="
         display:inline-flex;align-items:center;gap:7px;background:#fff;
         border:1.5px solid var(--line-d);color:var(--ink);font-weight:600;
         padding:8px 14px;border-radius:var(--r);text-decoration:none;font-size:.95rem;">
-        &#9632; <span id="txtBlocksLink">블록 코딩</span></a>
+        &#9632; <span id="txtBlocksLink">블록</span></a>
       <a href="/code" id="codeLink" title="파이썬 — 코드로 AI를 불러 봐요" style="
         display:inline-flex;align-items:center;gap:7px;background:#fff;
         border:1.5px solid var(--line-d);color:var(--ink);font-weight:600;
@@ -817,11 +832,11 @@
       ko: {
         titleTag: "The Maker", title: "The Maker",
         eyebrow: "써보기 · AI 12가지를 눌러 봐요 · 인터넷 없이 내 컴퓨터에서",
-        blocksLink: "블록 코딩", trainLink: "가르치기", codeLink: "파이썬", optionsTip: "설정 · 점검", langBtn: "EN",
+        blocksLink: "블록", trainLink: "가르치기", codeLink: "파이썬", talkLink: "대화", optionsTip: "설정 · 점검", langBtn: "EN",
         bootSub: "인터넷 없이 내 컴퓨터에서 실행돼요",
         bootSkip: "건너뛰기", bootWait: "준비 중...", bootStart: "시작하기",
         bootDone: "준비 끝!", bootError: "문제가 생겼어요: ",
-        bootSec: "초", bootMin: "분 ", bootTook: "걸린 시간",
+        bootSec: "초", bootMin: "분 ",
         cam_denied: "카메라를 쓸 수 없어요.<br>주소창 왼쪽(또는 창 위쪽)의 자물쇠·카메라 아이콘을 눌러 <b>허용</b>으로 바꿔 주세요.",
         cam_busy: "다른 프로그램이 카메라를 쓰고 있어요.<br>화상회의·카메라 앱을 닫고 다시 눌러 보세요.",
         cam_none: "카메라를 찾지 못했어요.<br>웹캠이 꽂혀 있는지, 노트북이라면 카메라 덮개가 열려 있는지 확인해 주세요.",
@@ -849,7 +864,7 @@
         saveResult: "결과 이미지 저장", clearHistory: "기록 지우기",
         historyTitle: "실행 기록 — 눌러서 다시 보기",
         details: "상세보기 — 결과 데이터(JSON)", copy: "복사", copied: "복사됨!",
-        promptQ: "이미지를 설명해주세요.", promptVLM: "이미지를 30자 이내로 설명해주세요.",
+        promptQ: "이미지를 설명해주세요.",
         liveOkTip: "웹캠으로 계속 인식합니다 (체크하면 웹캠 탭으로 전환)",
         liveNoTip: "이 모델은 응답이 길어 라이브를 지원하지 않아요 (얼굴·사물·포즈 계열에서 사용)",
         aSelectImage: "이미지를 선택하세요.", aCapture: "웹캠 이미지를 캡쳐하세요.",
@@ -860,11 +875,11 @@
       en: {
         titleTag: "The Maker", title: "The Maker",
         eyebrow: "Use · try 12 AIs · runs on this computer, no internet",
-        blocksLink: "Blocks", trainLink: "Train", codeLink: "Python", optionsTip: "Settings & Check", langBtn: "한",
+        blocksLink: "Blocks", trainLink: "Train", codeLink: "Python", talkLink: "Talk", optionsTip: "Settings & Check", langBtn: "한",
         bootSub: "Runs on this computer, no internet needed",
         bootSkip: "Skip", bootWait: "Getting ready...", bootStart: "Start",
         bootDone: "Ready!", bootError: "Something went wrong: ",
-        bootSec: "s", bootMin: "m ", bootTook: "took",
+        bootSec: "s", bootMin: "m ",
         cam_denied: "Camera is blocked.<br>Click the lock or camera icon near the address bar and choose <b>Allow</b>.",
         cam_busy: "Another app is using the camera.<br>Close video-call or camera apps, then try again.",
         cam_none: "No camera found.<br>Check that a webcam is connected and the privacy cover is open.",
@@ -892,7 +907,7 @@
         saveResult: "Save result image", clearHistory: "Clear history",
         historyTitle: "History — click to view again",
         details: "Details — result data (JSON)", copy: "Copy", copied: "Copied!",
-        promptQ: "Describe this image.", promptVLM: "Describe this image in one short sentence.",
+        promptQ: "Describe this image.",
         liveOkTip: "Keeps detecting from the webcam (checking switches to the webcam tab)",
         liveNoTip: "This model is too slow for live mode (use face / object / pose models)",
         aSelectImage: "Choose an image first.", aCapture: "Capture a webcam image first.",
@@ -979,7 +994,7 @@
           show();
           const pct = r.total ? Math.round(r.loaded / r.total * 100) : 0;
           document.getElementById("bootBar").style.width = pct + "%";
-          document.getElementById("bootCount").firstChild.nodeValue = r.loaded + " / " + r.total;
+          document.getElementById("bootCount").textContent = r.loaded + " / " + r.total;
           document.getElementById("bootTime").textContent = elapsed();
           if (r.error) {
             document.getElementById("bootNow").textContent = T("bootError") + r.error;
@@ -991,8 +1006,8 @@
           if (r.ready) {
             ready = true;
             /* 얼마나 걸렸는지 남겨 둔다 — 느린 PC 를 가늠하는 데 쓴다 */
-            document.getElementById("bootNow").textContent =
-              T("bootDone") + " (" + T("bootTook") + " " + elapsed() + ")";
+            document.getElementById("bootNow").textContent = T("bootDone");
+            document.getElementById("bootTime").textContent = elapsed();   // 총 걸린 시간
             const b = document.getElementById("bootStart");
             b.disabled = false;
             b.textContent = T("bootStart");
@@ -1006,37 +1021,58 @@
       poll();
     })();
 
+    /* 묶음 순서 = 화면에 보이는 순서. 얼굴 → 몸·손 → 사물 → 개별 인식 →
+       말로 답하는 AI → 사진 바꾸기 → 글자·QR (빠른 것부터, 느린 VLM 은 뒤로) */
+    const GROUPS = [
+      ["face",    "얼굴",           "Face"],
+      ["body",    "몸 · 손",        "Body & hands"],
+      ["object",  "사물",           "Objects"],
+      ["special", "개별 인식",       "Individual detectors"],
+      ["vlm",     "말로 답하는 AI",  "AI that answers in words"],
+      ["image",   "사진 바꾸기",     "Change the photo"],
+      ["text",    "글자 · QR",      "Text & QR"],
+    ];
+
     const SERVICE_LIST = {
-      "얼굴 특성": { "api": "face/face_attribute", "params": {}, "tooltip": "얼굴의 안경, 콧수염, 턱수염, 모자를 인식합니다.", "en": "Face attributes", "tooltip_en": "Detects glasses, mustache, beard and hats on faces." },
-      "마스크 인식": { "api": "face/mask_detect", "params": {}, "tooltip": "얼굴의 마스크 착용 여부를 인식합니다.", "en": "Mask detection", "tooltip_en": "Checks whether each face is wearing a mask." },
-      "얼굴 분석": { "api": "face/face_analyze_e", "params": {}, "tooltip": "얼굴의 나이/성별/감정/방향을 분석합니다.", "en": "Face analysis", "tooltip_en": "Estimates age, gender, emotion and gaze direction." },
-      "얼굴 인식": { "api": "face/face_detect_e", "params": {}, "tooltip": "얼굴을 인식합니다.", "en": "Face detection", "tooltip_en": "Finds faces in the image." },
-      "얼굴 감정 분석": { "api": "face/face_emotion_e", "params": {}, "tooltip": "얼굴의 감정을 분석합니다.", "en": "Face emotion", "tooltip_en": "Reads the emotion on each face." },
-      "얼굴 나이/성별 분석": { "api": "face/face_age_gender_e", "params": {}, "tooltip": "얼굴의 나이/성별을 분석합니다.", "en": "Face age / gender", "tooltip_en": "Estimates each face's age and gender." },
-      "얼굴 방향 인식": { "api": "face/face_pose_e", "params": {}, "tooltip": "얼굴의 시선 방향을 인식합니다.", "en": "Face direction", "tooltip_en": "Detects which way each face is looking." },
-      "얼굴 거리·방향": { "api": "face/mesh_e", "params": {}, "tooltip": "홍채 크기로 카메라와의 거리(cm)와 시선 방향을 추정합니다.", "en": "Face distance / direction", "tooltip_en": "Estimates distance to the camera (cm) from iris size, plus gaze direction." },
-      "손동작 인식": { "api": "object/hand_e", "params": {}, "tooltip": "손 모양(엄지척, 브이, 주먹 등)과 손가락 21개 포인트를 인식합니다.", "en": "Hand gesture", "tooltip_en": "Recognizes hand gestures (thumbs-up, victory, fist...) and 21 finger points." },
-      "사물 인식": { "api": "object/object_search_e", "params": {}, "tooltip": "80가지 사물의 이름/위치를 인식합니다.", "en": "Object detection", "tooltip_en": "Finds 80 kinds of objects and where they are." },
-      "가위바위보 인식": { "api": "object/object_custom_e", "params": {"detect_mode":"rps"}, "tooltip": "가위바위보를 인식합니다.", "en": "Rock-paper-scissors", "tooltip_en": "Recognizes rock, paper and scissors hands." },
-      "불 인식": { "api": "object/object_custom_e", "params": {"detect_mode":"fire"}, "tooltip": "불, 연기를 인식합니다.", "en": "Fire detection", "tooltip_en": "Detects fire and smoke." },
-      "공 인식": { "api": "object/object_custom_e", "params": {"detect_mode":"ball"}, "tooltip": "공을 인식합니다.(빨강,노랑,초록)", "en": "Ball detection", "tooltip_en": "Detects balls (red, yellow, green)." },
-      "숫자 인식": { "api": "object/object_custom_e", "params": {"detect_mode":"number"}, "tooltip": "숫자, 연산자를 인식합니다.", "en": "Number detection", "tooltip_en": "Detects digits and math operators." },
-      "낙상 인식": { "api": "object/object_custom_e", "params": {"detect_mode":"fall"}, "tooltip": "낙상을 인식합니다.", "en": "Fall detection", "tooltip_en": "Detects a person falling down." },
-      "안전모 인식": { "api": "object/object_custom_e", "params": {"detect_mode":"helmet"}, "tooltip": "안전모 착용 여부를 인식합니다.", "en": "Helmet detection", "tooltip_en": "Checks whether a safety helmet is worn." },
-      "박스 인식": { "api": "object/object_custom_e", "params": {"detect_mode":"box"}, "tooltip": "박스를 인식합니다.", "en": "Box detection", "tooltip_en": "Detects boxes." },
-      "사람 포즈 인식": { "api": "object/object_pose_e", "params": {}, "tooltip": "인체의 17개 주요 포인트를 인식합니다.", "en": "Human pose", "tooltip_en": "Finds 17 key points of the human body." },
-      "이미지 분류": { "api": "object/object_cls_e", "params": {}, "tooltip": "이미지의 주제를 분류합니다.", "en": "Image classification", "tooltip_en": "Classifies what the image is about." },
-      "사물 분할": { "api": "object/object_seg_e", "params": {}, "tooltip": "80가지 사물의 영역을 분할하여 표시합니다.", "en": "Object segmentation", "tooltip_en": "Colors in the exact area of each object." },
-      "이미지 장소 인식": { "api": "caption/caption_place_e", "params": {}, "tooltip": "이미지에 대한 장소를 추측합니다.", "en": "Guess the place", "tooltip_en": "Guesses where the photo was taken." },
-      "이미지 시간 인식": { "api": "caption/caption_time_e", "params": {}, "tooltip": "이미지에 대한 시간대를 추측합니다.", "en": "Guess the time", "tooltip_en": "Guesses the time of day in the photo." },
-      "이미지 날씨 인식": { "api": "caption/caption_weather_e", "params": {}, "tooltip": "이미지에 대한 날씨를 추측합니다.", "en": "Guess the weather", "tooltip_en": "Guesses the weather in the photo." },
-      "이미지 질문": { "api": "caption/caption_question_e", "params": {}, "tooltip": "이미지에 대한 질문을 하고, 답변을 생성합니다.", "en": "Ask about the image", "tooltip_en": "Ask a question about the image and get an answer." },
-      "이미지 태그": { "api": "caption/caption_tag_e", "params": {}, "tooltip": "이미지에 대한 태그를 생성합니다.(한/영)", "en": "Image tags", "tooltip_en": "Creates tags for the image." },
-      "이미지 설명": { "api": "vlm/vlm_inference_e", "params": {}, "tooltip": "비전 언어 모델에 프롬프트를 입력하여, 이미지를 설명합니다.", "en": "Describe the image", "tooltip_en": "Describes the image with a vision-language model." },
-      "배경 제거": { "api": "gan/portrait", "params": {}, "tooltip": "인물/사물만 남기고 배경을 제거합니다.", "en": "Remove background", "tooltip_en": "Keeps the subject and removes the background." },
-      "화질 개선(4배)": { "api": "gan/sr", "params": {}, "tooltip": "이미지 화질을 4배로 개선합니다.", "en": "Upscale (4x)", "tooltip_en": "Improves the image quality four times." },
-      "글자 인식": { "api": "code/ocr", "params": {}, "tooltip": "이미지에서 문자/숫자를 인식합니다.", "en": "Text recognition", "tooltip_en": "Reads letters and numbers in the image." },
-      "QR코드 인식": { "api": "code/barcode", "params": {}, "tooltip": "이미지에서 바코드를 인식합니다.", "en": "QR code", "tooltip_en": "Reads QR codes in the image." }
+      /* ----- 얼굴 ----- */
+      "얼굴 인식": { "g": "face", "api": "face/face_detect", "params": {}, "tooltip": "얼굴을 인식합니다.", "en": "Face detection", "tooltip_en": "Finds faces in the image." },
+      "얼굴 분석": { "g": "face", "api": "face/face_analyze", "params": {}, "tooltip": "얼굴의 나이/성별/감정/방향을 한 번에 분석합니다.", "en": "Face analysis", "tooltip_en": "Estimates age, gender, emotion and gaze direction." },
+      "얼굴 감정 분석": { "g": "face", "api": "face/face_emotion", "params": {}, "tooltip": "얼굴의 감정을 분석합니다.", "en": "Face emotion", "tooltip_en": "Reads the emotion on each face." },
+      "얼굴 나이/성별 분석": { "g": "face", "api": "face/face_age_gender", "params": {}, "tooltip": "얼굴의 나이/성별을 분석합니다.", "en": "Face age / gender", "tooltip_en": "Estimates each face's age and gender." },
+      "얼굴 거리·방향": { "g": "face", "api": "face/mesh", "params": {}, "tooltip": "카메라와의 거리(cm)와 얼굴이 보는 방향을 함께 알려줍니다.", "en": "Face distance / direction", "tooltip_en": "Tells how far the face is (cm) and which way it is looking." },
+      "마스크 인식": { "g": "face", "api": "face/mask_detect", "params": {}, "tooltip": "얼굴의 마스크 착용 여부를 인식합니다.", "en": "Mask detection", "tooltip_en": "Checks whether each face is wearing a mask." },
+
+      /* ----- 몸 · 손 ----- */
+      "사람 포즈 인식": { "g": "body", "api": "object/object_pose", "params": {}, "tooltip": "인체의 17개 주요 포인트를 인식합니다.", "en": "Human pose", "tooltip_en": "Finds 17 key points of the human body." },
+      "손동작 인식": { "g": "body", "api": "object/hand", "params": {}, "tooltip": "손 모양(엄지척, 브이, 주먹 등)과 손가락 21개 포인트를 인식합니다.", "en": "Hand gesture", "tooltip_en": "Recognizes hand gestures (thumbs-up, victory, fist...) and 21 finger points." },
+
+      /* ----- 사물 ----- */
+      "사물 인식": { "g": "object", "api": "object/object_search", "params": {}, "tooltip": "80가지 사물의 이름/위치를 인식합니다. 사람도 함께 찾아요.", "en": "Object detection", "tooltip_en": "Finds 80 kinds of objects (people too) and where they are." },
+      "사물 분할": { "g": "object", "api": "object/object_seg", "params": {}, "tooltip": "80가지 사물의 영역을 색으로 칠해 표시합니다.", "en": "Object segmentation", "tooltip_en": "Colors in the exact area of each object." },
+
+      /* ----- 개별 인식 (하나만 따로 훈련한 AI) ----- */
+      "가위바위보 인식": { "g": "special", "api": "object/object_custom", "params": {"detect_mode":"rps"}, "tooltip": "가위바위보를 인식합니다.", "en": "Rock-paper-scissors", "tooltip_en": "Recognizes rock, paper and scissors hands." },
+      "불 인식": { "g": "special", "api": "object/object_custom", "params": {"detect_mode":"fire"}, "tooltip": "불, 연기를 인식합니다.", "en": "Fire detection", "tooltip_en": "Detects fire and smoke." },
+      "공 인식": { "g": "special", "api": "object/object_custom", "params": {"detect_mode":"ball"}, "tooltip": "공을 인식합니다.(빨강,노랑,초록)", "en": "Ball detection", "tooltip_en": "Detects balls (red, yellow, green)." },
+      "숫자 인식": { "g": "special", "api": "object/object_custom", "params": {"detect_mode":"number"}, "tooltip": "숫자, 연산자를 인식합니다.", "en": "Number detection", "tooltip_en": "Detects digits and math operators." },
+      "낙상 인식": { "g": "special", "api": "object/object_custom", "params": {"detect_mode":"fall"}, "tooltip": "낙상을 인식합니다.", "en": "Fall detection", "tooltip_en": "Detects a person falling down." },
+      "안전모 인식": { "g": "special", "api": "object/object_custom", "params": {"detect_mode":"helmet"}, "tooltip": "안전모 착용 여부를 인식합니다.", "en": "Helmet detection", "tooltip_en": "Checks whether a safety helmet is worn." },
+      "박스 인식": { "g": "special", "api": "object/object_custom", "params": {"detect_mode":"box"}, "tooltip": "박스를 인식합니다.", "en": "Box detection", "tooltip_en": "Detects boxes." },
+
+      /* ----- 말로 답하는 AI (VLM — 몇 초 걸려요) ----- */
+      "이미지 질문·설명": { "g": "vlm", "api": "vlm/look", "params": {}, "tooltip": "사진에 대해 물어봐요. 프롬프트를 비우면 사진을 설명해 줍니다.", "en": "Ask about the image", "tooltip_en": "Ask about the photo. Leave the prompt empty to get a description." },
+      "이미지 태그": { "g": "vlm", "api": "vlm/tag", "params": {}, "tooltip": "이미지에 대한 태그를 생성합니다.", "en": "Image tags", "tooltip_en": "Creates tags for the image." },
+      "이미지 장소 인식": { "g": "vlm", "api": "vlm/place", "params": {}, "tooltip": "이미지에 대한 장소를 추측합니다.", "en": "Guess the place", "tooltip_en": "Guesses where the photo was taken." },
+      "이미지 시간 인식": { "g": "vlm", "api": "vlm/time", "params": {}, "tooltip": "이미지에 대한 시간대를 추측합니다.", "en": "Guess the time", "tooltip_en": "Guesses the time of day in the photo." },
+      "이미지 날씨 인식": { "g": "vlm", "api": "vlm/weather", "params": {}, "tooltip": "이미지에 대한 날씨를 추측합니다.", "en": "Guess the weather", "tooltip_en": "Guesses the weather in the photo." },
+
+      /* ----- 사진 바꾸기 ----- */
+      "배경 제거": { "g": "image", "api": "gan/portrait", "params": {}, "tooltip": "인물/사물만 남기고 배경을 제거합니다.", "en": "Remove background", "tooltip_en": "Keeps the subject and removes the background." },
+      "화질 개선(4배)": { "g": "image", "api": "gan/sr", "params": {}, "tooltip": "이미지 화질을 4배로 개선합니다.", "en": "Upscale (4x)", "tooltip_en": "Improves the image quality four times." },
+
+      /* ----- 글자 · QR ----- */
+      "글자 인식": { "g": "text", "api": "code/ocr", "params": {}, "tooltip": "이미지에서 문자/숫자를 인식합니다.", "en": "Text recognition", "tooltip_en": "Reads letters and numbers in the image." },
+      "QR코드 인식": { "g": "text", "api": "code/barcode", "params": {}, "tooltip": "이미지에서 바코드를 인식합니다.", "en": "QR code", "tooltip_en": "Reads QR codes in the image." }
     };
 
     const mName = key => {
@@ -1127,7 +1163,7 @@
       document.title = T("titleTag");
       set("txtTitle", T("title"));           set("txtEyebrow", T("eyebrow"));
       set("txtBlocksLink", T("blocksLink")); set("txtTrainLink", T("trainLink"));
-      set("txtCodeLink", T("codeLink"));
+      set("txtCodeLink", T("codeLink")); set("txtTalkLink", T("talkLink"));
       const ol = document.getElementById("optionsLink");
       if (ol) { ol.title = T("optionsTip"); ol.setAttribute("aria-label", T("optionsTip")); }
       set("langButton", T("langBtn"));
@@ -1157,22 +1193,28 @@
     modelSelect.addEventListener('change', function() {
       const selected = this.value;
       let prompt = "-";
-      if (selected === "이미지 질문") {
-        prompt = T("promptQ");
-      } else if (selected === "이미지 설명") {
-        prompt = T("promptVLM");
+      if (selected === "이미지 질문·설명") {
+        prompt = T("promptQ");            // 비우면 서버가 알아서 설명해 준다
       }
       document.getElementById('promptInput').value = prompt;
       guide.value = mTip(selected);
     });
 
-    for (let key in SERVICE_LIST) {
-      const option = document.createElement('option');
-      option.value = key;                 // 내부 키는 한국어 이름 그대로 (API 매핑 유지)
-      option.text = mName(key);
-      modelSelect.appendChild(option);
-    }
-    modelSelect.value = "이미지 설명";
+    /* 묶음(optgroup)으로 나눠 넣는다 — 스물몇 개를 한 줄로 늘어놓으면 못 찾는다 */
+    GROUPS.forEach(([id, ko, en]) => {
+      const keys = Object.keys(SERVICE_LIST).filter(k => SERVICE_LIST[k].g === id);
+      if (!keys.length) return;
+      const group = document.createElement('optgroup');
+      group.label = (LANG === "en" ? en : ko);
+      keys.forEach(key => {
+        const option = document.createElement('option');
+        option.value = key;               // 내부 키는 한국어 이름 그대로 (API 매핑 유지)
+        option.text = mName(key);
+        group.appendChild(option);
+      });
+      modelSelect.appendChild(group);
+    });
+    modelSelect.value = "얼굴 인식";
     guide.value = mTip(modelSelect.value);
     modelSelect.dispatchEvent(new Event('change')); // 프롬프트 기본값 반영
 
@@ -1455,29 +1497,11 @@
     function esc(s) {
       return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
-    const DIRW = {
-      ko: { L:'왼쪽', R:'오른쪽', C:'', T:'위', B:'아래' },
-      en: { L:'left', R:'right', C:'', T:'up', B:'down' },
-    };
-    function dirLabel(d) {
-      if (!d || d.length !== 2) return d || '';
-      if (d === 'CC') return LANG === 'en' ? 'straight ahead' : '정면';
-      const h = DIRW[LANG][d[0]] || '', v = DIRW[LANG][d[1]] || '';
-      const w = (h + ' ' + v).trim();
-      return LANG === 'en' ? w : w + ' 방향';
-    }
-    const WEATHER_W = {
-      ko: { sunny:'맑음 ☀', snow:'눈 ☃', cloudy:'흐림', rainy:'비', unknown:'알 수 없음' },
-      en: { sunny:'sunny ☀', snow:'snowy ☃', cloudy:'cloudy', rainy:'rainy', unknown:'unknown' },
-    };
-    const TIME_W = {
-      ko: { morning:'아침', noon:'낮', afternoon:'낮(오후)', evening:'저녁', night:'밤', daytime:'낮', unknown:'알 수 없음' },
-      en: { morning:'morning', noon:'midday', afternoon:'afternoon', evening:'evening', night:'night', daytime:'daytime', unknown:'unknown' },
-    };
-    const RPS_W = {
-      ko: { rock:'바위', paper:'보', scissors:'가위', scissor:'가위' },
-      en: { rock:'rock', paper:'paper', scissors:'scissors', scissor:'scissors' },
-    };
+    /* 서버가 낱말 하나를 그대로 보내준다. 여기서는 그림글자만 덧붙인다. */
+    const WEATHER_ICON = { '맑음':'☀', 'sunny':'☀', '눈':'☃', 'snowy':'☃',
+                           '비':'☂', 'rainy':'☂', '흐림':'☁', 'cloudy':'☁',
+                           '바람':'🍃', 'windy':'🍃' };
+    const isIndoor = w => (w === '실내' || w === 'indoor');
     function nameCounts(items, key) {
       const m = {};
       (items || []).forEach(it => { const n = it[key]; if (n) m[n] = (m[n] || 0) + 1; });
@@ -1493,109 +1517,78 @@
       const d = res.data;
       if (LANG === 'en') {
         switch (res.type) {
-          case 'caption_place_e': {
-            const env = d.environment === '실내' ? 'indoors' : d.environment === '실외' ? 'outdoors'
-                      : d.environment === 'indoor' ? 'indoors' : d.environment === 'outdoor' ? 'outdoors' : esc(d.environment);
-            return `This looks like <b>${env}</b> — probably a <b>${esc(d.category)}</b>.`;
-          }
-          case 'caption_time_e': {
-            const t = TIME_W.en[d.time] || esc(d.time);
-            return d.time === 'unknown'
-              ? `Can't tell the time of day. <span class="sub">(no outdoor view in the photo)</span>`
-              : `The photo was probably taken in the <b>${t}</b>.`;
-          }
-          case 'caption_weather_e': {
-            const w = WEATHER_W.en[d.weather] || esc(d.weather);
-            return d.weather === 'unknown'
+          case 'place':
+            return `This looks like a <b>${esc(d.place)}</b>.`;
+          case 'time':
+            return `The photo was probably taken in the <b>${esc(d.time)}</b>.`;
+          case 'weather':
+            return isIndoor(d.weather)
               ? `Can't tell the weather. <span class="sub">(no outdoor view in the photo)</span>`
-              : `The weather in the photo looks <b>${w}</b>.`;
-          }
-          case 'caption_question_e':
-            return `Answer: <b>${esc(d.answer)}</b>${d.answer_en && d.answer_en !== d.answer ? `<div class="sub">${esc(d.answer_en)}</div>` : ''}`;
-          case 'caption_tag_e': {
+              : `The weather in the photo looks <b>${esc(d.weather)}</b> ${WEATHER_ICON[d.weather] || ''}`;
+          case 'look':
+            return `Answer: <b>${esc(d.answer)}</b>`;
+          case 'tag': {
             const tags = Array.isArray(d.tag) ? d.tag.join(', ') : d.tag;
             return `Tags found: <b>${esc(tags)}</b>`;
           }
-          case 'vlm_inference_e':
-            return `<b>${esc(d.answer)}</b>`;
           case 'custom': {
             if (!d || !d.length) return `Nothing to answer.`;
             const t0 = d[0];
             return `My AI says this is <b>${esc(t0.name)}</b>. <span class="sub">(confidence ${Math.round(t0.score*100)}%)</span>`;
           }
-          case 'face_detect_e':
+          case 'face_detect':
             return d.length ? `Found <b>${d.length}</b> face${d.length > 1 ? 's' : ''}!` : `No faces found.`;
-          case 'face_analyze_e':
+          case 'face_analyze':
             if (!d.length) return `No faces found.`;
             return d.map((f, i) =>
-              `${d.length > 1 ? 'Face ' + (i+1) + ': ' : 'Face: '}<b>${esc(f.gender_en || f.gender)}</b> · about <b>${esc(f.age)}</b> · <b>${esc(f.emotion_en || f.emotion)}</b> · looking ${dirLabel(f.pos && f.pos.direction)}`
+              `${d.length > 1 ? 'Face ' + (i+1) + ': ' : 'Face: '}<b>${esc(f.gender)}</b> · about <b>${esc(f.age)}</b> · <b>${esc(f.emotion)}</b> · looking ${esc((f.pos && f.pos.direction) || '')}`
             ).join('<br>');
-          case 'face_emotion_e':
+          case 'face_emotion':
             if (!d.length) return `No faces found.`;
             return d.map((f, i) =>
-              `${d.length > 1 ? 'Face ' + (i+1) : 'The face'} looks <b>${esc(f.emotion_en || f.emotion)}</b>.`
+              `${d.length > 1 ? 'Face ' + (i+1) : 'The face'} looks <b>${esc(f.emotion)}</b>.`
             ).join('<br>');
-          case 'face_age_gender_e':
+          case 'face_age_gender':
             if (!d.length) return `No faces found.`;
             return d.map((f, i) =>
-              `${d.length > 1 ? 'Face ' + (i+1) + ': ' : 'Face: '}<b>${esc(f.gender_en || f.gender)}</b> · about <b>${esc(f.age)}</b>`
+              `${d.length > 1 ? 'Face ' + (i+1) + ': ' : 'Face: '}<b>${esc(f.gender)}</b> · about <b>${esc(f.age)}</b>`
             ).join('<br>');
-          case 'face_pose_e':
+          case 'mesh':
             if (!d.length) return `No faces found.`;
             return d.map((f, i) =>
-              `${d.length > 1 ? 'Face ' + (i+1) : 'The face'} is looking <b>${dirLabel((f.pos || f.pose || {}).direction)}</b>.`
+              `${d.length > 1 ? 'Face ' + (i+1) : 'The face'} is about <b>${esc(f.distance)}cm</b> away, looking <b>${esc(f.direction || '')}</b>.`
             ).join('<br>');
-          case 'mesh_e':
-            if (!d.length) return `No faces found.`;
-            return d.map((f, i) =>
-              `${d.length > 1 ? 'Face ' + (i+1) : 'The face'} is about <b>${esc(f.distance)}cm</b> away, looking <b>${dirLabel(f.direction)}</b>.`
-            ).join('<br>');
-          case 'hand_e':
+          case 'hand':
             if (!d.length) return `No hands found.`;
-            return d.map(hd => `Hand gesture: <b>${esc(hd.gesture_en || hd.gesture)}</b> <span class="sub">(${esc(hd.score)}%)</span>`).join('<br>');
-          case 'face_attribute': {
-            if (!d.length) return `No faces found.`;
-            const ATTR_EN = { Eyeglasses:'glasses', Mustache:'a mustache', Beard:'a beard', Hat:'a hat' };
-            return d.map((f, i) => {
-              const found = Object.keys(ATTR_EN).filter(k => f[k] > 55).map(k => ATTR_EN[k]);
-              const head = d.length > 1 ? 'Face ' + (i+1) : 'The face';
-              return found.length
-                ? `${head} has <b>${found.join(', ')}</b>.`
-                : `${head} has no special features.`;
-            }).join('<br>');
-          }
+            return d.map(hd => `Hand gesture: <b>${esc(hd.gesture)}</b> <span class="sub">(${esc(hd.score)}%)</span>`).join('<br>');
           case 'mask_detect': {
             if (!d.length) return `No faces found.`;
             const on = d.filter(f => f.mask === 1).length;
             return `<b>${on}</b> of <b>${d.length}</b> face${d.length > 1 ? 's are' : ' is'} wearing a mask.`;
           }
-          case 'object_search_e': {
-            const people = d.person || [];
-            const objs = d.object_en || d.object || [];
+          case 'object_search': {
+            const all = d.object || [];
+            const people = all.filter(o => o.name_en === 'person');
+            const objs = all.filter(o => o.name_en !== 'person');
             const parts = [];
             if (people.length) parts.push(`<b>${people.length}</b> ${people.length > 1 ? 'people' : 'person'}`);
             if (objs.length) parts.push(`objects: <b>${nameCounts(objs, 'name')}</b>`);
             return parts.length ? `Found ${parts.join(' / ')}!` : `No objects found.`;
           }
-          case 'object_custom_e': {
+          case 'object_custom': {
             const objs = (d && d.object) || [];
             if (!objs.length) return `Nothing found.`;
             const mode = res.detect_mode;
             if (mode === 'rps') {
-              const names = objs.map(o => `<b>${RPS_W.en[o.name] || esc(o.name)}</b>`).join(', ');
+              const names = objs.map(o => `<b>${esc(o.name)}</b>`).join(', ');
               return `You played ${names}!`;
             }
             return `Found <b>${nameCounts(objs, 'name')}</b>!`;
           }
-          case 'object_pose_e':
+          case 'object_pose':
             return d.length
               ? `Found the pose of <b>${d.length}</b> ${d.length > 1 ? 'people' : 'person'} (17 key points). Check the dots and lines above!`
               : `No people found.`;
-          case 'object_cls_e': {
-            if (!d.length) return `Could not classify it.`;
-            const top = d[0];
-            return `This image looks like <b>${esc(top.name)}</b>. <span class="sub">(confidence ${esc(top.score)}%)</span>`;
-          }
           case 'ocr': {
             if (!d.length) return `No text found.`;
             return `Text read: <b>${d.map(t => esc(t.text)).join(' ')}</b>`;
@@ -1606,114 +1599,88 @@
           }
           case 'cartoon': case 'webtoon': case 'portrait': case 'sketch': case 'sr':
             return `Changed the image into a new style! Check the picture above.`;
-          case 'object_seg_e':
-            return `Colored in each object's area. Check the picture above.`;
+          case 'object_seg':
+            {
+            const objs = (d && d.object) || [];
+            return objs.length
+              ? `Colored in the area of <b>${nameCounts(objs, 'name')}</b>. Check the picture above.`
+              : `Nothing found to color in.`;
+            }
           default:
             return `Got a result. Open the details below for more.`;
         }
       }
       switch (res.type) {
         /* --- 텍스트 계열 --- */
-        case 'caption_place_e': {
-          const env = d.environment === 'indoor' ? '실내' : d.environment === 'outdoor' ? '실외' : esc(d.environment);
-          return `이곳은 <b>${env}</b>이고, <b>${esc(d.category)}</b>(으)로 보여요.`;
-        }
-        case 'caption_time_e': {
-          const t = TIME_W.ko[d.time] || esc(d.time);
-          return d.time === 'unknown'
-            ? `시간대를 알 수 없어요. <span class="sub">(바깥 풍경이 보이지 않아요)</span>`
-            : `사진을 찍은 시간대는 <b>${t}</b>인 것 같아요.`;
-        }
-        case 'caption_weather_e': {
-          const w = WEATHER_W.ko[d.weather] || esc(d.weather);
-          return d.weather === 'unknown'
+        case 'place':
+          return `사진 속 장소는 <b>${esc(d.place)}</b>(으)로 보여요.`;
+        case 'time':
+          return `사진을 찍은 시간대는 <b>${esc(d.time)}</b>인 것 같아요.`;
+        case 'weather':
+          return isIndoor(d.weather)
             ? `날씨를 알 수 없어요. <span class="sub">(바깥 풍경이 보이지 않아요)</span>`
-            : `사진 속 날씨는 <b>${w}</b>이에요.`;
-        }
-        case 'caption_question_e':
-          return `질문에 대한 답: <b>${esc(d.answer)}</b>${d.answer_en && d.answer_en !== d.answer ? `<div class="sub">${esc(d.answer_en)}</div>` : ''}`;
-        case 'caption_tag_e': {
+            : `사진 속 날씨는 <b>${esc(d.weather)}</b>이에요. ${WEATHER_ICON[d.weather] || ''}`;
+        case 'look':
+          return `질문에 대한 답: <b>${esc(d.answer)}</b>`;
+        case 'tag': {
           const tags = Array.isArray(d.tag) ? d.tag.join(', ') : d.tag;
           return `사진에서 찾은 태그: <b>${esc(tags)}</b>`;
         }
-        case 'vlm_inference_e':
-          return `<b>${esc(d.answer)}</b>`;
 
         /* --- 검출 계열 --- */
-        case 'face_detect_e':
+        case 'face_detect':
           return d.length ? `얼굴을 <b>${d.length}개</b> 찾았어요!` : `얼굴을 찾지 못했어요.`;
-        case 'face_analyze_e':
+        case 'face_analyze':
           if (!d.length) return `얼굴을 찾지 못했어요.`;
           return d.map((f, i) =>
-            `${d.length > 1 ? (i+1) + '번 ' : ''}얼굴: <b>${esc(f.gender)}</b> · 약 <b>${esc(f.age)}살</b> · <b>${esc(f.emotion)}</b> 표정 · ${dirLabel(f.pos && f.pos.direction)}`
+            `${d.length > 1 ? (i+1) + '번 ' : ''}얼굴: <b>${esc(f.gender)}</b> · 약 <b>${esc(f.age)}살</b> · <b>${esc(f.emotion)}</b> 표정 · ${esc((f.pos && f.pos.direction) || '')}`
           ).join('<br>');
-        case 'face_emotion_e':
+        case 'face_emotion':
           if (!d.length) return `얼굴을 찾지 못했어요.`;
           return d.map((f, i) =>
             `${d.length > 1 ? (i+1) + '번 ' : ''}얼굴의 표정은 <b>${esc(f.emotion)}</b>이에요.`
           ).join('<br>');
-        case 'face_age_gender_e':
+        case 'face_age_gender':
           if (!d.length) return `얼굴을 찾지 못했어요.`;
           return d.map((f, i) =>
             `${d.length > 1 ? (i+1) + '번 ' : ''}얼굴: <b>${esc(f.gender)}</b> · 약 <b>${esc(f.age)}살</b>`
           ).join('<br>');
-        case 'face_pose_e':
+        case 'mesh':
           if (!d.length) return `얼굴을 찾지 못했어요.`;
           return d.map((f, i) =>
-            `${d.length > 1 ? (i+1) + '번 ' : ''}얼굴은 <b>${dirLabel((f.pos || f.pose || {}).direction)}</b>을 보고 있어요.`
+            `${d.length > 1 ? (i+1) + '번 ' : ''}얼굴은 카메라에서 약 <b>${esc(f.distance)}cm</b>, <b>${esc(f.direction || '')}</b>을 보고 있어요.`
           ).join('<br>');
-        case 'mesh_e':
-          if (!d.length) return `얼굴을 찾지 못했어요.`;
-          return d.map((f, i) =>
-            `${d.length > 1 ? (i+1) + '번 ' : ''}얼굴은 카메라에서 약 <b>${esc(f.distance)}cm</b>, <b>${dirLabel(f.direction)}</b>을 보고 있어요.`
-          ).join('<br>');
-        case 'hand_e':
+        case 'hand':
           if (!d.length) return `손을 찾지 못했어요.`;
           return d.map(hd => `손 모양: <b>${esc(hd.gesture)}</b> <span class="sub">(확신 ${esc(hd.score)}%)</span>`).join('<br>');
-        case 'face_attribute': {
-          if (!d.length) return `얼굴을 찾지 못했어요.`;
-          const ATTR_KO = { Eyeglasses:'안경', Mustache:'콧수염', Beard:'턱수염', Hat:'모자' };
-          return d.map((f, i) => {
-            const found = Object.keys(ATTR_KO).filter(k => f[k] > 55).map(k => ATTR_KO[k]);
-            const head = d.length > 1 ? (i+1) + '번 얼굴' : '얼굴';
-            return found.length
-              ? `${head}에서 <b>${found.join(', ')}</b>을(를) 찾았어요.`
-              : `${head}에서 특별한 특징을 찾지 못했어요.`;
-          }).join('<br>');
-        }
         case 'mask_detect': {
           if (!d.length) return `얼굴을 찾지 못했어요.`;
           const on = d.filter(f => f.mask === 1).length;
           return `얼굴 <b>${d.length}개</b> 중 <b>${on}개</b>가 마스크를 쓰고 있어요.`;
         }
-        case 'object_search_e': {
-          const people = d.person || [];
-          const objs = d.object || [];
+        case 'object_search': {
+          const all = d.object || [];
+          const people = all.filter(o => o.name_en === 'person');
+          const objs = all.filter(o => o.name_en !== 'person');
           const parts = [];
           if (people.length) parts.push(`사람 <b>${people.length}명</b>`);
           if (objs.length) parts.push(`사물: <b>${nameCounts(objs, 'name')}</b>`);
           return parts.length ? `사진에서 ${parts.join(' / ')}을(를) 찾았어요!` : `사물을 찾지 못했어요.`;
         }
-        case 'object_custom_e': {
+        case 'object_custom': {
           const objs = (d && d.object) || [];
           if (!objs.length) return `찾지 못했어요.`;
           const mode = res.detect_mode;
           if (mode === 'rps') {
-            const names = objs.map(o => `<b>${RPS_W.ko[o.name] || esc(o.name)}</b>`).join(', ');
+            const names = objs.map(o => `<b>${esc(o.name)}</b>`).join(', ');
             return `${names}을(를) 냈어요!`;
           }
           return `<b>${nameCounts(objs, 'name')}</b>을(를) 찾았어요!`;
         }
-        case 'object_pose_e':
+        case 'object_pose':
           return d.length
             ? `사람 <b>${d.length}명</b>의 몸 자세(주요 포인트 17개)를 찾았어요. 결과 이미지의 점과 선을 살펴보세요!`
             : `사람을 찾지 못했어요.`;
-        case 'object_cls_e': {
-          if (!d.length) return `분류하지 못했어요.`;
-          const top = d[0];
-          const ko = top['ko_name'] || top['ko_name:'] || top.name;
-          return `이 이미지는 <b>${esc(ko)}</b>인 것 같아요. <span class="sub">(확신 ${esc(top.score)}%)</span>`;
-        }
         case 'custom': {
           if (!d || !d.length) return `대답할 게 없어요.`;
           const t0 = d[0];
@@ -1731,8 +1698,13 @@
         /* --- 이미지 변환 계열 --- */
         case 'cartoon': case 'webtoon': case 'portrait': case 'sketch': case 'sr':
           return `이미지를 새로운 스타일로 바꿨어요! 위 그림을 확인해 보세요.`;
-        case 'object_seg_e':
-          return `사물의 영역을 색으로 칠해 표시했어요. 위 그림을 확인해 보세요.`;
+        case 'object_seg':
+          {
+          const objs = (d && d.object) || [];
+          return objs.length
+            ? `<b>${nameCounts(objs, 'name')}</b>의 영역을 색으로 칠했어요. 위 그림을 확인해 보세요.`
+            : `칠할 사물을 찾지 못했어요.`;
+          }
 
         default:
           return `결과가 나왔어요. 자세한 내용은 아래 상세보기를 펼쳐 보세요.`;
@@ -1762,16 +1734,25 @@
 
       if (
         res.type &&
-        ["cartoon","webtoon","portrait","sketch","sr","object_seg_e"]
+        ["cartoon","webtoon","portrait","sketch","sr","object_seg"]
           .includes(res.type)
       ) {
-        const base64Image = "data:image/jpeg;base64," + res.data;
+        /* 분할은 색칠한 그림 + 찾은 것 목록으로 온다.
+           이름·박스는 여기서 그린다 — 서버 그림에 새기면 영문이라 화면 언어와 어긋난다. */
+        const b64 = (res.data && res.data.image) ? res.data.image : res.data;
+        const segItems = (res.data && res.data.object) || [];
+        const base64Image = "data:image/jpeg;base64," + b64;
         const genImg = new Image();
         genImg.onload = function() {
           resultCanvas.width = genImg.width;
           resultCanvas.height = genImg.height;
           ctx.clearRect(0, 0, genImg.width, genImg.height);
           ctx.drawImage(genImg, 0, 0);
+          segItems.forEach(item => {
+            const [x1, y1, x2, y2] = item.box;
+            drawRect(ctx, x1, y1, x2, y2, "rgb(43, 75, 216)",
+                     `${item.name} (${item.score}%)`, 1, 1);
+          });
         };
         genImg.src = base64Image;
         return;
@@ -1786,16 +1767,16 @@
         const scaleX = resultCanvas.width / srcWidth;
         const scaleY = resultCanvas.height / srcHeight;
 
-        if (res.type === "mesh_e") {
+        if (res.type === "mesh") {
           res.data.forEach((item) => {
             const [x1, y1, x2, y2] = item.box;
             drawRect(ctx, x1, y1, x2, y2, "rgb(43, 75, 216)", `${item.distance}cm ${item.direction}`, scaleX, scaleY);
           });
         }
-        else if (res.type === "hand_e") {
+        else if (res.type === "hand") {
           res.data.forEach((item) => {
             const [x1, y1, x2, y2] = item.box;
-            const gname = (LANG === 'en' ? (item.gesture_en || item.gesture) : item.gesture);
+            const gname = item.gesture;
             drawRect(ctx, x1, y1, x2, y2, "rgb(217, 65, 65)", `${gname} (${item.score}%)`, scaleX, scaleY);
             (item.points || []).forEach(p => drawEllipse(ctx, p[0], p[1], 3, "rgb(43, 75, 216)", scaleX, scaleY));
           });
@@ -1804,44 +1785,30 @@
           res.data.forEach((item, idx) => {
             const [x1, y1, x2, y2] = item.box;
             const color = item.mask === 1 ? "rgb(43, 75, 216)" : "rgb(217, 65, 65)";
-            const label = item.mask === 1 ? "Mask" : "No Mask";
+            const label = item.name || (item.mask === 1 ? "Mask" : "No Mask");
             drawRect(ctx, x1, y1, x2, y2, color, label, scaleX, scaleY);
           });
         }
         else if ([
-          "face_attribute","face_detect_e","face_analyze_e",
-          "face_emotion_e","face_age_gender_e","face_pose_e"
+          "face_detect","face_analyze",
+          "face_emotion","face_age_gender"
         ].includes(res.type)) {
           res.data.forEach((item, idx) => {
             const [x1, y1, x2, y2] = item.box;
-            let label = 'face';
+            let label = item.name || 'face';
 
-            if (res.type === "face_attribute") {
-                let attributes = [];
-                if (item.Eyeglasses > 55) attributes.push('Eyeglasses');
-                if (item.Mustache > 55) attributes.push('Mustache');
-                if (item.Beard > 55) attributes.push('Beard');
-                if (item.Hat > 55) attributes.push('Hat');
-
-                if (attributes.length > 0) {
-                    label = attributes.join(', ');
-                }
-            } else if (res.type === "face_analyze_e") {
-                label = `${item.gender_en}, ${item.age}, ${item.emotion_en}`;
-            } else if (res.type === "face_age_gender_e") {
-                label = `${item.gender_en}, ${item.age}`;
-            } else if (res.type === "face_emotion_e") {
-                label = item.emotion_en;
-            } else if (res.type === "face_pose_e") {
-                if (item.pos && item.pos.direction) {
-                    label = item.pos.direction;
-                }
+            if (res.type === "face_analyze") {
+                label = `${item.gender}, ${item.age}, ${item.emotion}`;
+            } else if (res.type === "face_age_gender") {
+                label = `${item.gender}, ${item.age}`;
+            } else if (res.type === "face_emotion") {
+                label = item.emotion;
             }
 
             drawRect(ctx, x1, y1, x2, y2, "rgb(43, 75, 216)", label, scaleX, scaleY);
           });
         }
-        else if (res.type === "object_custom_e") {
+        else if (res.type === "object_custom") {
           if (res.data.object) {
             res.data.object.forEach((item, idx) => {
               const [x1, y1, x2, y2] = item.box;
@@ -1850,26 +1817,14 @@
             });
           }
         }
-        else if (res.type === "object_search_e") {
-          const personData = res.data.person_en || res.data.person;
-          const objectData = res.data.object_en || res.data.object;
-
-          if (personData) {
-            personData.forEach((item, idx) => {
-              const [x1, y1, x2, y2] = item.box;
-              const label = `${item.name} (${item.score}%)`;
-              drawRect(ctx, x1, y1, x2, y2, "rgb(43, 75, 216)", label, scaleX, scaleY);
-            });
-          }
-          if (objectData) {
-            objectData.forEach((item, idx) => {
-              const [x1, y1, x2, y2] = item.box;
-              const label = `${item.name} (${item.score}%)`;
-              drawRect(ctx, x1, y1, x2, y2, "rgb(217, 65, 65)", label, scaleX, scaleY);
-            });
-          }
+        else if (res.type === "object_search") {
+          (res.data.object || []).forEach((item) => {
+            const [x1, y1, x2, y2] = item.box;
+            const color = item.name_en === "person" ? "rgb(43, 75, 216)" : "rgb(217, 65, 65)";
+            drawRect(ctx, x1, y1, x2, y2, color, `${item.name} (${item.score}%)`, scaleX, scaleY);
+          });
         }
-        else if (res.type === "object_pose_e") {
+        else if (res.type === "object_pose") {
           res.data.forEach((item, idx) => {
             const [x1, y1, x2, y2] = item.box;
             ctx.strokeStyle = "rgb(43, 75, 216)";
@@ -2083,7 +2038,7 @@
 
     /* ----- 라이브 모드 (웹캠 연속 인식) — 빠른 모델만 ----- */
     const LIVE_OK = new Set([
-      "얼굴 인식","얼굴 분석","얼굴 감정 분석","얼굴 나이/성별 분석","얼굴 방향 인식","마스크 인식",
+      "얼굴 인식","얼굴 분석","얼굴 감정 분석","얼굴 나이/성별 분석","마스크 인식",
       "사물 인식","사람 포즈 인식","가위바위보 인식","불 인식","공 인식","숫자 인식",
       "낙상 인식","안전모 인식","박스 인식","QR코드 인식","얼굴 거리·방향","손동작 인식"
     ]);

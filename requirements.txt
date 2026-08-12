@@ -9,8 +9,9 @@
 # (2026.3 으로 올라갔을 때 VLM 이 JSON 지시를 무시한 전례가 있다)
 
 # --- 추론 런타임 (버전에 민감, 반드시 고정) ---
-openvino==2026.2.*
-openvino-genai==2026.2.*
+openvino==2026.3.*
+openvino-genai==2026.3.*
+openvino-tokenizers==2026.3.*   # 자료 찾기(RAG) 토크나이저 IR 을 여는 확장
 onnxruntime==1.23.*
 
 # --- 모델 ---

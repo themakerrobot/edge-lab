@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
 # vapi-od : VLM prompt templates + output parsers
-# 모든 caption/* 계열과 face_attribute, object_cls_e 를 VLM 하나로 처리한다.
+# 장소·시간·날씨·태그·질문(사진)과 사진 없는 대화를 VLM 하나로 처리한다.
 #
 # lang 파라미터 (기본 "ko")
-#   - 응답 스키마는 그대로 유지한다. lang="en" 이면 주 필드(caption/answer/tag/category)에
-#     영어가 들어간다. 기존 클라이언트는 lang 을 보내지 않으므로 동작이 바뀌지 않는다.
-#   - time/weather/attr 은 원래 언어 중립(영문 코드값)이라 프롬프트만 영어로 바꾼다.
+#   - 답은 요청한 언어 하나만 만든다. 한/영을 함께 만들던 예전 방식은 없앴다
+#     (출력 토큰이 두 배라 느리고, 화면에도 같은 말이 두 번 나왔다).
+#   - 장소/시간/날씨는 정해진 낱말 중에서만 고르게 한다 — 아이가 사진만 보고
+#     맞았는지 틀렸는지 스스로 판단할 수 있어야 수업이 된다.
 import json, re
 
 MAX_TOKENS = {
-    "caption": 64, "place": 32, "time": 12, "weather": 12,
-    "question": 80, "tag": 56, "attr": 48, "cls": 64, "free": 128,
+    "place": 12, "time": 8, "weather": 8,
+    "question": 80, "tag": 56, "free": 128, "chat": 256,
 }
 
 LANGS = ("ko", "en")
@@ -21,39 +22,97 @@ def _lang(lang):
     return lang if lang in LANGS else "ko"
 
 
-# ---------------------------------------------------------------- 프롬프트
-_CAPTION = {
-    "ko": ("이 사진을 한국어 한 문장으로 설명하세요. 한국어로만 쓰고, "
-           "발음 표기나 영어 번역은 넣지 마세요.\n"
-           '반드시 이 JSON 으로만 답하세요. {"caption": "<한 문장>"}'),
-    "en": ("Describe this photo in one English sentence.\n"
-           'Answer only in this JSON. {"caption": "<one sentence>"}'),
-}
+def lang_of(text, fallback="ko"):
+    """질문에 쓰인 언어를 알아낸다 — 한글이 하나라도 있으면 한국어, 로마자만
+    있으면 영어. 글자가 없으면(질문이 비었으면) 화면 언어를 그대로 쓴다."""
+    t = str(text or "")
+    if re.search(r"[가-힣]", t):
+        return "ko"
+    if re.search(r"[A-Za-z]", t):
+        return "en"
+    return _lang(fallback)
 
+
+# ---------------------------------------------------------------- 선택지
+# (한국어, 영어, 별칭...) — 별칭은 모델이 다른 말로 답했을 때 끌어오기 위한 것
+PLACE = [
+    ("교실", "classroom", "school", "lecture room"),
+    ("도서관", "library", "book"),
+    ("식당", "restaurant", "cafeteria", "dining", "cafe", "diner"),
+    ("부엌", "kitchen", "주방"),
+    ("거실", "living-room", "living room", "livingroom", "lounge"),
+    ("침실", "bedroom", "방", "room"),
+    ("사무실", "office", "연구실", "실험실", "laboratory", "lab", "desk", "study"),
+    ("운동장", "playground", "gym", "체육관", "sports field", "stadium", "court"),
+    ("공원", "park", "garden", "정원"),
+    ("길거리", "street", "road", "sidewalk", "거리", "도로"),
+    ("가게", "shop", "store", "market", "상점", "마트"),
+    ("자연", "nature", "mountain", "beach", "sea", "forest", "field", "산", "바다", "숲"),
+    ("기타", "other", "unknown"),
+]
+
+TIME = [
+    ("아침", "morning", "dawn", "새벽"),
+    ("낮", "afternoon", "daytime", "noon", "day", "오후"),
+    ("저녁", "evening", "sunset", "dusk"),
+    ("밤", "night", "midnight", "새벽녘"),
+]
+
+WEATHER = [
+    ("맑음", "sunny", "clear", "맑은", "화창"),
+    ("흐림", "cloudy", "overcast", "흐린", "구름"),
+    ("비", "rainy", "rain", "비오는"),
+    ("눈", "snowy", "snow", "눈오는"),
+    ("바람", "windy", "wind", "바람부는"),
+    ("실내", "indoor", "indoors", "inside", "안"),
+]
+
+
+def choices(table, lang):
+    """프롬프트에 넣을 낱말 목록 (기타/unknown 은 빼고 보여준다).
+    모델에게는 하이픈을 뺀 자연스러운 낱말로 보여 준다."""
+    i = 0 if _lang(lang) == "ko" else 1
+    return [row[i].replace("-", " ") for row in table if row[0] != "기타"]
+
+
+def _pick(text, table, lang, key, fallback_index=-1):
+    """모델 출력에서 표의 한 줄을 찾아 {key: 요청 언어, key_en: 영어} 로 돌려준다.
+
+    영어 값은 표에서 꺼내는 것이라 공짜다. 화면 언어를 바꿔도 안 변하므로
+    블록·파이썬에서 값을 비교할 때는 _en 쪽을 쓴다."""
+    i = 0 if _lang(lang) == "ko" else 1
+    t = (text or "").strip().lower()
+    row = table[fallback_index]
+    if t:
+        # 긴 낱말부터 확인 — '맑음'이 '맑'보다, 'living room'이 'room'보다 먼저
+        cand = []
+        for r in table:
+            for word in r:
+                cand.append((len(word), word.lower(), r))
+        for _, word, r in sorted(cand, key=lambda x: -x[0]):
+            if word in t:
+                row = r
+                break
+    return {key: row[i], key + "_en": row[1]}
+
+
+# ---------------------------------------------------------------- 프롬프트
 _PLACE = {
-    "ko": ("이 사진의 장소를 판단하세요. environment는 '실내' 또는 '실외' 중 하나, "
-           "category는 장소 종류(예: 교실, 공원, 주방)를 한국어 한 단어로. "
-           '반드시 JSON으로만 답하세요. {"environment": "...", "category": "..."}'),
-    "en": ("Decide where this photo was taken. environment must be either 'indoor' or 'outdoor'. "
-           "category is the kind of place in one English word (e.g. classroom, park, kitchen). "
-           'Answer only in JSON. {"environment": "...", "category": "..."}'),
+    "ko": "이 사진 속 장소를 다음 중 하나의 낱말로만 답하세요: {c}",
+    "en": "Answer with exactly one of these words for the place in this photo: {c}",
 }
 
 _TIME = {
-    "ko": ("이 사진이 찍힌 시간대를 다음 중 하나의 단어로만 답하세요: "
-           "morning, afternoon, evening, night, unknown"),
-    "en": ("Answer with exactly one of these words for the time of day in this photo: "
-           "morning, afternoon, evening, night, unknown"),
+    "ko": "이 사진을 찍은 시간대를 다음 중 하나의 낱말로만 답하세요: {c}",
+    "en": "Answer with exactly one of these words for the time of day in this photo: {c}",
 }
-TIME_CHOICES = ["morning", "afternoon", "evening", "night", "unknown"]
 
 _WEATHER = {
-    "ko": ("이 사진의 날씨를 다음 중 하나의 단어로만 답하세요: "
-           "sunny, cloudy, rainy, snow, unknown"),
-    "en": ("Answer with exactly one of these words for the weather in this photo: "
-           "sunny, cloudy, rainy, snow, unknown"),
+    "ko": ("이 사진의 날씨를 다음 중 하나의 낱말로만 답하세요: {c}\n"
+           "바깥이 보이지 않으면 '실내'라고 답하세요."),
+    "en": ("Answer with exactly one of these words for the weather in this photo: {c}\n"
+           "If the outdoors is not visible, answer 'indoor'."),
 }
-WEATHER_CHOICES = ["sunny", "cloudy", "rainy", "snow", "unknown"]
 
 _QUESTION = {
     "ko": ("사진을 보고 질문에 한국어로 짧게 답하세요. 한국어로만 쓰고, "
@@ -73,23 +132,35 @@ _TAG = {
            'Answer only in this JSON. {"tag": "word, word, word"}'),
 }
 
-_ATTR = {
-    "ko": ("이 얼굴 사진에서 각 항목의 여부를 0~100 정수 확신도로 답하세요. "
-           "반드시 JSON으로만 답하세요.\n"
-           '{"Eyeglasses": 0, "Mustache": 0, "Beard": 0, "Hat": 0}'),
-    "en": ("For this face photo, give a 0-100 integer confidence for each item. "
-           "Answer only in JSON.\n"
-           '{"Eyeglasses": 0, "Mustache": 0, "Beard": 0, "Hat": 0}'),
+_CHAT = {
+    "ko": ("아이에게 이야기하듯 한국어로 쉽고 짧게 답하세요. 세 문장을 넘기지 마세요.\n"
+           "질문: {q}"),
+    "en": ("Answer in easy, short English as if talking to a child. "
+           "Keep it under three sentences.\n"
+           "Question: {q}"),
 }
-ATTR_KEYS = ["Eyeglasses", "Mustache", "Beard", "Hat"]
 
-_CLS = {
-    "ko": ("이 이미지의 주제를 나타내는 낱말 3개를 확신도 순으로 답하세요. "
-           "이름은 한국어 한 낱말로, 설명은 넣지 마세요.\n"
-           '반드시 이 JSON 배열로만 답하세요. [{"name": "낱말", "score": 90}, ...]'),
-    "en": ("Give 3 words describing this image, most confident first. "
-           "One English word each, no explanation.\n"
-           'Answer only as this JSON array. [{"name": "word", "score": 90}, ...]'),
+# 작은 모델은 "없으면 X 라고 답하세요" 같은 조건 문구를 답 뒤에 그대로 붙이는 버릇이
+# 있다(답을 해 놓고 "자료에서 찾지 못했어요"까지 이어 씀). 그래서 두 경우를 문장으로
+# 갈라 말하고, 그래도 붙여 오면 db_routes 가 걷어낸다.
+NOT_FOUND = {"ko": "자료에서 찾지 못했어요", "en": "I could not find it in the material"}
+
+# 지시 순서가 중요하다 — "없으면 X라고 쓰세요" 를 마지막 지시로 두면 작은 모델이
+# 자료에 답이 있어도 그쪽으로 쏠린다(실기에서 규칙 질문에 "찾지 못했어요"로 답함).
+# 그래서 자료·질문을 먼저 주고, "자료 내용으로 답하라" 를 마지막에 둔다.
+_RAG = {
+    "ko": ("아래 자료에서 질문의 답을 찾아 아이에게 이야기하듯 한국어로 쉽고 짧게 "
+           "답하세요. 세 문장을 넘기지 마세요.\n"
+           "--- 자료 ---\n{c}\n--- 끝 ---\n"
+           "질문: {q}\n"
+           "자료에 관련 내용이 있으면 그 내용으로 답하세요. "
+           "정말 없을 때만 \"자료에서 찾지 못했어요\" 라고 하세요.\n답:"),
+    "en": ("Find the answer in the material below and answer in easy, short English. "
+           "Keep it under three sentences.\n"
+           "--- material ---\n{c}\n--- end ---\n"
+           "Question: {q}\n"
+           "If the material has related content, answer from it. "
+           "Only when it truly does not, say \"I could not find it in the material\".\nAnswer:"),
 }
 
 _FREE = {
@@ -97,31 +168,17 @@ _FREE = {
     "en": "Describe this image.",
 }
 
-# 기존 코드 호환용 상수 (한국어 기본값)
-P_CAPTION = _CAPTION["ko"]
-P_PLACE = _PLACE["ko"]
-P_TIME = _TIME["ko"]
-P_WEATHER = _WEATHER["ko"]
-P_QUESTION = _QUESTION["ko"]
-P_TAG = _TAG["ko"]
-P_ATTR = _ATTR["ko"]
-P_CLS = _CLS["ko"]
-
-
-def p_caption(lang="ko"):
-    return _CAPTION[_lang(lang)]
-
 
 def p_place(lang="ko"):
-    return _PLACE[_lang(lang)]
+    return _PLACE[_lang(lang)].replace("{c}", ", ".join(choices(PLACE, lang)))
 
 
 def p_time(lang="ko"):
-    return _TIME[_lang(lang)]
+    return _TIME[_lang(lang)].replace("{c}", ", ".join(choices(TIME, lang)))
 
 
 def p_weather(lang="ko"):
-    return _WEATHER[_lang(lang)]
+    return _WEATHER[_lang(lang)].replace("{c}", ", ".join(choices(WEATHER, lang)))
 
 
 def p_question(q, lang="ko"):
@@ -132,12 +189,30 @@ def p_tag(lang="ko"):
     return _TAG[_lang(lang)]
 
 
-def p_attr(lang="ko"):
-    return _ATTR[_lang(lang)]
+# 점수가 높은데도 모델이 "찾지 못했어요"라고 우길 때 쓰는 재시도 프롬프트 —
+# 빠져나갈 문구를 아예 주지 않아 자료 내용으로 답할 수밖에 없게 한다.
+_RAG_FORCE = {
+    "ko": ("아래 자료의 내용을 바탕으로 질문에 답하세요. "
+           "아이에게 이야기하듯 한국어로 쉽고 짧게, 세 문장을 넘기지 마세요.\n"
+           "--- 자료 ---\n{c}\n--- 끝 ---\n질문: {q}\n답:"),
+    "en": ("Answer the question using the material below. "
+           "Keep it easy and short, under three sentences.\n"
+           "--- material ---\n{c}\n--- end ---\nQuestion: {q}\nAnswer:"),
+}
 
 
-def p_cls(lang="ko"):
-    return _CLS[_lang(lang)]
+def p_rag_force(q, context, lang="ko"):
+    return _RAG_FORCE[_lang(lang)].replace("{c}", context or "").replace("{q}", q or "")
+
+
+def p_rag(q, context, lang="ko"):
+    """내가 준 자료에서만 찾아 답하게 한다 — 지어내지 않는 것이 수업의 핵심이다."""
+    return _RAG[_lang(lang)].replace("{c}", context or "").replace("{q}", q or "")
+
+
+def p_chat(q, lang="ko"):
+    """사진 없이 묻는 말 — 같은 VLM 에게 글만 준다."""
+    return _CHAT[_lang(lang)].replace("{q}", q or "")
 
 
 def p_free(lang="ko"):
@@ -179,97 +254,33 @@ def _clean(v):
     return t
 
 
-def parse_caption(text):
-    d = _extract_json(text)
-    if isinstance(d, dict) and d.get("caption"):
-        cap = _clean(d.get("caption"))
-        cap_en = _clean(d.get("caption_en")) or cap
-        return {"caption": cap, "caption_en": cap_en, "raw": [cap_en]}
-    t = _clean(text)
-    return {"caption": t, "caption_en": t, "raw": [t]}
-
-
 def parse_place(text, lang="ko"):
-    """environment 는 요청 언어에 맞춰 돌려준다 (실내/실외 또는 indoor/outdoor)."""
-    lang = _lang(lang)
-    inside = ("실내", "indoor") if lang == "ko" else ("indoor", "indoor")
-    outside = ("실외", "outdoor") if lang == "ko" else ("outdoor", "outdoor")
-
-    d = _extract_json(text)
-    if isinstance(d, dict):
-        raw = str(d.get("environment", "")).strip().lower()
-        if "실내" in raw or "indoor" in raw:
-            env = inside[0]
-        elif "실외" in raw or "outdoor" in raw:
-            env = outside[0]
-        else:
-            env = "unknown"
-        return {"environment": env, "category": str(d.get("category", "unknown"))}
-    return {"environment": "unknown", "category": "unknown"}
+    """정해진 장소 낱말 하나로 정리한다. 못 고르면 기타/other."""
+    return _pick(text, PLACE, lang, "place")
 
 
-def parse_choice(text, choices):
-    t = (text or "").strip().lower()
-    for c in choices:
-        if c in t:
-            return c
-    return "unknown"
+def parse_time(text, lang="ko"):
+    """모르겠으면 낮/afternoon 으로 둔다 — 사진에서 가장 흔한 답이다."""
+    return _pick(text, TIME, lang, "time", fallback_index=1)
 
 
-def parse_question(text, prompt):
+def parse_weather(text, lang="ko"):
+    """바깥이 안 보이면 실내/indoor."""
+    return _pick(text, WEATHER, lang, "weather", fallback_index=5)
+
+
+def parse_question(text):
     d = _extract_json(text)
     if isinstance(d, dict) and d.get("answer"):
-        ans = _clean(d.get("answer"))
-        return {"answer": ans,
-                "answer_en": _clean(d.get("answer_en")) or ans,
-                "prompt_en": prompt}
-    t = _clean(text)
-    return {"answer": t, "answer_en": t, "prompt_en": prompt}
+        return {"answer": _clean(d.get("answer"))}
+    return {"answer": _clean(text)}
 
 
 def parse_tag(text):
     d = _extract_json(text)
     if isinstance(d, dict):
-        tag, tag_en = d.get("tag", ""), d.get("tag_en", "")
+        tag = d.get("tag", "")
         if isinstance(tag, list):
             tag = ", ".join(map(str, tag))
-        if isinstance(tag_en, list):
-            tag_en = ", ".join(map(str, tag_en))
-        tag, tag_en = _clean(tag), _clean(tag_en)
-        return {"tag": tag, "tag_en": tag_en or tag}
-    t = _clean(text)
-    return {"tag": t, "tag_en": t}
-
-
-def parse_attr(text):
-    d = _extract_json(text)
-    out = {}
-    for k in ATTR_KEYS:
-        try:
-            out[k] = int(d.get(k, 0)) if isinstance(d, dict) else 0
-        except Exception:
-            out[k] = 0
-        out[k] = max(0, min(100, out[k]))
-    return out
-
-
-def parse_cls(text):
-    d = _extract_json(text)
-    out = []
-    if isinstance(d, list):
-        for item in d[:3]:
-            if isinstance(item, dict) and item.get("name"):
-                try:
-                    score = int(item.get("score", 0))
-                except Exception:
-                    score = 0
-                name = str(item["name"])
-                # 이제 한 언어만 만들게 하므로 ko_name 이 없을 수 있다 — 화면이
-                # ko_name 을 먼저 보므로 비어 있으면 name 을 넣어 준다.
-                out.append({"name": name,
-                            "ko_name": str(item.get("ko_name", "")) or name,
-                            "score": max(0, min(100, score))})
-    if not out:
-        one = (text or "unknown").strip()[:50]
-        out = [{"name": one, "ko_name": one, "score": 0}]
-    return out
+        return {"tag": _clean(tag)}
+    return {"tag": _clean(text)}

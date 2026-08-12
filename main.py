@@ -111,12 +111,9 @@ def exec_device(obj, fallback="CPU"):
 
 def build_device_map():
     import engines as E
-    vlm = {"caption", "caption_place_e", "caption_time_e", "caption_weather_e",
-           "caption_question_e", "caption_tag_e", "vlm_inference_e",
-           "object_cls_e", "face_attribute"}
+    vlm = {"place", "time", "weather", "tag", "look", "chat_ask"}
     gan = {"portrait", "sr"}
-    face = {"face_detect_e", "face_analyze_e", "face_analyze", "face_emotion_e",
-            "face_age_gender_e", "face_pose_e"}
+    face = {"face_detect", "face_analyze", "face_emotion", "face_age_gender"}
     # 실측: 각 그룹의 대표 모델에게 직접 물어본다
     dev_face = exec_device(eng.face.detect, E.DEV_FACE) if eng else E.DEV_FACE
     dev_gan = exec_device(eng.gan.bgremove, E.DEV_GAN) if eng else E.DEV_GAN
@@ -128,17 +125,17 @@ def build_device_map():
         DEVICE_OF[k] = dev_gan
     for k in face:
         DEVICE_OF[k] = dev_face
-    for k in ("object_search_e", "object_search", "object_pose_e", "object_seg_e",
-              "object_custom_e", "mask_detect"):
+    for k in ("object_search", "object_pose", "object_seg",
+              "object_custom", "mask_detect"):
         DEVICE_OF[k] = "CPU"
     for k in ("ocr", "barcode"):
         DEVICE_OF[k] = "CPU"
-    for k in ("mesh_e", "hand_e", "mesh_calibrate"):     # MediaPipe
+    for k in ("mesh", "hand", "mesh_calibrate"):     # MediaPipe
         DEVICE_OF[k] = "CPU"
 
-    print(f"[devices] face={DEVICE_OF.get('face_analyze_e')} "
-          f"gan={DEVICE_OF.get('portrait')} vlm={DEVICE_OF.get('caption')} "
-          f"yolo={DEVICE_OF.get('object_search_e')} code=CPU  (런타임 보고값)")
+    print(f"[devices] face={DEVICE_OF.get('face_analyze')} "
+          f"gan={DEVICE_OF.get('portrait')} vlm={DEVICE_OF.get('place')} "
+          f"yolo={DEVICE_OF.get('object_search')} code=CPU  (런타임 보고값)")
 
 
 # ---------------------------------------------------------------- 준비 상태
@@ -194,7 +191,7 @@ ALLOW_WHILE_LOADING = ("/ready", "/system", "/lib", "/assets", "/fonts", "/block
 async def _loading_guard(request: Request, call_next):
     path = request.url.path
     if (not READY["ready"] and request.method != "OPTIONS"
-            and path not in ("/", "/blocks", "/train", "/options", "/code")
+            and path not in ("/", "/blocks", "/train", "/options", "/code", "/talk")
             and not path.startswith(ALLOW_WHILE_LOADING)):
         return JSONResponse(status_code=503, content={
             "type": "loading", "result": "fail",
@@ -214,7 +211,7 @@ if os.path.isdir("view_project/blockly"):
 if os.path.isdir("view_project/lib"):
     app.mount("/lib", StaticFiles(directory="view_project/lib"), name="lib")
 
-import mp_routes  # noqa: E402  (MediaPipe 확장: /face/mesh_e, /object/hand_e, /face/mesh_calibrate)
+import mp_routes  # noqa: E402  (MediaPipe 확장: /face/mesh, /object/hand, /face/mesh_calibrate)
 app.include_router(mp_routes.router)
 
 import train_routes  # noqa: E402  (나만의 AI: /custom/predict, /custom/upload, /custom/models ...)
@@ -225,6 +222,9 @@ stats_routes.install(app)
 
 import code_routes  # noqa: E402  (파이썬 IDE: /pycode/run·stop·output·save ...)
 app.include_router(code_routes.router)
+
+import db_routes  # noqa: E402  (자료에서 찾아 답하기: /chat/db, /chat/find, /chat/rag)
+app.include_router(db_routes.router)
 
 import speech_routes  # noqa: E402  (음성 인식: /speech/stt — 첫 요청 때 지연 로딩)
 app.include_router(speech_routes.router)
@@ -284,43 +284,35 @@ def read_bgr(path):
 
 
 # ---------------------------------------------------------------- object
-@app.post("/object/object_search_e", tags=["object"], summary="사물 인식")
-@service("object_search_e")
-def object_search_e(path):
-    o_ko, o_en, p_ko, p_en = eng.object.search(path)
-    return {"person": p_ko, "person_en": p_en, "object": o_ko, "object_en": o_en}
-
-
-@app.post("/object/object_search", tags=["object"], summary="(로봇용)사물 인식")
+@app.post("/object/object_search", tags=["object"], summary="사물 인식")
 @service("object_search")
-def object_search(path):
-    o_ko, o_en, p_ko, p_en = eng.object.search(path)
-    return {"person": p_ko, "person_en": p_en, "object": o_ko, "object_en": o_en,
-            "keypoint": eng.object.points(path)}
+def object_search(path, lang: str = "ko"):
+    # 사람도 사물 목록 안에 함께 온다 (name_en == "person")
+    return {"object": eng.object.search(path, lang)}
 
 
-@app.post("/object/object_pose_e", tags=["object"], summary="포즈 인식")
-@service("object_pose_e")
-def object_pose_e(path):
+@app.post("/object/object_pose", tags=["object"], summary="포즈 인식")
+@service("object_pose")
+def object_pose(path):
     return eng.object.points(path)
 
 
-@app.post("/object/object_seg_e", tags=["object"], summary="사물 영역 인식")
-@service("object_seg_e")
-def object_seg_e(path):
-    return eng.object.segment(path)
+@app.post("/object/object_seg", tags=["object"], summary="사물 영역 인식")
+@service("object_seg")
+def object_seg(path, lang: str = "ko"):
+    return eng.object.segment(path, lang)
 
 
-@app.post("/object/object_custom_e", tags=["object"],
+@app.post("/object/object_custom", tags=["object"],
           summary="Custom Yolo (fire|fall|ball|rps|number|helmet|box)")
-async def object_custom_e(request: Request, uploadFile: UploadFile = File(...),
-                          detect_mode: str = "fire"):
-    name = "object_custom_e"
+async def object_custom(request: Request, uploadFile: UploadFile = File(...),
+                          detect_mode: str = "fire", lang: str = "ko"):
+    name = "object_custom"
     path = save_upload(uploadFile, name)
     dev = DEVICE_OF.get(name, "CPU")
     t0 = time.perf_counter()
     try:
-        data = eng.custom.predict(detect_mode, path)
+        data = eng.custom.predict(detect_mode, path, lang)
         return {"type": name, "result": "ok", "detect_mode": detect_mode,
                 "data": {"object": data},
                 "elapsed_ms": int((time.perf_counter() - t0) * 1000), "device": dev}
@@ -332,172 +324,144 @@ async def object_custom_e(request: Request, uploadFile: UploadFile = File(...),
         os.path.exists(path) and os.remove(path)
 
 
-@app.post("/object/object_cls_e", tags=["object"], summary="이미지 분류 (VLM)")
-@service("object_cls_e")
-def object_cls_e(path, lang: str = "ko"):
-    text = eng.vlm.generate(read_bgr(path), P.p_cls(lang), P.MAX_TOKENS["cls"])
-    return P.parse_cls(text)
-
-
 # ---------------------------------------------------------------- face
 def _faces(path):
     image = read_bgr(path)
     return image, eng.face.detect.predict(image)
 
 
-@app.post("/face/face_detect_e", tags=["face"], summary="얼굴 찾기")
-@service("face_detect_e")
-def face_detect_e(path):
+@app.post("/face/face_detect", tags=["face"], summary="얼굴 찾기")
+@service("face_detect")
+def face_detect(path, lang: str = "ko"):
     _, items = _faces(path)
-    return items
+    name = "얼굴" if (lang or "ko").startswith("ko") else "face"
+    return [dict(it, name=name, name_en="face") for it in items]
 
 
-@app.post("/face/face_analyze_e", tags=["face"], summary="얼굴 분석")
-@service("face_analyze_e")
-def face_analyze_e(path):
+@app.post("/face/face_analyze", tags=["face"], summary="얼굴 분석")
+@service("face_analyze")
+def face_analyze(path, lang: str = "ko"):
     image, items = _faces(path)
+    i = 0 if (lang or "ko").startswith("ko") else 1
     faces = []
     for item in items:
         x1, y1, x2, y2 = item["box"]
         crop = image[y1:y2, x1:x2]
-        _a, (_g_ko, _g_en) = eng.face.age_gender.predict(crop)
-        _e_ko, _e_en = eng.face.emotion.predict(crop)
-        _p = eng.face.head_pose.predict(crop)
-        faces.append(dict(item, **{"age": _a, "gender": _g_ko, "gender_en": _g_en,
-                                   "emotion": _e_ko, "emotion_en": _e_en, "pos": _p}))
+        age, gender = eng.face.age_gender.predict(crop)
+        emotion = eng.face.emotion.predict(crop)
+        faces.append(dict(item, **{"age": age,
+                                   "gender": gender[i], "gender_en": gender[1],
+                                   "emotion": emotion[i], "emotion_en": emotion[1],
+                                   "pos": eng.face.head_pose.predict(crop, lang)}))
     return faces
 
 
-@app.post("/face/face_analyze", tags=["face"], summary="(로봇용)얼굴 분석")
-async def face_analyze(request: Request, uploadFile: UploadFile = File(...), mode: str = "all"):
-    name = "face_analyze"
-    path = save_upload(uploadFile, name)
-    try:
-        image = read_bgr(path)
-        _a, (_g_ko, _g_en), _e_ko, _e_en, _p = "", ("", ""), "", "", {"direction": ""}
-        if mode in ("all", "age_gender"):
-            _a, (_g_ko, _g_en) = eng.face.age_gender.predict(image)
-        if mode in ("all", "emotion"):
-            _e_ko, _e_en = eng.face.emotion.predict(image)
-        if mode in ("all", "pose"):
-            _p = eng.face.head_pose.predict(image)
-        return {"type": name, "result": "ok", "age": _a, "gender": _g_ko,
-                "gender_en": _g_en, "emotion": _e_ko, "emotion_en": _e_en,
-                "pos": _p["direction"]}
-    except Exception as ex:
-        return {"type": name, "result": "fail", "data": "Inference error:" + str(ex)}
-    finally:
-        os.path.exists(path) and os.remove(path)
-
-
-@app.post("/face/face_emotion_e", tags=["face"], summary="얼굴 감정")
-@service("face_emotion_e")
-def face_emotion_e(path):
+@app.post("/face/face_emotion", tags=["face"], summary="얼굴 감정")
+@service("face_emotion")
+def face_emotion(path, lang: str = "ko"):
     image, items = _faces(path)
+    i = 0 if (lang or "ko").startswith("ko") else 1
     faces = []
     for item in items:
         x1, y1, x2, y2 = item["box"]
-        _e_ko, _e_en = eng.face.emotion.predict(image[y1:y2, x1:x2])
-        faces.append(dict(item, **{"emotion": _e_ko, "emotion_en": _e_en}))
+        emotion = eng.face.emotion.predict(image[y1:y2, x1:x2])
+        faces.append(dict(item, **{"emotion": emotion[i], "emotion_en": emotion[1]}))
     return faces
 
 
-@app.post("/face/face_age_gender_e", tags=["face"], summary="얼굴 나이 성별")
-@service("face_age_gender_e")
-def face_age_gender_e(path):
+@app.post("/face/face_age_gender", tags=["face"], summary="얼굴 나이 성별")
+@service("face_age_gender")
+def face_age_gender(path, lang: str = "ko"):
     image, items = _faces(path)
+    i = 0 if (lang or "ko").startswith("ko") else 1
     faces = []
     for item in items:
         x1, y1, x2, y2 = item["box"]
-        _a, (_g_ko, _g_en) = eng.face.age_gender.predict(image[y1:y2, x1:x2])
-        faces.append(dict(item, **{"age": _a, "gender": _g_ko, "gender_en": _g_en}))
-    return faces
-
-
-@app.post("/face/face_pose_e", tags=["face"], summary="얼굴 방향")
-@service("face_pose_e")
-def face_pose_e(path):
-    image, items = _faces(path)
-    faces = []
-    for item in items:
-        x1, y1, x2, y2 = item["box"]
-        faces.append(dict(item, **{"pos": eng.face.head_pose.predict(image[y1:y2, x1:x2])}))
+        age, gender = eng.face.age_gender.predict(image[y1:y2, x1:x2])
+        faces.append(dict(item, **{"age": age, "gender": gender[i],
+                                   "gender_en": gender[1]}))
     return faces
 
 
 @app.post("/face/mask_detect", tags=["face"], summary="마스크 인식")
 @service("mask_detect")
-def mask_detect(path):
+def mask_detect(path, lang: str = "ko"):
     image, items = _faces(path)
     out = []
     for item in items:
         x1, y1, x2, y2 = item["box"]
-        out.append(dict(item, **eng.face.mask.predict(image[y1:y2, x1:x2])))
+        out.append(dict(item, **eng.face.mask.predict(image[y1:y2, x1:x2], lang)))
     return out
 
 
-@app.post("/face/face_attribute", tags=["face"], summary="얼굴 속성 (VLM)")
-@service("face_attribute")
-def face_attribute(path, lang: str = "ko"):
-    image, items = _faces(path)
-    out = []
-    for item in items[:2]:  # VLM 호출 비용 고려 상위 2명
-        x1, y1, x2, y2 = item["box"]
-        text = eng.vlm.generate(image[y1:y2, x1:x2], P.p_attr(lang), P.MAX_TOKENS["attr"])
-        out.append(dict(P.parse_attr(text), **item))
-    return out
-
-
-# ---------------------------------------------------------------- caption (VLM 통합)
-@app.post("/caption/caption", tags=["caption"], summary="이미지 캡션")
-@service("caption")
-def caption(path, mode: str = "enko", lang: str = "ko"):
-    text = eng.vlm.generate(read_bgr(path), P.p_caption(lang), P.MAX_TOKENS["caption"])
-    return P.parse_caption(text)
-
-
-@app.post("/caption/caption_place_e", tags=["caption"], summary="이미지 장소 인식")
-@service("caption_place_e")
-def caption_place_e(path, lang: str = "ko"):
+# ---------------------------------------------------------------- vlm (사진을 보고 답한다)
+# 접두사 규칙: /<묶음>/<기능>. 같은 이름을 두 번 쓰지 않는다(caption_place → place).
+@app.post("/vlm/place", tags=["vlm"], summary="장소 맞히기")
+@service("place")
+def vlm_place(path, lang: str = "ko"):
     text = eng.vlm.generate(read_bgr(path), P.p_place(lang), P.MAX_TOKENS["place"])
     return P.parse_place(text, lang)
 
 
-@app.post("/caption/caption_time_e", tags=["caption"], summary="이미지 시간 인식")
-@service("caption_time_e")
-def caption_time_e(path, lang: str = "ko"):
+@app.post("/vlm/time", tags=["vlm"], summary="시간대 맞히기")
+@service("time")
+def vlm_time(path, lang: str = "ko"):
     text = eng.vlm.generate(read_bgr(path), P.p_time(lang), P.MAX_TOKENS["time"])
-    return {"time": P.parse_choice(text, P.TIME_CHOICES)}
+    return P.parse_time(text, lang)
 
 
-@app.post("/caption/caption_weather_e", tags=["caption"], summary="이미지 날씨 인식")
-@service("caption_weather_e")
-def caption_weather_e(path, lang: str = "ko"):
+@app.post("/vlm/weather", tags=["vlm"], summary="날씨 맞히기")
+@service("weather")
+def vlm_weather(path, lang: str = "ko"):
     text = eng.vlm.generate(read_bgr(path), P.p_weather(lang), P.MAX_TOKENS["weather"])
-    return {"weather": P.parse_choice(text, P.WEATHER_CHOICES)}
+    return P.parse_weather(text, lang)
 
 
-@app.post("/caption/caption_question_e", tags=["caption"], summary="이미지 질문")
-@service("caption_question_e")
-def caption_question_e(path, prompt: str = "", lang: str = "ko"):
-    text = eng.vlm.generate(read_bgr(path), P.p_question(prompt, lang),
-                            P.MAX_TOKENS["question"])
-    return P.parse_question(text, prompt)
-
-
-@app.post("/caption/caption_tag_e", tags=["caption"], summary="이미지 태그")
-@service("caption_tag_e")
-def caption_tag_e(path, lang: str = "ko"):
+@app.post("/vlm/tag", tags=["vlm"], summary="핵심 낱말 뽑기")
+@service("tag")
+def vlm_tag(path, lang: str = "ko"):
     text = eng.vlm.generate(read_bgr(path), P.p_tag(lang), P.MAX_TOKENS["tag"])
     return P.parse_tag(text)
 
 
-@app.post("/vlm/vlm_inference_e", tags=["vlm"], summary="이미지 설명 (자유 프롬프트)")
-@service("vlm_inference_e")
-def vlm_inference_e(path, prompt: str = "", lang: str = "ko"):
-    answer = eng.vlm.generate(read_bgr(path), prompt or P.p_free(lang),
-                              P.MAX_TOKENS["free"])
-    return {"answer": answer}
+@app.post("/vlm/look", tags=["vlm"], summary="사진 보고 답하기 (질문을 비우면 설명)")
+@service("look")
+def vlm_look(path, prompt: str = "", lang: str = "ko"):
+    """질문을 주면 그 질문에, 비우면 사진 설명을 답한다.
+
+    답하는 언어는 질문을 따라간다 — 한글로 물으면 한국어, 영어로 물으면 영어.
+    (질문이 비면 화면 언어를 따른다)"""
+    lang = P.lang_of(prompt, lang)
+    q = (prompt or "").strip() or P.p_free(lang)     # 비우면 "이 사진을 설명하세요"
+    text = eng.vlm.generate(read_bgr(path), P.p_question(q, lang),
+                            P.MAX_TOKENS["question"])
+    return P.parse_question(text)
+
+
+# ---------------------------------------------------------------- chat (사진 없이 대화)
+@app.post("/chat/ask", tags=["chat"], summary="사진 없이 물어보기")
+async def chat_ask(request: Request, prompt: str = "", lang: str = "ko"):
+    """같은 VLM 에게 사진 없이 묻는다 — 모델을 더 올리지 않는다.
+
+    앞말은 기억하지 않는다(한 번 묻고 한 번 답한다). 교실에서 학생마다 대화가
+    섞이지 않게 하려면 기록은 화면 쪽이 들고 있어야 한다."""
+    name = "chat_ask"
+    t0 = time.perf_counter()
+    q = (prompt or "").strip()
+    if not q:
+        return {"type": name, "result": "fail", "data": "물어볼 말을 적어 주세요.",
+                "elapsed_ms": 0}
+    try:
+        answer = eng.vlm.generate_text(P.p_chat(q, P.lang_of(q, lang)),
+                                       P.MAX_TOKENS["chat"])
+        return {"type": name, "result": "ok", "data": {"answer": answer},
+                "elapsed_ms": int((time.perf_counter() - t0) * 1000),
+                "device": DEVICE_OF.get("place", "GPU")}
+    except Exception as ex:
+        import traceback
+        traceback.print_exc()
+        return {"type": name, "result": "fail", "data": "Inference error:" + str(ex),
+                "elapsed_ms": int((time.perf_counter() - t0) * 1000)}
 
 
 # ---------------------------------------------------------------- gan (변환 계열)
@@ -513,14 +477,6 @@ def gan_portrait(path):
 def gan_sr(path):
     from engines import to_b64_jpg
     return to_b64_jpg(eng.gan.sr.predict(read_bgr(path)))
-
-
-@app.post("/gan/txt2image", tags=["gan"], summary="(미지원) 이미지 생성")
-@app.post("/gan/txt2cbimage", tags=["gan"], summary="(미지원) 스토리북 생성")
-async def gan_txt2image(request: Request):
-    name = request.url.path.rsplit("/", 1)[-1]
-    return {"type": name, "result": "fail",
-            "data": "on-device 버전에서는 이미지 생성을 지원하지 않습니다."}
 
 
 # ---------------------------------------------------------------- code
@@ -572,6 +528,12 @@ async def options_page():
         return f.read()
 
 
+@app.get("/talk", response_class=HTMLResponse)
+async def talk_page():
+    with open("view_project/talk.html", encoding="utf-8") as f:
+        return f.read()
+
+
 @app.get("/code", response_class=HTMLResponse)
 async def code_page():
     with open("view_project/code.html", encoding="utf-8") as f:
@@ -620,6 +582,26 @@ async def system_packages():
                      "installed_at": saved, "snapshot": os.path.exists(snap)}}
 
 
+@app.post("/system/sound_settings", tags=["system"], summary="윈도우 소리 설정 열기")
+async def open_sound_settings():
+    """소리가 안 들릴 때 쓰는 길잡이.
+
+    소리는 윈도우 기본 출력 장치로 나간다 — 노트북 기본이 모니터(HDMI)로 잡혀
+    있으면 블록 코딩·파이썬·TTS 가 전부 조용해 보인다. 이 앱에서 장치를 따로
+    고르게 하면 브라우저 소리와 파이썬 소리가 서로 다른 데로 갈라지므로,
+    제대로 된 자리인 윈도우 설정을 열어 준다."""
+    import subprocess
+    if os.name != "nt":
+        return {"result": "fail",
+                "data": "윈도우에서만 열 수 있어요. 시스템 소리 설정을 직접 열어 주세요."}
+    try:
+        subprocess.Popen(["cmd", "/c", "start", "", "ms-settings:sound"],
+                         creationflags=0x08000000)     # 창 안 띄우기
+        return {"result": "ok", "data": "윈도우 소리 설정을 열었어요."}
+    except Exception as ex:
+        return {"result": "fail", "data": "열지 못했어요: %s" % ex}
+
+
 @app.get("/system")
 async def system():
     """온디바이스 상태 요약 (프론트 상단 HUD용)."""
@@ -628,9 +610,9 @@ async def system():
     return {
         "ready": eng is not None,
         "devices": E.core.available_devices,
-        "assign": {"vlm": DEVICE_OF.get("caption", E.DEV_VLM),
+        "assign": {"vlm": DEVICE_OF.get("place", E.DEV_VLM),
                    "vision": DEVICE_OF.get("portrait", E.DEV_GAN),
-                   "face": DEVICE_OF.get("face_analyze_e", E.DEV_FACE),
+                   "face": DEVICE_OF.get("face_analyze", E.DEV_FACE),
                    "code": "CPU"},
         "assign_requested": {"vlm": E.DEV_VLM, "vision": E.DEV_GAN, "face": E.DEV_FACE},
         "device_of": DEVICE_OF,          # 서비스명 -> 실행 디바이스 (프론트 HUD용)
@@ -646,4 +628,12 @@ async def system():
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host=HOST, port=PORT)
+    # 교실에서는 요청 한 줄 한 줄이 콘솔을 가득 채운다 — 기본은 조용히 띄우고,
+    # 문제를 볼 때만 VAPI_VERBOSE=1 로 실행 기록을 켠다. (오류·경고는 항상 나온다)
+    verbose = bool(os.environ.get("VAPI_VERBOSE"))
+    # app 을 문자열("main:app")로 주면 uvicorn 이 이 파일을 한 번 더 import 한다
+    # (__main__ 과 main, 두 벌이 됨 → 시작 안내가 두 줄씩 찍히고 준비도 두 번 한다).
+    # 자동 재시작을 쓰지 않으므로 객체를 그대로 넘긴다.
+    uvicorn.run(app, host=HOST, port=PORT,
+                log_level="info" if verbose else "warning",
+                access_log=verbose)

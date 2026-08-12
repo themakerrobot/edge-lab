@@ -97,6 +97,9 @@
       padding:11px 16px; border-bottom:1.5px dashed var(--line);
     }
     .panel-body { flex:1 1 auto; min-height:0; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:12px; }
+    /* 세로 flex 는 자식을 기본으로 줄인다 — 그대로 두면 내용이 넘쳐도 스크롤이 안 생기고
+       웹캠 미리보기 같은 아래쪽 항목만 납작하게 눌린다. 줄이지 말고 넘치게 해서 스크롤을 낸다. */
+    .panel-body > * { flex:0 0 auto; }
     .q { position:relative; border:2.5px solid var(--cyan); background:#fff; padding:6px 16px 6px 12px;
          border-radius:2px; display:inline-flex; align-items:center; gap:6px; }
     .q::after { content:""; position:absolute; left:14px; bottom:-12px;
@@ -221,6 +224,18 @@
         <div class="checks" id="checks"><div class="empty" id="txtNotRun">아직 점검하지 않았어요.</div></div>
         <div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);">
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <b style="font-size:.9rem;" id="txtSndTitle">소리</b>
+            <button class="btn" id="sndTest" style="padding:5px 12px;font-size:.86rem;">
+              <span id="txtSndTest">소리 시험</span></button>
+            <button class="btn" id="sndOpen" style="padding:5px 12px;font-size:.86rem;">
+              <span id="txtSndOpen">윈도우 소리 설정 열기</span></button>
+            <span class="hint" id="txtSndHint" style="margin:0;">
+              소리가 안 들리면 윈도우 기본 장치가 모니터로 잡혀 있을 수 있어요.</span>
+          </div>
+        </div>
+
+        <div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
             <b style="font-size:.9rem;" id="txtHcTitle">밝은 곳 모드</b>
             <button class="btn" id="hcToggle" style="padding:5px 12px;font-size:.86rem;">
               <span id="txtHcBtn">켜기</span></button>
@@ -318,13 +333,17 @@
         lab_run: "써보기 실행", block_run: "블록 프로그램 실행",
         block_done: "블록 정상 종료", block_error: "블록 오류", block_stopped: "블록 정지",
         train_run: "학습 실행", model_saved: "모델 저장", project_saved: "작품 저장",
-        samples_collected: "모은 사진", bias_hit: "AI 속이기 성공",
+        samples_collected: "모은 사진",
         edit_used: "사진 편집 사용",
         example_loaded: "예제 불러오기",
       },
       pgName: { index: "써보기", blocks: "블록 코딩", train: "가르치기",
                 code: "파이썬", options: "설정 · 점검", etc: "기타" },
       notRun: "아직 점검하지 않았어요.", none: "아직 없어요.",
+      sndTitle: "소리", sndTest: "소리 시험", sndOpen: "윈도우 소리 설정 열기",
+      sndHint: "소리가 안 들리면 윈도우 기본 장치가 모니터로 잡혀 있을 수 있어요.",
+      sndPlaying: "소리 나는 중...", sndAsk: "소리가 들렸나요? 안 들리면 옆 단추로 설정을 열어요.",
+      sndOpened: "윈도우 소리 설정을 열었어요.",
       hcTitle: "밝은 곳 모드", hcOn: "켜기", hcOff: "끄기",
       hcHint: "창가나 조명이 밝은 곳에서 글씨가 흐릴 때 켜세요. 색이 진해집니다.",
       verTitle: "설치 버전", verCopy: "복사", verCopied: "복사했어요",
@@ -362,13 +381,17 @@
         lab_run: "Use runs", block_run: "Block program runs",
         block_done: "Block finished", block_error: "Block errors", block_stopped: "Block stopped",
         train_run: "Training runs", model_saved: "Models saved", project_saved: "Work saved",
-        samples_collected: "Photos collected", bias_hit: "Fooled the AI",
+        samples_collected: "Photos collected",
         edit_used: "Photo edits",
         example_loaded: "Examples loaded",
       },
       pgName: { index: "Use", blocks: "Blocks", train: "Train",
                 code: "Python", options: "Settings", etc: "Other" },
       notRun: "Not checked yet.", none: "Nothing yet.",
+      sndTitle: "Sound", sndTest: "Test sound", sndOpen: "Open Windows sound settings",
+      sndHint: "If you hear nothing, Windows may be sending sound to the monitor.",
+      sndPlaying: "Playing...", sndAsk: "Did you hear it? If not, open the settings.",
+      sndOpened: "Opened the Windows sound settings.",
       hcTitle: "High contrast", hcOn: "Turn on", hcOff: "Turn off",
       hcHint: "Turn this on when text looks faint in bright light.",
       verTitle: "Installed versions", verCopy: "Copy", verCopied: "Copied",
@@ -393,6 +416,37 @@
   const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
   /* ---------------- 상태바 ---------------- */
+  /* ---------------- 소리 ----------------
+     시험음은 브라우저(Web Audio)로 낸다 — 윈도우 기본 출력 장치를 그대로 쓰므로
+     "지금 이 PC 에서 소리가 나는가" 를 그대로 확인할 수 있다. */
+  $("sndTest").addEventListener("click", async () => {
+    const hint = $("txtSndHint");
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      const ac = new AC();
+      const osc = ac.createOscillator(), gain = ac.createGain();
+      osc.type = "sine"; osc.frequency.value = 660;
+      gain.gain.setValueAtTime(0.0001, ac.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.25, ac.currentTime + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.6);
+      osc.connect(gain).connect(ac.destination);
+      osc.start(); osc.stop(ac.currentTime + 0.65);
+      hint.textContent = t("sndPlaying");
+      setTimeout(() => { hint.textContent = t("sndAsk"); ac.close(); }, 800);
+    } catch (e) {
+      hint.textContent = String(e);
+    }
+  });
+
+  $("sndOpen").addEventListener("click", async () => {
+    try {
+      const r = await (await fetch("/system/sound_settings", { method: "POST" })).json();
+      $("txtSndHint").textContent = r.result === "ok" ? t("sndOpened") : r.data;
+    } catch (e) {
+      $("txtSndHint").textContent = String(e);
+    }
+  });
+
   /* ---------------- 밝은 곳 모드 ---------------- */
   function hcOn() { return document.documentElement.classList.contains("hc"); }
   function paintHc() { $("txtHcBtn").textContent = t(hcOn() ? "hcOff" : "hcOn"); }
@@ -701,6 +755,8 @@
     set("txtQ3", t("q3")); set("txtPrintReport", t("printReport"));
     set("txtQ4", t("q4")); set("txtStatReset", t("statReset"));
     set("txtNotRun", t("notRun"));
+    set("txtSndTitle", t("sndTitle")); set("txtSndTest", t("sndTest"));
+    set("txtSndOpen", t("sndOpen")); set("txtSndHint", t("sndHint"));
     set("txtHcTitle", t("hcTitle")); set("txtHcHint", t("hcHint"));
     if (typeof paintHc === "function") paintHc();
     set("txtVerTitle", t("verTitle")); set("txtVerCopy", t("verCopy"));

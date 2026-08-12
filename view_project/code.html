@@ -282,6 +282,7 @@
       <div class="ph-row">
         <div class="panel-head" id="txtEdHead">파이썬 코드를 써요</div>
         <div class="ph-tools">
+          <button id="newButton" title="Ctrl + Alt + N">새로 만들기</button>
           <button id="guideButton">가이드</button>
           <button id="exampleButton">예제</button>
           <button id="saveButton">저장</button>
@@ -309,6 +310,7 @@
       </div>
       <div id="output"></div>
       <div class="hintline" id="txtHint">show() 결과는 위 칸에 나와요. 배포한 프로그램에서는 창으로 떠요. input() 은 지원하지 않아요.</div>
+      <div class="hintline" id="keysHint" style="opacity:.85;">단축키 — Ctrl+Enter 실행 · Esc 정지 · Ctrl+/ 주석 · Alt+↑↓ 줄 옮기기 · Shift+Alt+↓ 줄 복제 · Ctrl+D 줄 지우기 · Ctrl+Space 자동완성 · Ctrl+S 저장</div>
     </div>
 
     <!-- 도움말 (열어 둔 채로 코딩) -->
@@ -362,6 +364,10 @@
         homeLink: "The Maker (홈)", langBtn: "EN",
         edHead: "파이썬 코드를 써요", outHead: "결과를 확인해요",
         guide: "도움말", guideOff: "도움말 ✕", example: "예제", save: "저장", load: "불러오기", deploy: "배포",
+        newCode: "새로 만들기",
+        askNew: "쓰던 코드를 지우고 새로 시작할까요?",
+        keysTitle: "단축키",
+        keysBody: "Ctrl+Enter 실행 · Esc 정지 · Ctrl+/ 주석 · Alt+↑↓ 줄 옮기기 · Shift+Alt+↓ 줄 복제 · Ctrl+D 줄 지우기 · Ctrl+Space 자동완성 · Ctrl+S 저장",
         helpHead: "도움말", helpMore: "기능 이름 · 종류 표 보기", helpSearch: "찾기 (예: 얼굴, 소리)",
         put: "넣기", detail: "설명", noHit: "찾는 것이 없어요.",
         argsK: "넣는 것", retK: "돌려주는 것", exK: "예시 (눌러서 넣기)",
@@ -389,6 +395,10 @@
         eyebrow: "call AI from Python · runs on this computer",
         homeLink: "The Maker (home)", langBtn: "한",
         edHead: "Write Python code", outHead: "Check the result",
+        newCode: "New",
+        askNew: "Clear what you wrote and start over?",
+        keysTitle: "Shortcuts",
+        keysBody: "Ctrl+Enter run · Esc stop · Ctrl+/ comment · Alt+↑↓ move line · Shift+Alt+↓ duplicate · Ctrl+D delete line · Ctrl+Space autocomplete · Ctrl+S save",
         guide: "Help", guideOff: "Help ✕", example: "Examples", save: "Save", load: "Load", deploy: "Share",
         helpHead: "Help", helpMore: "Kinds & tables", helpSearch: "search (e.g. face, sound)",
         put: "insert", detail: "what?", noHit: "Nothing found.",
@@ -413,7 +423,7 @@
         confirmReplace: "This will replace your current code. Load the example?",
       },
     };
-    let LANG = localStorage.getItem("vapi-lang") || "ko";
+    let LANG = localStorage.getItem("vapiLang") || "ko";
     const t = k => (DICT[LANG] && DICT[LANG][k]) || DICT.ko[k] || k;
 
     /* =============================== CodeMirror =============================== */
@@ -474,7 +484,8 @@ show(img, r)                # 결과를 화면에서 보기 (박스가 그려져
       notePreload(cm.getValue());
       setState("stRun");
       try {
-        const j = await (await fetch("/pycode/run", {
+        /* 화면 언어를 함께 보낸다 — AI 가 돌려주는 이름(사람/의자·person/chair)이 화면과 맞도록 */
+        const j = await (await fetch("/pycode/run?lang=" + (LANG === "en" ? "en" : "ko"), {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ code: cm.getValue() }),
         })).json();
@@ -548,6 +559,19 @@ show(img, r)                # 결과를 화면에서 보기 (박스가 그려져
 
     /* =============================== 저장/불러오기 =============================== */
     let LAST_NAME = "";
+    /* 새로 만들기 = 정말 비운다. 첫 줄(import)만 남긴다 — 그게 없으면 아무 것도 안 되고,
+       아이가 매번 외워 쓰기에는 부담이라 이 한 줄은 두는 것이 낫다. */
+    const EMPTY_CODE = "from themaker import *\n\n";
+    document.getElementById("newButton").onclick = () => {
+      const now = cm.getValue().trim();
+      if (now && now !== EMPTY_CODE.trim() && !confirm(t("askNew"))) return;
+      cm.setValue(EMPTY_CODE);
+      cm.setCursor(cm.lineCount(), 0);
+      cm.focus();
+      out.textContent = "";                                  // 결과 칸도 함께 비운다
+      document.getElementById("stageWrap").style.display = "none";
+      try { localStorage.setItem("pycode-draft", EMPTY_CODE); } catch (e) {}
+    };
     document.getElementById("saveButton").onclick = async () => {
       const name = prompt(t("savePrompt"), LAST_NAME);
       if (!name) return;
@@ -625,7 +649,7 @@ show(img, r)                # 결과를 화면에서 보기 (박스가 그려져
 
 img = camera()
 r = vision("object", img)
-for it in r["object"]:                # 사물은 r["object"], 사람은 r["person"]
+for it in r["object"]:                # 사람도 여기 함께 들어 있어요
     print(it["name"], it["score"])
 show(img, r)
 ` },
@@ -634,7 +658,7 @@ show(img, r)
         code: `from themaker import *
 
 img = camera()
-r = vision("question", img, prompt="사람이 몇 명이야?")
+r = vision("look", img, prompt="사람이 몇 명이야?")
 print(r["answer"])
 ` },
       { ko: ["얼굴 세기", "얼굴을 찾아 몇 명인지 세요."],
@@ -683,7 +707,7 @@ for it in r:
     print(it["name"], round(it["score"] * 100), "%")
 show(img, r)
 ` },
-      { ko: ["불이 났는지 살펴보기", "특별 훈련된 AI로 불·연기를 찾아요."],
+      { ko: ["불이 났는지 살펴보기", "개별 인식 AI로 불·연기를 찾아요."],
         en: ["Watch for fire", "Use the specially trained fire model."],
         code: `from themaker import *
 import time
@@ -767,7 +791,7 @@ print("들은 말:", text)
 
 if "사진" in text:              # 말로 시키기
     img = camera()
-    print(vision("caption", img)["caption"])
+    print(vision("look", img)["answer"])
 ` },
       { ko: ["말로 묻고 말로 답하기", "듣고 → AI 로 보고 → 소리로 읽어 줘요."],
         en: ["Ask and answer by voice", "Listen, look, then speak the answer."],
@@ -778,7 +802,7 @@ question = listen(4)
 print("질문:", question)
 
 img = camera()
-answer = vision("question", img, prompt=question)["answer"]
+answer = vision("look", img, prompt=question)["answer"]
 print("대답:", answer)
 speak(answer)
 ` },
@@ -793,6 +817,149 @@ for i in range(5):
     names = [it["name"] for it in r["object"]]
     print(i + 1, "번째:", names)
     time.sleep(3)
+` },
+      { ko: ["자료에서 찾아 답하기",
+             "내가 준 글에서만 찾아 답해요. 그냥 물었을 때와 견줘 봐요."],
+        en: ["Answer from my own material",
+             "The AI answers from your text only. Compare it with a plain question."],
+        code: `from themaker import *
+
+# 자료에서 찾아 답하기 — 같은 질문을 두 가지 방법으로 물어 보고 견줘 봐요.
+
+자료 = """무지개는 빛이 물방울에 꺾여서 생겨요. 비가 온 뒤에 해가 나면 하늘에
+반원 모양으로 나타나요. 빨강 주황 노랑 초록 파랑 남색 보라, 일곱 빛깔이에요.
+
+달은 지구를 도는 위성이에요. 한 달에 한 번씩 둥글게 찼다가 다시 줄어들어요.
+달에서는 몸무게가 지구의 6분의 1로 느껴져요.
+
+우리 반 규칙: 복도에서는 걸어 다녀요. 급식은 남기지 않아요.
+쉬는 시간에는 교실 창문을 열어 환기를 해요."""
+
+db_add("우리자료", 자료)          # 자료 만들기 (한 번만 하면 돼요)
+print("만든 자료:", [d["title"] for d in db_list()])
+
+물음 = "무지개는 왜 생겨?"
+
+print("\\n[1] AI 가 아는 대로 답하기")
+print(chat(물음))
+
+print("\\n[2] 우리 자료에서 찾아 답하기")
+print(chat(물음, db="우리자료"))
+
+print("\\n[3] 어디서 가져왔는지 보기")
+for h in db_find(물음, "우리자료", 2):
+    print(" ", h["score"], h["text"][:40], "...")
+
+# 자료에 없는 것을 물으면 어떻게 될까요?
+print("\\n[4] 자료에 없는 질문")
+print(chat("공룡은 왜 사라졌어?", db="우리자료"))
+
+# 다 해 봤으면 지워요
+# db_delete("우리자료")
+` },
+      { ko: ["전체 점검 (모든 기능)",
+             "모든 기능을 한 번씩 써 봐요. 새 컴퓨터에서 잘 도는지 확인할 때 쓰세요."],
+        en: ["Full check (everything)",
+             "Uses every function once. Run it to check a new computer."],
+        code: `from themaker import *
+
+# 모든 기능을 한 번씩 써 보는 점검용 코드예요.
+# 새 컴퓨터에서 잘 도는지 확인할 때 쓰세요. 한 바퀴에 1~2분쯤 걸려요.
+
+print("=== 1. 사진 ===")
+img = camera()                      # 웹캠에서 한 장
+print("크기:", size_of(img, "w"), "x", size_of(img, "h"))
+print("가운데 색:", color_at(img, "mc"), "/ 많이 쓰인 색:", main_color(img))
+show(img)
+
+print("=== 2. 무엇이 보이나 ===")
+r = vision("object", img)           # 사물·사람 (사람도 이 목록에 함께 있어요)
+print("찾은 것:", [it["name"] for it in r["object"]])
+people = [it for it in r["object"] if it["name_en"] == "person"]
+print("사람 수:", len(people))
+show(img, r)                        # 박스를 그려서 보여주기
+
+faces = vision("face", img)
+print("얼굴 수:", len(faces))
+info = vision("face_attr", img)
+if info:
+    f = info[0]
+    print("얼굴:", f["gender"], f["age"], "살", f["emotion"], f["pos"]["direction"])
+
+near = vision("distance", img)
+if near:
+    print("얼굴까지:", near[0]["distance"], "cm", near[0]["direction"])
+
+hands = vision("hand", img)
+print("손 모양:", [h["gesture"] for h in hands])
+print("몸 관절:", len(vision("pose", img)), "명")
+print("글자:", [t["text"] for t in vision("ocr", img)])
+print("QR:", [q["data"] for q in vision("qr", img)])
+print("마스크:", [m["name"] for m in vision("mask", img)])
+
+print("=== 3. 개별 인식 AI ===")
+for kind in ["fire", "fall", "ball", "rps", "number", "helmet", "box"]:
+    found = vision(kind, img)["object"]
+    print(" ", kind, "->", [it["name"] for it in found])
+
+print("=== 4. 말로 하는 AI (조금 느려요) ===")
+print("설명:", vision("look", img)["answer"])
+print("질문:", vision("look", img, prompt="이 사진에 무엇이 있어?")["answer"])
+print("태그:", vision("tag", img)["tag"])
+print("장소:", vision("place", img)["place"])
+print("시간:", vision("time", img)["time"])
+print("날씨:", vision("weather", img)["weather"])
+print("고르기:", vision("look", img, prompt="사람·동물·물건 중 무엇이야? 한 낱말로")["answer"])
+
+print("=== 5. 사진 바꾸기 ===")
+cut = vision("bg_remove", img)      # 배경 지우기
+big = vision("sr", img)             # 화질 좋게
+seg = vision("seg", img)            # 영역 칠하기 + 무엇을 칠했는지
+print("칠한 것:", [it["name"] for it in seg["object"]])
+show(seg["image"], seg["object"])
+
+print("=== 6. 사진 편집 ===")
+pic = resize(img, 0.6)
+pic = rotate(pic, 90)
+pic = flip(pic, "h")
+pic = crop(pic, "mc")
+pic = attach(pic, pic, "h")             # 나란히 붙이기
+pic = put_on(pic, cut, "small", "br")   # 위에 얹기 (크기, 자리)
+pic = put_sticker(pic, cut)
+pic = adjust(pic, "bright", 20)
+pic = img_filter(pic, "sepia")
+pic = draw_rect(pic, "mc", "line", "red")
+pic = draw_circle(pic, "tl", "fill", "blue")
+pic = draw_line(pic, "tl", "br", "green")
+pic = draw_text(pic, "점검", "bc", 30, "black")
+show(pic)
+
+print("=== 7. 좌표로 편집 (상급생용) ===")
+pic = crop_xy(img, 0, 0, 320, 240)
+pic = draw_rect_xy(pic, 10, 10, 80, 60, "line", "red")
+pic = draw_circle_xy(pic, 60, 60, 20, "fill", "blue")
+pic = draw_line_xy(pic, 0, 0, 100, 80, "green")
+pic = draw_text_xy(pic, "점검", 10, 30, 24, "black")
+pic = put_on_xy(pic, cut, 5, 5, 0.3)
+print("그 자리 색:", color_at_xy(pic, 10, 10))
+show(pic)
+save(pic, "점검결과.jpg")
+
+print("=== 8. 소리 ===")
+play_note("솔", 1)
+play_melody("도미솔 도2", 120)
+play_hz(440, 0.3)
+beep("ok")
+speak("전체 점검을 마쳤어요", voice="F1", speed=1.05)
+
+print("=== 9. 내가 가르친 AI ===")
+mine = my_models()
+print("저장된 모델:", mine)
+# 모델이 있으면 첫 번째 것으로 해 봐요
+# r = vision("my:" + mine[0]["title"], img)
+# print(r)
+
+print("전체 점검 끝!")
 ` },
     ];
 
@@ -828,17 +995,19 @@ for i in range(5):
 <tr><td><code>hand</code></td><td>손</td><td>손동작</td></tr>
 <tr><td><code>pose</code></td><td>자세</td><td>몸 관절</td></tr>
 <tr><td><code>seg</code></td><td>분할</td><td>영역 나누기</td></tr>
-<tr><td><code>caption</code></td><td>설명</td><td>사진 설명</td></tr>
-<tr><td><code>question</code></td><td>질문</td><td>사진에 질문</td></tr>
+<tr><td><code>look</code></td><td>보기·설명·질문</td><td>사진 보고 답하기 (안 물으면 설명)</td></tr>
+
+<tr><td><code>place</code></td><td>장소</td><td>장소 맞히기 (교실·공원 …)</td></tr>
+<tr><td><code>time</code></td><td>시간</td><td>시간대 맞히기 (아침·낮·저녁·밤)</td></tr>
+<tr><td><code>weather</code></td><td>날씨</td><td>날씨 맞히기 (맑음·흐림·비·눈·바람·실내)</td></tr>
 <tr><td><code>tag</code></td><td>태그</td><td>주제어 뽑기 (글자)</td></tr>
-<tr><td><code>classify</code></td><td>분류</td><td>자유 분류</td></tr>
 <tr><td><code>ocr</code></td><td>글자</td><td>글자 읽기</td></tr>
 <tr><td><code>qr</code></td><td>큐알</td><td>QR 읽기</td></tr>
 <tr><td><code>bg_remove</code></td><td>배경제거</td><td>배경 지우기</td></tr>
 <tr><td><code>sr</code></td><td>화질개선</td><td>4배 선명하게</td></tr>
 <tr><td><code>mask</code></td><td>마스크</td><td>마스크 착용</td></tr>
 </table>
-<p style="margin:10px 0 6px;"><b>특별 훈련된 AI 7종</b></p>
+<p style="margin:10px 0 6px;"><b>개별 인식 AI 7종</b></p>
 <table>
 <tr><th>kind</th><th>한글</th><th>찾는 것</th></tr>
 <tr><td><code>fire</code></td><td>불</td><td>불·연기</td></tr>
@@ -860,10 +1029,10 @@ for i in range(5):
 </table>
 <p style="margin:10px 0 6px;"><b>결과는 서버가 준 그대로 와요</b></p>
 <p>어떤 모양인지 모를 땐 <code>print(r)</code> 로 먼저 확인하고, 필요한 값을 이름으로 꺼내세요.</p>
-<pre style="background:var(--paper);padding:8px 10px;border-radius:4px;font-size:.84em;">r = vision("caption", img)
-print(r)              # {'caption': '고양이가 앉아 있어요', 'caption_en': 'a cat...'}
-print(r["caption"])   # 고양이가 앉아 있어요
-print(vision("caption", img, lang="en")["caption"])   # 영어로 받기</pre>
+<pre style="background:var(--paper);padding:8px 10px;border-radius:4px;font-size:.84em;">r = vision("look", img)
+print(r)              # {'answer': '고양이가 앉아 있어요'}
+print(r["answer"])    # 고양이가 앉아 있어요
+print(vision("look", img, lang="en")["answer"])   # 영어로 받기</pre>
 <p style="margin-top:8px;">이름이 헷갈리면 <code>my_models()</code> 로 확인하세요.
 띄어쓴 제목(<code>"my:우리 반 얼굴"</code>)도 그대로 돼요.<br>
 상대경로 기준 폴더는 <code>models\\pycode</code> 예요. cv2 · numpy 도 쓸 수 있어요.</p>`,
@@ -878,10 +1047,12 @@ print(vision("caption", img, lang="en")["caption"])   # 영어로 받기</pre>
 <tr><td><code>hand</code></td><td>hand gesture</td></tr>
 <tr><td><code>pose</code></td><td>body joints</td></tr>
 <tr><td><code>seg</code></td><td>segmentation</td></tr>
-<tr><td><code>caption</code></td><td>describe</td></tr>
-<tr><td><code>question</code></td><td>ask about the photo</td></tr>
+<tr><td><code>place</code></td><td>guess the place</td></tr>
+<tr><td><code>time</code></td><td>guess the time of day</td></tr>
+<tr><td><code>weather</code></td><td>guess the weather</td></tr>
+<tr><td><code>look</code></td><td>ask about the photo (describes if you ask nothing)</td></tr>
+
 <tr><td><code>tag</code></td><td>keywords</td></tr>
-<tr><td><code>classify</code></td><td>free classify</td></tr>
 <tr><td><code>ocr</code></td><td>read text</td></tr>
 <tr><td><code>qr</code></td><td>read QR</td></tr>
 <tr><td><code>bg_remove</code></td><td>remove background</td></tr>
@@ -936,42 +1107,81 @@ print(vision("caption", img, lang="en")["caption"])   # 영어로 받기</pre>
       { g: "basic", n: "print(r)", ins: "print(r)",
         ko: { d: "결과를 글자로 확인 — 무엇이 왔는지 모를 땐 이걸 먼저", a: "아무 값", r: "없음 (화면에 찍힘)" },
         en: { d: "print the result — use it when unsure", a: "any value", r: "nothing" },
-        x: 'r = vision("caption", img)\nprint(r)' },
+        x: 'r = vision("look", img)\nprint(r)' },
 
+      { g: "ai", n: 'language("en")', ins: 'language("en")',
+        ko: { d: "AI 가 돌려주는 이름의 언어를 바꿔요 (기본은 화면 언어)", a: "\"ko\" 또는 \"en\"", r: "지금 언어" },
+        en: { d: "language of names the AI returns (defaults to the page language)", a: '"ko" or "en"', r: "current language" },
+        x: 'language("en")\nr = vision("object", img)\nprint(r["object"][0]["name"])   # chair' },
       { g: "ai", n: 'vision("object", img)', ins: 'vision("object", img)',
-        ko: { d: "사물과 사람 찾기", a: "기능 이름, 사진", r: '{"person": [...], "object": [{name 이름, score 확신도, box 위치}, ...]} — 사람과 사물이 따로 와요' },
-        en: { d: "find objects and people", a: "kind, image", r: '{"person": [...], "object": [{name, score, box}, ...]}' },
-        x: 'r = vision("object", img)\nfor it in r["object"]:\n    print(it["name"], it["score"])\nprint("사람 수:", len(r["person"]))' },
+        ko: { d: "사물과 사람 찾기 — 사람도 한 목록에 같이 와요",
+              a: "기능 이름, 사진", r: '{"object": [{name 이름, name_en 영어이름, score 확신도, box 위치}, ...]}' },
+        en: { d: "find objects and people (one list)", a: "kind, image", r: '{"object": [{name, name_en, score, box}, ...]}' },
+        x: 'r = vision("object", img)\nfor it in r["object"]:\n    print(it["name"], it["score"])\npeople = [it for it in r["object"] if it["name_en"] == "person"]\nprint("사람 수:", len(people))' },
       { g: "ai", n: 'vision("face", img)', ins: 'vision("face", img)',
         ko: { d: "얼굴 찾기", a: "기능 이름, 사진", r: "목록 [{box 위치}, ...] — len(r) 이 얼굴 수" },
         en: { d: "find faces", a: "kind, image", r: "list of {box} — len(r) is the count" },
         x: 'faces = vision("face", img)\nprint("얼굴 수:", len(faces))\nshow(img, faces)' },
       { g: "ai", n: 'vision("face_attr", img)', ins: 'vision("face_attr", img)',
-        ko: { d: "나이·성별·감정 알아보기", a: "기능 이름, 사진", r: "목록 [{age 나이, gender 성별, emotion 감정, box}, ...]" },
-        en: { d: "age, gender, emotion", a: "kind, image", r: "list of {age, gender, emotion, box}" },
+        ko: { d: "나이·성별·감정 알아보기", a: "기능 이름, 사진", r: "목록 [{age 나이, gender 성별, gender_en, emotion 감정, emotion_en, box}, ...]" },
+        en: { d: "age, gender, emotion", a: "kind, image", r: "list of {age, gender, gender_en, emotion, emotion_en, box}" },
         x: 'r = vision("face_attr", img)\nif r:\n    print(r[0]["age"], r[0]["gender"], r[0]["emotion"])' },
       { g: "ai", n: 'vision("distance", img)', ins: 'vision("distance", img)',
-        ko: { d: "얼굴이 얼마나 가까운지·어디를 보는지", a: "기능 이름, 사진", r: "목록 [{distance 센티미터, direction 방향, box}, ...]" },
-        en: { d: "face distance and direction", a: "kind, image", r: "list of {distance, direction, box}" },
+        ko: { d: "얼굴이 얼마나 가까운지·어디를 보는지 — 값 비교는 direction_en(CC·LT…)",
+              a: "기능 이름, 사진", r: "목록 [{distance 센티미터, direction 방향 낱말, direction_en 코드, box}, ...]" },
+        en: { d: "face distance and direction (compare with direction_en)", a: "kind, image",
+              r: "list of {distance, direction, direction_en, box}" },
         x: 'r = vision("distance", camera())\nif r:\n    print(r[0]["distance"], "cm", r[0]["direction"])' },
-      { g: "ai", n: 'vision("caption", img)', ins: 'vision("caption", img)',
-        ko: { d: "사진을 한 줄로 설명", a: "기능 이름, 사진, lang=\"en\" 이면 영어", r: '{"caption": 한국어 설명, "caption_en": 영어 설명}' },
-        en: { d: "describe the photo", a: "kind, image, lang=", r: '{"caption": ..., "caption_en": ...}' },
-        x: 'r = vision("caption", img)\nprint(r["caption"])\nspeak(r["caption"])' },
-      { g: "ai", n: 'vision("question", img, prompt="...")',
-        ins: 'vision("question", img, prompt="사람이 몇 명이야?")',
-        ko: { d: "사진에 대해 질문하기", a: "기능 이름, 사진, prompt=질문", r: '{"answer": 한국어 답, "answer_en": 영어 답}' },
-        en: { d: "ask about the photo", a: "kind, image, prompt=question", r: '{"answer": ..., "answer_en": ...}' },
-        x: 'r = vision("question", img, prompt="무슨 색이야?")\nprint(r["answer"])\nspeak(r["answer"])' },
+      { g: "ai", n: 'vision("look", img)', ins: 'vision("look", img)',
+        ko: { d: "사진을 보고 답해요 — prompt 로 물으면 그 질문에, 안 물으면 사진 설명",
+              a: "기능 이름, 사진, prompt=질문(없어도 됨)", r: '{"answer": 답}' },
+        en: { d: "look at the photo and answer (describes it if you ask nothing)",
+              a: "kind, image, prompt=question (optional)", r: '{"answer": ...}' },
+        x: 'print(vision("look", img)["answer"])\nprint(vision("look", img, prompt="몇 명이야?")["answer"])' },
+      { g: "ai", n: 'db_add("이름", 글)', ins: 'db_add("삼국지", "여기에 자료 글을 넣어요")',
+        ko: { d: "자료 만들기 — 이 글에서 찾아 답하게 해요", a: "자료 이름, 글", r: "{slug, title, count 조각 수}" },
+        en: { d: "make a knowledge base from your text", a: "title, text", r: "{slug, title, count}" },
+        x: 'db_add("삼국지", open("삼국지.txt", encoding="utf-8").read())\nprint(db_list())' },
+      { g: "ai", n: 'chat("...", db="이름")', ins: 'chat("제갈량은 누구야?", db="삼국지")',
+        ko: { d: "내가 만든 자료에서 찾아 답해요 — 자료에 없으면 없다고 말해요", a: "물어볼 말, db=자료 이름", r: "답 (글자)" },
+        en: { d: "answer from your own material only", a: "question, db=title", r: "answer text" },
+        x: 'print(chat("제갈량은 누구야?", db="삼국지"))' },
+      { g: "ai", n: 'db_find("...", "이름")', ins: 'db_find("제갈량은 누구야?", "삼국지")',
+        ko: { d: "답은 안 만들고 자료에서 비슷한 곳만 찾아요 — 어디서 가져오는지 보기", a: "물어볼 말, 자료 이름, 개수", r: "목록 [{text 조각, score 닮은 정도}]" },
+        en: { d: "find similar parts without answering", a: "question, title, count", r: "list of {text, score}" },
+        x: 'for h in db_find("제갈량은 누구야?", "삼국지"):\n    print(h["score"], h["text"])' },
+      { g: "ai", n: 'db_delete("이름")', ins: 'db_delete("삼국지")',
+        ko: { d: "자료 지우기", a: "자료 이름", r: "{slug, deleted}" },
+        en: { d: "delete a knowledge base", a: "title", r: "{slug, deleted}" },
+        x: 'db_delete("삼국지")\nprint(db_list())' },
+      { g: "ai", n: 'db_list()', ins: 'db_list()',
+        ko: { d: "만들어 둔 자료 목록", a: "없음", r: "목록 [{slug, title, count}]" },
+        en: { d: "list your knowledge bases", a: "none", r: "list of {slug, title, count}" },
+        x: 'print([k["title"] for k in db_list()])' },
       { g: "ai", n: 'vision("tag", img)', ins: 'vision("tag", img)',
-        ko: { d: "사진의 주제어 뽑기", a: "기능 이름, 사진", r: '{"tag": "고양이, 소파", "tag_en": "cat, sofa"}' },
-        en: { d: "extract keywords", a: "kind, image", r: '{"tag": ..., "tag_en": ...}' },
+        ko: { d: "사진의 주제어 뽑기", a: "기능 이름, 사진", r: '{"tag": "고양이, 소파"}' },
+        en: { d: "extract keywords", a: "kind, image", r: '{"tag": ...}' },
         x: 'print(vision("tag", img)["tag"])' },
-      { g: "ai", n: 'vision("classify", img, prompt="...")',
-        ins: 'vision("classify", img, prompt="강아지 / 고양이 / 사람")',
-        ko: { d: "내가 정한 보기 중에서 고르게 하기", a: "기능 이름, 사진, prompt=보기들", r: '{"answer": 고른 것}' },
-        en: { d: "classify into your own choices", a: "kind, image, prompt=choices", r: '{"answer": ...}' },
-        x: 'r = vision("classify", img, prompt="강아지 / 고양이 / 사람")\nprint(r["answer"])' },
+      { g: "ai", n: 'vision("place", img)', ins: 'vision("place", img)',
+        ko: { d: "장소 맞히기 — 교실·도서관·식당·부엌·거실·침실·사무실·운동장·공원·길거리·가게·자연 중 하나",
+              a: "기능 이름, 사진", r: '{"place": "교실"}' },
+        en: { d: "guess the place (one word)", a: "kind, image", r: '{"place": "classroom"}' },
+        x: 'print(vision("place", img)["place"])' },
+      { g: "ai", n: 'vision("seg", img)', ins: 'vision("seg", img)',
+        ko: { d: "사물의 영역을 색으로 칠하고, 무엇을 칠했는지도 알려줘요",
+              a: "기능 이름, 사진", r: '{"image": 칠한 그림, "object": [{"name","score","box"}]}' },
+        en: { d: "color each object's area and list what was found",
+              a: "kind, image", r: '{"image": ..., "object": [...]}' },
+        x: 'r = vision("seg", img)\nshow(r["image"], r["object"])\nfor it in r["object"]:\n    print(it["name"], it["score"])' },
+      { g: "ai", n: 'vision("time", img)', ins: 'vision("time", img)',
+        ko: { d: "시간대 맞히기 — 아침·낮·저녁·밤 중 하나", a: "기능 이름, 사진", r: '{"time": "낮"}' },
+        en: { d: "guess the time of day", a: "kind, image", r: '{"time": "afternoon"}' },
+        x: 'print(vision("time", img)["time"])' },
+      { g: "ai", n: 'vision("weather", img)', ins: 'vision("weather", img)',
+        ko: { d: "날씨 맞히기 — 맑음·흐림·비·눈·바람 중 하나. 바깥이 안 보이면 실내",
+              a: "기능 이름, 사진", r: '{"weather": "맑음"}' },
+        en: { d: "guess the weather", a: "kind, image", r: '{"weather": "sunny"}' },
+        x: 'print(vision("weather", img)["weather"])' },
       { g: "ai", n: 'vision("ocr", img)', ins: 'vision("ocr", img)',
         ko: { d: "사진 속 글자 읽기", a: "기능 이름, 사진", r: "목록 [{text 글자, score 확신도, box 위치}, ...]" },
         en: { d: "read text in the photo", a: "kind, image", r: "list of {text, score, box}" },
@@ -981,8 +1191,9 @@ print(vision("caption", img, lang="en")["caption"])   # 영어로 받기</pre>
         en: { d: "read a QR code", a: "kind, image", r: 'list of {"data", "type", box} — empty if none' },
         x: 'r = vision("qr", camera())\nif r:\n    print(r[0]["data"])' },
       { g: "ai", n: 'vision("hand", img)', ins: 'vision("hand", img)',
-        ko: { d: "손동작 알아보기", a: "기능 이름, 사진", r: "목록 [{gesture 손모양, score, hand 왼/오른, box, points 관절}, ...]" },
-        en: { d: "hand gesture", a: "kind, image", r: "list of {gesture, score, hand, box, points}" },
+        ko: { d: "손동작 알아보기 — 값 비교는 gesture_en(Thumb_Up·Victory 등)", a: "기능 이름, 사진",
+              r: "목록 [{gesture 손모양, gesture_en, score, hand 왼/오른, box, points 관절}, ...]" },
+        en: { d: "hand gesture (compare with gesture_en)", a: "kind, image", r: "list of {gesture, gesture_en, score, hand, box, points}" },
         x: 'r = vision("hand", camera())\nif r:\n    print(r[0]["gesture"])' },
       { g: "ai", n: 'vision("pose", img)', ins: 'vision("pose", img)',
         ko: { d: "몸 관절 위치 찾기", a: "기능 이름, 사진", r: "목록 [{score, box, points 관절 17개 좌표}, ...]" },
@@ -997,12 +1208,12 @@ print(vision("caption", img, lang="en")["caption"])   # 영어로 받기</pre>
         en: { d: "upscale 4x", a: "kind, image", r: "the upscaled image" },
         x: 'big = vision("sr", img)\nshow(big)\nsave(big, "big.jpg")' },
       { g: "ai", n: 'vision("fire", img)', ins: 'vision("fire", img)',
-        ko: { d: "불·연기 찾기 (특별 훈련된 AI)", a: "기능 이름, 사진", r: '{"object": [{name, score, box}, ...]} — 없으면 목록이 비어요' },
+        ko: { d: "불·연기 찾기 (개별 인식)", a: "기능 이름, 사진", r: '{"object": [{name, name_en, score, box}, ...]} — 없으면 목록이 비어요' },
         en: { d: "find fire and smoke", a: "kind, image", r: '{"object": [...]}' },
         x: 'r = vision("fire", camera())\nif r["object"]:\n    print("불이야!")\n    show(camera(), r)' },
       { g: "ai", n: 'vision("rps", img)', ins: 'vision("rps", img)',
-        ko: { d: "가위바위보 알아보기 (특별 훈련된 AI)", a: "기능 이름, 사진", r: '{"object": [{name 가위/바위/보, score, box}, ...]}' },
-        en: { d: "rock paper scissors", a: "kind, image", r: '{"object": [{name, score, box}, ...]}' },
+        ko: { d: "가위바위보 알아보기 (개별 인식)", a: "기능 이름, 사진", r: '{"object": [{name 가위/바위/보, name_en rock/paper/scissors, score, box}, ...]}' },
+        en: { d: "rock paper scissors", a: "kind, image", r: '{"object": [{name, name_en, score, box}, ...]}' },
         x: 'r = vision("rps", camera())["object"]\nif r:\n    print(r[0]["name"])' },
 
       { g: "edit", n: "resize(img, 2)", ins: "resize(img, 2)",
@@ -1106,6 +1317,12 @@ print(vision("caption", img, lang="en")["caption"])   # 영어로 받기</pre>
         ko: { d: "계이름으로 소리 내기", a: "계이름(도 레 미 파 솔 라 시 도2), 박자", r: "없음" },
         en: { d: "play a note", a: "note name, beats", r: "nothing" },
         x: 'for n in ["도", "미", "솔"]:\n    play_note(n, 1)' },
+      { g: "sound", n: 'speaker()', ins: 'speaker()',
+        ko: { d: "소리가 안 들릴 때 스피커를 골라요. 그냥 부르면 목록이 나와요",
+              a: "번호 또는 이름 (없으면 목록)", r: "지금 쓰는 스피커" },
+        en: { d: "pick the speaker when you hear nothing (no argument = list)",
+              a: "index or name", r: "current speaker" },
+        x: 'speaker()          # 목록 보기\nspeaker(4)         # 4번으로 정하기\nbeep("ok")' },
       { g: "sound", n: 'beep("ok")', ins: 'beep("ok")',
         ko: { d: "짧은 알림 소리", a: "ok / error / ding / buzz", r: "없음" },
         en: { d: "short beep", a: "ok / error / ding / buzz", r: "nothing" },
@@ -1148,7 +1365,7 @@ print(vision("caption", img, lang="en")["caption"])   # 영어로 받기</pre>
       { g: "flow", n: "for i in range(5):", ins: "for i in range(5):\n    ",
         ko: { d: "5번 반복하기", a: "반복할 횟수", r: "없음" },
         en: { d: "repeat 5 times", a: "count", r: "nothing" },
-        x: 'for i in range(5):\n    print(vision("caption", camera())["caption"])' },
+        x: 'for i in range(5):\n    print(vision("look", camera())["answer"])' },
       { g: "flow", n: "if ...:", ins: "if r:\n    ",
         ko: { d: "조건이 맞을 때만 실행 — 목록이 비어 있으면 거짓", a: "조건", r: "없음" },
         en: { d: "run only if the condition is true", a: "condition", r: "nothing" },
@@ -1239,14 +1456,15 @@ print(vision("caption", img, lang="en")["caption"])   # 영어로 받기</pre>
 
     /* ---------------- 자동완성 ---------------- */
     const KINDS = ["object", "face", "face_attr", "distance", "hand", "pose", "seg",
-                   "caption", "question", "tag", "classify", "ocr", "qr",
+                   "look", "place", "time", "weather",
+                   "tag", "ocr", "qr",
                    "bg_remove", "sr", "mask", "fire", "fall", "ball", "rps",
                    "number", "helmet", "box"];
-    const FUNCS = ["camera", "load", "save", "show", "draw", "vision", "detect",
+    const FUNCS = ["camera", "load", "save", "show", "draw", "vision", "detect", "language", "chat", "db_add", "db_list", "db_find", "db_delete",
                    "speak", "listen", "wav_to_text", "my_models",
                    "resize", "rotate", "flip", "crop", "crop_xy", "crop_found",
                    "attach", "put_on", "put_on_xy", "put_sticker",
-                   "adjust", "img_filter", "draw_text", "draw_text_xy",
+                   "speaker", "adjust", "img_filter", "draw_text", "draw_text_xy",
                    "draw_rect", "draw_rect_xy", "draw_circle", "draw_circle_xy",
                    "draw_line", "draw_line_xy",
                    "size_of", "color_at", "color_at_xy", "main_color",
@@ -1274,11 +1492,49 @@ print(vision("caption", img, lang="en")["caption"])   # 영어로 받기</pre>
       return { list, from: CodeMirror.Pos(cur.line, cur.ch - typed.length), to: cur };
     }
 
+    /* 여러 줄 주석 토글 — 고른 줄이 모두 주석이면 벗기고, 아니면 씌운다.
+       (CodeMirror 주석 애드온을 따로 넣지 않고 파이썬 한 줄 주석만 다룬다) */
+    function toggleComment(c) {
+      const from = c.getCursor("from"), to = c.getCursor("to");
+      const last = (to.line > from.line && to.ch === 0) ? to.line - 1 : to.line;
+      const lines = [];
+      for (let i = from.line; i <= last; i++) lines.push(i);
+      const body = lines.filter(i => c.getLine(i).trim() !== "");
+      const target = body.length ? body : lines;
+      const allOn = target.every(i => /^\s*#\s?/.test(c.getLine(i)));
+      c.operation(() => {
+        if (allOn) {                                  // 벗기기
+          target.forEach(i => {
+            const m = c.getLine(i).match(/^(\s*)#\s?/);
+            if (m) c.replaceRange("", { line: i, ch: m[1].length },
+                                      { line: i, ch: m[0].length });
+          });
+        } else {                                      // 씌우기 — 들여쓰기 자리는 맞춘다
+          const indent = Math.min(...target.map(i => c.getLine(i).match(/^\s*/)[0].length));
+          target.forEach(i => c.replaceRange("# ", { line: i, ch: indent }));
+        }
+      });
+    }
+    function moveLines(c, dir) {                      // 줄 옮기기 (Alt + ↑ / ↓)
+      c.execCommand(dir < 0 ? "swapLineUp" : "swapLineDown");
+    }
+    function dupLine(c) {                             // 줄 복제
+      const cur = c.getCursor();
+      c.replaceRange(c.getLine(cur.line) + "\n", { line: cur.line, ch: 0 });
+      c.setCursor({ line: cur.line + 1, ch: cur.ch });
+    }
     cm.setOption("extraKeys", Object.assign({}, cm.getOption("extraKeys"), {
       "Ctrl-Space": c => c.showHint({ hint: themakerHint, completeSingle: false }),
       "Ctrl-Enter": () => { if (!SID) run(); },      // 실행
       "Cmd-Enter": () => { if (!SID) run(); },
       "Shift-Ctrl-Enter": () => stop(),
+      "Ctrl-/": toggleComment, "Cmd-/": toggleComment,       // 주석 토글
+      "Ctrl-'": toggleComment,                               // 한글 자판에서 / 대신 눌리는 자리
+      "Alt-Up": c => moveLines(c, -1), "Alt-Down": c => moveLines(c, 1),
+      "Shift-Alt-Down": dupLine, "Shift-Alt-Up": dupLine,
+      "Ctrl-D": c => c.execCommand("deleteLine"),            // 줄 지우기
+      "Ctrl-S": () => { document.getElementById("saveButton").click(); },
+      "Ctrl-Alt-N": () => document.getElementById("newButton").click(),
     }));
     /* 편집기 밖에서도 되게 */
     document.addEventListener("keydown", e => {
@@ -1314,7 +1570,10 @@ print(vision("caption", img, lang="en")["caption"])   # 영어로 받기</pre>
       const helpOpen = document.getElementById("helpPanel").classList.contains("open");
       document.getElementById("guideButton").textContent = t(helpOpen ? "guideOff" : "guide");
       set("exampleButton", "example");
+      set("newButton", "newCode");
       set("saveButton", "save"); set("loadButton", "load"); set("deployButton", "deploy");
+      const kb = document.getElementById("keysHint");
+      if (kb) kb.textContent = t("keysTitle") + " — " + t("keysBody");
       set("stopButton", "stop"); set("clearButton", "clear");
       set("txtHint", "hint"); set("txtExTitle", "exTitle");
       set("txtHelpHead", "helpHead"); set("txtHelpMore", "helpMore");
@@ -1334,7 +1593,7 @@ print(vision("caption", img, lang="en")["caption"])   # 영어로 받기</pre>
     }
     document.getElementById("langButton").onclick = () => {
       LANG = LANG === "ko" ? "en" : "ko";
-      localStorage.setItem("vapi-lang", LANG);
+      localStorage.setItem("vapiLang", LANG);
       applyLang();
     };
     applyLang();

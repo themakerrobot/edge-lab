@@ -80,7 +80,7 @@ def _cleanup():
 
 
 @router.post("/pycode/run", tags=["pycode"], summary="파이썬 코드 실행")
-def pycode_run(code: str = Body(..., embed=True)):
+def pycode_run(code: str = Body(..., embed=True), lang: str = "ko"):
     _cleanup()
     with _lock:
         running = sum(1 for s in _sessions.values() if not s["done"])
@@ -97,6 +97,7 @@ def pycode_run(code: str = Body(..., embed=True)):
     env["PYTHONIOENCODING"] = "utf-8"
     env["PYTHONUNBUFFERED"] = "1"
     env["THEMAKER_SID"] = sid          # show() 가 결과를 화면으로 보내는 통로
+    env["THEMAKER_LANG"] = "en" if str(lang).startswith("en") else "ko"   # 화면 언어 = AI 이름 언어
 
     kw = {}
     if os.name == "nt":
@@ -236,6 +237,14 @@ _README = """{name} — The Maker 로 만든 프로그램
 
 [설치 폴더가 다르면]
   themaker_home.txt 를 열어 The Maker 폴더 경로를 적어 주세요.
+
+[소리가 안 들리면]
+  윈도우 소리 설정에서 기본 출력이 스피커인지 확인해 주세요.
+  그래도 안 들리면 코드 맨 위에 speaker() 를 넣고 한 번 실행해
+  스피커 목록을 본 뒤 speaker(번호) 로 골라 주세요.
+
+[영어로 답하게 하려면]
+  코드 맨 위에 language("en") 을 넣어 주세요.
 """
 
 _BAT = """@echo off

@@ -28,6 +28,8 @@ from typing import List
 
 import cv2
 import numpy as np
+
+import hub
 from fastapi import APIRouter, Body, File, Form, Query, Request, UploadFile
 from fastapi.responses import FileResponse
 
@@ -232,10 +234,10 @@ UPPER_N = 11                        # 0~10 (얼굴·어깨·팔) — 책상에 �
 
 def _body_keypoints(bgr):
     """가장 크게 잡힌 사람 한 명의 관절 17개 [(x, y, conf)]. 없으면 None."""
-    import main                                        # 이미 로딩된 모듈을 그대로 쓴다
-    if getattr(main, "eng", None) is None:
+    eng = hub.engines(required=False)                  # 이미 올라온 것을 그대로 쓴다
+    if eng is None:
         raise SoftError("AI를 준비하는 중이에요. 조금만 기다려 주세요.")
-    r = main.eng.object.pose(bgr)[0]
+    r = eng.object.pose(bgr)[0]
     if r.keypoints is None or r.boxes is None or len(r.boxes) == 0:
         return None
     areas = []
@@ -428,11 +430,7 @@ def _dev_for(kind):
     if kind in ("pose", "face"):
         return "CPU"                      # MediaPipe
     if kind in ("body", "body_up"):
-        try:
-            import main
-            return main.DEVICE_OF.get("pose_e", "CPU")
-        except Exception:
-            return "CPU"
+        return hub.device_of("object_pose", "CPU")
     return _device                        # image (OpenVINO 백본)
 
 
@@ -668,6 +666,17 @@ async def custom_models(request: Request):
                     pass
         return items
     return _run("custom_models", fn)
+
+
+@router.get("/custom/models/{slug}/file", tags=["custom"], summary="내가 만든 AI 내려받기")
+async def custom_model_file(request: Request, slug: str):
+    """저장한 모델 zip 을 그대로 돌려준다 (가르치기에서 다시 불러올 때 쓴다)."""
+    p = os.path.join(USER_DIR, _slugify(slug), "model.zip")
+    if not os.path.exists(p):
+        return {"type": "custom_model_file", "result": "fail",
+                "data": f"모델을 찾을 수 없습니다: {slug}", "elapsed_ms": 0}
+    return FileResponse(p, media_type="application/zip",
+                        filename=_slugify(slug) + ".zip")
 
 
 @router.delete("/custom/models/{slug}", tags=["custom"], summary="내가 만든 AI 삭제")

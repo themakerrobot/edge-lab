@@ -25,17 +25,18 @@ PROJECT_DIR = os.path.join(DATA_DIR, "project")
 PYCODE_DIR = os.path.join(DATA_DIR, "pycode")
 STATS_DIR = os.path.join(DATA_DIR, "stats")
 TMP_DIR = os.path.join(DATA_DIR, "tmp")
+DB_DIR = os.path.join(DATA_DIR, "db")            # 아이가 올린 자료(지식베이스)
 APPWIN_DIR = os.path.join(DATA_DIR, ".appwin")
 
 REPORTS_PATH = os.path.join(STATS_DIR, "reports.json")
 USAGE_PATH = os.path.join(STATS_DIR, "usage.json")
 
 # 전체 초기화 대상 (모델은 건드리지 않는다)
-RESET_DIRS = [USER_DIR, PROJECT_DIR, PYCODE_DIR, STATS_DIR, TMP_DIR]
+RESET_DIRS = [USER_DIR, PROJECT_DIR, PYCODE_DIR, STATS_DIR, TMP_DIR, DB_DIR]
 
 
 def ensure():
-    for d in (DATA_DIR, USER_DIR, PROJECT_DIR, PYCODE_DIR, STATS_DIR, TMP_DIR):
+    for d in (DATA_DIR, USER_DIR, PROJECT_DIR, PYCODE_DIR, STATS_DIR, TMP_DIR, DB_DIR):
         os.makedirs(d, exist_ok=True)
 
 
