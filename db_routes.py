@@ -48,9 +48,12 @@ def _eng():
     return hub.engines()          # import main 은 금물 — main.py 가 통째로 다시 실행된다
 
 
-def _ok(data, t0=None):
-    return {"type": "db", "result": "ok", "data": data,
-            "elapsed_ms": int((time.perf_counter() - t0) * 1000) if t0 else 0}
+def _ok(data, t0=None, device=None):
+    out = {"type": "db", "result": "ok", "data": data,
+           "elapsed_ms": int((time.perf_counter() - t0) * 1000) if t0 else 0}
+    if device:
+        out["device"] = device                # 화면 상태바·점검 도구가 장치를 보여 준다
+    return out
 
 
 def _fail(msg, t0=None):
@@ -284,4 +287,5 @@ async def db_rag(request: Request, db: str = Query(...), prompt: str = Query(...
         import traceback
         traceback.print_exc()
         return _fail(str(ex), t0)
-    return _ok({"answer": answer, "db": meta["title"], "found": hits}, t0)
+    return _ok({"answer": answer, "db": meta["title"], "found": hits}, t0,
+               device=hub.device_of("chat_ask", "GPU"))

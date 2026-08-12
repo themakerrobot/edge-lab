@@ -110,13 +110,13 @@ def check_chat():
         state = "PASS" if j.get("result") == "ok" else "FAIL"
         dev = j.get("device", "-")
         print(f"  {state}  {'대화(사진 없이)':<16} {ms:>6} ms  [{dev}]")
-        return j.get("result") == "ok"
+        return (1, 0) if j.get("result") == "ok" else (0, 1)
     except Exception as ex:
         print(f"  FAIL  {'대화(사진 없이)':<16} {str(ex)[:50]}")
-        return False
+        return (0, 1)
 
 
-def check_kb():
+def check_db():
     """자료 만들기 → 찾기 → 답하기 → 지우기. 임베딩 모델은 첫 요청 때 올라온다."""
     text = ("무지개는 빛이 물방울에 꺾여서 생긴다. 비가 온 뒤 햇빛이 나면 하늘에 "
             "반원 모양으로 나타난다. 빨강부터 보라까지 일곱 빛깔이다.\n\n"
@@ -145,18 +145,22 @@ def check_kb():
         with urllib.request.urlopen(req, timeout=180) as r:
             j = json.loads(r.read().decode())
         ms = int((time.perf_counter() - t1) * 1000)
-        state = "PASS" if j.get("result") == "ok" else "FAIL"
-        print(f"  {state}  {'자료에서 답하기':<16} {ms:>6} ms  [{j.get('device', '-')}]")
+        ok2 = j.get("result") == "ok"
+        print(f"  {'PASS' if ok2 else 'FAIL'}  {'자료에서 답하기':<16} {ms:>6} ms "
+              f" [{j.get('device', '-')}]")
 
         req = urllib.request.Request(HOST + "/chat/db/" + urllib.parse.quote(slug),
                                      method="DELETE")
         urllib.request.urlopen(req, timeout=10).read()
+        return (1 + (1 if ok2 else 0), 0 if ok2 else 1)
     except Exception as ex:
         print(f"  FAIL  {'자료(RAG)':<16} {str(ex)[:50]}")
+        return (0, 1)
 
 
 def check_speech():
     """TTS(소리 만들기)와 STT(음성 인식). 둘 다 지연 로딩이라 첫 호출이 느리다."""
+    p_n = f_n = 0
     err = tts_err = ""
     dev_stt = dev_tts = "CPU"                     # TTS 는 onnxruntime CPU 고정
     try:
@@ -177,6 +181,7 @@ def check_speech():
             ok = "audio" in r.headers.get("Content-Type", "") and len(r.read()) > 1000
         ms = int((time.perf_counter() - t0) * 1000)
         print(f"  {'PASS' if ok else 'FAIL'}  {'음성 합성(TTS)':<16} {ms:>6} ms  [{dev_tts}]")
+        p_n, f_n = (p_n + 1, f_n) if ok else (p_n, f_n + 1)
     except Exception as ex:
         print(f"  SKIP  {'음성 합성(TTS)':<16} {str(tts_err or ex)[:40]}")
 
@@ -197,8 +202,10 @@ def check_speech():
         ms = int((time.perf_counter() - t0) * 1000)
         state = "PASS" if j.get("result") == "ok" else "FAIL"
         print(f"  {state}  {'음성 인식(STT)':<16} {ms:>6} ms  [{dev_stt}]")
+        p_n, f_n = (p_n + 1, f_n) if state == "PASS" else (p_n, f_n + 1)
     except Exception as ex:
         print(f"  SKIP  {'음성 인식(STT)':<16} {str(err or ex)[:40]}")
+    return (p_n, f_n)
 
 
 def wait_ready(limit=300):
@@ -259,9 +266,9 @@ def main():
             print(f"  FAIL  {label:<16} {str(ex)[:60]}")
             failed += 1
 
-    check_chat()
-    check_kb()
-    check_speech()
+    for p_i, f_i in (check_chat(), check_db(), check_speech()):
+        passed += p_i
+        failed += f_i
     print("-" * 62)
     print(f"결과: {passed} PASS / {failed} FAIL  (총 {passed + failed})")
     return 1 if failed else 0
