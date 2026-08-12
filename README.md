@@ -68,6 +68,39 @@ powershell -File tools\upgrade_check.ps1 -Rollback   # 문제가 있으면 되�
 ```
 추론 런타임(openvino·onnxruntime)은 사고 이력이 있어 기본으로 제외한다 — 함께 올리려면 `-Runtime`.
 
+## VLM 모델 바꾸기 (개발 PC 전용)
+쓰는 모델은 `engines.py` 의 `VLM_NAME` 하나다(현재 `gemma3-4b-int4`).
+여러 개 두고 시험할 때는 코드를 고치지 말고 `VAPI_VLM=폴더이름` 을 준다.
+
+변환은 **전용 가상환경**에서 한다 — 모델마다 요구하는 `transformers` 버전이 달라
+메인 `venv` 와 섞으면 깨진다. `openvino` 는 **실행 쪽과 같은 버전**으로 맞춘다
+(다르면 모델이 열려도 답을 못 만드는 수가 있다).
+
+```
+python -m venv venv-convert
+venv-convert\Scripts\python -m pip install "transformers>=4.50,<5" "optimum-intel[openvino]" nncf accelerate openvino-tokenizers "openvino==2026.3.*"
+
+venv-convert\Scripts\python -m optimum.commands.optimum_cli export openvino -m google/gemma-3-4b-it --task image-text-to-text --weight-format int4 --trust-remote-code models\vlm\gemma3-4b-int4
+```
+
+`--task image-text-to-text` 를 빼면 안 된다. 자동 추론에 맡기면 모델에 따라
+비전 부분이 어긋나게 나와, 나중에 답을 만들 때 모양 불일치 오류가 난다.
+
+변환이 끝나면 `venv-convert` 는 지워도 된다 — 교실 PC 는 IR 만 읽는다.
+
+허깅페이스에 올려야 다른 PC 도 `setup_deploy.ps1` 만으로 받는다.
+
+```
+venv\Scripts\python -c "from huggingface_hub import HfApi; HfApi().upload_folder(repo_id='leeyunjai/vapi-od', folder_path='models/vlm/gemma3-4b-int4', path_in_repo='vlm/gemma3-4b-int4', delete_patterns='*', ignore_patterns=['.cache/**'], commit_message='VLM: gemma3-4b')"
+```
+
+**예전 VLM 폴더는 허깅페이스 웹에서 지운다.** 안 지우면 설치할 때 둘 다 받아 용량만 먹는다.
+
+### 모델이 열리는데 답을 못 만들 때
+`Check '...get_shape() == ...' failed` 같은 오류가 나면 **런타임이 그 구조를 모르는 것**이다.
+아주 새로운 구조는 정식 릴리스에 아직 안 들어와 있고, 모델 카드가 nightly 빌드를 권하기도 한다.
+**교실에 배포하는 제품이므로 nightly 는 쓰지 않는다** — 정식 릴리스에 들어올 때까지 기다린다.
+
 ## 폴더
 | 폴더 | 내용 | 지워도 되나 |
 |---|---|---|
@@ -80,7 +113,7 @@ powershell -File tools\upgrade_check.ps1 -Rollback   # 문제가 있으면 되�
 ## 모델
 | 용도 | 모델 | 디바이스 |
 |---|---|---|
-| 캡션·질문·태그·분류·얼굴속성 | Qwen2.5-VL-3B INT4 | GPU |
+| 캡션·질문·태그·분류·얼굴속성 | Gemma 3 4B INT4 (`engines.py` 의 `VLM_NAME`) | GPU |
 | 사물/자세/분할 | YOLO11m (+pose/seg) | CPU |
 | 커스텀 7종 (fire·fall·ball·rps·number·helmet·box) | YOLO11s | CPU |
 | 마스크 | YOLO11s-cls | CPU |
@@ -100,7 +133,7 @@ powershell -File tools\upgrade_check.ps1 -Rollback   # 문제가 있으면 되�
 포함된 구성 요소:
 | 구성 요소 | 라이선스 |
 |---|---|
-| Qwen2.5-VL | Apache-2.0 |
+| Gemma 3 | Gemma Terms of Use |
 | YOLO11 (ultralytics) | AGPL-3.0 |
 | OpenVINO / open_model_zoo 얼굴 모델 | Apache-2.0 |
 | MediaPipe | Apache-2.0 |

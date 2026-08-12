@@ -2,6 +2,7 @@
 # vapi-od : on-device inference engines (Intel Meteor Lake / OpenVINO)
 # 디바이스 배정: VLM/YOLO/gan=GPU, 얼굴 스위트=NPU(없으면 GPU→CPU), ocr/qr=CPU
 import base64
+import os
 import threading
 from math import cos, sin, pi
 from pathlib import Path
@@ -404,14 +405,39 @@ class CodeEngine:
 
 
 # ---------------------------------------------------------------- VLM
+# 쓰는 VLM. 다른 모델을 시험할 때는 VAPI_VLM 환경변수로 폴더 이름을 준다.
+#   set VAPI_VLM=다른모델-int4
+# 모델을 바꾸려면 새 IR 을 models/vlm 에 두고 이 이름만 고친다 (README 참고).
+VLM_NAME = "gemma3-4b-int4"
+
+
+def find_vlm():
+    """쓸 VLM 폴더를 고른다."""
+    root = MODELS / "vlm"
+    want = os.environ.get("VAPI_VLM", "").strip() or VLM_NAME
+    path = root / want
+    if path.is_dir():
+        return path
+    have = [d.name for d in sorted(root.iterdir()) if d.is_dir()] if root.is_dir() else []
+    if not have:
+        raise FileNotFoundError("models/vlm 에 모델이 없습니다.")
+    print("[engines] %s 가 없어 %s 를 씁니다 (있는 것: %s)"
+          % (want, have[0], ", ".join(have)))
+    return root / have[0]
+
+
 class VlmEngine:
     def __init__(self):
         import openvino_genai as og
-        self.pipe = og.VLMPipeline(str(MODELS / "vlm/qwen2.5-vl-3b-int4"), DEV_VLM)
+        path = find_vlm()
+        print("[engines] VLM:", path.name)
+        self.pipe = og.VLMPipeline(str(path), DEV_VLM)
         self.lock = threading.Lock()
 
     @staticmethod
-    def _tensor(bgr, max_side=896):
+    def _tensor(bgr, max_side=640):
+        """640 이 적정선. 실측상 896 은 느리기만 하고 답이 더 낫지 않으며,
+        640 아래로 내려도 더 빨라지지 않는다."""
         h, w = bgr.shape[:2]
         scale = min(1.0, max_side / max(h, w))
         if scale < 1.0:

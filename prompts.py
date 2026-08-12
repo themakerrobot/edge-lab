@@ -9,8 +9,8 @@
 import json, re
 
 MAX_TOKENS = {
-    "caption": 128, "place": 48, "time": 16, "weather": 16,
-    "question": 160, "tag": 96, "attr": 64, "cls": 96, "free": 256,
+    "caption": 64, "place": 32, "time": 12, "weather": 12,
+    "question": 80, "tag": 56, "attr": 48, "cls": 64, "free": 128,
 }
 
 LANGS = ("ko", "en")
@@ -23,10 +23,11 @@ def _lang(lang):
 
 # ---------------------------------------------------------------- 프롬프트
 _CAPTION = {
-    "ko": ("이 사진을 설명하세요. 반드시 아래 JSON 형식으로만 답하세요.\n"
-           '{"caption": "<한국어 한 문장>", "caption_en": "<English one sentence>"}'),
-    "en": ("Describe this photo. Answer only in the JSON format below.\n"
-           '{"caption": "<one English sentence>", "caption_en": "<the same English sentence>"}'),
+    "ko": ("이 사진을 한국어 한 문장으로 설명하세요. 한국어로만 쓰고, "
+           "발음 표기나 영어 번역은 넣지 마세요.\n"
+           '반드시 이 JSON 으로만 답하세요. {"caption": "<한 문장>"}'),
+    "en": ("Describe this photo in one English sentence.\n"
+           'Answer only in this JSON. {"caption": "<one sentence>"}'),
 }
 
 _PLACE = {
@@ -55,22 +56,21 @@ _WEATHER = {
 WEATHER_CHOICES = ["sunny", "cloudy", "rainy", "snow", "unknown"]
 
 _QUESTION = {
-    "ko": ("사진을 보고 질문에 답하세요. 반드시 아래 JSON 형식으로만 답하세요.\n"
-           "answer 에는 한국어 답을, answer_en 에는 같은 뜻의 영어 답을 넣으세요. "
-           "설명이나 형식 표시는 넣지 마세요.\n"
-           '{"answer": "", "answer_en": ""}\n'
+    "ko": ("사진을 보고 질문에 한국어로 짧게 답하세요. 한국어로만 쓰고, "
+           "발음 표기나 영어 번역은 넣지 마세요.\n"
+           '반드시 이 JSON 으로만 답하세요. {"answer": "<짧은 답>"}\n'
            "질문: {q}"),
-    "en": ("Look at the photo and answer the question. Answer only in the JSON format below.\n"
-           "Put the English answer in both fields. Do not add any explanation or markers.\n"
-           '{"answer": "", "answer_en": ""}\n'
+    "en": ("Look at the photo and answer briefly in English.\n"
+           'Answer only in this JSON. {"answer": "<short answer>"}\n'
            "Question: {q}"),
 }
 
 _TAG = {
-    "ko": ("이 사진의 핵심 사물/개념 태그를 5~10개 뽑으세요. 반드시 JSON으로만 답하세요. "
-           '{"tag": "<한국어 태그 콤마 구분>", "tag_en": "<english tags comma separated>"}'),
-    "en": ("List 5 to 10 key object or concept tags for this photo. Answer only in JSON. "
-           '{"tag": "<english tags comma separated>", "tag_en": "<the same english tags>"}'),
+    "ko": ("이 사진의 핵심 낱말을 5개까지 한국어로 뽑으세요. 낱말만 콤마로 잇고 "
+           "설명은 넣지 마세요.\n"
+           '반드시 이 JSON 으로만 답하세요. {"tag": "낱말, 낱말, 낱말"}'),
+    "en": ("List up to 5 key words for this photo in English, comma separated, no explanation.\n"
+           'Answer only in this JSON. {"tag": "word, word, word"}'),
 }
 
 _ATTR = {
@@ -84,12 +84,12 @@ _ATTR = {
 ATTR_KEYS = ["Eyeglasses", "Mustache", "Beard", "Hat"]
 
 _CLS = {
-    "ko": ("이 이미지의 주제를 가장 잘 나타내는 카테고리 3개를 확신도 순으로 답하세요. "
-           "반드시 JSON 배열로만 답하세요.\n"
-           '[{"name": "<english>", "ko_name": "<한국어>", "score": <0-100>}, ...]'),
-    "en": ("Give the 3 categories that best describe this image, most confident first. "
-           "Answer only as a JSON array.\n"
-           '[{"name": "<english>", "ko_name": "<english, same as name>", "score": <0-100>}, ...]'),
+    "ko": ("이 이미지의 주제를 나타내는 낱말 3개를 확신도 순으로 답하세요. "
+           "이름은 한국어 한 낱말로, 설명은 넣지 마세요.\n"
+           '반드시 이 JSON 배열로만 답하세요. [{"name": "낱말", "score": 90}, ...]'),
+    "en": ("Give 3 words describing this image, most confident first. "
+           "One English word each, no explanation.\n"
+           'Answer only as this JSON array. [{"name": "word", "score": 90}, ...]'),
 }
 
 _FREE = {
@@ -263,9 +263,13 @@ def parse_cls(text):
                     score = int(item.get("score", 0))
                 except Exception:
                     score = 0
-                out.append({"name": str(item["name"]),
-                            "ko_name": str(item.get("ko_name", "")),
+                name = str(item["name"])
+                # 이제 한 언어만 만들게 하므로 ko_name 이 없을 수 있다 — 화면이
+                # ko_name 을 먼저 보므로 비어 있으면 name 을 넣어 준다.
+                out.append({"name": name,
+                            "ko_name": str(item.get("ko_name", "")) or name,
                             "score": max(0, min(100, score))})
     if not out:
-        out = [{"name": (text or "unknown").strip()[:50], "ko_name": "", "score": 0}]
+        one = (text or "unknown").strip()[:50]
+        out = [{"name": one, "ko_name": one, "score": 0}]
     return out

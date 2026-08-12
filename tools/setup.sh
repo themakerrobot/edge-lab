@@ -16,10 +16,8 @@ pip install -r requirements.txt        # 실행에 필요한 것 (루트의 목�
 pip install "optimum[openvino]" nncf torchvision
 pip install mediapipe
 
-echo "=== [2/6] VLM: Qwen2.5-VL-3B INT4 export ==="
-rm -rf "$MODELS/vlm/qwen2.5-vl-3b-int4"
-optimum-cli export openvino -m Qwen/Qwen2.5-VL-3B-Instruct \
-    --weight-format int4 "$MODELS/vlm/qwen2.5-vl-3b-int4"
+echo "=== [2/6] VLM ==="
+echo "  VLM 은 따로 변환합니다 (README 참고)"
 
 echo "=== [3/6] YOLO standard x3 export ==="
 cd "$MODELS/object"

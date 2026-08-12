@@ -365,7 +365,7 @@
         helpHead: "도움말", helpMore: "기능 이름 · 종류 표 보기", helpSearch: "찾기 (예: 얼굴, 소리)",
         put: "넣기", detail: "설명", noHit: "찾는 것이 없어요.",
         argsK: "넣는 것", retK: "돌려주는 것", exK: "예시 (눌러서 넣기)",
-        g_basic: "기본", g_ai: "AI 로 보기", g_my: "내가 만든 AI",
+        g_basic: "기본", g_ai: "AI 로 보기", g_edit: "사진 편집", g_my: "내가 만든 AI",
         g_sound: "소리", g_flow: "반복 · 조건",
         run: "실행 ▶", running: "실행 중...", stop: "정지", clear: "지우기",
         runStateK: "상태", stReady: "준비됨", stRun: "실행 중", stDone: "끝남", stStop: "정지됨",
@@ -393,7 +393,7 @@
         helpHead: "Help", helpMore: "Kinds & tables", helpSearch: "search (e.g. face, sound)",
         put: "insert", detail: "what?", noHit: "Nothing found.",
         argsK: "takes", retK: "returns", exK: "example (click to insert)",
-        g_basic: "Basics", g_ai: "See with AI", g_my: "Your own AI",
+        g_basic: "Basics", g_ai: "See with AI", g_edit: "Edit photo", g_my: "Your own AI",
         g_sound: "Sound", g_flow: "Repeat · If",
         run: "Run ▶", running: "Running...", stop: "Stop", clear: "Clear",
         runStateK: "state", stReady: "ready", stRun: "running", stDone: "done", stStop: "stopped",
@@ -429,7 +429,15 @@ show(img, r)                # 결과를 화면에서 보기 (박스가 그려져
       matchBrackets: true, autoCloseBrackets: true,
       extraKeys: { Tab: c => c.execCommand("indentMore"), "Shift-Tab": c => c.execCommand("indentLess") },
     });
-    cm.setValue(localStorage.getItem("pycode-draft") || DEFAULT_CODE);
+    /* 블록 코딩에서 "파이썬 페이지에서 열기" 로 넘어온 코드가 있으면 그것부터 */
+    let startCode = null;
+    try {
+      if (location.search.indexOf("from=blocks") >= 0) {
+        startCode = sessionStorage.getItem("vapi-py-from-blocks");
+        sessionStorage.removeItem("vapi-py-from-blocks");
+      }
+    } catch (e) {}
+    cm.setValue(startCode || localStorage.getItem("pycode-draft") || DEFAULT_CODE);
     cm.on("change", () => localStorage.setItem("pycode-draft", cm.getValue()));
 
     /* =============================== 실행/중지 =============================== */
@@ -690,6 +698,66 @@ for i in range(10):
     print(i + 1, "번째 — 이상 없음")
     time.sleep(2)
 ` },
+      { ko: ["사진 꾸미기", "효과를 넣고 글자·도형을 그려 저장해요."],
+        en: ["Decorate a photo", "Add an effect, text and shapes, then save."],
+        code: `from themaker import *
+
+img = camera()
+
+img = img_filter(img, "sepia")            # 낡은 사진 느낌
+img = draw_text(img, "오늘의 사진", "bc", 46, "white")
+img = draw_rect(img, "mc", "line", "red")  # 가운데 네모
+
+show(img)
+save(img, "꾸민사진.jpg")
+print("저장했어요")
+` },
+      { ko: ["얼굴만 오려내기", "찾은 얼굴을 오려 크게 붙여요."],
+        en: ["Cut out the face", "Crop the found face and show it big."],
+        code: `from themaker import *
+
+img = camera()
+faces = vision("face", img)
+
+if faces:
+    face = crop_found(img, faces)          # 첫 번째 얼굴만
+    face = resize(face, 0.5)               # 너무 크면 줄이기
+    both = attach(img, face, "h")           # 원본 옆에 나란히
+    show(both)
+else:
+    print("얼굴을 못 찾았어요")
+    beep("error")
+` },
+      { ko: ["색 맞히기 놀이", "가운데 색을 말하고 소리로 알려 줘요."],
+        en: ["Guess the color", "Says the center color out loud."],
+        code: `from themaker import *
+import time
+
+for i in range(5):
+    img = camera()
+    img = draw_rect(img, "mc", "line", "yellow")   # 어디를 보는지 표시
+    show(img)
+
+    color = color_at(img, "mc")
+    print(i + 1, "번째:", color)
+    speak(color + " 색이에요")
+    time.sleep(2)
+
+beep("ding")
+` },
+      { ko: ["멜로디 연주하기", "계이름으로 노래하고 주파수도 들어 봐요."],
+        en: ["Play a melody", "Play notes, then hear the same pitch as Hz."],
+        code: `from themaker import *
+
+play_melody("도미솔 솔 도2", 120)
+
+# 같은 소리를 주파수로도 내 봐요 (소리는 떨림이에요)
+for f in [262, 294, 330, 349, 392]:
+    print(f, "Hz")
+    play_hz(f, 0.4)
+
+beep("ok")
+` },
       { ko: ["말을 글자로 바꾸기", "마이크로 듣고 글자로 바꿔요 (음성 인식)."],
         en: ["Speech to text", "Listen with the mic and transcribe."],
         code: `from themaker import *
@@ -937,6 +1005,120 @@ print(vision("caption", img, lang="en")["caption"])   # 영어로 받기</pre>
         en: { d: "rock paper scissors", a: "kind, image", r: '{"object": [{name, score, box}, ...]}' },
         x: 'r = vision("rps", camera())["object"]\nif r:\n    print(r[0]["name"])' },
 
+      { g: "edit", n: "resize(img, 2)", ins: "resize(img, 2)",
+        ko: { d: "크기 바꾸기 (1보다 크면 가운데를 잘라 확대)", a: "사진, 배율", r: "바뀐 사진" },
+        en: { d: "resize (over 1 = zoom into the center)", a: "image, factor", r: "the new image" },
+        x: 'show(resize(img, 2))' },
+      { g: "edit", n: "rotate(img, 90)", ins: "rotate(img, 90)",
+        ko: { d: "돌리기", a: "사진, 각도", r: "바뀐 사진" },
+        en: { d: "rotate", a: "image, degrees", r: "the new image" }, x: 'show(rotate(img, 90))' },
+      { g: "edit", n: 'flip(img, "h")', ins: 'flip(img, "h")',
+        ko: { d: "뒤집기", a: '사진, "h" 좌우 / "v" 위아래', r: "바뀐 사진" },
+        en: { d: "flip", a: 'image, "h" or "v"', r: "the new image" }, x: 'show(flip(img, "h"))' },
+      { g: "edit", n: 'crop(img, "tl")', ins: 'crop(img, "tl")',
+        ko: { d: "아홉 칸 중 한 칸 오려내기", a: "사진, 자리 (tl tc tr ml mc mr bl bc br)", r: "오려낸 사진" },
+        en: { d: "crop one of nine spots", a: "image, spot", r: "the cropped image" },
+        x: 'show(crop(img, "mc"))' },
+      { g: "edit", n: "crop_xy(img, 10, 20, 100, 80)", ins: "crop_xy(img, 10, 20, 100, 80)",
+        ko: { d: "좌표로 오려내기", a: "사진, x, y, 너비, 높이", r: "오려낸 사진" },
+        en: { d: "crop by coordinates", a: "image, x, y, w, h", r: "the cropped image" },
+        x: 'show(crop_xy(img, 10, 20, 100, 80))' },
+      { g: "edit", n: "crop_found(img, r)", ins: "crop_found(img, r)",
+        ko: { d: "인식한 것만 오려내기", a: "사진, 인식 결과, 몇 번째(0부터)", r: "오려낸 사진" },
+        en: { d: "crop what was found", a: "image, result, index", r: "the cropped image" },
+        x: 'r = vision("face", img)\nshow(crop_found(img, r))' },
+      { g: "edit", n: 'attach(a, b, "h")', ins: 'attach(a, b, "h")',
+        ko: { d: "두 사진 나란히 붙이기", a: '사진A, 사진B, "h" 가로 / "v" 세로', r: "붙인 사진" },
+        en: { d: "put two images side by side", a: 'a, b, "h" or "v"', r: "the merged image" },
+        x: 'show(attach(img, flip(img, "h"), "h"))' },
+      { g: "edit", n: 'put_on(a, b, "half", "br")', ins: 'put_on(a, b, "half", "br")',
+        ko: { d: "사진 위에 사진 얹기", a: "아래, 위, 크기(tiny small half big full), 자리", r: "합친 사진" },
+        en: { d: "put an image on top", a: "base, top, size, spot", r: "the combined image" },
+        x: 'show(put_on(img, crop(img, "mc"), "small", "br"))' },
+      { g: "edit", n: "put_on_xy(a, b, 30, 40, 0.5)", ins: "put_on_xy(a, b, 30, 40, 0.5)",
+        ko: { d: "좌표로 얹기", a: "아래, 위, x, y, 배율", r: "합친 사진" },
+        en: { d: "overlay by coordinates", a: "base, top, x, y, scale", r: "the combined image" },
+        x: 'show(put_on_xy(img, crop(img, "mc"), 10, 10, 0.4))' },
+      { g: "edit", n: "put_sticker(img, s)", ins: "put_sticker(img, s)",
+        ko: { d: "찾은 얼굴마다 스티커 붙이기", a: "사진, 스티커 사진, 배율", r: "붙인 사진" },
+        en: { d: "put a sticker on every face", a: "image, sticker, scale", r: "the new image" },
+        x: 's = load("sticker.png")\nshow(put_sticker(camera(), s))' },
+      { g: "edit", n: 'adjust(img, "bright", 30)', ins: 'adjust(img, "bright", 30)',
+        ko: { d: "밝기·대비·채도 바꾸기", a: '사진, "bright"/"contrast"/"saturate", -100~100', r: "바뀐 사진" },
+        en: { d: "brightness, contrast, saturation", a: "image, what, -100~100", r: "the new image" },
+        x: 'show(adjust(img, "bright", 40))' },
+      { g: "edit", n: 'img_filter(img, "gray")', ins: 'img_filter(img, "gray")',
+        ko: { d: "사진 효과", a: "사진, gray sepia blur sharpen invert edge", r: "바뀐 사진" },
+        en: { d: "photo effect", a: "image, gray sepia blur sharpen invert edge", r: "the new image" },
+        x: 'show(img_filter(img, "sepia"))' },
+      { g: "edit", n: 'draw_text(img, "안녕", "tc", 40, "red")',
+        ins: 'draw_text(img, "안녕", "tc", 40, "red")',
+        ko: { d: "글자 쓰기 (아홉 칸 자리)", a: "사진, 글, 자리, 크기, 색, 기울기", r: "글자를 쓴 사진" },
+        en: { d: "write text (nine spots)", a: "image, text, spot, size, color, degree", r: "the new image" },
+        x: 'show(draw_text(img, "안녕하세요", "bc", 50, "white"))' },
+      { g: "edit", n: 'draw_text_xy(img, "안녕", 20, 30, 40, "red")',
+        ins: 'draw_text_xy(img, "안녕", 20, 30, 40, "red")',
+        ko: { d: "좌표로 글자 쓰기", a: "사진, 글, x, y, 크기, 색, 기울기", r: "글자를 쓴 사진" },
+        en: { d: "write text by coordinates", a: "image, text, x, y, size, color, degree", r: "the new image" },
+        x: 'show(draw_text_xy(img, "Hi", 20, 30, 40, "blue", 15))' },
+      { g: "edit", n: 'draw_rect(img, "mc", "line", "red")', ins: 'draw_rect(img, "mc", "line", "red")',
+        ko: { d: "네모 그리기 (아홉 칸 자리)", a: '사진, 자리, "fill"/"line", 색', r: "그린 사진" },
+        en: { d: "draw a rectangle", a: 'image, spot, "fill"/"line", color', r: "the new image" },
+        x: 'show(draw_rect(img, "mc", "line", "red"))' },
+      { g: "edit", n: "draw_rect_xy(img, 10, 20, 100, 50)", ins: 'draw_rect_xy(img, 10, 20, 100, 50, "line", "red")',
+        ko: { d: "좌표로 네모 그리기", a: "사진, x, y, 너비, 높이, fill/line, 색", r: "그린 사진" },
+        en: { d: "rectangle by coordinates", a: "image, x, y, w, h, fill/line, color", r: "the new image" },
+        x: 'show(draw_rect_xy(img, 10, 20, 100, 50, "fill", "yellow"))' },
+      { g: "edit", n: 'draw_circle(img, "mc", "line", "red")', ins: 'draw_circle(img, "mc", "line", "red")',
+        ko: { d: "동그라미 그리기 (아홉 칸 자리)", a: "사진, 자리, fill/line, 색", r: "그린 사진" },
+        en: { d: "draw a circle", a: "image, spot, fill/line, color", r: "the new image" },
+        x: 'show(draw_circle(img, "mc", "line", "green"))' },
+      { g: "edit", n: "draw_circle_xy(img, 100, 100, 50)", ins: 'draw_circle_xy(img, 100, 100, 50, "line", "red")',
+        ko: { d: "좌표로 동그라미 그리기", a: "사진, x, y, 반지름, fill/line, 색", r: "그린 사진" },
+        en: { d: "circle by coordinates", a: "image, x, y, radius, fill/line, color", r: "the new image" },
+        x: 'show(draw_circle_xy(img, 100, 100, 40, "fill", "pink"))' },
+      { g: "edit", n: 'draw_line(img, "tl", "br", "red")', ins: 'draw_line(img, "tl", "br", "red")',
+        ko: { d: "선 긋기 (아홉 칸 자리에서 자리로)", a: "사진, 시작 자리, 끝 자리, 색", r: "그린 사진" },
+        en: { d: "draw a line (spot to spot)", a: "image, start, end, color", r: "the new image" },
+        x: 'show(draw_line(img, "tl", "br", "blue"))' },
+      { g: "edit", n: "draw_line_xy(img, 0, 0, 100, 100)", ins: 'draw_line_xy(img, 0, 0, 100, 100, "red")',
+        ko: { d: "좌표로 선 긋기", a: "사진, x1, y1, x2, y2, 색", r: "그린 사진" },
+        en: { d: "line by coordinates", a: "image, x1, y1, x2, y2, color", r: "the new image" },
+        x: 'show(draw_line_xy(img, 0, 0, 200, 150, "orange"))' },
+      { g: "edit", n: 'size_of(img, "w")', ins: 'size_of(img, "w")',
+        ko: { d: "사진 크기 알아보기", a: '사진, "w" 너비 / "h" 높이', r: "숫자" },
+        en: { d: "image size", a: 'image, "w" or "h"', r: "a number" },
+        x: 'print(size_of(img, "w"), size_of(img, "h"))' },
+      { g: "edit", n: 'color_at(img, "mc")', ins: 'color_at(img, "mc")',
+        ko: { d: "그 자리 색 알아보기", a: "사진, 자리", r: "색 이름 (글자)" },
+        en: { d: "color at a spot", a: "image, spot", r: "the color name" },
+        x: 'print(color_at(img, "mc"))' },
+      { g: "edit", n: "color_at_xy(img, 50, 50)", ins: "color_at_xy(img, 50, 50)",
+        ko: { d: "좌표의 색 알아보기", a: "사진, x, y", r: "색 이름 (글자)" },
+        en: { d: "color at coordinates", a: "image, x, y", r: "the color name" },
+        x: 'print(color_at_xy(img, 50, 50))' },
+      { g: "edit", n: "main_color(img)", ins: "main_color(img)",
+        ko: { d: "가장 많은 색 알아보기", a: "사진", r: "색 이름 (글자)" },
+        en: { d: "the most common color", a: "image", r: "the color name" },
+        x: 'speak(main_color(camera()) + " 색이 제일 많아요")' },
+
+      { g: "sound", n: 'play_note("도", 1)', ins: 'play_note("도", 1)',
+        ko: { d: "계이름으로 소리 내기", a: "계이름(도 레 미 파 솔 라 시 도2), 박자", r: "없음" },
+        en: { d: "play a note", a: "note name, beats", r: "nothing" },
+        x: 'for n in ["도", "미", "솔"]:\n    play_note(n, 1)' },
+      { g: "sound", n: 'beep("ok")', ins: 'beep("ok")',
+        ko: { d: "짧은 알림 소리", a: "ok / error / ding / buzz", r: "없음" },
+        en: { d: "short beep", a: "ok / error / ding / buzz", r: "nothing" },
+        x: 'beep("ok")' },
+      { g: "sound", n: 'play_melody("도레미파솔")', ins: 'play_melody("도레미파솔")',
+        ko: { d: "계이름 이어서 연주하기", a: "계이름들, 빠르기(기본 120)", r: "없음" },
+        en: { d: "play a melody", a: "notes, tempo", r: "nothing" },
+        x: 'play_melody("도미솔 솔 도2", 140)' },
+      { g: "sound", n: "play_hz(440, 0.5)", ins: "play_hz(440, 0.5)",
+        ko: { d: "주파수로 소리 내기 (440 = 라)", a: "주파수(Hz), 초", r: "없음" },
+        en: { d: "play a frequency", a: "Hz, seconds", r: "nothing" },
+        x: 'for f in range(200, 900, 100):\n    play_hz(f, 0.2)' },
+
       { g: "my", n: "my_models()", ins: "my_models()",
         ko: { d: "가르치기에서 만든 내 AI 목록 보기", a: "없음", r: "목록 [{name 이름, kind 종류, classes 클래스들}, ...]" },
         en: { d: "list your trained AIs", a: "none", r: "list of {name, kind, classes}" },
@@ -1061,8 +1243,15 @@ print(vision("caption", img, lang="en")["caption"])   # 영어로 받기</pre>
                    "bg_remove", "sr", "mask", "fire", "fall", "ball", "rps",
                    "number", "helmet", "box"];
     const FUNCS = ["camera", "load", "save", "show", "draw", "vision", "detect",
-                   "speak", "listen", "stt", "my_models", "print", "range",
-                   "len", "for", "if", "else", "while", "import", "from"];
+                   "speak", "listen", "wav_to_text", "my_models",
+                   "resize", "rotate", "flip", "crop", "crop_xy", "crop_found",
+                   "attach", "put_on", "put_on_xy", "put_sticker",
+                   "adjust", "img_filter", "draw_text", "draw_text_xy",
+                   "draw_rect", "draw_rect_xy", "draw_circle", "draw_circle_xy",
+                   "draw_line", "draw_line_xy",
+                   "size_of", "color_at", "color_at_xy", "main_color",
+                   "play_note", "beep", "play_melody", "play_hz",
+                   "print", "range", "len", "for", "if", "else", "while", "import", "from"];
 
     function themakerHint(editor) {
       const cur = editor.getCursor();

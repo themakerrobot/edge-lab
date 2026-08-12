@@ -350,10 +350,10 @@ def listen(seconds=4, lang="ko"):
     print("듣는 중... (%d초)" % seconds)
     rec = sd.rec(int(seconds * sr), samplerate=sr, channels=1, dtype="float32")
     sd.wait()
-    return stt(_wav_bytes(rec.reshape(-1), sr), lang=lang)
+    return wav_to_text(_wav_bytes(rec.reshape(-1), sr), lang=lang)
 
 
-def stt(wav, lang="ko"):
+def wav_to_text(wav, lang="ko"):
     """소리를 글자로 바꾼다. wav 는 .wav 파일 경로 또는 WAV 바이트."""
     if isinstance(wav, str):
         with open(wav, "rb") as f:
@@ -362,7 +362,7 @@ def stt(wav, lang="ko"):
         raw = bytes(wav)
     else:
         raise TheMakerError("wav 는 .wav 파일 경로이거나 WAV 데이터여야 해요.")
-    j = _post("/speech/stt?lang=" + urllib.parse.quote(lang),
+    j = _post("/speech/wav_to_text?lang=" + urllib.parse.quote(lang),
               files={"uploadFile": ("a.wav", raw, "audio/wav")}, timeout=180)
     if j.get("result") != "ok":
         raise TheMakerError("음성 인식 실패: %s" % j.get("data"))
@@ -466,5 +466,568 @@ def detect(model_path, image, conf=0.3):
     return out
 
 
-__all__ = ["vision", "detect", "camera", "load", "save", "draw", "show",
-           "listen", "stt", "speak", "my_models", "SERVER", "TheMakerError"]
+__all__ = [
+    # 기본
+    "camera", "load", "save", "show", "draw", "my_models",
+    # AI
+    "vision", "detect",
+    # 소리 (말)
+    "listen", "wav_to_text", "speak",
+    # 이미지 편집 — 크기·방향·자르기·합치기
+    "resize", "rotate", "flip", "crop", "crop_xy", "crop_found",
+    "attach", "put_on", "put_on_xy", "put_sticker",
+    # 이미지 편집 — 색·그리기
+    "adjust", "img_filter", "draw_text", "draw_text_xy",
+    "draw_rect", "draw_rect_xy", "draw_circle", "draw_circle_xy",
+    "draw_line", "draw_line_xy",
+    # 이미지 살펴보기
+    "size_of", "color_at", "color_at_xy", "main_color",
+    # 소리 만들기
+    "play_note", "beep", "play_melody", "play_hz",
+    "SERVER", "TheMakerError",
+]
+
+
+# ================================================================= 이미지 편집
+# 블록 코딩의 "이미지 편집" 블록과 1:1 로 대응한다.
+# 아홉 칸(tl tc tr / ml mc mr / bl bc br) 을 쓰는 것과, 좌표(_xy) 를 쓰는 것이 짝을 이룬다.
+
+# 아홉 칸 -> 비율 좌표 (0~1)
+_P9 = {"tl": (.12, .12), "tc": (.5, .12), "tr": (.88, .12),
+       "ml": (.12, .5),  "mc": (.5, .5),  "mr": (.88, .5),
+       "bl": (.12, .88), "bc": (.5, .88), "br": (.88, .88)}
+_P9_KO = {"왼위": "tl", "가운데위": "tc", "오른위": "tr",
+          "왼쪽": "ml", "가운데": "mc", "오른쪽": "mr",
+          "왼아래": "bl", "가운데아래": "bc", "오른아래": "br"}
+
+# 색 이름 -> BGR
+_COLORS = {
+    "black": (0, 0, 0), "white": (255, 255, 255), "gray": (128, 128, 128),
+    "red": (0, 0, 255), "orange": (0, 140, 255), "yellow": (0, 215, 255),
+    "green": (60, 175, 60), "blue": (200, 80, 40), "navy": (100, 60, 30),
+    "purple": (180, 60, 130), "pink": (170, 150, 255), "brown": (40, 70, 120),
+}
+_COLORS_KO = {"검정": "black", "하양": "white", "회색": "gray", "빨강": "red",
+              "주황": "orange", "노랑": "yellow", "초록": "green", "파랑": "blue",
+              "남색": "navy", "보라": "purple", "분홍": "pink", "갈색": "brown"}
+
+_MAX_PX = 2400          # 확대를 반복해도 폭주하지 않게
+
+
+def _bgr(color):
+    """색 이름 또는 (B,G,R) 을 BGR 로. '#ff0000' 도 받는다."""
+    if isinstance(color, (tuple, list)) and len(color) >= 3:
+        return tuple(int(c) for c in color[:3])
+    name = str(color).strip().lower()
+    name = _COLORS_KO.get(str(color).strip(), name)
+    if name.startswith("#") and len(name) == 7:
+        return (int(name[5:7], 16), int(name[3:5], 16), int(name[1:3], 16))
+    if name in _COLORS:
+        return _COLORS[name]
+    raise TheMakerError("모르는 색이에요: %s (쓸 수 있는 색: %s)"
+                        % (color, ", ".join(_COLORS)))
+
+
+def _spot(img, where):
+    """아홉 칸 이름 -> 실제 좌표 (x, y)."""
+    key = _P9_KO.get(str(where).strip(), str(where).strip().lower())
+    if key not in _P9:
+        raise TheMakerError("모르는 자리예요: %s (tl tc tr ml mc mr bl bc br)" % where)
+    h, w = img.shape[:2]
+    fx, fy = _P9[key]
+    return int(w * fx), int(h * fy)
+
+
+def _img(image):
+    """이미지가 맞는지 확인하고 복사본을 준다 (원본을 건드리지 않게)."""
+    if not isinstance(image, np.ndarray) or image.ndim < 2:
+        raise TheMakerError("사진이 아니에요. camera() 나 load() 로 만든 사진을 넣어 주세요.")
+    return _flatten(image).copy()
+
+
+# ---------------------------------------------------------------- 크기 · 방향
+def resize(image, factor=1):
+    """크기 바꾸기. factor 가 1보다 크면 가운데를 잘라 확대한다(디지털 줌).
+
+    >>> big = resize(img, 2)      # 2배로 가까이
+    >>> small = resize(img, 0.5)  # 절반 크기
+    """
+    img = _img(image)
+    f = max(0.1, min(8.0, float(factor)))
+    h, w = img.shape[:2]
+    if f > 1:
+        cw, ch = int(w / f), int(h / f)
+        x, y = (w - cw) // 2, (h - ch) // 2
+        img = img[y:y + ch, x:x + cw]
+        return cv2.resize(img, (w, h), interpolation=cv2.INTER_LINEAR)
+    nw, nh = max(1, int(w * f)), max(1, int(h * f))
+    return cv2.resize(img, (nw, nh), interpolation=cv2.INTER_AREA)
+
+
+def rotate(image, degree=90):
+    """돌리기. 90 / 180 / 270 은 깔끔하게, 그 외 각도는 검은 여백이 생긴다."""
+    img = _img(image)
+    d = int(degree) % 360
+    if d == 0:
+        return img
+    if d == 90:
+        return cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
+    if d == 180:
+        return cv2.rotate(img, cv2.ROTATE_180)
+    if d == 270:
+        return cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    h, w = img.shape[:2]
+    m = cv2.getRotationMatrix2D((w / 2, h / 2), -d, 1.0)
+    return cv2.warpAffine(img, m, (w, h), borderValue=(255, 255, 255))
+
+
+def flip(image, direction="h"):
+    """뒤집기. h = 좌우(거울), v = 위아래."""
+    img = _img(image)
+    d = str(direction).lower()
+    if d in ("h", "가로", "좌우"):
+        return cv2.flip(img, 1)
+    if d in ("v", "세로", "위아래"):
+        return cv2.flip(img, 0)
+    raise TheMakerError('h(좌우) 또는 v(위아래) 를 넣어 주세요.')
+
+
+# ---------------------------------------------------------------- 자르기
+def crop(image, where="mc"):
+    """아홉 칸 중 한 칸만 오려내기 (원본의 절반 크기)."""
+    img = _img(image)
+    h, w = img.shape[:2]
+    cx, cy = _spot(img, where)
+    cw, ch = w // 2, h // 2
+    x = max(0, min(w - cw, cx - cw // 2))
+    y = max(0, min(h - ch, cy - ch // 2))
+    return img[y:y + ch, x:x + cw].copy()
+
+
+def crop_xy(image, x, y, width, height):
+    """좌표로 오려내기."""
+    img = _img(image)
+    h, w = img.shape[:2]
+    x, y = max(0, int(x)), max(0, int(y))
+    x2, y2 = min(w, x + max(1, int(width))), min(h, y + max(1, int(height)))
+    if x2 <= x or y2 <= y:
+        raise TheMakerError("자를 수 없는 자리예요. 사진 크기는 %d x %d 예요." % (w, h))
+    return img[y:y2, x:x2].copy()
+
+
+def crop_found(image, result, index=0):
+    """인식 결과에서 찾은 것만 오려내기.
+
+    >>> faces = vision("face", img)
+    >>> face = crop_found(img, faces)      # 첫 번째 얼굴만
+    """
+    items = _boxes_of(result)
+    boxes = [it["box"] for it in items if it.get("box")]
+    if not boxes:
+        raise TheMakerError("찾은 것이 없어요.")
+    if index >= len(boxes):
+        raise TheMakerError("%d 번째는 없어요. %d 개 찾았어요." % (index + 1, len(boxes)))
+    x1, y1, x2, y2 = [int(v) for v in boxes[index][:4]]
+    return crop_xy(image, x1, y1, x2 - x1, y2 - y1)
+
+
+# ---------------------------------------------------------------- 합치기
+def attach(image_a, image_b, direction="h"):
+    """두 사진을 나란히 붙이기. h = 가로로, v = 세로로.
+
+    >>> both = attach(img, flip(img, "h"), "h")     # 원본 옆에 거울 사진
+    """
+    a, b = _img(image_a), _img(image_b)
+    d = str(direction).lower()
+    if d in ("h", "가로"):
+        h = min(a.shape[0], b.shape[0], _MAX_PX)
+        a = cv2.resize(a, (int(a.shape[1] * h / a.shape[0]), h))
+        b = cv2.resize(b, (int(b.shape[1] * h / b.shape[0]), h))
+        return np.hstack([a, b])
+    if d in ("v", "세로"):
+        w = min(a.shape[1], b.shape[1], _MAX_PX)
+        a = cv2.resize(a, (w, int(a.shape[0] * w / a.shape[1])))
+        b = cv2.resize(b, (w, int(b.shape[0] * w / b.shape[1])))
+        return np.vstack([a, b])
+    raise TheMakerError('h(가로) 또는 v(세로) 를 넣어 주세요.')
+
+
+_SIZES = {"tiny": .15, "small": .25, "half": .5, "big": .75, "full": 1.0,
+          "아주작게": .15, "작게": .25, "반": .5, "크게": .75, "가득": 1.0}
+
+
+def put_on(image_a, image_b, size="half", where="br"):
+    """사진 위에 사진 얹기. size = tiny small half big full, where = 아홉 칸.
+
+    >>> r = put_on(배경, 얼굴, "small", "br")        # 오른쪽 아래에 작게
+    """
+    a = _img(image_a)
+    b = _img(image_b)
+    f = _SIZES.get(str(size).strip().lower(), _SIZES.get(str(size).strip(), .5))
+    bw = max(1, int(a.shape[1] * f))
+    bh = max(1, int(b.shape[0] * bw / b.shape[1]))
+    cx, cy = _spot(a, where)
+    return put_on_xy(a, b, cx - bw // 2, cy - bh // 2, bw / b.shape[1])
+
+
+def put_on_xy(image_a, image_b, x, y, scale=1.0):
+    """a 위 (x, y) 자리에 b 를 얹기. scale 로 크기 조절."""
+    a = _img(image_a)
+    b = _flatten(image_b)
+    s = max(0.02, float(scale))
+    bw, bh = max(1, int(b.shape[1] * s)), max(1, int(b.shape[0] * s))
+    b = cv2.resize(b, (bw, bh))
+    x, y = int(x), int(y)
+    H, W = a.shape[:2]
+    x1, y1 = max(0, x), max(0, y)
+    x2, y2 = min(W, x + bw), min(H, y + bh)
+    if x2 <= x1 or y2 <= y1:
+        return a                                   # 화면 밖이면 그대로
+    a[y1:y2, x1:x2] = b[y1 - y:y2 - y, x1 - x:x2 - x]
+    return a
+
+
+def put_sticker(image, sticker_image, scale=1.0):
+    """찾은 얼굴마다 스티커를 붙인다."""
+    img = _img(image)
+    faces = vision("face", img)
+    boxes = [it["box"] for it in _boxes_of(faces) if it.get("box")]
+    if not boxes:
+        return img
+    for x1, y1, x2, y2 in [[int(v) for v in b[:4]] for b in boxes]:
+        w = max(1, int((x2 - x1) * float(scale)))
+        img = put_on_xy(img, sticker_image, x1 + (x2 - x1 - w) // 2, y1,
+                         w / max(1, _flatten(sticker_image).shape[1]))
+    return img
+
+
+# ---------------------------------------------------------------- 색
+def adjust(image, what="bright", value=0):
+    """밝기·대비·채도 바꾸기. value 는 -100 ~ 100.
+
+    what : "bright"(밝기) / "contrast"(대비) / "saturate"(채도)
+    >>> 밝게 = adjust(img, "bright", 40)
+    """
+    img = _img(image)
+    v = max(-100, min(100, float(value)))
+    w = str(what).strip().lower()
+    if w in ("bright", "밝기"):
+        return cv2.convertScaleAbs(img, alpha=1.0, beta=v * 1.27)
+    if w in ("contrast", "대비"):
+        return cv2.convertScaleAbs(img, alpha=1.0 + v / 100.0, beta=0)
+    if w in ("saturate", "채도"):
+        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV).astype(np.float32)
+        hsv[:, :, 1] = np.clip(hsv[:, :, 1] * (1.0 + v / 100.0), 0, 255)
+        return cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR)
+    raise TheMakerError("bright(밝기) / contrast(대비) / saturate(채도) 중에서 골라 주세요.")
+
+
+def img_filter(image, kind="gray"):
+    """사진 효과. gray sepia blur sharpen invert edge
+
+    (파이썬에 filter 라는 기본 기능이 이미 있어서 img_filter 로 이름 지었어요)
+    """
+    img = _img(image)
+    k = str(kind).strip().lower()
+    if k in ("gray", "흑백"):
+        return cv2.cvtColor(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY), cv2.COLOR_GRAY2BGR)
+    if k in ("sepia", "세피아"):
+        m = np.array([[.272, .534, .131], [.349, .686, .168], [.393, .769, .189]])
+        return np.clip(img[:, :, ::-1] @ m.T, 0, 255).astype(np.uint8)[:, :, ::-1]
+    if k in ("blur", "흐리게"):
+        return cv2.GaussianBlur(img, (0, 0), 6)
+    if k in ("sharpen", "선명하게"):
+        kern = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]], np.float32)
+        return cv2.filter2D(img, -1, kern)
+    if k in ("invert", "반전"):
+        return 255 - img
+    if k in ("edge", "윤곽"):
+        e = cv2.Canny(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY), 80, 180)
+        return cv2.cvtColor(255 - e, cv2.COLOR_GRAY2BGR)
+    raise TheMakerError("gray sepia blur sharpen invert edge 중에서 골라 주세요.")
+
+
+# ---------------------------------------------------------------- 그리기
+_font_cache = {}
+
+
+def _font(size):
+    """한글이 나오는 글꼴을 찾는다 (윈도우 맑은고딕 등)."""
+    from PIL import ImageFont
+    size = int(size)
+    if size in _font_cache:
+        return _font_cache[size]
+    here = os.path.dirname(os.path.abspath(__file__))
+    spots = [os.path.join(here, "view_project", "fonts", "NanumGothic.ttf"),
+             r"C:\Windows\Fonts\malgun.ttf", r"C:\Windows\Fonts\gulim.ttc",
+             "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
+             "/System/Library/Fonts/AppleSDGothicNeo.ttc"]
+    for p in spots:
+        if os.path.exists(p):
+            try:
+                f = ImageFont.truetype(p, size)
+                _font_cache[size] = f
+                return f
+            except Exception:
+                pass
+    f = ImageFont.load_default()                   # 없으면 기본 글꼴(한글은 깨질 수 있다)
+    _font_cache[size] = f
+    return f
+
+
+def draw_text(image, text, where="tc", size=40, color="black", degree=0):
+    """사진에 글자 쓰기 (아홉 칸 자리).
+
+    (파이썬에서 text 는 흔한 변수 이름이라 draw_text 로 이름 지었어요)
+    """
+    img = _img(image)
+    cx, cy = _spot(img, where)
+    return _put_text(img, text, cx, cy, size, color, degree, center=True)
+
+
+def draw_text_xy(image, text, x, y, size=40, color="black", degree=0):
+    """좌표를 정해서 글자 쓰기."""
+    return _put_text(_img(image), text, int(x), int(y), size, color, degree, center=False)
+
+
+def _put_text(img, text, x, y, size, color, degree, center):
+    from PIL import Image, ImageDraw
+    b, g, r = _bgr(color)
+    pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+    font = _font(size)
+    s = str(text)
+
+    if int(degree) % 360 == 0:
+        d = ImageDraw.Draw(pil)
+        if center:
+            box = d.textbbox((0, 0), s, font=font)
+            x -= (box[2] - box[0]) // 2
+            y -= (box[3] - box[1]) // 2
+        d.text((x, y), s, font=font, fill=(r, g, b))
+    else:
+        tmp = Image.new("RGBA", pil.size, (0, 0, 0, 0))
+        d = ImageDraw.Draw(tmp)
+        box = d.textbbox((0, 0), s, font=font)
+        tw, th = box[2] - box[0], box[3] - box[1]
+        lay = Image.new("RGBA", (tw + 20, th + 20), (0, 0, 0, 0))
+        ImageDraw.Draw(lay).text((10, 10), s, font=font, fill=(r, g, b, 255))
+        lay = lay.rotate(float(degree), expand=True, resample=Image.BICUBIC)
+        px = x - lay.width // 2 if center else x
+        py = y - lay.height // 2 if center else y
+        tmp.paste(lay, (int(px), int(py)), lay)
+        pil = Image.alpha_composite(pil.convert("RGBA"), tmp).convert("RGB")
+    return cv2.cvtColor(np.array(pil), cv2.COLOR_RGB2BGR)
+
+
+def draw_rect(image, where="mc", fill="line", color="red"):
+    """네모 그리기 (아홉 칸 자리). fill = fill(채우기) / line(선만)."""
+    img = _img(image)
+    h, w = img.shape[:2]
+    cx, cy = _spot(img, where)
+    bw, bh = w // 4, h // 4
+    return draw_rect_xy(img, cx - bw // 2, cy - bh // 2, bw, bh, fill, color)
+
+
+def draw_rect_xy(image, x, y, width, height, fill="line", color="red"):
+    """좌표로 네모 그리기."""
+    img = _img(image)
+    thick = -1 if str(fill).lower() in ("fill", "채우기") else max(2, img.shape[1] // 250)
+    cv2.rectangle(img, (int(x), int(y)), (int(x) + int(width), int(y) + int(height)),
+                  _bgr(color), thick)
+    return img
+
+
+def draw_circle(image, where="mc", fill="line", color="red"):
+    """동그라미 그리기 (아홉 칸 자리)."""
+    img = _img(image)
+    cx, cy = _spot(img, where)
+    return draw_circle_xy(img, cx, cy, min(img.shape[:2]) // 6, fill, color)
+
+
+def draw_circle_xy(image, x, y, radius=50, fill="line", color="red"):
+    """좌표로 동그라미 그리기."""
+    img = _img(image)
+    thick = -1 if str(fill).lower() in ("fill", "채우기") else max(2, img.shape[1] // 250)
+    cv2.circle(img, (int(x), int(y)), max(1, int(radius)), _bgr(color), thick)
+    return img
+
+
+def draw_line(image, start="tl", end="br", color="red"):
+    """선 긋기 (아홉 칸 자리에서 자리로)."""
+    img = _img(image)
+    x1, y1 = _spot(img, start)
+    x2, y2 = _spot(img, end)
+    return draw_line_xy(img, x1, y1, x2, y2, color)
+
+
+def draw_line_xy(image, x1, y1, x2, y2, color="red"):
+    """좌표로 선 긋기."""
+    img = _img(image)
+    cv2.line(img, (int(x1), int(y1)), (int(x2), int(y2)), _bgr(color),
+             max(2, img.shape[1] // 250))
+    return img
+
+
+# ---------------------------------------------------------------- 살펴보기
+def size_of(image, what="w"):
+    """사진 크기 알아보기. w = 너비, h = 높이."""
+    img = _flatten(image)
+    w = str(what).strip().lower()
+    if w in ("w", "너비", "가로"):
+        return int(img.shape[1])
+    if w in ("h", "높이", "세로"):
+        return int(img.shape[0])
+    raise TheMakerError("w(너비) 또는 h(높이) 를 넣어 주세요.")
+
+
+def color_at(image, where="mc"):
+    """그 자리의 색 이름 알아보기."""
+    img = _flatten(image)
+    x, y = _spot(img, where)
+    return color_at_xy(img, x, y)
+
+
+def color_at_xy(image, x, y):
+    """좌표의 색 이름 알아보기. 둘레를 평균 내서 정한다."""
+    img = _flatten(image)
+    h, w = img.shape[:2]
+    x, y = max(0, min(w - 1, int(x))), max(0, min(h - 1, int(y)))
+    patch = img[max(0, y - 4):y + 5, max(0, x - 4):x + 5]
+    return _name_of(patch.reshape(-1, 3).mean(axis=0))
+
+
+def main_color(image):
+    """사진에서 가장 많은 색 이름."""
+    img = _flatten(image)
+    small = cv2.resize(img, (64, 64), interpolation=cv2.INTER_AREA)
+    names = {}
+    for px in small.reshape(-1, 3):
+        n = _name_of(px)
+        names[n] = names.get(n, 0) + 1
+    return max(names.items(), key=lambda kv: kv[1])[0]
+
+
+def _name_of(bgr):
+    """BGR 값에 가장 가까운 색 이름 (한국어)."""
+    b, g, r = [float(v) for v in bgr[:3]]
+    best, dist = "black", 1e9
+    for name, (cb, cg, cr) in _COLORS.items():
+        d = (b - cb) ** 2 + (g - cg) ** 2 + (r - cr) ** 2
+        if d < dist:
+            best, dist = name, d
+    for ko, en in _COLORS_KO.items():
+        if en == best:
+            return ko
+    return best
+
+
+# ================================================================= 소리 만들기
+_NOTES = {"도": 261.63, "레": 293.66, "미": 329.63, "파": 349.23,
+          "솔": 392.00, "라": 440.00, "시": 493.88,
+          "높은도": 523.25, "도2": 523.25, "c2": 523.25,   # 한 옥타브 위
+          "레2": 587.33, "미2": 659.26, "d2": 587.33, "e2": 659.26,
+          "c": 261.63, "d": 293.66, "e": 329.63, "f": 349.23,
+          "g": 392.00, "a": 440.00, "b": 493.88,
+          "쉼": 0.0, "-": 0.0}                              # 0 = 소리 없이 쉬기
+_SR = 22050
+
+
+def _play(wave_f32, wait=True):
+    try:
+        import sounddevice as sd
+    except ImportError:
+        raise TheMakerError("소리를 내려면 sounddevice 가 필요해요.\n"
+                            "설치: pip install sounddevice")
+    sd.play(wave_f32, _SR)
+    if wait:
+        sd.wait()
+
+
+def _wave(freq, seconds, kind="sine"):
+    """파형 만들기. 앞뒤를 부드럽게 해서 '툭' 소리를 없앤다. freq 0 이면 쉼표."""
+    n = max(1, int(_SR * float(seconds)))
+    if float(freq) <= 0:
+        return np.zeros(n, dtype=np.float32)
+    t = np.arange(n) / _SR
+    if kind == "square":
+        a = np.sign(np.sin(2 * np.pi * freq * t))
+    elif kind == "saw":
+        a = 2 * (t * freq - np.floor(0.5 + t * freq))
+    else:
+        a = np.sin(2 * np.pi * freq * t)
+    fade = min(n // 8, int(_SR * 0.01))
+    if fade > 0:
+        a[:fade] *= np.linspace(0, 1, fade)
+        a[-fade:] *= np.linspace(1, 0, fade)
+    return (a * 0.3).astype(np.float32)
+
+
+def play_note(name="도", beats=1, tempo=120):
+    """계이름 하나를 소리 내기.
+
+    >>> play_note("도")
+    >>> play_note("솔", 2)          # 2박자
+    계이름 : 도 레 미 파 솔 라 시 도2(한 옥타브 위)
+    """
+    key = str(name).strip().lower()
+    key = key if key in _NOTES else str(name).strip()
+    if key not in _NOTES:
+        raise TheMakerError("모르는 계이름이에요: %s (도 레 미 파 솔 라 시 높은도)" % name)
+    sec = float(beats) * 60.0 / max(20.0, float(tempo))
+    _play(_wave(_NOTES[key], sec))
+    return None
+
+
+def beep(kind="ok"):
+    """짧은 알림 소리. ok / error / ding / buzz"""
+    k = str(kind).strip().lower()
+    if k in ("ok", "성공"):
+        w = np.concatenate([_wave(660, .09), _wave(880, .12)])
+    elif k in ("error", "실패"):
+        w = np.concatenate([_wave(300, .12, "square"), _wave(200, .18, "square")])
+    elif k in ("ding", "딩"):
+        w = _wave(1200, .25)
+    elif k in ("buzz", "삐"):
+        w = _wave(150, .3, "saw")
+    else:
+        raise TheMakerError("ok error ding buzz 중에서 골라 주세요.")
+    _play(w)
+    return None
+
+
+def play_melody(notes="도레미파솔", tempo=120):
+    """계이름을 이어서 연주하기. 띄어쓰기로 나눠도 되고 붙여 써도 돼요.
+
+    >>> play_melody("도레미파솔라시높은도")
+    >>> play_melody("솔 솔 라 라 솔 솔 미", 100)
+    """
+    # 띄어쓰기는 쉼표로 친다 — 블록 코딩과 같은 규칙 ("도미솔 솔 도2")
+    keys = sorted(_NOTES, key=len, reverse=True)
+    parts, skipped = [], []
+    for group in str(notes).replace(",", " ").split(" "):
+        if not group:
+            continue
+        if parts:
+            parts.append("쉼")                     # 덩어리 사이는 한 박 쉬기
+        i = 0
+        while i < len(group):
+            for k in keys:
+                if group[i:i + len(k)] == k:
+                    parts.append(k); i += len(k); break
+            else:
+                skipped.append(group[i]); i += 1
+    while parts and parts[-1] == "쉼":
+        parts.pop()
+    if skipped:
+        print("[play_melody] 모르는 글자는 건너뛰었어요:", "".join(skipped))
+    if not parts:
+        raise TheMakerError("계이름을 찾을 수 없어요. (도 레 미 파 솔 라 시 도2)")
+    sec = 60.0 / max(20.0, float(tempo))
+    _play(np.concatenate([_wave(_NOTES[p], sec) for p in parts]))
+    return None
+
+
+def play_hz(freq=440, seconds=0.5):
+    """주파수(Hz)로 소리 내기. 440 = 라"""
+    _play(_wave(max(20.0, float(freq)), max(0.02, float(seconds))))
+    return None

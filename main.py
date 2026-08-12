@@ -635,7 +635,7 @@ async def system():
         "assign_requested": {"vlm": E.DEV_VLM, "vision": E.DEV_GAN, "face": E.DEV_FACE},
         "device_of": DEVICE_OF,          # 서비스명 -> 실행 디바이스 (프론트 HUD용)
         "models": {
-            "vlm": "Qwen2.5-VL-3B INT4",
+            "vlm": "Gemma 3 4B INT4",
             "detect": "YOLO11m (+pose/seg)",
             "custom": len(eng.custom.models) if eng else 0,
             "face": 5, "transform": 4, "ocr": "easyocr ko/en",

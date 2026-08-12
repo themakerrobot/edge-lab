@@ -611,7 +611,8 @@
         <div class="boot-bar"><i id="bootBar"></i></div>
         <div class="boot-status">
           <span id="bootNow">준비하는 중...</span>
-          <span id="bootCount">0 / 0</span>
+          <span id="bootCount">0 / 0<span id="bootTime" style="margin-left:8px;
+                font-variant-numeric:tabular-nums;color:var(--ink-2);"></span></span>
         </div>
       </div>
 
@@ -733,6 +734,8 @@
           <div class="webcam-container">
             <video id="webcamVideo"></video>
             <canvas id="webcamCanvas" width="320" height="240"></canvas>
+            <div id="webcamMsg" style="display:none;padding:14px;text-align:center;
+                 color:var(--ink-2);font-size:.9rem;line-height:1.7;"></div>
           </div>
           <div class="button-row">
             <button id="captureWebcam" class="btn-line">캡쳐</button>
@@ -818,6 +821,12 @@
         bootSub: "인터넷 없이 내 컴퓨터에서 실행돼요",
         bootSkip: "건너뛰기", bootWait: "준비 중...", bootStart: "시작하기",
         bootDone: "준비 끝!", bootError: "문제가 생겼어요: ",
+        bootSec: "초", bootMin: "분 ", bootTook: "걸린 시간",
+        cam_denied: "카메라를 쓸 수 없어요.<br>주소창 왼쪽(또는 창 위쪽)의 자물쇠·카메라 아이콘을 눌러 <b>허용</b>으로 바꿔 주세요.",
+        cam_busy: "다른 프로그램이 카메라를 쓰고 있어요.<br>화상회의·카메라 앱을 닫고 다시 눌러 보세요.",
+        cam_none: "카메라를 찾지 못했어요.<br>웹캠이 꽂혀 있는지, 노트북이라면 카메라 덮개가 열려 있는지 확인해 주세요.",
+        cam_fail: "카메라를 켜지 못했어요.",
+        cam_retry: "다시 시도",
         s1h: "인터넷 없이 동작해요",
         s1b: "이 프로그램은 인터넷에 연결하지 않아요. 웹캠으로 찍은 사진은 이 컴퓨터 밖으로 나가지 않고, 여기 안에서만 처리돼요.",
         s2h: "AI를 내 컴퓨터에 올리는 중이에요",
@@ -855,6 +864,12 @@
         bootSub: "Runs on this computer, no internet needed",
         bootSkip: "Skip", bootWait: "Getting ready...", bootStart: "Start",
         bootDone: "Ready!", bootError: "Something went wrong: ",
+        bootSec: "s", bootMin: "m ", bootTook: "took",
+        cam_denied: "Camera is blocked.<br>Click the lock or camera icon near the address bar and choose <b>Allow</b>.",
+        cam_busy: "Another app is using the camera.<br>Close video-call or camera apps, then try again.",
+        cam_none: "No camera found.<br>Check that a webcam is connected and the privacy cover is open.",
+        cam_fail: "Could not start the camera.",
+        cam_retry: "Try again",
         s1h: "It works without the internet",
         s1b: "This program never connects to the internet. Photos from your webcam stay on this computer and are processed right here.",
         s2h: "Loading the AI models",
@@ -949,6 +964,13 @@
         });
       }
 
+      const bootT0 = Date.now();
+      function elapsed() {
+        const s = Math.floor((Date.now() - bootT0) / 1000);   // 내림 — 59.5 가 "60초" 로 보이지 않게
+        return s < 60 ? s + T("bootSec")
+                      : Math.floor(s / 60) + T("bootMin") + (s % 60) + T("bootSec");
+      }
+
       async function poll() {
         try {
           const r = await (await fetch("/ready")).json();
@@ -957,7 +979,8 @@
           show();
           const pct = r.total ? Math.round(r.loaded / r.total * 100) : 0;
           document.getElementById("bootBar").style.width = pct + "%";
-          document.getElementById("bootCount").textContent = r.loaded + " / " + r.total;
+          document.getElementById("bootCount").firstChild.nodeValue = r.loaded + " / " + r.total;
+          document.getElementById("bootTime").textContent = elapsed();
           if (r.error) {
             document.getElementById("bootNow").textContent = T("bootError") + r.error;
             return;                                   // 더 묻지 않는다
@@ -967,6 +990,9 @@
             : (LANG === "en" ? (r.current_en || "") : (r.current_ko || "")) + " ...";
           if (r.ready) {
             ready = true;
+            /* 얼마나 걸렸는지 남겨 둔다 — 느린 PC 를 가늠하는 데 쓴다 */
+            document.getElementById("bootNow").textContent =
+              T("bootDone") + " (" + T("bootTook") + " " + elapsed() + ")";
             const b = document.getElementById("bootStart");
             b.disabled = false;
             b.textContent = T("bootStart");
@@ -1226,14 +1252,41 @@
 
     const webcamVideo = document.getElementById('webcamVideo');
     const webcamCanvas = document.getElementById('webcamCanvas');
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    const webcamMsg = document.getElementById('webcamMsg');
+
+    /* 웹캠이 안 될 때 검은 화면만 보이면 왜 그런지 알 수 없다 — 이유를 화면에 적는다 */
+    function showWebcamError(err) {
+      const name = (err && err.name) || "";
+      const why = {
+        NotAllowedError:  t("cam_denied"),
+        NotReadableError: t("cam_busy"),
+        NotFoundError:    t("cam_none"),
+        OverconstrainedError: t("cam_none"),
+      }[name] || (t("cam_fail") + " (" + (name || err) + ")");
+      webcamVideo.style.display = "none";
+      webcamMsg.style.display = "block";
+      webcamMsg.innerHTML = why +
+        '<br><br><button class="btn" id="webcamRetry">' + t("cam_retry") + "</button>";
+      const btn = document.getElementById("webcamRetry");
+      if (btn) btn.addEventListener("click", startWebcam);
+      console.log("웹캠 접근 오류:", err);
+    }
+
+    function startWebcam() {
+      if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
+        showWebcamError({ name: "NotFoundError" });
+        return;
+      }
+      webcamMsg.style.display = "none";
+      webcamVideo.style.display = "";
       navigator.mediaDevices.getUserMedia({ video: true })
         .then(stream => {
           webcamVideo.srcObject = stream;
           webcamVideo.play();
         })
-        .catch(err => console.log("웹캠 접근 오류:", err));
+        .catch(showWebcamError);
     }
+    startWebcam();
     document.getElementById('captureWebcam').addEventListener('click', function() {
       const ctx = webcamCanvas.getContext('2d');
       ctx.drawImage(webcamVideo, 0, 0, webcamCanvas.width, webcamCanvas.height);
@@ -1458,7 +1511,7 @@
               : `The weather in the photo looks <b>${w}</b>.`;
           }
           case 'caption_question_e':
-            return `Answer: <b>${esc(d.answer)}</b><div class="sub">${esc(d.answer_en || '')}</div>`;
+            return `Answer: <b>${esc(d.answer)}</b>${d.answer_en && d.answer_en !== d.answer ? `<div class="sub">${esc(d.answer_en)}</div>` : ''}`;
           case 'caption_tag_e': {
             const tags = Array.isArray(d.tag) ? d.tag.join(', ') : d.tag;
             return `Tags found: <b>${esc(tags)}</b>`;
@@ -1578,7 +1631,7 @@
             : `사진 속 날씨는 <b>${w}</b>이에요.`;
         }
         case 'caption_question_e':
-          return `질문에 대한 답: <b>${esc(d.answer)}</b><div class="sub">${esc(d.answer_en || '')}</div>`;
+          return `질문에 대한 답: <b>${esc(d.answer)}</b>${d.answer_en && d.answer_en !== d.answer ? `<div class="sub">${esc(d.answer_en)}</div>` : ''}`;
         case 'caption_tag_e': {
           const tags = Array.isArray(d.tag) ? d.tag.join(', ') : d.tag;
           return `사진에서 찾은 태그: <b>${esc(tags)}</b>`;

@@ -23,6 +23,7 @@ themaker*.exe
 
 # ---------------------------------------------------------------- 파이썬
 venv/
+venv-convert/
 __pycache__/
 *.pyc
 *.egg-info/

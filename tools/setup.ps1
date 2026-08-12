@@ -19,11 +19,14 @@ pip install mediapipe
 pip install pyinstaller   # make_bundle.bat 의 런처 exe 빌드용 (개발 PC 전용)
 $global:LASTEXITCODE = 0
 
-Write-Host "=== [2/6] VLM: Qwen2.5-VL-3B INT4 export ===" -ForegroundColor Cyan
-$vlmDir = Join-Path $MODELS "vlm\qwen2.5-vl-3b-int4"
-if (Test-Path $vlmDir) { Remove-Item -Recurse -Force $vlmDir }
-optimum-cli export openvino -m Qwen/Qwen2.5-VL-3B-Instruct --weight-format int4 $vlmDir
-if ($LASTEXITCODE -ne 0) { throw "VLM export failed" }
+Write-Host "=== [2/6] VLM ===" -ForegroundColor Cyan
+# VLM 은 요구하는 transformers 버전이 달라 전용 가상환경에서 따로 변환한다.
+# (자세한 절차는 README 의 "VLM 모델 바꾸기")
+if (Get-ChildItem (Join-Path $MODELS "vlm") -Directory -ErrorAction SilentlyContinue) {
+  Write-Host "  이미 있음 - 건너뜁니다" -ForegroundColor DarkGray
+} else {
+  Write-Host "  아직 없습니다. README 의 'VLM 모델 바꾸기' 를 보고 먼저 변환하세요." -ForegroundColor Yellow
+}
 
 Write-Host "=== [3/6] YOLO standard x3 export ===" -ForegroundColor Cyan
 Push-Location (Join-Path $MODELS "object")

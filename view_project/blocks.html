@@ -261,8 +261,16 @@
           <div id="varsBody" style="font-variant-numeric:tabular-nums;"></div>
         </div>
         <div id="logBox"></div>
-        <details class="codeview">
-          <summary id="txtCodeView">만들어진 코드 보기 (JavaScript)</summary>
+        <details class="codeview" id="codeDetails">
+          <summary id="txtCodeView">파이썬 코드로 보기</summary>
+          <div style="display:flex;gap:6px;margin:6px 0;">
+            <button id="pyCopy" style="border:1.5px solid var(--line);background:#fff;
+              border-radius:6px;padding:3px 12px;cursor:pointer;font-family:inherit;
+              font-size:.82rem;">복사</button>
+            <button id="pyOpen" style="border:1.5px solid var(--line);background:#fff;
+              border-radius:6px;padding:3px 12px;cursor:pointer;font-family:inherit;
+              font-size:.82rem;">파이썬 페이지에서 열기</button>
+          </div>
           <pre id="codeView"></pre>
         </details>
       </div>
@@ -312,7 +320,7 @@
       workHead: "블록을 조립해요", stageHead: "무대",
       upload: "사진 올리기", uploadHint: "「업로드한 사진」 블록에서 사용돼요",
       uploadReady: "사진이 준비됐어요",
-      codeView: "만들어진 코드 보기 (JavaScript)",
+      codeView: "파이썬 코드로 보기",
 
       cat_input: "입력", cat_vision: "AI 인식", cat_lang: "AI 언어·변환", cat_stage: "무대",
       cat_loop: "반복", cat_logic: "판단", cat_math: "계산", cat_text: "글자",
@@ -339,6 +347,13 @@
       b_random_rps: "가위·바위·보 중 랜덤",
       b_say: "%1 말하기", b_say_tip: "소리 내어 읽고 말풍선으로 보여줘요.",
       b_voice: "목소리 %1 로 바꾸기", b_voice_tip: "말하기에 쓸 목소리를 골라요. F=여자, M=남자.",
+      b_speed: "말하기 빠르기 %1", b_speed_tip: "말하는 속도를 바꿔요.",
+      o_slow: "느리게", o_normal: "보통", o_fast: "빠르게",
+      b_listen: "%1초 동안 듣기", b_listen_tip: "마이크로 듣고 글자로 바꿔 줘요 (음성 인식).",
+      m_listen: "듣는 중... ", m_sec: "초", m_heard: "들은 말: ",
+      m_noMic: "마이크를 쓸 수 없어요. 마이크 권한을 확인해 주세요.",
+      m_sttFail: "말을 알아듣지 못했어요.",
+      o_F4: "여자 4", o_F5: "여자 5", o_M4: "남자 4", o_M5: "남자 5",
       o_F1: "여자 1", o_F2: "여자 2", o_F3: "여자 3",
       o_M1: "남자 1", o_M2: "남자 2", o_M3: "남자 3",
       b_show_text: "%1 크게 보여주기", b_show_image: "사진 %1 보여주기",
@@ -439,6 +454,7 @@
       n_la: "라", n_si: "시", n_do2: "높은도",
       vars_title: "변수 값",
       btn_examples: "예제",
+      pyCopy: "복사", pyCopied: "복사했어요", pyOpen: "파이썬 페이지에서 열기",
       ex_title: "예제 프로그램",
       ex_hint: "누르면 지금 블록이 예제로 바뀌어요. 저장하지 않은 블록은 사라져요.",
       ex_greet: "얼굴 보이면 인사하기",
@@ -451,6 +467,16 @@
       ex_color_d: "5번 반복하며 화면 가운데 색을 말해요. (픽셀·반복)",
       ex_sound: "소리 실험 (멜로디·주파수)",
       ex_sound_d: "멜로디를 연주하고, 같은 음을 주파수로 내 봐요. (소리·과학)",
+      ex_echo: "말 따라 하기",
+      ex_echo_d: "내가 한 말을 듣고 그대로 따라 말해요. (음성 인식)",
+      ex_voices: "목소리 바꿔 말하기",
+      ex_voices_d: "목소리와 빠르기를 바꿔 가며 말해요. (소리)",
+      sh_askSay: "하고 싶은 말을 해 보세요",
+      sh_echoTail: " 라고 하셨네요",
+      sh_voiceF: "안녕하세요, 여자 목소리예요",
+      sh_voiceM: "저는 남자 목소리, 느리게 말해요",
+      sh_voiceFast: "이번엔 빠르게 말해 볼게요",
+      v_word: "말",
       ex_count: "얼굴 수 세기",
       ex_count_d: "얼굴 개수를 변수에 담아 말해요. (변수·인식)",
       m_waitTimeout: "60초가 지나서 그냥 넘어가요",
@@ -494,7 +520,7 @@
       workHead: "Build your blocks", stageHead: "Stage",
       upload: "Upload photo", uploadHint: "Used by the “uploaded photo” block",
       uploadReady: "Photo ready",
-      codeView: "See the generated code (JavaScript)",
+      codeView: "See as Python code",
 
       cat_input: "Input", cat_vision: "AI Vision", cat_lang: "AI Language", cat_stage: "Stage",
       cat_loop: "Loops", cat_logic: "Logic", cat_math: "Math", cat_text: "Text",
@@ -521,6 +547,13 @@
       b_random_rps: "random rock, paper or scissors",
       b_say: "say %1", b_say_tip: "Reads it aloud and shows a speech bubble.",
       b_voice: "set voice to %1", b_voice_tip: "Picks the voice for speaking. F=female, M=male.",
+      b_speed: "speaking speed %1", b_speed_tip: "Changes how fast it speaks.",
+      o_slow: "slow", o_normal: "normal", o_fast: "fast",
+      b_listen: "listen for %1 s", b_listen_tip: "Listens with the mic and turns it into text.",
+      m_listen: "listening... ", m_sec: "s", m_heard: "heard: ",
+      m_noMic: "Can't use the microphone. Check the permission.",
+      m_sttFail: "Couldn't understand the speech.",
+      o_F4: "female 4", o_F5: "female 5", o_M4: "male 4", o_M5: "male 5",
       o_F1: "female 1", o_F2: "female 2", o_F3: "female 3",
       o_M1: "male 1", o_M2: "male 2", o_M3: "male 3",
       b_show_text: "show %1 in big letters", b_show_image: "show photo %1",
@@ -620,6 +653,7 @@
       n_la: "A (la)", n_si: "B (si)", n_do2: "high C",
       vars_title: "Variables",
       btn_examples: "Examples",
+      pyCopy: "Copy", pyCopied: "Copied", pyOpen: "Open in Python page",
       ex_title: "Example programs",
       ex_hint: "Loading replaces your current blocks. Unsaved work is lost.",
       ex_greet: "Greet when a face appears",
@@ -632,6 +666,16 @@
       ex_color_d: "Repeats 5 times, saying the color at the center. (pixels & loops)",
       ex_sound: "Sound lab (melody & frequency)",
       ex_sound_d: "Plays a melody, then the same notes by frequency. (sound & science)",
+      ex_echo: "Repeat after me",
+      ex_echo_d: "Listens to you and says it back. (speech to text)",
+      ex_voices: "Try different voices",
+      ex_voices_d: "Speaks with different voices and speeds. (sound)",
+      sh_askSay: "Say something",
+      sh_echoTail: " - that is what you said",
+      sh_voiceF: "Hello, this is a female voice",
+      sh_voiceM: "I am a male voice, speaking slowly",
+      sh_voiceFast: "Now I will speak fast",
+      v_word: "word",
       ex_count: "Count the faces",
       ex_count_d: "Stores the face count in a variable and says it. (variables)",
       m_waitTimeout: "60 seconds passed, moving on",
@@ -696,6 +740,390 @@
     ko: { sunny: "맑음", cloudy: "흐림", rainy: "비", snow: "눈", unknown: "모름" },
     en: { sunny: "sunny", cloudy: "cloudy", rainy: "rainy", snow: "snow", unknown: "unknown" },
   };
+  /* =======================================================================
+     블록 -> 파이썬 변환
+     화면에서 도는 JS 와 별개로, themaker 라이브러리를 쓰는 파이썬을 만든다.
+     파이썬 페이지에 붙여넣으면 그대로 돌아간다.
+     ======================================================================= */
+  const PY = (() => {
+    const q = s => "'" + String(s).replace(/\\/g, "\\\\").replace(/'/g, "\\'") + "'";
+    let needTime = false, needCam = false;
+
+    /* 값 블록 -> 파이썬 식 */
+    function val(block, name, dflt) {
+      const t = block.getInputTargetBlock(name);
+      if (!t) return dflt;
+      return expr(t);
+    }
+    function field(b, n) { return b.getFieldValue(n); }
+    function num(b, n, d) { const t = b.getInputTargetBlock(n); return t ? expr(t) : String(d); }
+
+    /* 이미지 인자 — 안 꽂혀 있으면 방금 찍은 사진을 쓴다 */
+    function img(b, name) {
+      const t = b.getInputTargetBlock(name);
+      if (t) return expr(t);
+      needCam = true;
+      return "img";
+    }
+
+    const E = {
+      /* ---- 값 ---- */
+      text: b => q(field(b, "TEXT")),
+      math_number: b => String(Number(field(b, "NUM")) || 0),
+      logic_boolean: b => (field(b, "BOOL") === "TRUE" ? "True" : "False"),
+      variables_get: b => pyName(b.getField("VAR").getText()),
+      text_join: b => {
+        const n = b.inputList.filter(i => i.name.startsWith("ADD")).length;
+        const parts = [];
+        for (let i = 0; i < n; i++) {
+          const v = val(b, "ADD" + i, "''");
+          /* 이미 글자면 str() 로 감싸지 않는다 — 코드가 읽기 쉬워진다 */
+          parts.push(/^'.*'$/.test(v) ? v : "str(" + v + ")");
+        }
+        return parts.length ? parts.join(" + ") : "''";
+      },
+      math_arithmetic: b => {
+        const op = { ADD: "+", MINUS: "-", MULTIPLY: "*", DIVIDE: "/", POWER: "**" }[field(b, "OP")] || "+";
+        return "(" + val(b, "A", "0") + " " + op + " " + val(b, "B", "0") + ")";
+      },
+      logic_compare: b => {
+        const op = { EQ: "==", NEQ: "!=", LT: "<", LTE: "<=", GT: ">", GTE: ">=" }[field(b, "OP")] || "==";
+        return "(" + val(b, "A", "0") + " " + op + " " + val(b, "B", "0") + ")";
+      },
+      logic_operation: b =>
+        "(" + val(b, "A", "False") + (field(b, "OP") === "AND" ? " and " : " or ") + val(b, "B", "False") + ")",
+      logic_negate: b => "(not " + val(b, "BOOL", "False") + ")",
+      math_random_int: b => { needRandom = true; return "random.randint(" + val(b, "FROM", "1") + ", " + val(b, "TO", "10") + ")"; },
+      text_length: b => "len(" + val(b, "VALUE", "''") + ")",
+      lists_length: b => "len(" + val(b, "VALUE", "[]") + ")",
+      lists_create_with: b => {
+        const n = b.inputList.filter(i => i.name.startsWith("ADD")).length;
+        const parts = [];
+        for (let i = 0; i < n; i++) parts.push(val(b, "ADD" + i, "None"));
+        return "[" + parts.join(", ") + "]";
+      },
+
+      /* ---- 사진 가져오기 ---- */
+      ai_capture: () => "camera()",
+      ai_upload: () => "load('사진.jpg')",
+
+      /* ---- AI 로 보기 ---- */
+      ai_detect_one: b =>
+        "first_name(vision(" + q(pick(M_MODE, field(b, "MODE"))) + ", " + img(b, "IMG") + "))",
+      ai_objects: b => "names_of(vision('object', " + img(b, "IMG") + "))",
+      ai_custom: b => "first_name(vision('my:" + field(b, "MODEL") + "', " + img(b, "IMG") + "))",
+      ai_face: b => {
+        const w = field(b, "WHAT");
+        if (w === "dir") return "first_of(vision('distance', " + img(b, "IMG") + "), 'direction')";
+        return "first_of(vision('face_attr', " + img(b, "IMG") + "), " + q(w) + ")";
+      },
+      ai_face_count: b => "len(vision('face', " + img(b, "IMG") + "))",
+      ai_hand: b => "first_of(vision('hand', " + img(b, "IMG") + "), 'gesture')",
+      ai_face_dist: b => "first_of(vision('distance', " + img(b, "IMG") + "), 'distance')",
+      ai_ocr: b => "texts_of(vision('ocr', " + img(b, "IMG") + "))",
+      ai_qr: b => "first_of(vision('qr', " + img(b, "IMG") + "), 'data')",
+      ai_ask: b => "vision('question', " + img(b, "IMG") + ", prompt=" + val(b, "Q", "''") + ")['answer']",
+      ai_guess: b => {
+        const k = field(b, "KIND");
+        if (k === "tag") return "vision('tag', " + img(b, "IMG") + ")['tag']";
+        return "vision('question', " + img(b, "IMG") + ", prompt=" + q(GUESS_Q[k] || k) + ")['answer']";
+      },
+      ai_transform: b =>
+        "vision(" + q(pick(M_TRANS, field(b, "KIND"))) + ", " + img(b, "IMG") + ")",
+      ai_listen: b => "listen(" + field(b, "SEC") + ")",
+      ai_beats: b => "beats(" + val(b, "A", "''") + ", " + val(b, "B", "''") + ")",
+      ai_random_rps: () => { needRandom = true; return "random.choice(['가위', '바위', '보'])"; },
+
+      /* ---- 사진 편집 (아홉 칸) ---- */
+      ed_resize: b => "resize(" + img(b, "IMG") + ", " + num(b, "F", 2) + ")",
+      ed_rotate: b => "rotate(" + img(b, "IMG") + ", " + num(b, "DEG", 90) + ")",
+      ed_flip: b => "flip(" + img(b, "IMG") + ", " + q(pick(M_FLIP, field(b, "DIR"), "h")) + ")",
+      ed_crop: b => "crop(" + img(b, "IMG") + ", " + q(pick(M_CROP, field(b, "PART"), "mc")) + ")",
+      ed_merge: b => "attach(" + img(b, "A") + ", " + img(b, "B") + ", " +
+        q(pick(M_MERGE, field(b, "DIR"), "h")) + ")",
+      ed_overlay: b => "put_on(" + img(b, "A") + ", " + img(b, "B") + ", " +
+        q(pick(M_SIZE, field(b, "SIZE"), "half")) + ", " + q(field(b, "POS")) + ")",
+      ed_tone: b => "adjust(" + img(b, "IMG") + ", " + q(field(b, "WHAT")) + ", " + num(b, "V", 0) + ")",
+      ed_filter: b => "img_filter(" + img(b, "IMG") + ", " + q(field(b, "F")) + ")",
+      ed_text: b => "draw_text(" + img(b, "IMG") + ", " + val(b, "TXT", "''") + ", " +
+        q(field(b, "POS")) + ", " + num(b, "SIZE", 40) + ", " + q(colName(field(b, "COL"))) + ")",
+      ed_text_rot: b => "draw_text(" + img(b, "IMG") + ", " + val(b, "TXT", "''") + ", " +
+        q(field(b, "POS")) + ", 44, 'black', " + num(b, "DEG", 0) + ")",
+      ed_rect: b => "draw_rect(" + img(b, "IMG") + ", " + q(field(b, "POS")) + ", " +
+        q(pick(M_FILL, field(b, "FILL"), "line")) + ", " + q(colName(field(b, "COL"))) + ")",
+      ed_circle: b => "draw_circle(" + img(b, "IMG") + ", " + q(field(b, "POS")) + ", " +
+        q(pick(M_FILL, field(b, "FILL"), "line")) + ", " + q(colName(field(b, "COL"))) + ")",
+      ed_line: b => "draw_line(" + img(b, "IMG") + ", " + q(field(b, "P1")) + ", " +
+        q(field(b, "P2")) + ", " + q(colName(field(b, "COL"))) + ")",
+      ed_size_of: b => "size_of(" + img(b, "IMG") + ", " + q(pick(M_WH, field(b, "WHAT"), "w")) + ")",
+      ed_color_at: b => "color_at(" + img(b, "IMG") + ", " + q(field(b, "POS")) + ")",
+      ed_main_color: b => "main_color(" + img(b, "IMG") + ")",
+      ed_crop_detected: b => {
+        if (!hasResult) { needCam = true; return "crop_found(img, vision('face', img))"; }
+        return "crop_found(" + lastShown + ", r)";
+      },
+      ed_sticker: b => "put_sticker(" + img(b, "A") + ", " + img(b, "B") + ")",
+
+      /* ---- 사진 편집 (좌표) ---- */
+      edx_crop: b => "crop_xy(" + img(b, "IMG") + ", " + num(b, "X", 0) + ", " + num(b, "Y", 0) +
+        ", " + num(b, "W", 100) + ", " + num(b, "H", 100) + ")",
+      edx_text: b => "draw_text_xy(" + img(b, "IMG") + ", " + val(b, "TXT", "''") + ", " +
+        num(b, "X", 20) + ", " + num(b, "Y", 20) + ", " + num(b, "SIZE", 40) + ", " +
+        q(colName(field(b, "COL"))) + ", " + num(b, "DEG", 0) + ")",
+      edx_rect: b => "draw_rect_xy(" + img(b, "IMG") + ", " + num(b, "X", 0) + ", " + num(b, "Y", 0) +
+        ", " + num(b, "W", 100) + ", " + num(b, "H", 100) + ", " +
+        q(pick(M_FILL, field(b, "FILL"), "line")) + ", " + q(colName(field(b, "COL"))) + ")",
+      edx_circle: b => "draw_circle_xy(" + img(b, "IMG") + ", " + num(b, "X", 100) + ", " +
+        num(b, "Y", 100) + ", " + num(b, "R", 50) + ", " +
+        q(pick(M_FILL, field(b, "FILL"), "line")) + ", " + q(colName(field(b, "COL"))) + ")",
+      edx_line: b => "draw_line_xy(" + img(b, "IMG") + ", " + num(b, "X1", 0) + ", " + num(b, "Y1", 0) +
+        ", " + num(b, "X2", 100) + ", " + num(b, "Y2", 100) + ", " + q(colName(field(b, "COL"))) + ")",
+      edx_overlay: b => "put_on_xy(" + img(b, "A") + ", " + img(b, "B") + ", " +
+        num(b, "X", 0) + ", " + num(b, "Y", 0) + ", " + num(b, "S", 1) + ")",
+      edx_color: b => "color_at_xy(" + img(b, "IMG") + ", " + num(b, "X", 0) + ", " + num(b, "Y", 0) + ")",
+    };
+
+    /* 블록이 쓰는 값 -> themaker 가 받는 값. 이름이 서로 다르므로 여기서 옮긴다. */
+    const GUESS_Q = { place: "여기는 어디야?", time: "지금은 언제야?", weather: "날씨가 어때?" };
+    const M_FLIP  = { flipH: "h", flipV: "v" };
+    const M_MERGE = { sideH: "h", sideV: "v" };
+    const M_CROP  = { center: "mc", left: "ml", right: "mr", top: "tc", bottom: "bc" };
+    const M_SIZE  = { small: "small", mid: "half", big: "big" };
+    const M_FILL  = { fill: "fill", hollow: "line" };
+    const M_WH    = { width: "w", height: "h" };
+    const M_NOTE  = { "262": "도", "294": "레", "330": "미", "349": "파",
+                      "392": "솔", "440": "라", "494": "시", "523": "높은도" };
+    /* 블록의 효과음 10종 -> themaker 의 4종에서 가장 가까운 것 */
+    const M_BEEP  = { beepOk: "ok", beepNo: "error", sndSiren: "buzz", sndLaser: "ding",
+                      sndCoin: "ding", sndJump: "ding", sndDrum: "buzz", sndClap: "ok",
+                      sndChime: "ding", sndFanfare: "ok" };
+    /* 인식 종류 -> vision() 기능 이름 */
+    const M_MODE  = { face: "face", hand: "hand", dist: "distance", objects: "object",
+                      ocr: "ocr", qr: "qr", rps: "rps", fire: "fire", ball: "ball",
+                      number: "number", fall: "fall", helmet: "helmet", box: "box" };
+    const M_TRANS = { portrait: "bg_remove", sr: "sr" };
+    const pick = (map, v, dflt) => map[v] || dflt || v;
+    let needRandom = false;
+
+    /* 블록의 색은 #rrggbb 로 온다 — themaker 가 아는 이름으로 바꾼다 */
+    function colName(hex) {
+      const map = { "#e0342e": "red", "#1f5f7a": "blue", "#f4c522": "yellow",
+                    "#2fa35c": "green", "#ffffff": "white", "#26262e": "black" };
+      const k = String(hex || "").toLowerCase();
+      return map[k] || (k.startsWith("#") ? k : (k || "red"));   // 모르는 색은 #코드 그대로
+    }
+
+    function pyName(name) {
+      const s = String(name).trim().replace(/[^\wㄱ-ㅎ가-힣]/g, "_");
+      return /^[0-9]/.test(s) ? "v_" + s : (s || "x");
+    }
+
+    function expr(b) {
+      const f = E[b.type];
+      if (f) return f(b);
+      return "None  # " + b.type + " (파이썬에 아직 없어요)";
+    }
+
+    /* ---- 문장 블록 ---- */
+    function stmt(b, ind) {
+      const p = " ".repeat(ind);
+      const out = [];
+      const T = b.type;
+
+      if (T === "ai_detect_draw") {
+        hasResult = true;
+        lastShown = img(b, "IMG");
+        out.push(p + "r = vision(" + q(pick(M_MODE, field(b, "MODE"))) + ", " + lastShown + ")");
+        out.push(p + "show(" + lastShown + ", r)");
+      } else if (T === "ai_exec") {
+        out.push(p + val(b, "V", "None"));
+      } else if (T === "st_say") {
+        out.push(p + "speak(" + val(b, "TEXT", "''") + voiceArg() + ")");
+      } else if (T === "st_voice") {
+        voice = field(b, "V");           // 아래 speak(...) 에 voice= 로 붙는다
+        return "";
+      } else if (T === "st_speed") {
+        speed = { slow: 0.85, normal: 1.05, fast: 1.35 }[field(b, "S")] || 1.05;
+        return "";
+      } else if (T === "st_print") {
+        out.push(p + "print(" + val(b, "V", "''") + ")");
+      } else if (T === "st_show_text") {
+        out.push(p + "print(" + val(b, "TEXT", "''") + ")");
+      } else if (T === "st_show_image") {
+        lastShown = img(b, "IMG");         // 무대에 보인 것을 기억 (저장·박스가 이걸 쓴다)
+        out.push(p + "show(" + lastShown + ")");
+      } else if (T === "st_boxes") {
+        if (hasResult) {
+          out.push(p + "show(" + lastShown + ", r)");
+        } else {                          // 앞에서 인식한 적이 없으면 여기서 한 번 한다
+          needCam = true;
+          out.push(p + "r = vision('object', img)");
+          out.push(p + "show(img, r)");
+        }
+      } else if (T === "st_clear") {
+        return "";                       // 파이썬에는 무대가 없다 — 조용히 건너뛴다
+      } else if (T === "st_save_stage") {
+        out.push(p + "save(" + lastShown + ", 'themaker.jpg')");
+      } else if (T === "st_wait") {
+        needTime = true;
+        out.push(p + "time.sleep(" + num(b, "SEC", 1) + ")");
+      } else if (T === "st_note") {
+        out.push(p + "play_note(" + q(pick(M_NOTE, field(b, "N"), "도")) + ", " + num(b, "B", 1) + ")");
+      } else if (T === "st_beep") {
+        out.push(p + "beep(" + q(pick(M_BEEP, field(b, "K"), "ok")) + ")");
+      } else if (T === "st_melody") {
+        out.push(p + "play_melody(" + val(b, "M", "''") + ", " + field(b, "T") + ")");
+      } else if (T === "st_freq") {
+        out.push(p + "play_hz(" + num(b, "F", 440) + ", " + num(b, "S", 0.5) + ")");
+      } else if (T === "ev_wait_face") {
+        needTime = true;
+        out.push(p + "while not vision('face', camera()):");
+        out.push(p + "    time.sleep(0.3)");
+      } else if (T === "ev_wait_hand") {
+        needTime = true;
+        out.push(p + "while first_of(vision('hand', camera()), 'gesture') != " + q(field(b, "G")) + ":");
+        out.push(p + "    time.sleep(0.3)");
+      } else if (T === "ev_wait_custom") {
+        needTime = true;
+        out.push(p + "while first_name(vision('my:" + field(b, "MODEL") + "', camera())) != " +
+                 val(b, "LABEL", "''") + ":");
+        out.push(p + "    time.sleep(0.3)");
+      } else if (T === "controls_repeat_ext" || T === "controls_repeat") {
+        const n = b.getInputTargetBlock("TIMES") ? val(b, "TIMES", "5") : (field(b, "TIMES") || "5");
+        out.push(p + "for i in range(" + n + "):");
+        out.push(body(b, "DO", ind + 4, p));
+      } else if (T === "controls_whileUntil") {
+        const cond = val(b, "BOOL", "True");
+        out.push(p + "while " + (field(b, "MODE") === "UNTIL" ? "not " + cond : cond) + ":");
+        out.push(body(b, "DO", ind + 4, p));
+      } else if (T === "controls_if") {
+        let n = 0;
+        while (b.getInput("IF" + n)) {
+          out.push(p + (n === 0 ? "if " : "elif ") + val(b, "IF" + n, "False") + ":");
+          out.push(body(b, "DO" + n, ind + 4, p));
+          n++;
+        }
+        if (b.getInput("ELSE")) {
+          out.push(p + "else:");
+          out.push(body(b, "ELSE", ind + 4, p));
+        }
+      } else if (T === "controls_forEach") {
+        out.push(p + pyName(b.getField("VAR").getText()) + " = None");
+        out.push(p + "for " + pyName(b.getField("VAR").getText()) + " in " + val(b, "LIST", "[]") + ":");
+        out.push(body(b, "DO", ind + 4, p));
+      } else if (T === "variables_set") {
+        out.push(p + pyName(b.getField("VAR").getText()) + " = " + val(b, "VALUE", "None"));
+      } else if (T === "math_change") {
+        const v = pyName(b.getField("VAR").getText());
+        out.push(p + v + " = " + v + " + " + val(b, "DELTA", "1"));
+      } else if (T === "controls_flow_statements") {
+        out.push(p + (field(b, "FLOW") === "BREAK" ? "break" : "continue"));
+      } else {
+        out.push(p + "# " + T + " (파이썬에 아직 없어요)");
+      }
+      return out.join("\n");
+    }
+
+    let voice = "F1", speed = 1.05;
+    let lastShown = "img";                 // 무대에 마지막으로 보인 사진
+    let hasResult = false;                 // r(인식 결과) 이 만들어졌는지
+    function voiceArg() {
+      const parts = [];
+      if (voice !== "F1") parts.push("voice='" + voice + "'");
+      if (Math.abs(speed - 1.05) > 0.01) parts.push("speed=" + speed);
+      return parts.length ? ", " + parts.join(", ") : "";
+    }
+
+    function body(b, name, ind, p) {
+      const first = b.getInputTargetBlock(name);
+      if (!first) return p + "    pass";
+      return chain(first, ind);
+    }
+
+    function chain(b, ind) {
+      const lines = [];
+      let cur = b;
+      while (cur) {
+        const one = stmt(cur, ind);
+        if (one !== "") lines.push(one);   // 파이썬에 없는 블록은 줄을 만들지 않는다
+        cur = cur.getNextBlock();
+      }
+      return lines.join("\n");
+    }
+
+    return {
+      generate(workspace) {
+        needTime = false; needCam = false; needRandom = false;
+        voice = "F1"; speed = 1.05; lastShown = "img"; hasResult = false;
+        const tops = workspace.getTopBlocks(true).filter(b => !b.outputConnection);
+        const bodyLines = tops.map(b => chain(b, 0)).filter(s => s.trim()).join("\n");
+        if (!bodyLines.trim()) return "from themaker import *\n\n# 블록을 조립해 보세요\n";
+
+        const head = ["from themaker import *"];
+        if (needTime) head.push("import time");
+        if (needRandom) head.push("import random");
+        head.push("");
+
+        /* 도우미는 실제로 쓴 것만 — 안 쓰는 함수가 붙으면 코드가 길어 보인다 */
+        const used = [];
+        const wanted = HELP_ORDER.filter(name => new RegExp("\\b" + name + "\\s*\\(").test(bodyLines));
+        for (const name of HELP_ORDER) {
+          if (wanted.includes(name) ||
+              (name === "first_of" && (wanted.includes("first_name")))) used.push(name);
+        }
+        if (used.length) {
+          head.push(used.map(n => HELPERS[n].trim()).join("\n\n"));
+          head.push("");
+        }
+        if (needCam) { head.push("img = camera()          # 사진 한 장"); head.push(""); }
+        return head.join("\n") + bodyLines + "\n";
+      },
+    };
+  })();
+
+  /* 블록이 쓰는 편의 기능 — 만든 코드에 필요한 것만 함께 넣는다 */
+  const HELP_ORDER = ["first_of", "first_name", "names_of", "texts_of", "beats"];
+  const HELPERS = {
+    first_of: `
+def first_of(result, key, default=""):
+    """인식 결과에서 첫 번째 것의 값 하나만 꺼내요."""
+    items = result.get("object", result) if isinstance(result, dict) else result
+    if isinstance(items, list) and items:
+        return items[0].get(key, default)
+    return default
+`,
+    first_name: `
+def first_name(result):
+    """첫 번째로 찾은 것의 이름."""
+    return first_of(result, "name")
+`,
+    names_of: `
+def names_of(result):
+    """찾은 것들의 이름 목록."""
+    items = []
+    if isinstance(result, dict):
+        for key, val in result.items():
+            if not str(key).endswith("_en") and isinstance(val, list):
+                items += val
+    elif isinstance(result, list):
+        items = result
+    return [it.get("name", "") for it in items if isinstance(it, dict)]
+`,
+    texts_of: `
+def texts_of(result):
+    """읽은 글자들을 한 줄로."""
+    return " ".join(it.get("text", "") for it in result if isinstance(it, dict))
+`,
+    beats: `
+def beats(a, b):
+    """가위바위보 승부. a 가 이기면 True."""
+    win = {"가위": "보", "바위": "가위", "보": "바위",
+           "scissors": "paper", "rock": "scissors", "paper": "rock"}
+    return win.get(str(a)) == str(b)
+`,
+  };
+
+  const RT_SPEED = { slow: 0.85, normal: 1.05, fast: 1.35 };
   const RPS = { ko: ["가위", "바위", "보"], en: ["scissors", "rock", "paper"] };
   const DIR_KO = new Proxy({}, { get: (_, k) => DIRS[LANG][k] });
   const TIME_KO = new Proxy({}, { get: (_, k) => TIMES[LANG][k] });
@@ -978,7 +1406,16 @@
       { type: "st_voice", message0: t("b_voice"), previousStatement: null, nextStatement: null,
         colour: C_STAGE, tooltip: t("b_voice_tip"),
         args0: [ { type: "field_dropdown", name: "V",
-                   options: opt(["F1", "F2", "F3", "M1", "M2", "M3"]) } ] },
+                   options: opt(["F1", "F2", "F3", "F4", "F5",
+                                 "M1", "M2", "M3", "M4", "M5"]) } ] },
+      { type: "st_speed", message0: t("b_speed"), previousStatement: null, nextStatement: null,
+        colour: C_STAGE, tooltip: t("b_speed_tip"),
+        args0: [ { type: "field_dropdown", name: "S",
+                   options: opt(["slow", "normal", "fast"]) } ] },
+      { type: "ai_listen", message0: t("b_listen"), output: "String", colour: C_AI,
+        tooltip: t("b_listen_tip"),
+        args0: [ { type: "field_dropdown", name: "SEC",
+                   options: [["2", "2"], ["3", "3"], ["4", "4"], ["5", "5"], ["8", "8"]] } ] },
       { type: "st_show_text", message0: t("b_show_text"), previousStatement: null, nextStatement: null,
         colour: C_STAGE, args0: [ { type: "input_value", name: "TEXT" } ] },
       { type: "st_show_image", message0: t("b_show_image"), previousStatement: null, nextStatement: null,
@@ -1048,6 +1485,8 @@
   G.forBlock["ai_random_rps"] = () => ["(AI.randomRps())", Order.ATOMIC];
   G.forBlock["st_say"]        = b => `await RT.say(${V(b,"TEXT","''")});\n`;
   G.forBlock["st_voice"]      = b => `RT.voice = "${b.getFieldValue("V")}";\n`;
+  G.forBlock["st_speed"]      = b => `RT.speed = "${b.getFieldValue("S")}";\n`;
+  G.forBlock["ai_listen"]     = b => [`(await AI.listen(${b.getFieldValue("SEC")}))`, Order.ATOMIC];
   G.forBlock["st_show_text"]  = b => `RT.showText(${V(b,"TEXT","''")});\n`;
   G.forBlock["st_show_image"] = b => `await RT.showImage(${V(b,"IMG","null")});\n`;
   G.forBlock["st_boxes"]      = () => "await RT.drawBoxes();\n";
@@ -1085,7 +1524,8 @@
         { kind: "block", type: "ai_custom" },
         { kind: "block", type: "ai_face" }, { kind: "block", type: "ai_face_count" },
         { kind: "block", type: "ai_hand" }, { kind: "block", type: "ai_face_dist" },
-        { kind: "block", type: "ai_ocr" }, { kind: "block", type: "ai_qr" } ] },
+        { kind: "block", type: "ai_ocr" }, { kind: "block", type: "ai_qr" },
+        { kind: "block", type: "ai_listen" } ] },
       { kind: "category", name: t("cat_edit"), colour: C_EDIT, contents: [
         { kind: "block", type: "ed_resize", inputs: { F: num(2) } },
         { kind: "block", type: "ed_rotate", inputs: { DEG: num(90) } },
@@ -1126,6 +1566,7 @@
       { kind: "category", name: t("cat_stage"), colour: C_STAGE, contents: [
         { kind: "block", type: "st_say", inputs: { TEXT: txt(t("sh_hello")) } },
         { kind: "block", type: "st_voice" },
+        { kind: "block", type: "st_speed" },
         { kind: "block", type: "st_show_text", inputs: { TEXT: txt(t("sh_win")) } },
         { kind: "block", type: "st_show_image" }, { kind: "block", type: "st_boxes" },
         { kind: "block", type: "st_note", inputs: { B: num(1) } },
@@ -1258,6 +1699,34 @@
           B("st_freq", { inputs: { F: shadowNum(524), S: shadowNum(1) } }),
           B("st_beep", { fields: { K: "sndChime" } }),
         ]) ] } } },
+      /* 새로 생긴 "듣기" 블록 — 말한 그대로 따라 말한다 */
+      { id: "echo", name: t("ex_echo"), desc: t("ex_echo_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
+          CLEAR(),
+          B("st_say", { inputs: { TEXT: shadowTxt(t("sh_askSay")) } }),
+          B("variables_set", { fields: { VAR: { name: t("v_word") } },
+            inputs: { VALUE: { block: B("ai_listen", { fields: { SEC: "4" } }) } } }),
+          B("st_show_text", { inputs: { TEXT: { block: B("variables_get",
+            { fields: { VAR: { name: t("v_word") } } }) } } }),
+          B("st_say", { inputs: { TEXT: { block: B("text_join", {
+            extraState: { itemCount: 2 },
+            inputs: { ADD0: { block: B("variables_get", { fields: { VAR: { name: t("v_word") } } }) },
+                      ADD1: shadowTxt(t("sh_echoTail")) } }) } } }),
+        ]) ] } } },
+      /* 목소리·빠르기 블록 — 같은 말을 다르게 들려준다 */
+      { id: "voices", name: t("ex_voices"), desc: t("ex_voices_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
+          CLEAR(),
+          B("st_voice", { fields: { V: "F1" } }),
+          B("st_speed", { fields: { S: "normal" } }),
+          B("st_say", { inputs: { TEXT: shadowTxt(t("sh_voiceF")) } }),
+          B("st_voice", { fields: { V: "M2" } }),
+          B("st_speed", { fields: { S: "slow" } }),
+          B("st_say", { inputs: { TEXT: shadowTxt(t("sh_voiceM")) } }),
+          B("st_voice", { fields: { V: "F3" } }),
+          B("st_speed", { fields: { S: "fast" } }),
+          B("st_say", { inputs: { TEXT: shadowTxt(t("sh_voiceFast")) } }),
+        ]) ] } } },
       { id: "count", name: t("ex_count"), desc: t("ex_count_d"),
         state: { blocks: { languageVersion: 0, blocks: [ chain([
           CLEAR(),
@@ -1272,6 +1741,38 @@
         ]) ] } } },
     ];
   }
+  /* ---------------- 파이썬 코드로 보기 (오른쪽 아래 패널) ---------------- */
+  let PY_TEXT = "";
+  function refreshPython() {
+    try {
+      PY_TEXT = PY.generate(ws);
+    } catch (e) {
+      console.error(e);
+      PY_TEXT = "# 코드를 만들지 못했어요: " + e;
+    }
+    const box = document.getElementById("codeView");
+    if (box) box.textContent = PY_TEXT;
+    return PY_TEXT;
+  }
+  document.getElementById("codeDetails").addEventListener("toggle", e => {
+    if (e.target.open) { refreshPython(); if (window.vapiStat) vapiStat("python_view"); }
+  });
+  document.getElementById("pyCopy").addEventListener("click", async () => {
+    refreshPython();
+    try {
+      await navigator.clipboard.writeText(PY_TEXT);
+      const el = document.getElementById("pyCopy");
+      const old = el.textContent;
+      el.textContent = t("pyCopied");
+      setTimeout(() => { el.textContent = old; }, 1500);
+    } catch (e) {}
+  });
+  document.getElementById("pyOpen").addEventListener("click", () => {
+    refreshPython();
+    try { sessionStorage.setItem("vapi-py-from-blocks", PY_TEXT); } catch (e) {}
+    location.href = "/code?from=blocks";
+  });
+
   const exModal = document.getElementById("exModal");
   document.getElementById("exampleButton").addEventListener("click", () => {
     const list = document.getElementById("exList");
@@ -1308,6 +1809,7 @@
     set("saveButton", t("save"));
     set("txtVarsTitle", t("vars_title"));
     set("exampleButton", t("btn_examples"));
+    set("pyCopy", t("pyCopy")); set("pyOpen", t("pyOpen"));
     set("txtExTitle", t("ex_title")); set("txtExHint", t("ex_hint"));
     set("loadButton", t("load"));       set("stopButton", t("stop"));
     set("runLabel", t("run"));          set("langButton", t("langBtn"));
@@ -1577,6 +2079,7 @@
       AI.addLayer(img, d.map(f => ({ box: f.box, label: f.distance + "cm" })), COLORS.face);
       return d.length ? d[0].distance : 0;
     },
+    async listen(sec) { return RT.listen(sec); },
     async ask(img, q) {
       const d = await post("vlm/vlm_inference_e", img, { prompt: q });
       return d.answer;
@@ -1988,7 +2491,8 @@
         const r = await fetch("/speech/tts", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text, lang: LANG === "en" ? "en" : "ko",
-                                 voice: RT.voice || "F1" }),
+                                 voice: RT.voice || "F1",
+                                 speed: RT_SPEED[RT.speed] || 1.05 }),
         });
         if (!r.ok || !(r.headers.get("Content-Type") || "").includes("audio")) {
           RT._ttsOff = true;                   // 모델이 없으면 다시 시도하지 않는다
@@ -2020,6 +2524,64 @@
           setTimeout(res, Math.max(1500, text.length * 250));  // 안전 타임아웃
         } catch (e) { res(); }
       });
+    },
+    /* 마이크로 듣고 글자로 바꾸기 (음성 인식) */
+    async listen(seconds) {
+      const sec = Math.max(1, Math.min(10, Number(seconds) || 4));
+      log(t("m_listen") + sec + t("m_sec"));
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (e) {
+        throw t("m_noMic");
+      }
+      try {
+        const wav = await RT._record(stream, sec);
+        const fd = new FormData();
+        fd.append("uploadFile", new Blob([wav], { type: "audio/wav" }), "a.wav");
+        const r = await fetch("/speech/stt?lang=" + (LANG === "en" ? "en" : "ko"),
+                              { method: "POST", body: fd });
+        const j = await r.json();
+        if (j.result !== "ok") throw (j.data || t("m_sttFail"));
+        const text = (j.data && j.data.text) || "";
+        log(t("m_heard") + text);
+        return text;
+      } finally {
+        stream.getTracks().forEach(tr => tr.stop());
+      }
+    },
+    /* 마이크 소리를 WAV(16bit 모노) 로 만든다 — 서버가 WAV 만 받는다 */
+    async _record(stream, seconds) {
+      if (!RT._audio) RT._audio = new (window.AudioContext || window.webkitAudioContext)();
+      const ctx = RT._audio;
+      await ctx.resume();
+      const src = ctx.createMediaStreamSource(stream);
+      const node = ctx.createScriptProcessor(4096, 1, 1);
+      const chunks = [];
+      node.onaudioprocess = e => chunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+      src.connect(node); node.connect(ctx.destination);
+      await new Promise(res => setTimeout(res, seconds * 1000));
+      node.disconnect(); src.disconnect(); node.onaudioprocess = null;
+
+      const total = chunks.reduce((n, c) => n + c.length, 0);
+      const pcm = new Float32Array(total);
+      let at = 0;
+      for (const c of chunks) { pcm.set(c, at); at += c.length; }
+
+      const sr = ctx.sampleRate;
+      const buf = new ArrayBuffer(44 + pcm.length * 2);
+      const dv = new DataView(buf);
+      const put = (off, str) => { for (let i = 0; i < str.length; i++) dv.setUint8(off + i, str.charCodeAt(i)); };
+      put(0, "RIFF"); dv.setUint32(4, 36 + pcm.length * 2, true); put(8, "WAVEfmt ");
+      dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+      dv.setUint32(24, sr, true); dv.setUint32(28, sr * 2, true);
+      dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
+      put(36, "data"); dv.setUint32(40, pcm.length * 2, true);
+      for (let i = 0; i < pcm.length; i++) {
+        const v = Math.max(-1, Math.min(1, pcm[i]));
+        dv.setInt16(44 + i * 2, v * 32767, true);
+      }
+      return buf;
     },
     _stopVoice() {
       try { speechSynthesis.cancel(); } catch (e) {}
@@ -2235,7 +2797,8 @@
 
   document.getElementById("runButton").addEventListener("click", async () => {
     if (runButton.disabled) return;
-    RT.stopFlag = false; RT.iter = 0; RT.voice = "F1";   // 목소리는 실행마다 기본값으로
+    RT.stopFlag = false; RT.iter = 0;
+    RT.voice = "F1"; RT.speed = "normal";   // 목소리·빠르기는 실행마다 기본값으로
     RT.aiCalls = 0; RT.lastAiAt = 0;
     RT.abort = new AbortController();
     RT._vars = {};
@@ -2245,8 +2808,8 @@
     runButton.disabled = true; runLabel.textContent = t("running");
     let code = "";
     try {
-      code = G.workspaceToCode(ws);
-      document.getElementById("codeView").textContent = code || t("m_noBlocks");
+      code = G.workspaceToCode(ws);          // 화면에서 도는 것 (블록 실행용)
+      refreshPython();                        // 아래 패널에는 파이썬을 보여 준다
       if (!code.trim()) { log(t("m_assembleFirst")); return; }
       log(t("m_start"));
       if (window.vapiStat) vapiStat("block_run");
