@@ -2072,9 +2072,13 @@ def beats(a, b):
   function devReport(dev, ms) {
     dev = String(dev || "").toUpperCase();
     devCalls++;
-    document.getElementById("devCalls").textContent = devCalls;
-    document.getElementById("devLast").textContent = ms + " ms";
-    document.getElementById("devExec").textContent = dev || "--";
+    /* 오버레이(lib/sysbar.js)가 못 떴어도 실행은 계속되어야 한다 —
+       옛 sysbar.js 가 브라우저 캐시에 남으면 이 칸들이 없어서
+       여기서 죽고 블록 실행 전체가 "오류" 로 끝났었다. */
+    const put = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    put("devCalls", devCalls);
+    put("devLast", ms + " ms");
+    put("devExec", dev || "--");
     if (DEV_N[dev] !== undefined) {
       DEV_N[dev]++;
       const st = document.getElementById("st" + dev);
