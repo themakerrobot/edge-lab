@@ -251,25 +251,25 @@
     }
 
     /* 어느 칩이 도는지 보고 버튼 글자를 바꾼다.
-       칩 id 는 chipCPU/chipGPU/chipNPU — 뒤 세 글자가 곧 장치 이름이다. */
+       칩 id 는 chipCPU/chipGPU/chipNPU — 뒤 세 글자가 곧 장치 이름이다.
+       도는 동안만 장치 이름이고, 끝나면 바로 AI 로 돌아온다 —
+       전에는 마지막 장치를 흐리게 남겼는데, 실행이 끝났는지가 안 읽혔다. */
     function nameOf(chip) {
       return String(chip.id || "").replace(/^chip/, "") || "AI";
     }
-    var lastUsed = "";
     function paintBtn() {
       var hot = null;
       for (var i = 0; i < chips.length; i++) {
         if (chips[i].classList.contains("busy")) { hot = chips[i]; break; }
       }
       if (hot) {
-        lastUsed = nameOf(hot);
-        btn.textContent = lastUsed;
+        btn.textContent = nameOf(hot);
         btn.classList.add("busy");
         btn.classList.remove("idle");
       } else {
-        btn.textContent = lastUsed || "AI";      // 아직 한 번도 안 돌았으면 그냥 AI
+        btn.textContent = "AI";
         btn.classList.remove("busy");
-        btn.classList.toggle("idle", !!lastUsed);
+        btn.classList.remove("idle");
       }
     }
     if (chips.length && window.MutationObserver) {

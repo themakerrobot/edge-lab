@@ -14,6 +14,20 @@ import openvino as ov
 MODELS = Path("models")
 core = ov.Core()
 
+# 컴파일 캐시 — GPU/NPU 모델 컴파일 산출물을 디스크에 저장한다.
+# iGPU 는 전용 메모리가 없어 컴파일 순간 피크가 시스템 RAM 을 그대로 먹는데
+# (가중치의 2배 가까이), 16GB PC 는 여기서 넘어져 모델이 안 올라간다.
+# 캐시가 있으면 두 번째 기동부터 컴파일을 건너뛰어 피크 메모리·부팅 시간이
+# 함께 준다. 자리는 앱데이터(그 PC 의 것 — 작업폴더로 옮길 이유가 없다).
+try:
+    from paths import APPDATA_DIR as _APPDATA
+    CACHE_DIR = os.path.join(_APPDATA, "ov-cache")
+    os.makedirs(CACHE_DIR, exist_ok=True)
+    core.set_property({"CACHE_DIR": CACHE_DIR})
+except Exception as _ex:
+    CACHE_DIR = ""
+    print("[engines] 컴파일 캐시를 켜지 못했어요 (없어도 동작):", _ex)
+
 
 def pick(*prefer):
     avail = core.available_devices
@@ -491,7 +505,10 @@ class VlmEngine:
         import openvino_genai as og
         path = find_vlm()
         print("[engines] VLM:", path.name)
-        self.pipe = og.VLMPipeline(str(path), DEV_VLM)
+        # VLMPipeline 은 자기 Core 를 쓰므로 캐시를 인자로 직접 준다 —
+        # 가장 큰 모델(3.5GB)이라 캐시 효과도 가장 크다
+        kw = {"CACHE_DIR": CACHE_DIR} if CACHE_DIR else {}
+        self.pipe = og.VLMPipeline(str(path), DEV_VLM, **kw)
         self.lock = threading.Lock()
 
     @staticmethod

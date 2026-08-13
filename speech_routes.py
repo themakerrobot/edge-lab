@@ -80,7 +80,12 @@ def _load():
         try:
             import openvino_genai as ov_genai
             _dev = _pick_device()
-            _pipe = ov_genai.WhisperPipeline(STT_DIR, _dev)
+            try:
+                from engines import CACHE_DIR as _cache
+            except Exception:
+                _cache = ""
+            kw = {"CACHE_DIR": _cache} if _cache else {}
+            _pipe = ov_genai.WhisperPipeline(STT_DIR, _dev, **kw)
             print(f"[stt] whisper loaded ({_dev})")
         except Exception as ex:
             _err = "STT 모델을 열 수 없어요: %s" % ex

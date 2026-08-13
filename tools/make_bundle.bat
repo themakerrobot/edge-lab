@@ -106,7 +106,8 @@ for %%F in (check.py smoke_test.py bundle_check.bat) do (
 )
 if exist themaker.exe copy /y themaker.exe %BUILD%\ >nul
 if exist themaker-run.exe copy /y themaker-run.exe %BUILD%\ >nul
-if exist themaker.ico copy /y themaker.ico %BUILD%\ >nul
+REM themaker.ico 는 빌드 때 exe 에 심는 용도라 배포본에는 넣지 않는다 -
+REM 확장자 숨김 상태에서 themaker(ico)와 themaker(exe)가 똑같이 보여 헷갈린다
 xcopy /e /i /q /y view_project %BUILD%\view_project >nul
 echo   copying models\ (several GB, takes a few minutes) ...
 xcopy /e /i /q /y models %BUILD%\models >nul
