@@ -81,7 +81,8 @@ CHAT = "/chat/ask"
 
 GONE = ["/caption/caption", "/object/object_cls", "/face/face_attribute", "/caption/caption_place",
         "/caption/caption_question", "/vlm/vlm_inference", "/vlm/ask", "/face/face_pose", "/vlm/place_e", "/object/object_search_e",
-        "/face/face_analyze_e", "/gan/txt2image", "/speech/wav_to_text"]
+        "/face/face_analyze_e", "/gan/txt2image", "/speech/wav_to_text",
+        "/face/mesh_calibrate", "/custom/predict_zip"]
 
 PAGES = ["/", "/blocks", "/code", "/train", "/options", "/talk", "/ready"]
 

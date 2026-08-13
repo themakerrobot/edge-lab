@@ -596,32 +596,6 @@ async def custom_predict(request: Request, uploadFile: UploadFile = File(...),
     return _run_image("custom", uploadFile, fn, device=_dev_for(kind))
 
 
-@router.post("/custom/predict_zip", tags=["custom"],
-             summary="내가 만든 AI로 분류 (압축파일 통째로)")
-async def custom_predict_zip(request: Request, uploadFile: UploadFile = File(...),
-                             model: str = Query(..., description="모델 slug")):
-    raw = uploadFile.file.read()
-    try:
-        kind = _head(model).kind
-    except Exception:
-        kind = "image"
-
-    def fn():
-        head = _head(model)
-        zf, names = _zip_images(raw)
-        items = []
-        for n in names:
-            try:
-                probs = head.predict(_embed(_decode(zf.read(n)), head.kind))
-            except Exception:
-                continue
-            k = int(np.argmax(probs))
-            items.append({"file": n, "name": head.labels[k],
-                          "score": round(float(probs[k]), 4)})
-        return items
-    return _run("custom_predict_zip", fn, device=_dev_for(kind))
-
-
 # ---------------------------------------------------------------- 모델 관리
 @router.post("/custom/upload", tags=["custom"], summary="학습한 모델 서버에 저장")
 async def custom_upload(request: Request, uploadFile: UploadFile = File(...),

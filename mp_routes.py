@@ -91,7 +91,9 @@ def _rescale(data, scale):
 
 
 def _f_px(width):
-    """캘리브레이션 값이 있으면 사용, 없으면 일반 웹캠 화각(약 70°) 기본값."""
+    """models/mediapipe/calib.json 이 있으면 그 f_px 를 쓰고, 없으면 일반 웹캠
+    화각(약 70°) 기본값. 화면에서 캘리브레이션하는 경로는 쓰는 곳이 없어 뺐다 —
+    필요하면 {"f_px": 값} 파일을 손으로 두면 그대로 읽는다."""
     try:
         with open(CALIB_PATH, encoding="utf-8") as f:
             return float(json.load(f)["f_px"])
@@ -232,25 +234,3 @@ async def object_hand(request: Request, uploadFile: UploadFile = File(...),
     return _run("hand", uploadFile, lambda img: _hand_items(img, lang))
 
 
-@router.post("/face/mesh_calibrate", tags=["face"],
-             summary="거리 캘리브레이션 (알려진 거리에서 1회)")
-async def mesh_calibrate(request: Request, uploadFile: UploadFile = File(...),
-                         distance_cm: float = 50.0):
-    """실측 거리(cm)에 정면 응시 상태로 촬영해 f_px를 확정한다."""
-    def fn(bgr):
-        h, w = bgr.shape[:2]
-        with _lock:
-            res = _face.detect(_mp_image(bgr))
-        if not (res and res.face_landmarks):
-            raise ValueError("얼굴을 찾지 못했습니다")
-        iris = _iris_px(res.face_landmarks[0], w, h)
-        if iris <= 0:
-            raise ValueError("홍채를 찾지 못했습니다")
-        f_px = distance_cm * 10.0 * iris / IRIS_MM
-        os.makedirs(MP_DIR, exist_ok=True)
-        with open(CALIB_PATH, "w", encoding="utf-8") as f:
-            json.dump({"f_px": f_px, "proc_w": PROC_W,
-                       "calibrated_at_cm": distance_cm}, f)
-        return {"f_px": round(f_px, 1), "iris_px": round(iris, 1),
-                "distance_cm": distance_cm}
-    return _run("mesh_calibrate", uploadFile, fn)

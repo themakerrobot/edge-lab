@@ -19,7 +19,10 @@ from fastapi.staticfiles import StaticFiles
 
 import prompts as P
 
-HOST = os.environ.get("VAPI_HOST", "0.0.0.0")
+# 학생 PC 마다 따로 도는 구조라 바깥에서 들어올 일이 없다. 0.0.0.0 으로 열면
+# 같은 교실 망의 다른 PC 가 작품을 지우거나 AI 를 쓸 수 있다(인증이 없다).
+# 일부러 밖에서 붙여야 할 때만 VAPI_HOST=0.0.0.0 으로 띄운다.
+HOST = os.environ.get("VAPI_HOST", "127.0.0.1")
 PORT = int(os.environ.get("VAPI_PORT", "57711"))
 from paths import TMP_DIR, APPWIN_DIR, DATA_DIR   # noqa: E402  (폴더 규칙은 paths.py 한 곳에)
 IMAGE_DIR = TMP_DIR + os.sep
@@ -133,7 +136,7 @@ def build_device_map():
         DEVICE_OF[k] = "CPU"
     for k in ("ocr", "barcode"):
         DEVICE_OF[k] = "CPU"
-    for k in ("mesh", "hand", "mesh_calibrate"):     # MediaPipe
+    for k in ("mesh", "hand"):                       # MediaPipe
         DEVICE_OF[k] = "CPU"
 
     print(f"[devices] face={DEVICE_OF.get('face_analyze')} "
@@ -218,7 +221,7 @@ if os.path.isdir("view_project/blockly"):
 if os.path.isdir("view_project/lib"):
     app.mount("/lib", StaticFiles(directory="view_project/lib"), name="lib")
 
-import mp_routes  # noqa: E402  (MediaPipe 확장: /face/mesh, /object/hand, /face/mesh_calibrate)
+import mp_routes  # noqa: E402  (MediaPipe 확장: /face/mesh, /object/hand)
 app.include_router(mp_routes.router)
 
 import train_routes  # noqa: E402  (나만의 AI: /custom/predict, /custom/upload, /custom/models ...)
