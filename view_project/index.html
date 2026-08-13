@@ -1040,8 +1040,6 @@
       return LANG === "en" ? (sv.tooltip_en || sv.tooltip) : sv.tooltip;
     };
 
-    const SERIAL = "3efde152";
-    const CLIENT_TYPE = "08f12867e7a16b1b9071ae92ca8b6e7e1698068f";
     const MAX_WIDTH = 1600;
     const MAX_HEIGHT = 1600;
     const draw_points = [
@@ -1419,21 +1417,21 @@
     async function runInference(imageBlob, prompt, model) {
       const selectedService = SERVICE_LIST[model];
       let url = HOST + '/' + selectedService.api;
-      const headers = {
-        'x-client-id': btoa(SERIAL),
-        'x-client-type': CLIENT_TYPE
-      };
 
       const formData = new FormData();
-      if (model === "이미지 질문" || model === "이미지 설명") {
-        selectedService.params.prompt = prompt;
-      }
       formData.append('uploadFile', imageBlob, 'image.jpg');
-      const query = new URLSearchParams(
-        Object.assign({ lang: LANG }, selectedService.params)).toString();  // VLM 응답 언어
+      /* 메뉴 이름이 아니라 주소로 가른다 — 메뉴 이름은 바뀌어도 주소는 그대로다.
+         (예전에는 없어진 이름 "이미지 질문"·"이미지 설명" 을 비교해 물음이 안 갔다)
+         params 는 손대지 않고 복사본에 담는다 — 원본을 고치면 다음 실행까지 남는다. */
+      const params = Object.assign({ lang: LANG }, selectedService.params);
+      if (selectedService.api === "vlm/look") {
+        const q = (prompt || "").trim();
+        if (q && q !== "-") { params.prompt = q; }   // 비우면 서버가 알아서 설명해 준다
+      }
+      const query = new URLSearchParams(params).toString();                 // VLM 응답 언어
       url = url + '?' + query;
       try {
-        const response = await fetch(url, { method: 'POST', headers: headers, body: formData });
+        const response = await fetch(url, { method: 'POST', body: formData });
         return await response.json();
       } catch (err) {
         return { error: err.toString() };

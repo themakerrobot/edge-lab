@@ -39,8 +39,11 @@ async function test(path, dir) {
   const after=a.style.flexBasis;
   await wait(1500);
   const later=a.style.flexBasis;
-  console.log('  %s %s  끄는중 %-9s 놓은뒤 %-9s 1.9초뒤 %-9s %s',
-    path.padEnd(8), dir>0?'오른쪽→':'←왼쪽 ', during, after, later,
+  /* node 의 console.log 는 %-9s 같은 폭 지정을 모른다 — padEnd 로 맞춘다 */
+  console.log('  ' + path.padEnd(8) + ' ' + (dir>0?'오른쪽→':'←왼쪽 ') +
+    '  끄는중 ' + String(during).padEnd(9) +
+    ' 놓은뒤 ' + String(after).padEnd(9) +
+    ' 1.9초뒤 ' + String(later).padEnd(9) + ' ' +
     (after===later ? 'O' : '✗ 되돌아감'));
   win.close();
 }

@@ -1,6 +1,7 @@
 import os, sys, types, threading
-ROOT = "/home/claude/vapi-od"
-sys.path.insert(0, os.path.join(ROOT, "tools/schema_test"))
+# 이 파일 위치에서 프로젝트 뿌리를 잡는다 — 절대경로를 박으면 다른 PC 에서 안 돈다
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.join(ROOT, "tools", "schema_test"))
 sys.path.insert(0, ROOT)
 os.chdir(ROOT)
 os.environ["VAPI_NO_BROWSER"] = "1"
