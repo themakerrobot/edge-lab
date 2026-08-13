@@ -28,7 +28,7 @@ from fastapi.responses import FileResponse, Response
 router = APIRouter()
 
 ROOT = Path(__file__).resolve().parent
-from paths import PYCODE_DIR                   # noqa: E402
+from paths import PYCODE_DIR, BLOCKS_DIR       # noqa: E402
 WORK_DIR = Path(PYCODE_DIR)                    # 저장한 작품
 RUN_DIR = WORK_DIR / ".run"                    # 실행용 임시 파일
 MAX_OUTPUT = 200_000                           # 세션당 출력 버퍼 상한(문자)
@@ -202,6 +202,43 @@ def pycode_save(name: str = Body(...), code: str = Body(...)):
     WORK_DIR.mkdir(parents=True, exist_ok=True)
     (WORK_DIR / (_safe(name) + ".py")).write_text(code, encoding="utf-8")
     return _ok({"saved": _safe(name)})
+
+
+# ── 블록 작품 ──────────────────────────────────────────────────────────
+# 파이썬 작품과 같은 규약(save/works/work)으로 맞춘다 — 두 화면이 같게 동작해야
+# 아이가 헷갈리지 않는다. 다른 점은 확장자(.json)와 폴더(blocks)뿐이다.
+BLOCK_DIR = Path(BLOCKS_DIR)
+
+
+@router.post("/blocks/save", tags=["blocks"], summary="블록 작품 저장")
+def blocks_save(name: str = Body(...), state: str = Body(...)):
+    BLOCK_DIR.mkdir(parents=True, exist_ok=True)
+    (BLOCK_DIR / (_safe(name) + ".json")).write_text(state, encoding="utf-8")
+    return _ok({"saved": _safe(name)})
+
+
+@router.get("/blocks/works", tags=["blocks"], summary="블록 작품 목록")
+def blocks_works():
+    if not BLOCK_DIR.exists():
+        return _ok([])
+    return _ok([{"name": p.stem, "mtime": int(p.stat().st_mtime)}
+                for p in sorted(BLOCK_DIR.glob("*.json"))])
+
+
+@router.get("/blocks/work", tags=["blocks"], summary="블록 작품 불러오기")
+def blocks_work(name: str = Query(...)):
+    p = BLOCK_DIR / (_safe(name) + ".json")
+    if not p.exists():
+        return _fail("no such work")
+    return _ok({"name": p.stem, "state": p.read_text(encoding="utf-8")})
+
+
+@router.delete("/blocks/work", tags=["blocks"], summary="블록 작품 지우기")
+def blocks_delete(name: str = Query(...)):
+    p = BLOCK_DIR / (_safe(name) + ".json")
+    if p.exists():
+        p.unlink()
+    return _ok({"deleted": _safe(name)})
 
 
 @router.get("/pycode/works", tags=["pycode"], summary="저장 목록")

@@ -1,0 +1,214 @@
+/* 화면 공통 규격 — 여섯 페이지가 이 파일 하나를 쓴다.
+ *
+ * 세 가지를 여기서만 정한다:
+ *   1) 헤더 모양 — 페이지를 옮겨도 완전히 같다(글꼴·크기·버튼·테두리)
+ *   2) 간격 체계 — 숫자를 흩뿌리지 않고 변수로만
+ *   3) 밀도 두 갈래 — 작업용(블록·파이썬)과 체험용(써보기·가르치기·대화·점검)
+ *
+ * 밀도는 <body data-density="work"> 로 페이지가 스스로 밝힌다.
+ *   work    : 코드 편집기처럼 화면을 꽉 쓴다. 테두리 여백 거의 0.
+ *   explore : 학습지 분위기를 지킨다. 숨 쉴 여백을 남긴다.
+ * 밝히지 않으면 explore. 헤더는 두 갈래에서 똑같다 — 같은 서비스이므로
+ * 페이지를 옮겨도 위쪽은 그대로이고 아래 작업 공간의 밀도만 달라진다.
+ *
+ * 간격 변수는 clamp 로 화면 높이에 따라 줄어든다(노트북에서 더 촘촘).
+ * 페이지에서는 var(--sp-2, 8px) 처럼 대비값을 함께 쓴다 — 이 파일이 안 실려도
+ * 여백이 0 이 되어 화면이 무너지지 않게.
+ */
+:root {
+  --sp-1: clamp(2px, 0.3vh, 4px);     /* 딱 붙는 곳 — 머리표 안쪽, 줄 사이 */
+  --sp-2: clamp(4px, 0.55vh, 7px);    /* 기본 — 화면 가장자리, 패널 사이 */
+  --sp-3: clamp(6px, 0.9vh, 11px);    /* 넉넉히 — 패널 안쪽 내용 */
+
+  --split: 6px;                        /* 끌어서 크기 바꾸는 손잡이 두께 */
+
+  /* 화면 가장자리 여백 — 밀도와 상관없이 모든 페이지가 같은 값을 쓴다.
+     이게 밀도를 따라 달라지면 헤더 네모가 페이지마다 몇 px 씩 어긋나 앉아,
+     페이지를 옮길 때마다 헤더가 움찔거린다(헤더 자체는 같은데도). */
+  --edge: clamp(4px, 0.55vh, 7px);
+}
+
+/* 작업용 — 편집기처럼 테두리까지 꽉 채운다.
+   체험용과의 차이는 이제 크지 않다(체험용도 함께 좁혔다). 남긴 차이는
+   "글을 읽는 화면"과 "만드는 화면"의 최소한의 결 차이 정도. */
+body[data-density="work"] {
+  --sp-1: 2px;
+  --sp-2: clamp(2px, 0.25vh, 3px);
+  --sp-3: clamp(3px, 0.5vh, 6px);
+}
+
+/* 헤더 공통 규격 — 여섯 페이지가 이 파일 하나를 쓴다.
+ *
+ * 페이지를 옮겨도 헤더가 그대로여야 한다(높이·글꼴·글씨 크기·테두리·버튼).
+ * 전에는 페이지마다 .header 를 따로 두어 글꼴이 다르거나(파이썬은 Gowun Dodum),
+ * 테두리가 없거나(대화), 정렬이 달라(블록) 넘어갈 때마다 헤더가 튀었다.
+ *
+ * 각 페이지 <style> 뒤에 <link> 로 넣어 순서로 이기게 하고, 인라인 style 속성으로
+ * 박아 둔 값(버튼 크기·글씨)만 !important 로 덮는다.
+ */
+
+.header {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0;
+  background: var(--box, #fff);
+  border: 2px solid var(--line-d, #4a3f2e);
+  border-radius: 3px;
+  box-shadow: 0 1px 0 rgba(44, 74, 124, .18);
+  padding: 0;
+}
+.header > div {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 6px 12px;
+}
+
+/* 왼쪽 : 로고 + 제목 */
+.header .h-subject,
+.header .h-title { gap: 10px; }
+.header .h-subject img,
+.header .h-title img { height: 30px; flex: 0 0 auto; }
+.header .title {
+  font-family: "Gowun Batang", serif !important;
+  font-size: 1.15rem !important;
+  font-weight: 700;
+  letter-spacing: .02em;
+  line-height: 1.2;
+  color: var(--ink, #2a2620);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.header .title .od {
+  font-size: .78rem !important;
+  color: var(--pen-red, #b4451c);
+  font-family: "Gowun Dodum", sans-serif;
+  font-weight: 400;
+}
+
+/* 오른쪽 : 페이지별 버튼 → [한/영] [시스템] 순서로 끝난다 */
+.header .h-tools {
+  margin-left: auto;
+  display: flex;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px;
+  padding: 6px 12px;
+}
+.header .h-tools > a,
+.header .h-tools > button {
+  height: 34px !important;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-size: .88rem !important;
+  line-height: 1;
+}
+/* 홈은 아이콘만이라 정사각형 */
+.header .h-tools > a[id="homeLink"] {
+  width: 34px !important;
+  padding: 0 !important;
+}
+/* 톱니는 이름이 붙으면 넓어진다(이름을 정한 경우). 그 폭은 sysbar.js 가 정하므로
+   여기서 크기를 못박지 않는다 — 못박으면 이름이 잘린다. */
+.header .h-tools > a[id="optionsLink"] {
+  min-width: 34px;
+  padding: 0 10px;
+}
+/* 헤더 단추의 생김새는 여기서 "완결적으로" 정한다 — 글꼴·크기·굵기·테두리·높이까지.
+   일부만 정하면 나머지를 페이지 CSS 가 채우는데 그 값이 페이지마다 달라서 또 어긋난다.
+   실제로 그랬다: 굵기가 써보기·대화만 600 이고 나머지는 지정 없음(400),
+   글씨 크기도 1.08rem / .95rem 으로 갈렸으며, 상태 단추만 고정폭 글꼴 700 이었다. */
+   페이지마다 두면 어긋난다 — 실제로 대화 화면은 한/영 단추에 규칙이 없어
+   브라우저 기본 테두리가 나왔고(굵고 진해 보임), 써보기는 #4a3f2e 를 직접 적어
+   두어 다른 페이지(--line)보다 진했다. */
+.header .h-tools > a,
+.header .h-tools > button {
+  background: #fff;
+  border: 1.5px solid var(--line-d, #4a3f2e);
+  color: var(--ink, #2a2620);
+  border-radius: var(--r, 3px);
+  font-family: inherit !important;
+  font-size: .88rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+  line-height: 1 !important;
+  height: 34px !important;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+/* 아이콘 글자(⌂ ⚙)는 크게, 그러나 굵기는 주지 않는다.
+   이 글리프들은 획이 이미 두꺼워서 600 을 걸면 혼자 뭉개져 보인다
+   (글자 단추 EN·AI 는 600 이 맞다 — 획이 얇아 그래야 같은 무게로 읽힌다). */
+.header .h-tools > a[id="homeLink"],
+.header .h-tools > a[id="optionsLink"] {
+  font-size: 1.1rem !important;
+  font-weight: 400 !important;
+}
+/* 톱니 옆 이름은 글자이므로 다시 600 */
+.header .h-tools > a[id="optionsLink"] span {
+  font-size: .88rem;
+  font-weight: 600;
+}
+
+/* 글자 단추(한/영, 지금 도는 장치)는 글씨가 들어갈 만큼만 */
+.header .h-tools > button#langButton,
+.header .h-tools > button#sysBtn {
+  min-width: 46px;
+  padding: 0 10px !important;
+}
+
+
+/* 화면 가장자리는 어느 페이지나 같다 — 헤더가 늘 같은 자리에 앉게 */
+@media screen {
+  body { padding: var(--edge); }
+}
+
+/* 간격 값은 위 :root 변수뿐이다. 각 페이지 CSS 가 그 변수를 참조하므로
+ * 여기서 body/main 여백을 또 정하지 않는다 — 두 곳에서 정하면 다시 어긋난다.
+ * 인쇄용 여백은 각 페이지의 @media print 가 그대로 이긴다.
+ */
+
+
+/* ── 작업용 화면(블록·파이썬) — 편집기처럼 꽉 채운다 ─────────────────────
+ * 체험용 페이지의 학습지 분위기(둥근 테두리·머리표 꼬리표)는 그대로 두고,
+ * 작업용에서만 바깥 여백과 패널 사이를 최소로 줄인다. 헤더는 건드리지 않는다
+ * — 같은 서비스이므로 위쪽은 어느 페이지나 똑같아야 한다.
+ */
+
+body[data-density="work"] .panel,
+body[data-density="work"] .work,
+body[data-density="work"] .stage-panel {
+  border-radius: 3px;
+}
+/* 패널 안쪽 스크롤 영역은 테두리에 바짝 */
+body[data-density="work"] .panel-body,
+body[data-density="work"] .stage-body {
+  padding: var(--sp-2, 4px);
+}
+/* 머리표(탭 꼬리표)는 작업용에서 한 줄로 눌러 앉힌다 */
+body[data-density="work"] .panel-head {
+  margin: var(--sp-1, 2px) var(--sp-3, 8px) var(--sp-1, 2px) !important;
+  padding: var(--sp-1, 2px) 10px !important;
+  font-size: .92rem;
+}
+body[data-density="work"] .ph-row,
+body[data-density="work"] .work-head {
+  padding: 0 var(--sp-2, 4px);
+}
+
+/* ── 체험용 화면 — 분위기 유지, 여백만 정리 ─────────────────────────── */
+body[data-density="explore"] .panel-body {
+  padding: var(--sp-3, 12px);
+}
+
+/* 끌어서 크기 바꾸기가 켜진 상자는 자식이 스스로 줄어들 수 있어야 한다
+   (flex 항목 기본 min-width:auto 때문에 안 줄어드는 문제) */
+[data-split] > * { min-width: 0; min-height: 0; }

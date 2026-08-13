@@ -83,10 +83,10 @@ GONE = ["/caption/caption", "/object/object_cls", "/face/face_attribute", "/capt
         "/caption/caption_question", "/vlm/vlm_inference", "/vlm/ask", "/face/face_pose", "/vlm/place_e", "/object/object_search_e",
         "/face/face_analyze_e", "/gan/txt2image", "/speech/wav_to_text"]
 
-PAGES = ["/", "/blocks", "/code", "/train", "/options", "/talk", "/ready", "/monitor"]
+PAGES = ["/", "/blocks", "/code", "/train", "/options", "/talk", "/ready"]
 
 # 있어야 하는 GET 경로 (없으면 화면에서 기능이 통째로 막힌다)
-NEEDED_GET = ["/custom/models", "/custom/projects"]
+NEEDED_GET = ["/custom/models", "/custom/projects", "/system/files"]
 
 
 def run(host):
@@ -173,6 +173,20 @@ def run(host):
             print("  PASS  목록 경로 살아 있음    %s" % path); ok += 1
         except Exception as ex:
             print("  FAIL  %s  %s" % (path, ex)); fail += 1
+
+    # 작업폴더 파일 브라우저 — 폴더 밖으로 나가려는 시도는 막혀야 한다
+    for bad in ["..", "../secret.txt", "a/../../b"]:
+        try:
+            u = host + "/system/files?path=" + urllib.parse.quote(bad)
+            with urllib.request.urlopen(u, timeout=10) as r:
+                print("  FAIL  작업폴더 밖이 열림    %s -> %s" % (bad, r.status)); fail += 1
+        except urllib.error.HTTPError as e:
+            if e.code == 400:
+                print("  PASS  작업폴더 밖 막음      %s" % bad); ok += 1
+            else:
+                print("  FAIL  %s -> %s" % (bad, e.code)); fail += 1
+        except Exception as ex:
+            print("  FAIL  %s  %s" % (bad, ex)); fail += 1
 
     for path in PAGES:
         try:

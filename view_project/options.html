@@ -45,7 +45,7 @@
       display:flex; flex-direction:column; height:100dvh; overflow:hidden;
       color:var(--ink); background:var(--paper);
       font-family:"Gowun Dodum","Apple SD Gothic Neo",system-ui,sans-serif;
-      line-height:1.5; padding:12px; gap:10px;
+      line-height:1.5; padding: var(--sp-2, 8px); gap: var(--sp-2, 8px);
     }
     a { color:var(--pen-blue-d); text-decoration:none; }
     select, input, button {
@@ -58,9 +58,9 @@
       background:var(--box); border:2px solid var(--line-d); border-radius:3px;
       box-shadow:0 1px 0 rgba(44,74,124,.18);
     }
-    .header > div { display:flex; flex-direction:column; justify-content:center; padding:10px 16px; }
+    .header > div { display:flex; flex-direction:column; justify-content:center; padding:5px 12px; }
     .h-subject .eyebrow { font-size:0.82rem; letter-spacing:.14em; color:var(--ink-2); }
-    .h-subject .title { font-family:"Gowun Batang",serif; font-size:1.4rem; font-weight:700; line-height:1.2; }
+    .h-subject .title { font-family:"Gowun Batang",serif; font-size:1.15rem; font-weight:700; line-height:1.2; }
     .h-tools { flex-direction:row !important; align-items:center; gap:8px; margin-left:auto; }
     /* 링크만 굵게 — 버튼은 다른 페이지와 같은 기본 스타일을 따른다 */
     .h-tools a {
@@ -87,20 +87,20 @@
     .sysbar .meter .k { color:#6b6255; }
     .sysbar .meter .v { color:var(--pen-blue-d); font-weight:700; font-variant-numeric:tabular-nums; }
     /* 레이아웃 */
-    .main-container { flex:1 1 auto; min-height:0; display:flex; gap:12px; max-width:2200px; margin:0 auto; width:100%; }
+    .main-container { flex:1 1 auto; min-height:0; display:flex; gap: var(--sp-2, 8px);  }
     .panel {
       flex:1 1 0; min-width:0; display:flex; flex-direction:column;
       background:var(--box); border:1.5px solid var(--line); border-radius:var(--r); overflow:hidden;
     }
     .panel-head {
       flex:0 0 auto; display:flex; align-items:center; gap:9px; flex-wrap:wrap;
-      padding:11px 16px; border-bottom:1.5px dashed var(--line);
+      padding:var(--sp-1, 4px) 16px; border-bottom:1.5px dashed var(--line);
     }
-    .panel-body { flex:1 1 auto; min-height:0; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:12px; }
+    .panel-body { flex:1 1 auto; min-height:0; overflow-y:auto; padding:var(--sp-3, 12px); display:flex; flex-direction:column; gap:var(--sp-2, 8px); }
     /* 세로 flex 는 자식을 기본으로 줄인다 — 그대로 두면 내용이 넘쳐도 스크롤이 안 생기고
        웹캠 미리보기 같은 아래쪽 항목만 납작하게 눌린다. 줄이지 말고 넘치게 해서 스크롤을 낸다. */
     .panel-body > * { flex:0 0 auto; }
-    .q { position:relative; border:2.5px solid var(--cyan); background:#fff; padding:6px 16px 6px 12px;
+    .q { position:relative; border:2.5px solid var(--cyan); background:#fff; padding:var(--sp-1, 4px) 16px var(--sp-1, 4px) 12px;
          border-radius:2px; display:inline-flex; align-items:center; gap:6px; }
     .q::after { content:""; position:absolute; left:14px; bottom:-12px;
                 border:7px solid transparent; border-top:9px solid var(--cyan); }
@@ -115,7 +115,7 @@
     .btn.sm { padding:4px 9px; font-size:.84rem; }
     .btn:disabled { opacity:.45; cursor:not-allowed; }
     /* 점검 목록 */
-    .checks { display:flex; flex-direction:column; gap:6px; }
+    .checks { display:flex; flex-direction:column; gap: var(--sp-1, 4px); }
     .chk { display:flex; align-items:center; gap:10px; border:1.5px solid var(--line);
            border-radius:var(--r); padding:8px 12px; background:#fff; }
     .chk .mark { width:22px; height:22px; flex:0 0 auto; border-radius:50%; color:#fff;
@@ -137,23 +137,23 @@
     /* 결과 도표 */
     .cards { display:flex; gap:10px; flex-wrap:wrap; }
     .card { flex:1 1 130px; border:1.5px solid var(--line); border-radius:var(--r);
-            padding:10px 12px; background:#fffdf6; }
+            padding:var(--sp-2, 8px) 12px; background:#fffdf6; }
     .card .k { font-size:0.82rem; color:var(--ink-2); letter-spacing:.02em; }
     .card .v { font-size:1.6rem; font-weight:800; color:var(--pen-blue-d);
                font-variant-numeric:tabular-nums; line-height:1.2; }
     .rep { border:1.5px solid var(--line); border-radius:var(--r); padding:10px 12px; background:#fff; }
-    .rep + .rep { margin-top:8px; }
+    .rep + .rep { margin-top: var(--sp-1, 4px); }
     .rep .rh { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:6px; }
     .rep .rh b { font-size:1rem; }
     .rep .rh .tag { font-size:0.82rem; color:#fff; background:var(--cyan-d);
                     border-radius:10px; padding:1px 7px; }
     .rep .rh .when { margin-left:auto; color:var(--ink-2); font-size:0.82rem; }
-    .rep .big { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+    .rep .big { display:flex; align-items:center; gap:8px; margin-bottom: var(--sp-1, 4px); }
     .rep .big .pb { flex:1 1 auto; height:16px; background:#e6eef6; border-radius:8px; overflow:hidden; }
     .rep .big .pb > i { display:block; height:100%; background:var(--pen-blue); }
     .rep .big .n { flex:0 0 96px; font-weight:800; color:var(--pen-blue-d);
                    font-variant-numeric:tabular-nums; }
-    .rep .row { display:flex; align-items:center; gap:8px; margin:3px 0; }
+    .rep .row { display:flex; align-items:center; gap:8px; margin:var(--sp-1, 4px) 0; }
     .rep .row .nm { flex:0 0 110px; font-size:.86rem; text-align:right;
                     overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .rep .row .pb { flex:1 1 auto; height:11px; background:#e6eef6; border-radius:6px; overflow:hidden; }
@@ -180,31 +180,18 @@
       .panel, .panel-body { overflow:visible; }
     }
   </style>
+  <link rel="stylesheet" href="/lib/ui.css">
 </head>
-<body>
+<body data-density="explore">
   <div class="header">
-    <div class="h-subject" style="flex-direction:row;align-items:center;gap:12px;">
-      <img src="/assets/pibo-prof.png" alt="" style="height:44px;flex:0 0 auto;">
-      <span style="display:flex;flex-direction:column;">
-        <span class="eyebrow" id="txtEyebrow">인공지능 · 컴퓨터 비전 · 이 PC의 준비 상태와 결과물</span>
-        <span class="title"><span id="txtTitle">설정 · 점검</span>
-          <span style="font-size:.85rem;color:var(--pen-red);vertical-align:middle;">(On-Device)</span></span>
-      </span>
+    <div class="h-subject" style="flex-direction:row;align-items:center;gap:10px;">
+      <img src="/assets/pibo-prof.png" alt="" style="height:30px;flex:0 0 auto;">
+      <span class="title" title="인터넷 없이 내 컴퓨터에서 실행돼요"><span id="txtTitle">설정 · 점검</span> <span class="od" style="font-size:.78rem;color:var(--pen-red);vertical-align:middle;">(On-Device)</span></span>
     </div>
     <div class="h-tools">
-      <a href="/" id="homeLink" style="display:inline-flex;align-items:center;justify-content:center;background:#fff;border:1.5px solid var(--line-d);color:var(--ink);width:38px;height:38px;border-radius:var(--r);text-decoration:none;font-size:1.15rem;line-height:1;">&#8962;</a>
+      <a href="/" id="homeLink" style="display:inline-flex;align-items:center;justify-content:center;background:#fff;border:1.5px solid var(--line-d);color:var(--ink);width:34px;height:34px;border-radius:var(--r);text-decoration:none;font-size:1.15rem;line-height:1;">&#8962;</a>
       <button id="langButton" title="한국어 / English" style="min-width:46px;">EN</button>
     </div>
-  </div>
-
-  <div class="sysbar">
-    <span class="brand"><b>VAPI-OD</b> · classroom console</span>
-    <span class="sep">|</span>
-    <span id="sysDevices">devices —</span>
-    <span class="meter">
-      <span><span class="k">models</span> <span class="v" id="sysModels">0</span></span>
-      <span><span class="k">works</span> <span class="v" id="sysWorks">0</span></span>
-    </span>
   </div>
 
   <div class="main-container">
@@ -232,9 +219,49 @@
             <span class="hint" id="txtSndHint" style="margin:0;">
               소리가 안 들리면 윈도우 기본 장치가 모니터로 잡혀 있을 수 있어요.</span>
           </div>
+
+          <!-- 마이크 — 소리 줄과 같은 모양. 3초 녹음해서 바로 되들려준다. -->
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px;">
+            <b style="font-size:.9rem;" id="txtMicTitle">마이크</b>
+            <button class="btn" id="micTest" style="padding:5px 12px;font-size:.86rem;">
+              <span id="txtMicTest">마이크 시험</span></button>
+            <button class="btn" id="micOpen" style="padding:5px 12px;font-size:.86rem;">
+              <span id="txtMicOpen">윈도우 마이크 설정 열기</span></button>
+            <span class="hint" id="txtMicHint" style="margin:0;">
+              말한 것을 그대로 들려줘요. 안 들리면 옆 단추로 설정을 열어요.</span>
+          </div>
         </div>
 
-        <div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);">
+        <div style="margin-top:var(--sp-2, 8px);padding-top:var(--sp-2, 8px);border-top:1px dashed var(--line);">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <b style="font-size:.9rem;" id="txtNameTitle">이름</b>
+            <input id="userName" maxlength="40" placeholder="이름"
+                   style="font-family:inherit;font-size:.86rem;padding:4px 8px;width:14ch;
+                          border:1.5px solid var(--line);border-radius:var(--r);background:#fff;">
+            <button class="btn" id="nameSave" style="padding:5px 12px;font-size:.86rem;">
+              <span id="txtNameSave">저장</span></button>
+            <span class="hint" id="txtNameHint" style="margin:0;">
+              만든 것에 이름을 남길 때 써요. 비우면 이 컴퓨터의 로그인 이름을 씁니다.</span>
+          </div>
+        </div>
+
+        <div style="margin-top:var(--sp-2, 8px);padding-top:var(--sp-2, 8px);border-top:1px dashed var(--line);">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <b style="font-size:.9rem;" id="txtWsTitle">작업 폴더</b>
+            <code id="wsPath" style="font-size:.82rem;background:#fff;border:1px solid var(--line);
+                  border-radius:3px;padding:2px 8px;max-width:46ch;overflow:hidden;
+                  text-overflow:ellipsis;white-space:nowrap;">—</code>
+            <button class="btn" id="wsOpen" style="padding:5px 12px;font-size:.86rem;">
+              <span id="txtWsOpen">폴더 열기</span></button>
+            <button class="btn" id="wsChange" style="padding:5px 12px;font-size:.86rem;">
+              <span id="txtWsChange">바꾸기</span></button>
+            <span class="hint" id="txtWsHint" style="margin:0;">
+              만든 작품·가르친 AI·기록이 모두 이 폴더에 있어요. 통째로 옮기거나 USB 에 담아
+              다른 컴퓨터에서 불러오면 하던 작업을 이어서 할 수 있어요.</span>
+          </div>
+        </div>
+
+        <div style="margin-top:var(--sp-2, 8px);padding-top:var(--sp-2, 8px);border-top:1px dashed var(--line);">
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
             <b style="font-size:.9rem;" id="txtHcTitle">밝은 곳 모드</b>
             <button class="btn" id="hcToggle" style="padding:5px 12px;font-size:.86rem;">
@@ -344,6 +371,28 @@
       sndHint: "소리가 안 들리면 윈도우 기본 장치가 모니터로 잡혀 있을 수 있어요.",
       sndPlaying: "소리 나는 중...", sndAsk: "소리가 들렸나요? 안 들리면 옆 단추로 설정을 열어요.",
       sndOpened: "윈도우 소리 설정을 열었어요.",
+      micTitle: "마이크", micTest: "마이크 시험", micOpen: "윈도우 마이크 설정 열기",
+      micHint: "말한 것을 그대로 들려줘요. 안 들리면 옆 단추로 설정을 열어요.",
+      micRec: "지금 녹음 중이에요 — 아무 말이나 해 보세요 (3초)",
+      micPlay: "들려주는 중... 방금 말한 것이 들리나요?",
+      micDone: "들렸다면 마이크와 소리 모두 잘 되는 거예요.",
+      micNone: "마이크를 쓸 수 없어요.", micDenied: "마이크가 막혀 있어요.",
+      micBusy: "다른 프로그램이 마이크를 쓰고 있어요.",
+      micOpened: "윈도우 마이크 설정을 열었어요.",
+      nameTitle: "이름", nameSave: "저장",
+      nameHint: "만든 것에 이름을 남길 때 써요. 비우면 이 컴퓨터의 로그인 이름을 씁니다.",
+      nameSaved: "이름을 정했어요:", nameCleared: "이름을 비웠어요. 지금은 이 컴퓨터의 로그인 이름을 써요:",
+      nameFail: "이름을 저장하지 못했어요 —",
+      wsTitle: "작업 폴더", wsOpen: "폴더 열기", wsChange: "바꾸기",
+      wsHint: "만든 작품·가르친 AI·기록이 모두 이 폴더에 있어요. 통째로 옮기거나 USB 에 담아 다른 컴퓨터에서 불러오면 하던 작업을 이어서 할 수 있어요.",
+      wsInProgram: "지금은 프로그램 폴더 안을 쓰고 있어요. 문서 폴더처럼 프로그램 밖으로 옮기면 프로그램을 다시 깔아도 작업이 남아요.",
+      wsAsk: "작업 폴더로 쓸 곳을 적어 주세요. 새 폴더거나, 전에 쓰던 작업 폴더여야 해요.",
+      wsRestart: "다음에 프로그램을 다시 켜면 새 작업 폴더를 씁니다.",
+      wsAskOpen: "이 폴더에는 이미 작업이 들어 있어요. 그 작업을 이어서 씁니다. 지금 컴퓨터에 있던 작업은 원래 자리에 그대로 남아요.",
+      wsAskMove: "빈 폴더예요. 지금 컴퓨터에 있는 작업을 이 폴더로 옮깁니다.",
+      wsMoved: "옮겼어요. 안에 있던 작품도 함께 따라갔습니다.",
+      wsFixed: "이 컴퓨터는 VAPI_WORK 환경변수로 작업 폴더가 정해져 있어요.",
+      wsLost: "정해 둔 작업 폴더를 못 찾아서 지금은 위 폴더에 저장돼요. USB 라면 다시 꽂고 프로그램을 다시 켜세요. 못 찾은 자리:",
       hcTitle: "밝은 곳 모드", hcOn: "켜기", hcOff: "끄기",
       hcHint: "창가나 조명이 밝은 곳에서 글씨가 흐릴 때 켜세요. 색이 진해집니다.",
       verTitle: "설치 버전", verCopy: "복사", verCopied: "복사했어요",
@@ -351,11 +400,11 @@
       verMissing: "설치 기록이 없어요 (setup 을 다시 돌리면 남습니다)",
       colTitle: "이름", colInfo: "내용", colWhen: "만든 때", colAct: "",
       kBackbone: "특징 추출 모델", kPose: "손 인식(MediaPipe)", kStorage: "저장 현황",
-      kWrite: "쓰기 권한", kCam: "웹캠",
+      kMemory: "메모리", kCpu: "CPU", kCam: "웹캠",
       allOk: "모두 정상이에요. 수업을 시작해도 됩니다.",
       someBad: "문제가 있어요. 빨간 항목을 확인해 주세요.",
       camOk: "웹캠이 열렸어요.", camNo: "웹캠을 열 수 없어요. 권한을 확인해 주세요.",
-      confirmClear: "이 PC에 저장된 AI와 작품을 모두 지웁니다. 되돌릴 수 없어요. 계속할까요?",
+      confirmClear: "이 PC에 저장된 AI·작품·사용 기록과 정해 둔 이름을 모두 지웁니다. 되돌릴 수 없어요. 계속할까요?",
       cleared: "%1개를 지웠어요.",
       err: "오류: ",
     },
@@ -392,6 +441,28 @@
       sndHint: "If you hear nothing, Windows may be sending sound to the monitor.",
       sndPlaying: "Playing...", sndAsk: "Did you hear it? If not, open the settings.",
       sndOpened: "Opened the Windows sound settings.",
+      micTitle: "Microphone", micTest: "Test microphone", micOpen: "Open Windows mic settings",
+      micHint: "Plays back what you say. If you hear nothing, open the settings.",
+      micRec: "Recording - say anything (3 seconds)",
+      micPlay: "Playing back... can you hear what you just said?",
+      micDone: "If you heard it, both mic and sound are working.",
+      micNone: "Cannot use the microphone.", micDenied: "Microphone access is blocked.",
+      micBusy: "Another program is using the microphone.",
+      micOpened: "Windows microphone settings opened.",
+      nameTitle: "Name", nameSave: "Save",
+      nameHint: "Used to label what you make. Leave it empty to use this computer's login name.",
+      nameSaved: "Name set:", nameCleared: "Name cleared. Using this computer's login name:",
+      nameFail: "Could not save the name —",
+      wsTitle: "Work folder", wsOpen: "Open folder", wsChange: "Change",
+      wsHint: "Your projects, trained AIs and records all live in this folder. Move it or copy it to a USB stick and load it on another computer to carry on.",
+      wsInProgram: "You are using a folder inside the program. Moving it outside (for example to Documents) keeps your work when the program is reinstalled.",
+      wsAsk: "Type the folder to use. It must be a new folder, or a work folder you used before.",
+      wsRestart: "The new work folder will be used the next time you start the program.",
+      wsAskOpen: "This folder already has work in it. It will be used as is. Work on this computer stays where it is.",
+      wsAskMove: "This folder is empty. Work on this computer will be moved into it.",
+      wsMoved: "Moved. Your saved work came along with it.",
+      wsFixed: "This computer pins the work folder with the VAPI_WORK environment variable.",
+      wsLost: "The work folder you chose could not be found, so work is being saved above for now. If it is a USB stick, plug it back in and restart. Missing:",
       hcTitle: "High contrast", hcOn: "Turn on", hcOff: "Turn off",
       hcHint: "Turn this on when text looks faint in bright light.",
       verTitle: "Installed versions", verCopy: "Copy", verCopied: "Copied",
@@ -399,10 +470,10 @@
       verMissing: "No install record (run setup again to create one)",
       colTitle: "Name", colInfo: "Contents", colWhen: "Created", colAct: "",
       kBackbone: "Feature model", kPose: "Hand tracking (MediaPipe)", kStorage: "Storage",
-      kWrite: "Write access", kCam: "Webcam",
+      kMemory: "Memory", kCpu: "CPU", kCam: "Webcam",
       allOk: "All good. You can start the class.", someBad: "Something is wrong. Check the red rows.",
       camOk: "Webcam opened.", camNo: "Can't open the webcam. Check the permission.",
-      confirmClear: "This deletes every AI and saved work on this PC. It cannot be undone. Continue?",
+      confirmClear: "This deletes every AI, saved work, usage record and the name you set on this PC. It cannot be undone. Continue?",
       cleared: "Deleted %1 items.",
       err: "Error: ",
     },
@@ -447,6 +518,185 @@
     }
   });
 
+  /* ---------------- 마이크 ----------------
+     3초 녹음해서 그대로 되들려준다. 파형 그림이나 숫자 막대는 어른에게도 애매하다 —
+     "방금 내가 한 말이 들리는가"가 아이가 판단할 수 있는 유일하게 확실한 기준이다.
+     이 한 번으로 마이크와 소리 출력이 함께 확인된다. */
+  let micBusy = false;
+  $("micTest").addEventListener("click", async () => {
+    if (micBusy) return;
+    const hint = $("txtMicHint");
+    const label = $("txtMicTest");
+    let stream = null, ac = null;
+    micBusy = true;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const AC = window.AudioContext || window.webkitAudioContext;
+      ac = new AC();
+      const src = ac.createMediaStreamSource(stream);
+      const node = ac.createScriptProcessor(4096, 1, 1);
+      const chunks = [];
+      node.onaudioprocess = e => chunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+      src.connect(node); node.connect(ac.destination);
+
+      hint.textContent = t("micRec");
+      label.textContent = "3...";
+      for (let n = 3; n > 0; n--) {                    // 남은 시간을 단추에 보여 준다
+        label.textContent = n + "...";
+        await new Promise(r => setTimeout(r, 1000));
+      }
+      node.disconnect(); src.disconnect(); node.onaudioprocess = null;
+      stream.getTracks().forEach(tr => tr.stop());
+      stream = null;
+
+      /* 모은 소리를 이어 붙여 그대로 재생 */
+      const total = chunks.reduce((n, c) => n + c.length, 0);
+      const buf = ac.createBuffer(1, Math.max(1, total), ac.sampleRate);
+      const ch = buf.getChannelData(0);
+      let at = 0;
+      chunks.forEach(c => { ch.set(c, at); at += c.length; });
+      const play = ac.createBufferSource();
+      play.buffer = buf;
+      play.connect(ac.destination);
+      hint.textContent = t("micPlay");
+      label.textContent = t("micTest");
+      play.start();
+      play.onended = () => { hint.textContent = t("micDone"); try { ac.close(); } catch (e) {} };
+    } catch (e) {
+      const name = (e && e.name) || "";
+      hint.textContent = name === "NotAllowedError" ? t("micDenied")
+                       : name === "NotReadableError" ? t("micBusy")
+                       : t("micNone");
+      label.textContent = t("micTest");
+      if (stream) stream.getTracks().forEach(tr => tr.stop());
+      if (ac) { try { ac.close(); } catch (e2) {} }
+    } finally {
+      micBusy = false;
+    }
+  });
+
+  $("micOpen").addEventListener("click", async () => {
+    try {
+      const r = await (await fetch("/system/mic_settings", { method: "POST" })).json();
+      $("txtMicHint").textContent = r.result === "ok" ? t("micOpened") : r.data;
+    } catch (e) {
+      $("txtMicHint").textContent = String(e);
+    }
+  });
+
+  /* ---------------- 작업 폴더 ---------------- */
+  /* 브라우저는 폴더 고르기 창을 열 수 없다(보안). 그래서 지금 폴더를 보여 주고,
+     새 경로를 직접 적게 한다. 서버가 쓸 수 있는지·남의 폴더가 아닌지 확인한다. */
+  async function paintWs() {
+    try {
+      const r = await (await fetch("/system/workdir")).json();
+      const d = r.data || {};
+      $("wsPath").textContent = d.work_dir || "—";
+      /* 칸에는 지금 쓰는 이름을 그대로 채워 둔다 — 아직 정하지 않아 로그인 이름을
+         쓰는 중이라도 마찬가지. 그래야 "이대로 쓸게" 하고 저장만 눌러도 되고,
+         고치고 싶으면 지우고 새로 적으면 된다. 아주 비우고 저장하면 다시
+         로그인 이름을 쓰는 상태로 돌아간다. */
+      $("userName").value = d.name || "";
+      savedName = d.name_is_default ? "" : $("userName").value;
+      $("userName").placeholder = t("nameTitle");
+      $("wsPath").title = (d.work_dir || "") +
+        (d.portable ? "  (USB 배포본)" : "") +
+        (d.fixed_by_env ? "  (VAPI_WORK 로 정해짐)" : "");
+      // 환경변수로 못박힌 교실 PC 에서는 바꾸기를 막는다 — 눌러도 서버가 거절한다
+      $("wsChange").disabled = !!d.fixed_by_env;
+      if (d.fixed_by_env) $("txtWsHint").textContent = t("wsFixed");
+      // USB 를 뽑았거나 드라이브 문자가 바뀌면 정해 둔 자리를 못 찾는다.
+      // 임시로 다른 자리에 저장되고 있다는 걸 반드시 알려야 한다.
+      if (d.unreachable) {
+        $("txtWsHint").textContent = t("wsLost") + " " + d.unreachable;
+        $("txtWsHint").style.color = "var(--pen-red)";
+      } else {
+        $("txtWsHint").style.color = "";
+      }
+    } catch (e) { $("wsPath").textContent = String(e); }
+  }
+  /* 이름 저장.
+     적어 놓고 [저장]을 안 누른 채 넘어가는 일이 잦아서, 칸을 벗어날 때도 저장한다.
+     서버가 무엇을 받았는지 다시 읽어 화면에 보여 준다 — "정했다고 생각했는데
+     실은 안 된" 상태를 없애기 위해서다. */
+  let savedName = "";
+  async function saveName() {
+    const want = $("userName").value.trim();
+    if (want === savedName) return;                 // 바뀐 게 없으면 조용히
+    try {
+      const r = await (await fetch("/system/username", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: want })
+      })).json();
+      if (r.result !== "ok") throw new Error(r.data);
+      const nm = (r.data && r.data.name) || "";
+      savedName = want;
+      $("userName").placeholder = nm;
+      if (window.vapiSetWho) window.vapiSetWho(nm);      // 상태 오버레이에 바로 반영
+      if (window.vapiPaintName) window.vapiPaintName();  // 톱니 단추 이름도
+      $("txtNameHint").textContent = want
+        ? t("nameSaved") + " " + nm
+        : t("nameCleared") + " " + nm;
+    } catch (e) {
+      $("txtNameHint").textContent = t("nameFail") + " " + (e.message || e);
+    }
+  }
+  $("nameSave").addEventListener("click", saveName);
+  $("userName").addEventListener("blur", saveName);       // 칸을 벗어나도 저장
+  $("userName").addEventListener("keydown", e => { if (e.key === "Enter") $("userName").blur(); });
+
+  $("wsOpen").addEventListener("click", async () => {
+    try {
+      const r = await (await fetch("/system/open_folder", { method: "POST" })).json();
+      if (r.result !== "ok") $("txtWsHint").textContent = r.data;
+    } catch (e) { $("txtWsHint").textContent = String(e); }
+  });
+  $("wsChange").addEventListener("click", async () => {
+    const now = $("wsPath").textContent;
+
+    /* 폴더 고르기 창을 서버에 부탁한다 — 브라우저는 폴더의 실제 경로를 못 준다.
+       창에서 새 폴더를 만들어 고를 수도 있다. 창을 못 띄우는 PC 라면 경로를
+       직접 적는 방식으로 물러선다. */
+    let next = "";
+    try {
+      const pick = await (await fetch("/system/pick_folder", { method: "POST" })).json();
+      if (pick.result === "ok") {
+        if (pick.data.canceled) return;                 // 창에서 취소
+        next = pick.data.path;
+      } else {
+        next = prompt(t("wsAsk"), now) || "";           // 창이 안 되는 경우
+      }
+    } catch (e) {
+      next = prompt(t("wsAsk"), now) || "";
+    }
+    if (!next || next === now) return;
+    try {
+      /* 무엇이 일어날지 먼저 알려 준다.
+         빈 폴더 → 지금 작업을 그쪽으로 옮긴다.
+         작업이 든 폴더 → 그 폴더를 그대로 이어서 쓴다(아무것도 안 옮김). */
+      let mode = "move";
+      try {
+        const pk = await (await fetch("/system/workdir/peek?path=" +
+                          encodeURIComponent(next))).json();
+        if (pk.data && pk.data.has_work) mode = "open";
+      } catch (e) {}
+      if (!confirm(t(mode === "open" ? "wsAskOpen" : "wsAskMove") + "\n\n" + next)) return;
+
+      const r = await (await fetch("/system/workdir", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: next, mode: mode })
+      })).json();
+      if (r.result === "ok") {
+        $("wsPath").textContent = (r.data && r.data.work_dir) || next;
+        $("txtWsHint").textContent = t("wsMoved");
+        alert(t("wsRestart"));
+      } else {
+        $("txtWsHint").textContent = r.data;
+      }
+    } catch (e) { $("txtWsHint").textContent = String(e); }
+  });
+  paintWs();
+
   /* ---------------- 밝은 곳 모드 ---------------- */
   function hcOn() { return document.documentElement.classList.contains("hc"); }
   function paintHc() { $("txtHcBtn").textContent = t(hcOn() ? "hcOff" : "hcOn"); }
@@ -482,7 +732,7 @@
   (async function initSystem() {
     try {
       const info = await (await fetch("/system")).json();
-      $("sysDevices").textContent = "devices " + ((info.devices || []).join(" ") || "—");
+      /* 장치 목록은 헤더의 상태 단추(오버레이)에서 본다 — 여기선 준비 여부만 기다린다 */
       if (info.ready) return;
     } catch (e) {}
     setTimeout(initSystem, 1500);
@@ -493,7 +743,8 @@
     if (k === "backbone") return t("kBackbone");
     if (k === "pose") return t("kPose");
     if (k === "storage") return t("kStorage");
-    if (k.indexOf("write:") === 0) return t("kWrite") + " " + k.slice(6);
+    if (k === "memory") return t("kMemory");
+    if (k === "cpu") return t("kCpu");
     if (k === "camera") return t("kCam");
     return k;
   };
@@ -565,8 +816,6 @@
       const b = await (await fetch("/custom/projects")).json();
       if (b.result === "ok") projects = b.data;
     } catch (e) { return; }
-    $("sysModels").textContent = models.length;
-    $("sysWorks").textContent = projects.length;
 
     const mrows = models.map(m => {
       const tr = document.createElement("tr");
@@ -735,6 +984,19 @@
       const j = await (await fetch("/custom/models?confirm=yes", { method: "DELETE" })).json();
       if (j.result !== "ok") throw new Error(j.data);
       await fetch("/stats?confirm=yes", { method: "DELETE" });   // 다음 반을 위해 통계도 초기화
+      /* 이름도 지운다 — 다음 반이 앞사람 이름을 그대로 쓰게 두면 안 된다.
+         비운 이름은 이 컴퓨터의 로그인 이름으로 돌아간다. */
+      try {
+        const u = await (await fetch("/system/username", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: "" })
+        })).json();
+        const nm = (u.data && u.data.name) || "";
+        savedName = "";
+        $("userName").value = nm;                       // 로그인 이름으로 되돌림
+        if (window.vapiSetWho) window.vapiSetWho(nm);
+        if (window.vapiPaintName) window.vapiPaintName();
+      } catch (e) { /* 이름을 못 지워도 나머지 정리는 끝난 상태 */ }
       alert(t("cleared", j.data.cleared));
       loadAll(); loadStats();
     } catch (e) { alert(t("err") + (e.message || e)); }
@@ -744,7 +1006,7 @@
   (function applyStatic() {
     const set = (id, v) => { const el = $(id); if (el) el.textContent = v; };
     document.title = t("titleTag");
-    set("txtTitle", t("title")); set("txtEyebrow", t("eyebrow"));
+    set("txtTitle", t("title"));
     const hl = $("homeLink");
     if (hl) { hl.title = t("homeLink"); hl.setAttribute("aria-label", t("homeLink")); }
     set("langButton", t("langBtn"));
@@ -757,6 +1019,12 @@
     set("txtNotRun", t("notRun"));
     set("txtSndTitle", t("sndTitle")); set("txtSndTest", t("sndTest"));
     set("txtSndOpen", t("sndOpen")); set("txtSndHint", t("sndHint"));
+    set("txtMicTitle", t("micTitle")); set("txtMicTest", t("micTest"));
+    set("txtMicOpen", t("micOpen")); set("txtMicHint", t("micHint"));
+    set("txtNameTitle", t("nameTitle")); set("txtNameSave", t("nameSave"));
+    set("txtNameHint", t("nameHint"));
+    set("txtWsTitle", t("wsTitle")); set("txtWsOpen", t("wsOpen"));
+    set("txtWsChange", t("wsChange")); set("txtWsHint", t("wsHint"));
     set("txtHcTitle", t("hcTitle")); set("txtHcHint", t("hcHint"));
     if (typeof paintHc === "function") paintHc();
     set("txtVerTitle", t("verTitle")); set("txtVerCopy", t("verCopy"));
@@ -770,5 +1038,6 @@
   loadAll();
   </script>
   <script src="/lib/usage.js" data-page="options"></script>
+  <script src="/lib/sysbar.js"></script>
 </body>
 </html>

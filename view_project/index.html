@@ -23,34 +23,34 @@
     }
     #boot.done { display: none; }
     .boot-card {
-      width: min(680px, 100%); background: #fff; border: 2px solid #4a3f2e;
+      width: min(880px, 100%); background: #fff; border: 2px solid #4a3f2e;
       border-radius: 4px; box-shadow: 0 2px 0 rgba(44,74,124,.2);
-      padding: 22px 26px 18px; display: flex; flex-direction: column; gap: 16px;
+      padding: 28px 32px 24px; display: flex; flex-direction: column; gap: 20px;
     }
     .boot-brand { display: flex; align-items: center; gap: 12px; }
-    .boot-brand img { height: 44px; }
+    .boot-brand img { height: 62px; }
     .boot-brand b { display: block; font-family: "Gowun Batang", serif;
-                    font-size: 1.25rem; line-height: 1.2; }
-    .boot-brand i { font-style: normal; font-size: 0.82rem; color: #4a423a; }
-    .boot-slide { display: flex; align-items: center; gap: 18px; min-height: 132px; }
-    .boot-art { flex: 0 0 132px; height: 116px; }
+                    font-size: 1.7rem; line-height: 1.2; }
+    .boot-brand i { font-style: normal; font-size: 1.02rem; color: #4a423a; }
+    .boot-slide { display: flex; align-items: center; gap: 26px; min-height: 200px; }
+    .boot-art { flex: 0 0 200px; height: 180px; }
     .boot-art svg { width: 100%; height: 100%; }
-    .boot-text h2 { font-family: "Gowun Dodum", sans-serif; font-size: 1.08rem;
-                    color: #17475c; margin-bottom: 6px; }
-    .boot-text p { font-size: .92rem; color: #2a2620; line-height: 1.65; }
+    .boot-text h2 { font-family: "Gowun Dodum", sans-serif; font-size: 1.5rem;
+                    color: #17475c; margin-bottom: 10px; }
+    .boot-text p { font-size: 1.18rem; color: #2a2620; line-height: 1.7; }
     .boot-slide.fade { opacity: 0; }
     .boot-slide { transition: opacity .35s; }
-    .boot-dots { display: flex; gap: 6px; justify-content: center; }
-    .boot-dots span { width: 7px; height: 7px; border-radius: 50%; background: #9a8f7d; }
+    .boot-dots { display: flex; gap: 8px; justify-content: center; }
+    .boot-dots span { width: 10px; height: 10px; border-radius: 50%; background: #9a8f7d; }
     .boot-dots span.on { background: #1f5f7a; }
     .boot-progress { display: flex; flex-direction: column; gap: 5px; }
-    .boot-bar { height: 12px; background: #e6eef6; border-radius: 6px; overflow: hidden; }
+    .boot-bar { height: 18px; background: #e6eef6; border-radius: 9px; overflow: hidden; }
     .boot-bar > i { display: block; height: 100%; width: 0;
                     background: linear-gradient(90deg, #1f5f7a, #1f5f7a);
                     transition: width .4s; }
     .boot-status { display: flex; align-items: baseline; gap: 10px;
                    font-family: "Menlo","Consolas",monospace;
-                   font-size: 0.82rem; color: #4a423a; }
+                   font-size: 1rem; color: #4a423a; }
     .boot-status #bootNow { flex: 1 1 auto; min-width: 0;
                             overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     /* 진행 수치는 오른쪽에 모아 둔다 — 숫자 폭을 고정해 갱신될 때 흔들리지 않게 */
@@ -60,8 +60,8 @@
     .boot-meter #bootTime { color: #6b6255; }
     .boot-actions { display: flex; gap: 8px; }
     .boot-actions button {
-      font-family: inherit; font-size: .95rem; font-weight: 600; cursor: pointer;
-      border: 1.5px solid #4a3f2e; border-radius: 6px; padding: 9px 18px;
+      font-family: inherit; font-size: 1.08rem; font-weight: 600; cursor: pointer;
+      border: 1.5px solid #4a3f2e; border-radius: 6px; padding: 11px 22px;
       background: #1f5f7a; color: #fff; margin-left: auto;
     }
     .boot-actions button:disabled { background: #c4b9a5; border-color: #c4b9a5; cursor: default; }
@@ -69,7 +69,9 @@
                                  border-color: #9a8f7d; margin-left: 0; }
     @media (max-width: 560px) {
       .boot-slide { flex-direction: column; text-align: center; }
-      .boot-art { flex: 0 0 auto; height: 92px; }
+      .boot-art { flex: 0 0 auto; height: 150px; }
+      .boot-text h2 { font-size: 1.3rem; }
+      .boot-text p { font-size: 1.05rem; }
     }
 
     /* ===== 디자인 토큰 : "학습지" (줄노트 + 시험지 머리표 + 빨간펜) ===== */
@@ -105,7 +107,6 @@
       --line-d:   #2e281c;
     }
     html.hc body { background-image: none; }          /* 배경 무늬 제거 */
-    html.hc .sysbar { background: #fffdf6; }
     html.hc select, html.hc input, html.hc button,
     html.hc .panel, html.hc .q, html.hc .card { border-width: 2px; }
     html.hc .panel-head { border-width: 3px; }
@@ -124,8 +125,8 @@
 
       font-family: "Gowun Dodum", "Apple SD Gothic Neo", system-ui, sans-serif;
       line-height: 1.5;
-      padding: 12px;
-      gap: 10px;
+      padding: var(--sp-2, 8px);
+      gap: var(--sp-2, 8px);
     }
     .serif { font-family: "Gowun Batang", serif; }
 
@@ -160,17 +161,17 @@
     }
     .header > div {
       display: flex; flex-direction: column; justify-content: center;
-      padding: 10px 16px;
+      padding: 5px 12px;
     }
     .h-subject .eyebrow {
       font-size: 0.82rem; letter-spacing: .14em; color: var(--ink-2);
     }
     .h-subject .title {
       font-family: "Gowun Batang", serif;
-      font-size: 1.4rem; font-weight: 700; letter-spacing: .02em; line-height: 1.2;
+      font-size: 1.15rem; font-weight: 700; letter-spacing: .02em; line-height: 1.2;
     }
     .h-fill { justify-content: center; gap: 4px; }
-    .fill-row { display: flex; align-items: baseline; gap: 8px; font-size: .88rem; }
+    .fill-row { display: flex; align-items: baseline; gap: var(--sp-1, 4px); font-size: .88rem; }
     .fill-row .k { color: var(--ink-2); white-space: nowrap; }
     .fill-row .v {
       min-width: 130px;
@@ -185,32 +186,7 @@
     .h-tools { flex-direction: row !important; align-items: center; gap: 8px; margin-left: auto; }
 
 
-    /* ===== 시스템 상태바 (온디바이스 콘솔) ===== */
-    .sysbar {
-      flex: 0 0 auto;
-      display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px;
-      background: #fffdf6;
-      border: 1.5px solid var(--line-d);
-      border-radius: 3px;
-      padding: 7px 14px;
-      font-family: "Menlo", "Consolas", ui-monospace, monospace;
-      font-size: 0.82rem; letter-spacing: .02em;
-      color: var(--ink-2);
-      box-shadow: 0 1px 0 rgba(44,74,124,.15);
-      transform: rotate(-.25deg);          /* 붙여놓은 스티커 느낌 */
-      position: relative;
-    }
-    .sysbar::before {                      /* 마스킹테이프 */
-      content: "";
-      position: absolute; top: -7px; left: 26px;
-      width: 54px; height: 13px;
-      background: rgba(31, 95, 122, .38); /* 활동지 시안 */
-      border-left: 1px solid rgba(38,38,46,.12);
-      border-right: 1px solid rgba(38,38,46,.12);
-      transform: rotate(-2deg);
-    }
-    .sysbar .brand { color: var(--ink-2); }
-    .sysbar .brand b { color: var(--ink); font-weight: 700; letter-spacing: .08em; }
+    /* ===== 시스템 상태바 (온디바이스 콘솔) ===== */   /* lib/sysbar.js 가 오버레이로 옮겨 담는다 */
     .chip {
       display: inline-flex; align-items: center; gap: 6px;
       background: #fff; border: 1.5px solid var(--line); border-radius: 999px;
@@ -229,10 +205,6 @@
     .chip.on .st { color: var(--ink-2); }
     .chip.hit { border-color: var(--cyan); }
     .chip.hit .st { color: var(--cyan-d); }
-    .sysbar .sep { color: var(--line); }
-    .sysbar .meter { margin-left: auto; display: flex; align-items: center; gap: 12px; }
-    .sysbar .meter .k { color: #6b6255; }
-    .sysbar .meter .v { color: var(--pen-blue-d); font-variant-numeric: tabular-nums; font-weight: 700; }
     @media (prefers-reduced-motion: reduce) { .chip.busy .dot { animation: none; } }
 
     /* ===== 문항 공통 ===== */
@@ -240,7 +212,7 @@
       position: relative;
       border: 2.5px solid var(--cyan);
       background: #fff;
-      padding: 6px 16px 6px 12px;
+      padding: var(--sp-1, 4px) 16px var(--sp-1, 4px) 12px;
       border-radius: 2px;
     }
     .q::after {                            /* 활동지 섹션 타이틀의 ▼ 마커 */
@@ -264,7 +236,7 @@
       background: var(--box);
       border: 1.5px solid var(--line);
       border-radius: var(--r);
-      padding: 10px 16px;
+      padding: var(--sp-2, 6px) 16px;
     }
     .subheader .q { display: flex; align-items: center; gap: 9px; }
     .subheader .field { display: flex; align-items: center; gap: 8px; flex: 1 1 auto; min-width: 200px; }
@@ -281,7 +253,7 @@
       background: var(--box);
       border: 1.5px solid var(--line);
       border-radius: var(--r);
-      padding: 10px 16px;
+      padding: var(--sp-2, 8px) 16px;
     }
     .tab-prompt-row .q { display: flex; align-items: center; gap: 9px; }
     .tabs { display: flex; gap: 2px; }
@@ -318,7 +290,7 @@
     .live-toggle.off { opacity: .45; cursor: not-allowed; }
 
     /* 결과 도구 (저장) */
-    .result-tools { flex: 0 0 auto; display: flex; gap: 8px; margin-top: 10px; }
+    .result-tools { flex: 0 0 auto; display: flex; gap: 8px; margin-top: var(--sp-2, 8px); }
     .result-tools button {
       background: #fff; border: 1.5px solid var(--line); color: var(--ink-2);
       font-size: .85rem; padding: 4px 14px; cursor: pointer; border-radius: var(--r);
@@ -326,7 +298,7 @@
     .result-tools button:hover { border-color: var(--pen-blue); color: var(--pen-blue-d); }
 
     /* 기록 스트립 */
-    .history { flex: 0 0 auto; margin-top: 12px; }
+    .history { flex: 0 0 auto; margin-top: var(--sp-2, 8px); }
     .history .h-title {
       font-family: "Gowun Batang", serif; font-weight: 700; font-size: .88rem;
       color: var(--ink-2); margin-bottom: 6px;
@@ -347,8 +319,8 @@
     /* ===== 답안 영역 (좌우) ===== */
     .main-container {
       flex: 1 1 auto; min-height: 0;
-      display: flex; gap: 12px;
-      width: 100%; max-width: 2200px; margin: 0 auto;
+      display: flex; gap: var(--sp-2, 8px);
+      
     }
     .panel {
       flex: 1 1 0; min-width: 0;
@@ -361,11 +333,11 @@
     .panel-head {
       flex: 0 0 auto;
       display: flex; align-items: center; gap: 9px;
-      padding: 11px 16px;
+      padding: var(--sp-1, 4px) 16px;
       border-bottom: 1.5px dashed var(--line);
     }
     .panel-body {
-      flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 16px;
+      flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: var(--sp-3, 12px);
       display: flex; flex-direction: column;   /* 남는 세로 공간을 자식이 채우도록 */
     }
 
@@ -397,7 +369,7 @@
       border: 1.5px solid var(--line);
       border-radius: var(--r);
       flex: 1 1 auto; min-height: 240px; min-width: 0;
-      display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: center;
+      display: flex; flex-wrap: wrap; gap: var(--sp-2, 8px); align-items: center; justify-content: center;
       background: #fdfcf8; padding: 14px;
     }
     #webcamVideo, #webcamCanvas {
@@ -427,11 +399,11 @@
       max-width: 100%; max-height: 100%; height: auto;
       touch-action: none; border-radius: 3px;
     }
-    .sketch-controls { margin-top: 12px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .sketch-controls { margin-top: var(--sp-2, 8px); display: flex; align-items: center; gap: var(--sp-2, 8px); flex-wrap: wrap; }
     .sketch-controls input[type="color"] { padding: 2px; width: 42px; height: 34px; cursor: pointer; }
     .sketch-controls input[type="range"] { cursor: pointer; }
 
-    .button-row { margin-top: 12px; flex: 0 0 auto; display: flex; gap: 10px; flex-wrap: wrap; }
+    .button-row { margin-top: var(--sp-2, 8px); flex: 0 0 auto; display: flex; gap: 10px; flex-wrap: wrap; }
     .btn-line {
       background: #fff; border: 1.5px solid var(--line-d); color: var(--ink);
       font-weight: 600; padding: 7px 18px; cursor: pointer; border-radius: var(--r);
@@ -491,8 +463,8 @@
     .easy-answer {
       display: none;
       flex: 0 0 auto;
-      margin-top: 14px;
-      align-items: flex-start; gap: 12px;
+      margin-top: var(--sp-3, 12px);
+      align-items: flex-start; gap: var(--sp-2, 8px);
     }
     .easy-answer.show { display: flex; }
     .easy-answer .pibo {
@@ -530,7 +502,7 @@
     #easyText b { color: var(--pen-blue-d); }
 
     /* 연습장 (JSON) — 접이식 */
-    .scratchpad { margin-top: 18px; flex: 0 0 auto; }
+    .scratchpad { margin-top: var(--sp-3, 12px); flex: 0 0 auto; }
     .scratchpad summary {
       cursor: pointer; list-style: none;
       display: flex; align-items: center; gap: 8px;
@@ -541,7 +513,7 @@
     .scratchpad summary::-webkit-details-marker { display: none; }
     .scratchpad summary::before { content: "▸"; color: var(--pen-blue); }
     .scratchpad[open] summary::before { content: "▾"; }
-    .scratchpad .pad-tools { display: flex; justify-content: flex-end; margin: 8px 0 6px; }
+    .scratchpad .pad-tools { display: flex; justify-content: flex-end; margin: var(--sp-1, 4px) 0; }
     #copyJsonButton {
       background: #fff; border: 1.5px solid var(--line); color: var(--ink-2);
       font-size: .85rem; padding: 4px 14px; cursor: pointer; border-radius: var(--r);
@@ -584,8 +556,9 @@
       .doc-link { margin-left: 0; }
     }
   </style>
+  <link rel="stylesheet" href="/lib/ui.css">
 </head>
-<body>
+<body data-density="explore">
   <!-- 부팅 화면 : 모델을 올리는 동안 무엇이 일어나는지 보여준다 -->
   <!-- 로딩 화면은 처음부터 덮어 둔다. 이미 준비가 끝난 세션이면 아래 스크립트가 바로 걷는다.
        (나중에 표시하면 그 사이 체험 화면이 잠깐 보였다가 가려진다) -->
@@ -635,56 +608,39 @@
 
   <!-- 시험지 머리표 -->
   <div class="header">
-    <div class="h-subject" style="flex-direction:row;align-items:center;gap:12px;">
-      <img src="/assets/pibo-prof.png" alt="" style="height:44px;flex:0 0 auto;">
-      <span style="display:flex;flex-direction:column;">
-      <span class="eyebrow" id="txtEyebrow">인공지능 · 컴퓨터 비전 · 인터넷 없이 내 컴퓨터에서 실행돼요</span>
-      <span class="title"><span id="txtTitle">The Maker</span> <span style="font-size:.85rem;color:var(--pen-red);vertical-align:middle;">(On-Device)</span></span>
-    </span>
+    <div class="h-subject" style="flex-direction:row;align-items:center;gap:10px;">
+      <img src="/assets/pibo-prof.png" alt="" style="height:30px;flex:0 0 auto;">
+      <span class="title" title="인터넷 없이 내 컴퓨터에서 실행돼요"><span id="txtTitle">The Maker</span> <span class="od" style="font-size:.78rem;color:var(--pen-red);vertical-align:middle;">(On-Device)</span></span>
     </div>
     <div class="h-tools">
-      <a href="/talk" id="talkLink" title="대화 — AI와 이야기해요" style="
-        display:inline-flex;align-items:center;gap:7px;background:#fff;
-        border:1.5px solid var(--line-d);color:var(--ink);font-weight:600;
-        padding:8px 14px;border-radius:var(--r);text-decoration:none;font-size:.95rem;">
-        &#128172; <span id="txtTalkLink">대화</span></a>
       <a href="/blocks" id="blocksLink" title="블록 코딩 — 블록으로 나만의 프로그램" style="
         display:inline-flex;align-items:center;gap:7px;background:#fff;
         border:1.5px solid var(--line-d);color:var(--ink);font-weight:600;
-        padding:8px 14px;border-radius:var(--r);text-decoration:none;font-size:.95rem;">
+        padding:5px 11px;border-radius:var(--r);text-decoration:none;font-size:.88rem;">
         &#9632; <span id="txtBlocksLink">블록</span></a>
       <a href="/code" id="codeLink" title="파이썬 — 코드로 AI를 불러 봐요" style="
         display:inline-flex;align-items:center;gap:7px;background:#fff;
         border:1.5px solid var(--line-d);color:var(--ink);font-weight:600;
-        padding:8px 14px;border-radius:var(--r);text-decoration:none;font-size:.95rem;">
+        padding:5px 11px;border-radius:var(--r);text-decoration:none;font-size:.88rem;">
         &#10095; <span id="txtCodeLink">파이썬</span></a>
       <a href="/train" id="trainLink" title="가르치기 — 내가 직접 AI를 학습시켜요" style="
         display:inline-flex;align-items:center;gap:7px;background:#fff;
         border:1.5px solid var(--line-d);color:var(--ink);font-weight:600;
-        padding:8px 14px;border-radius:var(--r);text-decoration:none;font-size:.95rem;">
+        padding:5px 11px;border-radius:var(--r);text-decoration:none;font-size:.88rem;">
         &#9679; <span id="txtTrainLink">가르치기</span></a>
+      <a href="/talk" id="talkLink" title="대화 — AI와 이야기해요" style="
+        display:inline-flex;align-items:center;gap:7px;background:#fff;
+        border:1.5px solid var(--line-d);color:var(--ink);font-weight:600;
+        padding:5px 11px;border-radius:var(--r);text-decoration:none;font-size:.88rem;">
+        &#128172; <span id="txtTalkLink">대화</span></a>
       <a href="/options" id="optionsLink" title="설정 · 점검" aria-label="설정 · 점검" style="
         display:inline-flex;align-items:center;justify-content:center;background:#fff;
         border:1.5px solid var(--line-d);color:var(--ink-2);
-        width:38px;height:38px;border-radius:var(--r);text-decoration:none;
+        width:34px;height:34px;border-radius:var(--r);text-decoration:none;
         font-size:1.05rem;line-height:1;">&#9881;</a>
       <button id="langButton" title="한국어 / English" style="min-width:46px;">EN</button>
 
     </div>
-  </div>
-
-  <!-- 시스템 상태바 -->
-  <div class="sysbar" id="sysbar">
-    <span class="brand"><b>VAPI-OD</b> · on-device vision runtime</span>
-    <span class="sep">|</span>
-    <span class="chip" id="chipCPU"><span class="dot"></span>CPU<span class="st" id="stCPU"></span></span>
-    <span class="chip" id="chipGPU"><span class="dot"></span>GPU<span class="st" id="stGPU"></span></span>
-    <span class="chip" id="chipNPU"><span class="dot"></span>NPU<span class="st" id="stNPU"></span></span>
-    <span class="meter">
-      <span><span class="k">last</span> <span class="v" id="sysElapsed">--</span></span>
-      <span><span class="k">exec</span> <span class="v" id="sysDevice">--</span></span>
-      <span><span class="k">runs</span> <span class="v" id="sysRuns">0</span></span>
-    </span>
   </div>
 
   <!-- 문항 1 : 모델 고르기 -->
@@ -1096,11 +1052,14 @@
 
     /* ----- 시스템 상태바 ----- */
     let runCount = 0;
+    /* 상태 칸은 lib/sysbar.js 가 오버레이에 만든다 — 이 코드가 도는 시점에는 아직
+       없을 수 있으므로 미리 잡아 두지 않고, 쓸 때마다 찾는다(없으면 조용히 넘어간다).
+       예전에는 미리 잡아 두어 null 이 되었고, 거기서 오류가 나 뒤 코드가 멈췄다. */
+    const pick = id => document.getElementById(id) || { set textContent(v) {}, style: {} };
     const sysEl = {
-      cpu: document.getElementById('chipCPU'), gpu: document.getElementById('chipGPU'),
-      npu: document.getElementById('chipNPU'),
-      elapsed: document.getElementById('sysElapsed'),
-      device: document.getElementById('sysDevice'), runs: document.getElementById('sysRuns'),
+      get elapsed() { return pick('sysElapsed'); },
+      get device()  { return pick('sysDevice');  },
+      get runs()    { return pick('sysRuns');    },
     };
     /* 서비스명 -> 실행 디바이스 (서버가 런타임에서 읽은 실측값) */
     let DEVICE_OF = {};
@@ -1161,7 +1120,7 @@
     (function applyStatic() {
       const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
       document.title = T("titleTag");
-      set("txtTitle", T("title"));           set("txtEyebrow", T("eyebrow"));
+      set("txtTitle", T("title"));
       set("txtBlocksLink", T("blocksLink")); set("txtTrainLink", T("trainLink"));
       set("txtCodeLink", T("codeLink")); set("txtTalkLink", T("talkLink"));
       const ol = document.getElementById("optionsLink");
@@ -1300,15 +1259,15 @@
     function showWebcamError(err) {
       const name = (err && err.name) || "";
       const why = {
-        NotAllowedError:  t("cam_denied"),
-        NotReadableError: t("cam_busy"),
-        NotFoundError:    t("cam_none"),
-        OverconstrainedError: t("cam_none"),
-      }[name] || (t("cam_fail") + " (" + (name || err) + ")");
+        NotAllowedError:  T("cam_denied"),
+        NotReadableError: T("cam_busy"),
+        NotFoundError:    T("cam_none"),
+        OverconstrainedError: T("cam_none"),
+      }[name] || (T("cam_fail") + " (" + (name || err) + ")");
       webcamVideo.style.display = "none";
       webcamMsg.style.display = "block";
       webcamMsg.innerHTML = why +
-        '<br><br><button class="btn" id="webcamRetry">' + t("cam_retry") + "</button>";
+        '<br><br><button class="btn" id="webcamRetry">' + T("cam_retry") + "</button>";
       const btn = document.getElementById("webcamRetry");
       if (btn) btn.addEventListener("click", startWebcam);
       console.log("웹캠 접근 오류:", err);
@@ -2156,5 +2115,6 @@
     });
   </script>
   <script src="/lib/usage.js" data-page="index"></script>
+  <script src="/lib/sysbar.js"></script>
 </body>
 </html>

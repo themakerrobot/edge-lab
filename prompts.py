@@ -210,9 +210,26 @@ def p_rag(q, context, lang="ko"):
     return _RAG[_lang(lang)].replace("{c}", context or "").replace("{q}", q or "")
 
 
-def p_chat(q, lang="ko"):
-    """사진 없이 묻는 말 — 같은 VLM 에게 글만 준다."""
-    return _CHAT[_lang(lang)].replace("{q}", q or "")
+def p_chat(q, lang="ko", history="", persona=""):
+    """사진 없이 묻는 말 — 같은 VLM 에게 글만 준다.
+
+    history 는 화면이 모아 보낸 앞말(주고받은 몇 턴). 있으면 질문 앞에 붙인다.
+    없으면 예전과 똑같다 — 기본은 안 보내는 쪽이다.
+    """
+    body = _CHAT[_lang(lang)].replace("{q}", q or "")
+
+    # 성격 — 화면에서 고르거나 직접 적은 한두 문장. 기본 규칙(쉽게·세 문장) 앞에
+    # 붙인다. 매번 같은 크기로 한 번만 붙으므로 대화가 길어져도 늘지 않는다.
+    style = (persona or "").strip()
+    if style:
+        head = "말투: " if _lang(lang) == "ko" else "Style: "
+        body = head + style + "\n" + body
+
+    past = (history or "").strip()
+    if not past:
+        return body
+    head = "지금까지 나눈 이야기:\n" if _lang(lang) == "ko" else "What we talked about so far:\n"
+    return head + past + "\n\n" + body
 
 
 def p_free(lang="ko"):

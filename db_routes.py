@@ -23,7 +23,7 @@ import time
 import uuid
 
 import numpy as np
-from fastapi import APIRouter, Body, File, Form, Query, Request, UploadFile
+from fastapi import APIRouter, File, Form, Query, Request, UploadFile
 
 import hub
 from paths import DB_DIR

@@ -96,7 +96,7 @@ if exist "%TOOLS%launcher.py" if exist themaker.ico (
 
 echo.
 echo === [6/8] copy sources and models ===
-for %%F in (main.py engines.py prompts.py paths.py hub.py mp_routes.py train_routes.py stats_routes.py code_routes.py speech_routes.py db_routes.py themaker.py README.md) do (
+for %%F in (main.py engines.py prompts.py paths.py hub.py mp_routes.py train_routes.py stats_routes.py code_routes.py speech_routes.py db_routes.py folderpick.py sysinfo.py themaker.py README.md) do (
   copy /y %%F %BUILD%\ >nul
   if errorlevel 1 (echo [ERROR] copy failed: %%F & exit /b 1)
 )
@@ -116,9 +116,10 @@ if exist %BUILD%\models\user rmdir /s /q %BUILD%\models\user
 if exist %BUILD%\models\project rmdir /s /q %BUILD%\models\project
 if exist %BUILD%\models\stats rmdir /s /q %BUILD%\models\stats
 if exist %BUILD%\models\pycode rmdir /s /q %BUILD%\models\pycode
+if exist %BUILD%\models\blocks rmdir /s /q %BUILD%\models\blocks
 if exist %BUILD%\models\.appwin rmdir /s /q %BUILD%\models\.appwin
 mkdir %BUILD%\data 2>nul
-for %%D in (user project pycode stats tmp) do mkdir %BUILD%\data\%%D 2>nul
+for %%D in (user project pycode blocks db stats tmp) do mkdir %BUILD%\data\%%D 2>nul
 
 REM bundle launcher (ASCII only, CRLF via echo)
 > %BUILD%\run.bat (
@@ -139,10 +140,10 @@ REM bundle launcher (ASCII only, CRLF via echo)
 
 echo.
 echo === [7/8] verify bundled python ===
-for %%F in (main.py engines.py prompts.py paths.py hub.py mp_routes.py train_routes.py stats_routes.py code_routes.py speech_routes.py db_routes.py themaker.py check.py smoke_test.py run.bat bundle_check.bat) do (
+for %%F in (main.py engines.py prompts.py paths.py hub.py mp_routes.py train_routes.py stats_routes.py code_routes.py speech_routes.py db_routes.py folderpick.py sysinfo.py themaker.py check.py smoke_test.py run.bat bundle_check.bat) do (
   if not exist %BUILD%\%%F (echo [ERROR] missing in bundle: %%F & exit /b 1)
 )
-for %%F in (view_project\index.html view_project\blocks.html view_project\train.html view_project\options.html view_project\code.html view_project\talk.html view_project\lib\tf.min-3.11.0.js view_project\lib\jszip.min.js view_project\lib\usage.js view_project\lib\cm\codemirror.js view_project\lib\cm\python.js view_project\lib\cm\show-hint.js) do (
+for %%F in (view_project\index.html view_project\blocks.html view_project\train.html view_project\options.html view_project\code.html view_project\talk.html view_project\lib\ui.css view_project\lib\sysbar.js view_project\lib\split.js view_project\lib\tf.min-3.11.0.js view_project\lib\jszip.min.js view_project\lib\usage.js view_project\lib\cm\codemirror.js view_project\lib\cm\python.js view_project\lib\cm\show-hint.js) do (
   if not exist %BUILD%\%%F (echo [ERROR] missing in bundle: %%F & exit /b 1)
 )
 for %%F in (mobilenetv2_feat.xml mobilenetv2_feat.bin mobilenetv2_feat.json) do (

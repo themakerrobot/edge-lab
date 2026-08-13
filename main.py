@@ -2,14 +2,17 @@
 # vapi-od : 단일 FastAPI 서버 (기존 circulus-vapi 5개 서버 통합, 온디바이스)
 # 응답 스키마는 기존 서버와 동일: {"type": <service_name>, "result": "ok"|"fail", "data": ...}
 import os
+import sys
 import time
 import uuid
 from contextlib import asynccontextmanager
 
 
 import cv2
+import asyncio
 import uvicorn
-from fastapi import FastAPI, File, Request, UploadFile
+from fastapi import Body, FastAPI, File, Request, UploadFile
+from starlette.concurrency import run_in_threadpool   # 창이 떠 있는 동안 서버가 멈추지 않게
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -182,9 +185,13 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True,
                    allow_methods=["*"], allow_headers=["*"])
 
 # 로딩 중에도 열어 두는 경로 (페이지·정적파일·상태). 나머지 AI 호출은 503 으로 막는다.
+# 모델 준비 중에도 되어야 하는 것들 — 화면·정적 파일과 "AI 를 안 쓰는" 기능.
+# 작품 저장·불러오기가 여기 들어가는 이유: 아이가 만들던 것을 잃지 않게 하려면
+# 모델 로딩이 끝나기 전에도 저장이 되어야 한다.
+# "/blocks/" 처럼 빗금까지 적은 것은 페이지 주소 "/blocks" 와 구분하기 위해서다.
 ALLOW_WHILE_LOADING = ("/ready", "/system", "/lib", "/assets", "/fonts", "/blockly",
                        "/docs", "/openapi.json", "/favicon", "/stats", "/custom", "/pycode",
-                       "/speech")
+                       "/blocks/", "/speech")
 
 
 @app.middleware("http")
@@ -440,11 +447,17 @@ def vlm_look(path, prompt: str = "", lang: str = "ko"):
 
 # ---------------------------------------------------------------- chat (사진 없이 대화)
 @app.post("/chat/ask", tags=["chat"], summary="사진 없이 물어보기")
-async def chat_ask(request: Request, prompt: str = "", lang: str = "ko"):
+async def chat_ask(request: Request, prompt: str = "", lang: str = "ko",
+                   history: str = Body("", embed=True),
+                   persona: str = Body("", embed=True)):
     """같은 VLM 에게 사진 없이 묻는다 — 모델을 더 올리지 않는다.
 
-    앞말은 기억하지 않는다(한 번 묻고 한 번 답한다). 교실에서 학생마다 대화가
-    섞이지 않게 하려면 기록은 화면 쪽이 들고 있어야 한다."""
+    서버는 앞말을 들고 있지 않는다. 필요하면 화면이 history 로 함께 보낸다 —
+    교실에서 학생마다 대화가 섞이지 않으려면 기록은 각자 화면이 들어야 한다.
+
+    history 를 주소(쿼리)가 아니라 본문으로 받는 이유: 한글은 주소에 넣을 때
+    글자당 9바이트로 부풀어(%EC%95%88…), 몇 턴만 담아도 주소 길이 한계(8KB)를
+    넘겨 요청이 통째로 실패한다."""
     name = "chat_ask"
     t0 = time.perf_counter()
     q = (prompt or "").strip()
@@ -452,7 +465,9 @@ async def chat_ask(request: Request, prompt: str = "", lang: str = "ko"):
         return {"type": name, "result": "fail", "data": "물어볼 말을 적어 주세요.",
                 "elapsed_ms": 0}
     try:
-        answer = eng.vlm.generate_text(P.p_chat(q, P.lang_of(q, lang)),
+        past = (history or "").strip()
+        style = (persona or "").strip()[:200]      # 너무 길면 지시가 서로 밀어낸다
+        answer = eng.vlm.generate_text(P.p_chat(q, P.lang_of(q, lang), past, style),
                                        P.MAX_TOKENS["chat"])
         return {"type": name, "result": "ok", "data": {"answer": answer},
                 "elapsed_ms": int((time.perf_counter() - t0) * 1000),
@@ -540,12 +555,6 @@ async def code_page():
         return f.read()
 
 
-@app.get("/monitor")
-async def monitor():
-    from engines import core
-    return {"devices": core.available_devices}
-
-
 # 어떤 버전으로 돌고 있는지 — 문제 생겼을 때 "언제부터" 를 찾는 근거
 KEY_PACKAGES = ["openvino", "openvino-genai", "onnxruntime", "ultralytics",
                 "mediapipe", "opencv-python", "numpy", "easyocr", "fastapi",
@@ -569,7 +578,12 @@ async def system_packages():
         except Exception:
             pkgs[name] = "?"
 
+    # 설치 기록은 설치 스크립트가 프로그램 폴더 data/ 에 남긴다.
+    # 작업 폴더가 밖으로 나가면서 자리가 갈렸으므로 두 곳을 다 본다.
+    import paths as _p
     snap = os.path.join(DATA_DIR, "installed-packages.txt")
+    if not os.path.exists(snap):
+        snap = os.path.join(_p.ROOT, "data", "installed-packages.txt")
     saved = ""
     if os.path.exists(snap):
         try:
@@ -580,6 +594,204 @@ async def system_packages():
     return {"result": "ok",
             "data": {"python": platform.python_version(), "packages": pkgs,
                      "installed_at": saved, "snapshot": os.path.exists(snap)}}
+
+
+# ── 작업폴더 파일 브라우저 ────────────────────────────────────────────────
+# 작업폴더 하나만 보여 준다(user·project·pycode·db). 파이썬을 실행할 때 작업
+# 위치도 그 안의 pycode 라, 아이가 만든 그림·글이 자연히 여기 쌓인다.
+#
+# 폴더 밖으로 나가는 길은 전부 막는다 — 상대경로(..), 절대경로, 심볼릭 링크까지
+# resolve() 후 실제 위치가 작업폴더 안인지 본다. 이름만 걸러내는 방식은
+# ..%2f 같은 우회에 뚫린다.
+FILE_TEXT_EXT = {".py", ".txt", ".json", ".csv", ".md"}
+FILE_SHOW_EXT = FILE_TEXT_EXT | {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".wav", ".mp3", ".zip"}
+FILE_MAX_READ = 512 * 1024
+
+
+def _work_path(rel: str):
+    from pathlib import Path
+    import paths as _p
+    root = Path(_p.WORK_ROOT)
+    root.mkdir(parents=True, exist_ok=True)
+    root = root.resolve()
+    rel = str(rel or "").replace("\\", "/").lstrip("/")
+    target = (root / rel).resolve()
+    if target != root and root not in target.parents:
+        raise ValueError("작업폴더 밖은 열 수 없어요")
+    return root, target
+
+
+@app.get("/system/files", tags=["system"], summary="작업폴더 목록")
+async def work_files(path: str = ""):
+    try:
+        root, d = _work_path(path)
+    except ValueError as ex:
+        return JSONResponse({"result": "fail", "data": str(ex)}, status_code=400)
+    if not d.exists():
+        return {"result": "ok", "data": {"path": "", "items": []}}
+    if d.is_file():
+        return JSONResponse({"result": "fail", "data": "폴더가 아니에요"}, status_code=400)
+    items = []
+    for p in sorted(d.iterdir(), key=lambda x: (not x.is_dir(), x.name.lower())):
+        if p.name.startswith("."):
+            continue
+        if p.is_file() and p.suffix.lower() not in FILE_SHOW_EXT:
+            continue
+        try:
+            st = p.stat()
+        except OSError:
+            continue
+        items.append({"name": p.name,
+                      "path": str(p.relative_to(root)).replace("\\", "/"),
+                      "dir": p.is_dir(),
+                      "size": 0 if p.is_dir() else st.st_size,
+                      "text": p.suffix.lower() in FILE_TEXT_EXT,
+                      "mtime": int(st.st_mtime)})
+    return {"result": "ok",
+            "data": {"path": "" if d == root else str(d.relative_to(root)).replace("\\", "/"),
+                     "items": items}}
+
+
+@app.get("/system/file", tags=["system"], summary="작업폴더 파일 열기")
+async def work_file(path: str):
+    try:
+        _root, f = _work_path(path)
+    except ValueError as ex:
+        return JSONResponse({"result": "fail", "data": str(ex)}, status_code=400)
+    if not f.is_file():
+        return JSONResponse({"result": "fail", "data": "그런 파일이 없어요"}, status_code=404)
+    if f.suffix.lower() not in FILE_TEXT_EXT:
+        return JSONResponse({"result": "fail", "data": "글 파일만 열 수 있어요"}, status_code=400)
+    if f.stat().st_size > FILE_MAX_READ:
+        return JSONResponse({"result": "fail", "data": "파일이 너무 커요"}, status_code=400)
+    return {"result": "ok",
+            "data": {"path": path, "code": f.read_text(encoding="utf-8", errors="replace")}}
+
+
+@app.get("/system/workdir", tags=["system"], summary="작업폴더 위치 보기")
+async def get_workdir():
+    """지금 작업폴더가 어디인지. 설정 화면이 보여 준다."""
+    import paths as _p
+    info = _p.summary()
+    info["exists"] = os.path.isdir(info["work_dir"])
+    return {"result": "ok", "data": info}
+
+
+@app.post("/system/pick_folder", tags=["system"], summary="폴더 고르기 창 열기")
+async def pick_folder():
+    """폴더 고르기 창을 띄우고 고른 경로를 돌려준다.
+
+    브라우저는 폴더의 실제 경로를 알려 주지 않는다(보안). 하지만 이 서버는 같은
+    PC 에서 돌기 때문에 서버가 창을 띄우면 된다.
+
+    창은 folderpick.py 가 파이썬 표준 ctypes 만으로 윈도우 기본 창을 부른다 —
+    PowerShell·.NET 컴파일·별도 패키지 없이 어느 교실 PC 에서나 같게 동작한다.
+    """
+    import folderpick
+    path, how, why = await run_in_threadpool(folderpick.choose,
+                                             "작업 폴더를 고르세요 - 새 폴더도 만들 수 있어요")
+    if why:
+        print("[pick_folder] 창을 띄우지 못했어요:", why[:300])
+        return {"result": "fail", "data": "폴더 고르기 창을 띄우지 못했어요. " + why[:160]}
+    if not path:
+        return {"result": "ok", "data": {"path": "", "canceled": True}}
+    return {"result": "ok", "data": {"path": path, "canceled": False, "how": how}}
+
+
+@app.post("/system/pick_file", tags=["system"], summary="파일 고르기 창 열기")
+async def pick_file(kind: str = Body("py", embed=True)):
+    """탐색기 창을 띄워 파일 하나를 고르고, 그 내용을 바로 돌려준다.
+
+    kind="py" 면 파이썬 작품 폴더(pycode)에서, "blocks" 면 블록 작품 폴더에서 열린다 —
+    아이가 폴더를 찾아 헤매지 않게 하려는 것. 고른 파일이 작업 폴더 밖이어도 읽어 준다
+    (다른 PC 에서 받아 온 파일을 여는 게 이 기능의 목적이다). 대신 종류는 제한한다.
+    """
+    import folderpick
+    import paths as _p
+    start = _p.BLOCKS_DIR if kind == "blocks" else _p.PYCODE_DIR
+    want = ".json" if kind == "blocks" else ".py"
+    path, how, why = await run_in_threadpool(
+        folderpick.choose_file, "작품을 고르세요", start)
+    if why:
+        return {"result": "fail", "data": "파일 고르기 창을 띄우지 못했어요. " + why[:160]}
+    if not path:
+        return {"result": "ok", "data": {"canceled": True}}
+    if os.path.splitext(path)[1].lower() != want:
+        return {"result": "fail", "data": "%s 파일만 열 수 있어요" % want}
+    try:
+        if os.path.getsize(path) > FILE_MAX_READ:
+            return {"result": "fail", "data": "파일이 너무 커요"}
+        with open(path, encoding="utf-8", errors="replace") as f:
+            text = f.read()
+    except OSError as ex:
+        return {"result": "fail", "data": "파일을 읽지 못했어요: %s" % ex}
+    return {"result": "ok", "data": {"canceled": False, "how": how,
+                                     "name": os.path.splitext(os.path.basename(path))[0],
+                                     "text": text}}
+
+
+@app.get("/system/workdir/peek", tags=["system"], summary="그 폴더에 작업이 들어 있나")
+async def peek_workdir(path: str = ""):
+    """[바꾸기] 를 누르기 전에 화면이 물어본다 — 빈 폴더면 "옮기기", 작업이 든
+    폴더면 "이어서 쓰기". 무엇이 일어날지 미리 알려 주려는 것."""
+    import paths as _p
+    p = os.path.abspath(str(path or "").strip())
+    return {"result": "ok", "data": {"path": p,
+                                     "exists": os.path.isdir(p),
+                                     "has_work": _p.has_work(p) if os.path.isdir(p) else False}}
+
+
+@app.post("/system/workdir", tags=["system"], summary="작업폴더 옮기기 / 이어서 쓰기")
+async def set_workdir(path: str = Body(..., embed=True),
+                      mode: str = Body("auto", embed=True)):
+    """작업폴더를 다른 곳으로. 안에 있던 작품도 함께 옮긴다.
+
+    바뀐 위치는 다음에 켤 때부터 쓰인다 — 지금 돌고 있는 서버는 이미 예전
+    폴더를 열어 둔 상태라, 도중에 갈아 끼우면 반쯤 옮겨진 채로 저장될 수 있다.
+    """
+    import paths as _p
+    if _p.summary()["fixed_by_env"]:
+        return {"result": "fail",
+                "data": "VAPI_WORK 환경변수로 정해져 있어요. 그 값을 바꿔 주세요."}
+    want = mode if mode in ("move", "open") else "auto"
+    used = want if want != "auto" else ("open" if _p.has_work(os.path.abspath(path.strip()))
+                                        else "move")
+    try:
+        new = _p.set_work_dir(path, want)
+    except Exception as ex:
+        return {"result": "fail", "data": str(ex)}
+    return {"result": "ok", "data": {"work_dir": new, "restart": True, "mode": used}}
+
+
+@app.post("/system/username", tags=["system"], summary="쓰는 사람 이름 정하기")
+async def set_username(name: str = Body("", embed=True)):
+    """작업폴더에 이름을 적어 둔다(work.json).
+
+    나중에 교사용 서버로 기록을 보낼 때 누구 것인지 가리는 값. 지금은 이 컴퓨터
+    안에만 있고, 비우면 윈도우 로그인 이름으로 돌아간다.
+    """
+    import paths as _p
+    return {"result": "ok", "data": {"name": _p.set_user_name(name)}}
+
+
+
+@app.post("/system/open_folder", tags=["system"], summary="작업폴더 열기")
+async def open_folder():
+    """탐색기로 작업폴더를 띄운다 — 아이가 만든 파일을 바로 찾을 수 있게."""
+    import subprocess
+    import paths as _p
+    target = _p.WORK_ROOT
+    os.makedirs(target, exist_ok=True)
+    try:
+        if os.name == "nt":
+            subprocess.Popen(["explorer", target])
+        elif sys.platform == "darwin":
+            subprocess.Popen(["open", target])
+        else:
+            subprocess.Popen(["xdg-open", target])
+    except Exception as ex:
+        return {"result": "fail", "data": str(ex)}
+    return {"result": "ok", "data": target}
 
 
 @app.post("/system/sound_settings", tags=["system"], summary="윈도우 소리 설정 열기")
@@ -600,6 +812,30 @@ async def open_sound_settings():
         return {"result": "ok", "data": "윈도우 소리 설정을 열었어요."}
     except Exception as ex:
         return {"result": "fail", "data": "열지 못했어요: %s" % ex}
+
+
+@app.post("/system/mic_settings", tags=["system"], summary="윈도우 마이크 설정 열기")
+async def open_mic_settings():
+    """마이크가 안 잡힐 때 쓰는 길잡이 — 소리 설정과 같은 결이다.
+
+    브라우저가 마이크를 못 쓰는 이유는 대개 둘이다: 윈도우가 앱의 마이크 사용을
+    막아 두었거나, 기본 입력 장치가 엉뚱한 것으로 잡혀 있거나. 둘 다 이 화면에서
+    고친다."""
+    import subprocess
+    if os.name != "nt":
+        return {"result": "fail",
+                "data": "윈도우에서만 열 수 있어요. 시스템 마이크 설정을 직접 열어 주세요."}
+    try:
+        subprocess.Popen(["cmd", "/c", "start", "", "ms-settings:privacy-microphone"],
+                         creationflags=0x08000000)
+        return {"result": "ok", "data": "윈도우 마이크 설정을 열었어요."}
+    except Exception as ex:
+        return {"result": "fail", "data": "열지 못했어요: %s" % ex}
+
+
+
+
+from sysinfo import _cpu_percent, _mem_info   # 이 컴퓨터 상태 (한 곳에서만 정의)
 
 
 @app.get("/system")
@@ -624,7 +860,46 @@ async def system():
         },
         "runtime": {"openvino": ov.get_version().split("-")[0], "port": PORT},
         "offline": True,
+        "mem": _mem_info(),
+        "cpu": _cpu_percent(),
     }
+
+
+def _quiet_disconnects(loop):
+    """브라우저가 먼저 끊었을 때 나는 잡음을 걸러 낸다.
+
+    윈도우에서 사진 스트림을 보다가 새로고침하거나 페이지를 옮기면, 서버가 아직
+    쓰는 중인 연결을 브라우저가 끊는다. 그러면 asyncio 가
+
+        ConnectionResetError: [WinError 10054] 현재 연결은 원격 호스트에 의해 ...
+        Exception in callback _ProactorBasePipeTransport._call_connection_lost()
+
+    를 통째로 찍는다. 우리 쪽이 잘못한 게 없고 이미 끝난 연결이라 할 일도 없지만,
+    교실 콘솔에서는 빨간 Traceback 이 고장처럼 보인다. 그 한 가지만 조용히 넘기고
+    나머지 오류는 그대로 보여 준다. VAPI_VERBOSE=1 이면 이것도 다 보여 준다.
+    """
+    if os.environ.get("VAPI_VERBOSE"):
+        return
+    default = loop.get_exception_handler()
+
+    def handler(lp, context):
+        ex = context.get("exception")
+        if isinstance(ex, (ConnectionResetError, ConnectionAbortedError)):
+            return                                  # 끊긴 연결 — 넘어간다
+        if default:
+            default(lp, context)
+        else:
+            lp.default_exception_handler(context)
+
+    loop.set_exception_handler(handler)
+
+
+class _QuietServer(uvicorn.Server):
+    """uvicorn 이 만든 루프에 위 거르개를 달기 위한 최소한의 껍데기."""
+
+    async def serve(self, sockets=None):
+        _quiet_disconnects(asyncio.get_running_loop())
+        await super().serve(sockets=sockets)
 
 
 if __name__ == "__main__":
@@ -634,6 +909,6 @@ if __name__ == "__main__":
     # app 을 문자열("main:app")로 주면 uvicorn 이 이 파일을 한 번 더 import 한다
     # (__main__ 과 main, 두 벌이 됨 → 시작 안내가 두 줄씩 찍히고 준비도 두 번 한다).
     # 자동 재시작을 쓰지 않으므로 객체를 그대로 넘긴다.
-    uvicorn.run(app, host=HOST, port=PORT,
-                log_level="info" if verbose else "warning",
-                access_log=verbose)
+    _QuietServer(uvicorn.Config(app, host=HOST, port=PORT,
+                                log_level="info" if verbose else "warning",
+                                access_log=verbose)).run()

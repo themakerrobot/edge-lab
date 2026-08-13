@@ -22,6 +22,7 @@ import re
 import shutil
 import threading
 import time
+import sysinfo                    # 이 컴퓨터 상태 (메모리·CPU)
 import uuid
 import zipfile
 from typing import List
@@ -884,17 +885,20 @@ async def custom_selftest(request: Request):
         except Exception as ex:
             add("face", False, ex)
 
-        # 3. 저장 폴더 쓰기 권한
-        for root in (USER_DIR, PROJECT_DIR, IMAGE_DIR):
-            try:
-                os.makedirs(root, exist_ok=True)
-                p = os.path.join(root, ".write_test")
-                with open(p, "w") as f:
-                    f.write("ok")
-                os.remove(p)
-                add("write:" + root, True, "")
-            except Exception as ex:
-                add("write:" + root, False, ex)
+        # 3. 이 컴퓨터 형편 (메모리)
+        #    쓰기 권한 점검은 뺐다 — 거의 늘 통과라 세 줄을 채울 값이 아니었고,
+        #    정작 막히면 저장할 때 오류로 바로 드러난다. 대신 수업 전에 알아야 할
+        #    것을 넣는다: 이 프로그램은 RAM 16GB 를 기준으로 만들었고, 교실 PC 는
+        #    다른 프로그램과 함께 돌기 때문에 남은 양이 부족하면 느려진다.
+        mem = sysinfo._mem_info()
+        if mem:
+            add("memory", mem["total_gb"] >= 15.0,
+                "%s / %s GB 씀 (%s%%)" % (mem["used_gb"], mem["total_gb"], mem["percent"]))
+        sysinfo._cpu_percent()                      # 첫 호출은 견줄 값이 없다(차분으로 구함)
+        time.sleep(0.2)
+        cpu = sysinfo._cpu_percent()
+        if cpu is not None:
+            add("cpu", cpu < 80, "%s%% 사용 중" % cpu)
 
         # 4. 저장된 결과물
         n_models = len(os.listdir(USER_DIR)) if os.path.isdir(USER_DIR) else 0

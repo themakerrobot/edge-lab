@@ -45,7 +45,6 @@
       --line-d:   #2e281c;
     }
     html.hc body { background-image: none; }          /* 배경 무늬 제거 */
-    html.hc .sysbar { background: #fffdf6; }
     html.hc select, html.hc input, html.hc button,
     html.hc .panel, html.hc .q, html.hc .card { border-width: 2px; }
     html.hc .panel-head { border-width: 3px; }
@@ -58,7 +57,7 @@
       overflow: hidden;
       color: var(--ink); background-color: var(--paper);
       font-family: "Gowun Dodum", "Apple SD Gothic Neo", system-ui, sans-serif;
-      line-height: 1.5; padding: 12px; gap: 10px;
+      line-height: 1.5; padding: var(--sp-2, 8px); gap: var(--sp-2, 8px);
     }
     a { color: var(--pen-blue-d); text-decoration: none; }
     a:hover { text-decoration: underline; }
@@ -83,43 +82,18 @@
     }
     .header > div {
       display: flex; flex-direction: column; justify-content: center;
-      padding: 10px 16px;
+      padding: 5px 12px;
     }
     .h-subject .eyebrow {
       font-size: 0.82rem; letter-spacing: .14em; color: var(--ink-2);
     }
     .h-subject .title {
       font-family: "Gowun Batang", serif;
-      font-size: 1.4rem; font-weight: 700; letter-spacing: .02em; line-height: 1.2;
+      font-size: 1.15rem; font-weight: 700; letter-spacing: .02em; line-height: 1.2;
     }
     .h-tools { flex-direction: row !important; align-items: center; gap: 8px; margin-left: auto; }
 
     /* ===== 시스템 상태바 (온디바이스 콘솔) — index.html 과 동일 ===== */
-    .sysbar {
-      flex: 0 0 auto;
-      display: flex; align-items: center; gap: 6px 14px; flex-wrap: wrap;
-      background: #fffdf6;
-      border: 1.5px solid var(--line-d);
-      border-radius: 3px;
-      padding: 7px 14px;
-      font-family: "Menlo", "Consolas", ui-monospace, monospace;
-      font-size: 0.82rem; letter-spacing: .02em;
-      color: var(--ink-2);
-      box-shadow: 0 1px 0 rgba(44,74,124,.15);
-      transform: rotate(-.25deg);          /* 붙여놓은 스티커 느낌 */
-      position: relative;
-    }
-    .sysbar::before {                      /* 마스킹테이프 */
-      content: "";
-      position: absolute; top: -7px; left: 26px;
-      width: 54px; height: 13px;
-      background: rgba(31, 95, 122, .38); /* 활동지 시안 */
-      border-left: 1px solid rgba(38,38,46,.12);
-      border-right: 1px solid rgba(38,38,46,.12);
-      transform: rotate(-2deg);
-    }
-    .sysbar .brand { color: var(--ink-2); }
-    .sysbar .brand b { color: var(--ink); font-weight: 700; letter-spacing: .08em; }
     .chip {
       display: inline-flex; align-items: center; gap: 6px;
       background: #fff; border: 1.5px solid var(--line); border-radius: 999px;
@@ -135,17 +109,13 @@
     .chip.on .st { color: var(--ink-2); }
     .chip.hit { border-color: var(--cyan); }
     .chip.hit .st { color: var(--cyan-d); }
-    .sysbar .sep { color: var(--line); }
-    .sysbar .meter { margin-left: auto; display: flex; align-items: center; gap: 12px; }
-    .sysbar .meter .k { color: #6b6255; }
-    .sysbar .meter .v { color: var(--pen-blue-d); font-variant-numeric: tabular-nums; font-weight: 700; }
     @media (prefers-reduced-motion: reduce) { .chip.busy .dot { animation: none; } }
 
     /* ===== 메인 2단 레이아웃 (index.html 과 동일 규약) ===== */
     .main-container {
       flex: 1 1 auto; min-height: 0;
-      display: flex; gap: 12px;
-      width: 100%; max-width: 2200px; margin: 0 auto;
+      display: flex; gap: var(--sp-2, 8px);
+      
     }
     .panel {
       flex: 1 1 0; min-width: 0;
@@ -159,18 +129,18 @@
     .panel-head {
       flex: 0 0 auto;
       display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
-      padding: 11px 16px;
+      padding: var(--sp-1, 4px) 16px;
       border-bottom: 1.5px dashed var(--line);
     }
     .panel-body {
-      flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 16px;
-      display: flex; flex-direction: column; gap: 14px;
+      flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: var(--sp-3, 12px);
+      display: flex; flex-direction: column; gap: var(--sp-3, 12px);
     }
 
     /* ===== 문항 공통 (체험툴과 동일한 시안 섹션 타이틀 + ▼) ===== */
     .q {
       position: relative; border: 2.5px solid var(--cyan); background: #fff;
-      padding: 6px 16px 6px 12px; border-radius: 2px;
+      padding: var(--sp-1, 4px) 16px var(--sp-1, 4px) 12px; border-radius: 2px;
       display: inline-flex; align-items: center; gap: 6px;
     }
     .q::after {                            /* 활동지 섹션 타이틀의 ▼ 마커 */
@@ -184,11 +154,11 @@
     }
     .qnum::after { content: "."; }
     .qtext { font-family: "Gowun Dodum", sans-serif; font-weight: 700; font-size: 1.02rem; color: var(--cyan-d); }
-    .head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+    .head { display: flex; align-items: center; gap: var(--sp-2, 6px); flex-wrap: wrap; margin-bottom: var(--sp-2, 8px); }
     .head .right { margin-left: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .hint { color: var(--ink-2); font-size: .86rem; }
     .sect { display: flex; flex-direction: column; }
-    .sect + .sect { border-top: 1px dashed var(--line); padding-top: 14px; }
+    .sect + .sect { border-top: 1px dashed var(--line); padding-top: var(--sp-2, 8px); }
 
     /* ----- 버튼 ----- */
     button, select, input[type=text], input[type=number] {
@@ -217,7 +187,7 @@
     }
     .cls.active { border-color: var(--cyan); box-shadow: 0 0 0 2px #d5f0fa inset; }
     .cls .ch {
-      display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+      display: flex; align-items: center; gap: 8px; padding: var(--sp-1, 4px) 10px;
       border-bottom: 1px dashed var(--line); background: #fafdff;
     }
     .cls .ch .name { font-weight: 700; flex: 1 1 auto; min-width: 0; }
@@ -227,7 +197,7 @@
       font-size: 0.82rem; color: #fff; background: var(--line-d);
       border-radius: 10px; padding: 1px 8px; font-weight: 700;
     }
-    .cls .cb { padding: 8px 10px; display: flex; flex-direction: column; gap: 8px; }
+    .cls .cb { padding: var(--sp-1, 4px) 10px; display: flex; flex-direction: column; gap: var(--sp-1, 4px); }
     .grid {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
       gap: 4px; max-height: 128px; overflow-y: auto;
@@ -238,7 +208,7 @@
     .cls .tools { display: flex; gap: 6px; flex-wrap: wrap; }
 
     /* ----- 웹캠 ----- */
-    .camrow { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-start; }
+    .camrow { display: flex; gap: var(--sp-3, 12px); flex-wrap: wrap; align-items: flex-start; }
     .cambox {
       flex: 0 0 320px; border: 1.5px solid var(--line-d); border-radius: var(--r);
       overflow: hidden; background: #000; position: relative;
@@ -295,12 +265,12 @@
     .sect .head .q { cursor: pointer; }
 
     /* ----- 그래프 (학습 곡선 / 특징 지도 / 확신 흐름) ----- */
-    .charts { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
+    .charts { display: flex; gap: var(--sp-2, 8px); flex-wrap: wrap; margin-top: var(--sp-2, 8px); }
     .chart { flex: 1 1 240px; border: 1.5px solid var(--line); border-radius: var(--r);
              background: #fff; padding: 8px 10px; min-width: 220px; }
     .chart .ct { font-size: 0.82rem; color: var(--ink-2); margin-bottom: 4px; font-weight: 700; }
     .chart canvas { width: 100%; display: block; }
-    .neighbors { display: flex; gap: 8px; margin-top: 10px; align-items: flex-start; flex-wrap: wrap; }
+    .neighbors { display: flex; gap: 8px; margin-top: var(--sp-2, 8px); align-items: flex-start; flex-wrap: wrap; }
     .neighbors .nlabel { font-size: 0.82rem; color: var(--ink-2); font-weight: 700; flex: 0 0 100%; }
     .neighbors figure { border: 1.5px solid var(--line); border-radius: 4px; overflow: hidden;
                         background: #fff; width: 76px; }
@@ -311,7 +281,7 @@
     .privacy .lock { color: var(--cyan-d); font-size: 1rem; }
 
     /* ----- 파이보 말풍선 ----- */
-    .say { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+    .say { display: flex; align-items: center; gap: 10px; margin-top: var(--sp-2, 8px); }
     .say .pibo {
       width: 46px; height: 46px; flex: 0 0 auto; background: url('/assets/pibo-idea.png') center/contain no-repeat;
     }
@@ -343,7 +313,7 @@
     .score .row.bad .pb > i { background: var(--pen-red); }
     .score .sc { flex: 0 0 60px; font-size: .82rem; color: var(--ink-2); }
     .wrong { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
-             gap: 6px; margin-top: 8px; }
+             gap: 6px; margin-top: var(--sp-1, 4px); }
     .wrong figure { border: 1.5px solid var(--pen-red); border-radius: 4px; overflow: hidden; background: #fff; }
     .wrong img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
     .wrong figcaption { font-size: 0.82rem; text-align: center; padding: 2px 1px; line-height: 1.25; }
@@ -353,7 +323,7 @@
     .lab { background: #fffdf6; border: 1.5px dashed var(--line-d); border-radius: var(--r); padding: 10px 12px; }
     .lab ul { margin: 6px 0 0 18px; font-size: .88rem; color: var(--ink-2); }
     .lab li { margin: 2px 0; }
-    .lab .trophy { margin-top: 8px; font-weight: 700; color: var(--pen-red); }
+    .lab .trophy { margin-top: var(--sp-1, 4px); font-weight: 700; color: var(--pen-red); }
     .modeSw { display: inline-flex; border: 1.5px solid var(--line); border-radius: 999px; overflow: hidden; }
     .modeSw button {
       border: none; border-radius: 0; padding: 5px 12px; font-size: .85rem;
@@ -365,7 +335,6 @@
     #printArea { display: none; }
     @media print {
       body { height: auto; overflow: visible; padding: 0; background: #fff; }
-      .header, .sysbar, .main-container { display: none !important; }
       #printArea { display: block; padding: 16px; font-size: 12px; }
       #printArea h1 { font-family: "Gowun Batang", serif; font-size: 18px; margin-bottom: 4px; }
       #printArea table { width: 100%; border-collapse: collapse; margin: 10px 0; }
@@ -383,36 +352,19 @@
       .h-tools { margin-left: 0; }
     }
   </style>
+  <link rel="stylesheet" href="/lib/ui.css">
 </head>
-<body>
+<body data-density="explore" data-sys="fps">
   <!-- 시험지 머리표 -->
   <div class="header">
-    <div class="h-subject" style="flex-direction:row;align-items:center;gap:12px;">
-      <img src="/assets/pibo-prof.png" alt="" style="height:44px;flex:0 0 auto;">
-      <span style="display:flex;flex-direction:column;">
-      <span class="eyebrow" id="txtEyebrow">인공지능 · 컴퓨터 비전 · 인터넷 없이 내 컴퓨터에서 실행돼요</span>
-      <span class="title"><span id="txtTitle">가르치기</span> <span style="font-size:.85rem;color:var(--pen-red);vertical-align:middle;">(On-Device)</span></span>
-    </span>
+    <div class="h-subject" style="flex-direction:row;align-items:center;gap:10px;">
+      <img src="/assets/pibo-prof.png" alt="" style="height:30px;flex:0 0 auto;">
+      <span class="title" title="인터넷 없이 내 컴퓨터에서 실행돼요"><span id="txtTitle">가르치기</span> <span class="od" style="font-size:.78rem;color:var(--pen-red);vertical-align:middle;">(On-Device)</span></span>
     </div>
     <div class="h-tools">
-      <a href="/" id="homeLink" style="display:inline-flex;align-items:center;justify-content:center;background:#fff;border:1.5px solid var(--line-d);color:var(--ink);width:38px;height:38px;border-radius:var(--r);text-decoration:none;font-size:1.15rem;line-height:1;">&#8962;</a>
+      <a href="/" id="homeLink" style="display:inline-flex;align-items:center;justify-content:center;background:#fff;border:1.5px solid var(--line-d);color:var(--ink);width:34px;height:34px;border-radius:var(--r);text-decoration:none;font-size:1.15rem;line-height:1;">&#8962;</a>
       <button id="langButton" title="한국어 / English" style="min-width:46px;">EN</button>
     </div>
-  </div>
-
-  <!-- 시스템 상태바 -->
-  <div class="sysbar" id="sysbar">
-    <span class="brand"><b>VAPI-OD</b> · on-device vision runtime</span>
-    <span class="sep">|</span>
-    <span class="chip" id="chipCPU"><span class="dot"></span>CPU<span class="st" id="stCPU"></span></span>
-    <span class="chip" id="chipGPU"><span class="dot"></span>GPU<span class="st" id="stGPU"></span></span>
-    <span class="chip" id="chipNPU"><span class="dot"></span>NPU<span class="st" id="stNPU"></span></span>
-    <span class="meter">
-      <span><span class="k">last</span> <span class="v" id="sysElapsed">--</span></span>
-      <span id="fpsBox" style="display:none;"><span class="k">fps</span> <span class="v" id="sysFps">--</span></span>
-      <span><span class="k">exec</span> <span class="v" id="sysDevice">--</span></span>
-      <span><span class="k">runs</span> <span class="v" id="sysRuns">0</span></span>
-    </span>
   </div>
 
   <div class="main-container">
@@ -456,6 +408,11 @@
           <div class="camrow">
             <div class="cambox" id="cambox">
               <video id="cam" autoplay muted playsinline></video>
+              <!-- 웹캠이 없거나 막혔을 때 이 자리에 이유를 적는다 (팝업 대신) -->
+              <div id="camMsg" style="position:absolute;inset:0;padding:14px;display:none;
+                   align-items:center;justify-content:center;text-align:center;
+                   font-size:.9rem;line-height:1.6;color:var(--ink-2);
+                   background:var(--paper,#faf7ef);"></div>
               <span class="badge" id="recBadge">● REC</span>
             <canvas id="overlay"></canvas>
             <span class="pose" id="poseBadge">손 없음</span>
@@ -685,6 +642,10 @@
       sayLow: "음... <b>%1</b>인 것 같은데 확신이 낮아요 (%2%). 사진을 더 모아 보세요.",
       savedOk: "저장했어요. [써보기]에서 바로 쓸 수 있어요.",
       aNoCam: "웹캠을 열 수 없어요. 카메라 권한을 확인해 주세요.",
+      camNone: "이 컴퓨터에는 웹캠이 없어요.",
+      camDenied: "카메라를 쓸 수 없게 막혀 있어요.",
+      camBusy: "다른 프로그램이 카메라를 쓰고 있어요.",
+      camAlt: "괜찮아요 — 아래 [사진 넣기] 로 사진을 골라도 학습할 수 있어요.",
       aNeedTarget: "먼저 모을 클래스를 골라 주세요.",
       aNeedTitle: "모델 이름을 적어 주세요.",
       aServer: "서버 오류: ",
@@ -778,6 +739,10 @@
       sayLow: "Hmm, maybe <b>%1</b>, but I'm not sure (%2%). Try collecting more photos.",
       savedOk: "Saved. You can use it in [Use] now.",
       aNoCam: "Can't open the webcam. Check the camera permission.",
+      camNone: "This computer has no webcam.",
+      camDenied: "Camera access is blocked.",
+      camBusy: "Another program is using the camera.",
+      camAlt: "That's fine - you can still use [Add photos] below.",
       aNeedTarget: "Pick a class to collect into first.",
       aNeedTitle: "Please enter a model name.",
       aServer: "Server error: ",
@@ -801,10 +766,15 @@
   let busy = false;
 
   /* ---------------- 상태바 (체험툴·블록툴과 동일 규약) ---------------- */
+  /* 상태 칸은 lib/sysbar.js 가 오버레이에 만든다 — 이 코드가 도는 시점에는 아직
+     없을 수 있으므로 미리 잡아 두지 않고, 쓸 때마다 찾는다(없으면 조용히 넘어간다). */
+  const pick = id => $(id) || { set textContent(v) {}, style: {} };
   const sysEl = {
-    cpu: $("chipCPU"), gpu: $("chipGPU"), npu: $("chipNPU"),
-    last: $("sysElapsed"), exec: $("sysDevice"), calls: $("sysRuns"),
-    fps: $("sysFps"), fpsBox: $("fpsBox"),
+    get last()   { return pick("sysElapsed"); },
+    get exec()   { return pick("sysDevice");  },
+    get calls()  { return pick("sysRuns");    },
+    get fps()    { return pick("sysFps");     },
+    get fpsBox() { return pick("fpsBox");     },
   };
   const DEV_STATS = { CPU: { n: 0 }, GPU: { n: 0 }, NPU: { n: 0 } };
   let FEAT_DEV = "";                       // 백본이 실제로 도는 디바이스
@@ -1070,10 +1040,34 @@
     try {
       stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
       cam.srcObject = stream;
+      hideCamMsg();
       $("txtCamToggle").textContent = t("camOff");
       if (SKELETON.includes(FEAT_KIND)) poseWatch();
-    } catch (e) { alert(t("aNoCam")); }
+    } catch (e) {
+      /* 웹캠은 없어도 된다 — 사진 파일이나 압축파일로도 학습할 수 있다.
+         그래서 팝업으로 막아 세우지 않고, 카메라 자리에 이유만 적어 둔다.
+         (예전에는 켤 때마다 경고창이 떠서, 카메라 없는 PC 에서는 매번 눌러 없애야 했다.) */
+      showCamMsg(e);
+    }
   }
+  /* 카메라 자리에 이유를 적는다. 왜 안 되는지와, 그래도 할 수 있는 일을 함께. */
+  function showCamMsg(err) {
+    const box = $("camMsg");
+    if (!box) return;
+    const name = (err && err.name) || "";
+    const why = name === "NotAllowedError" ? t("camDenied")
+              : name === "NotReadableError" ? t("camBusy")
+              : t("camNone");
+    box.textContent = why + " " + t("camAlt");
+    box.style.display = "flex";
+    const tg = $("txtCamToggle");
+    if (tg) tg.textContent = t("camOn");
+  }
+  function hideCamMsg() {
+    const box = $("camMsg");
+    if (box) box.style.display = "none";
+  }
+
   function camOff() {
     if (stream) stream.getTracks().forEach(tr => tr.stop());
     stream = null; cam.srcObject = null;
@@ -2099,13 +2093,13 @@
     const set = (id, v) => { const el = $(id); if (el) el.textContent = v; };
     const html = (id, v) => { const el = $(id); if (el) el.innerHTML = v; };
     document.title = t("titleTag");
-    set("txtTitle", t("title")); set("txtEyebrow", t("eyebrow"));
+    set("txtTitle", t("title"));
     const hl = $("homeLink");
     if (hl) { hl.title = t("homeLink"); hl.setAttribute("aria-label", t("homeLink")); }
     set("txtModeImage", t("modeImage")); set("txtModePose", t("modePose"));
     set("txtModeFace", t("modeFace"));
     set("txtModeUp", t("modeUp")); set("txtModeBody", t("modeBody"));
-    set("txtHoldout", t("holdout")); set("txtQ6", t("q6")); set("txtQ7", t("q7"));
+    set("txtHoldout", t("holdout")); set("txtQ7", t("q7"));
     set("txtPrint", t("print"));
     set("txtProjSave", t("projSave2")); set("txtProjFile", t("projFile"));
     set("txtProjDown", t("projDown")); set("txtProjListT", t("projListT"));
@@ -2143,5 +2137,6 @@
   }
   </script>
   <script src="/lib/usage.js" data-page="train"></script>
+  <script src="/lib/sysbar.js"></script>
 </body>
 </html>

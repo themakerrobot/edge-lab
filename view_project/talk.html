@@ -29,21 +29,24 @@
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
       display:flex; flex-direction:column; height:100dvh; overflow:hidden;
-      color:var(--ink); background:var(--paper); padding:12px; gap:10px;
+      color:var(--ink); background:var(--paper); padding: var(--sp-2, 8px); gap: var(--sp-2, 8px);
       font-family:"Gowun Dodum","Apple SD Gothic Neo",system-ui,sans-serif; line-height:1.55;
     }
     a { color:var(--pen-blue-d); text-decoration:none; }
+    /* 다른 화면과 같은 규격 — 이 페이지만 진한 테두리(--line-d)에 굵은 글씨를 써서
+       유독 도드라져 보였다. 테두리는 연한 --line, 글씨는 보통 굵기가 기본이다. */
     button, select, input, textarea {
-      font-family:inherit; font-size:.92rem; color:var(--ink); background:#fff;
-      border:1.5px solid var(--line-d); border-radius:var(--r); padding:7px 12px;
+      font-family:inherit; font-size:.95rem; color:var(--ink); background:#fff;
+      border:1.5px solid var(--line); border-radius:var(--r); padding:7px 12px;
     }
-    button { cursor:pointer; font-weight:600; }
+    button { cursor:pointer; }
     button:disabled { opacity:.45; cursor:default; }
     button.primary { background:var(--pen-blue); color:#fff; border-color:var(--pen-blue-d); }
     button.sm { padding:4px 9px; font-size:.82rem; }
     button.danger { color:var(--pen-red); }
 
     .header { display:flex; align-items:center; gap:12px; flex:0 0 auto; }
+    .header > div { display:flex; align-items:center; padding:5px 12px; }
     .header .title { font-weight:700; font-size:1.15rem; }
     .header .eyebrow { font-size:.8rem; color:var(--ink-2); }
     .h-tools { margin-left:auto; display:flex; gap:8px; align-items:center; }
@@ -53,25 +56,25 @@
       padding:8px 13px; border-radius:var(--r); font-size:.92rem;
     }
 
-    .main { flex:1 1 auto; min-height:0; display:flex; gap:12px; }
+    .main { flex:1 1 auto; min-height:0; display:flex; gap: var(--sp-2, 8px); }
     .panel {
       background:var(--box); border:1.5px solid var(--line); border-radius:var(--r);
       display:flex; flex-direction:column; overflow:hidden;
     }
     .panel > .head {
       flex:0 0 auto; display:flex; align-items:center; gap:9px; flex-wrap:wrap;
-      padding:10px 14px; border-bottom:1.5px dashed var(--line);
+      padding:var(--sp-1, 4px) 14px; border-bottom:1.5px dashed var(--line);
     }
     .q { position:relative; border:2.5px solid var(--cyan); background:#fff;
-         padding:5px 14px 5px 11px; border-radius:2px; display:inline-flex;
+         padding: var(--sp-1, 4px) 14px var(--sp-1, 4px) 11px; border-radius:2px; display:inline-flex;
          align-items:center; gap:6px; font-weight:700; color:var(--cyan-d); }
     .side { flex:0 0 300px; }
     .talk { flex:1 1 auto; min-width:0; }
-    .body { flex:1 1 auto; min-height:0; overflow-y:auto; padding:14px; }
+    .body { flex:1 1 auto; min-height:0; overflow-y:auto; padding: var(--sp-2, 8px); }
     .body > * { flex:0 0 auto; }
 
     /* ----- 말풍선 ----- */
-    .msg { display:flex; gap:9px; margin-bottom:14px; align-items:flex-start; }
+    .msg { display:flex; gap: var(--sp-1, 4px); margin-bottom: var(--sp-3, 12px); align-items:flex-start; }
     .msg.me { flex-direction:row-reverse; }
     .who { flex:0 0 auto; width:34px; display:flex; align-items:center; justify-content:center; }
     .who img { width:30px; height:30px; object-fit:contain; }
@@ -82,7 +85,7 @@
     }
     .msg.me .bubble { background:#eef4f7; border-color:var(--cyan); }
     .bubble img { max-width:220px; border-radius:8px; display:block; margin-bottom:7px; }
-    .bubble .from { margin-top:8px; font-size:.8rem; color:var(--ink-2);
+    .bubble .from { margin-top: var(--sp-1, 4px); font-size:.8rem; color:var(--ink-2);
                     border-top:1px dashed var(--line); padding-top:6px; }
     .bubble .from summary { cursor:pointer; font-weight:700; color:var(--cyan-d);
                             user-select:none; list-style:none; }
@@ -98,7 +101,7 @@
     .ask textarea { flex:1 1 auto; resize:none; height:44px; max-height:120px; line-height:1.4; }
 
     /* ----- 옆 칸 ----- */
-    .side .body { display:flex; flex-direction:column; gap:14px; }
+    .side .body { display:flex; flex-direction:column; gap:var(--sp-3, 12px); }
     .camwrap { border:1.5px solid var(--line-d); border-radius:var(--r);
                overflow:hidden; background:#000; }
     .camwrap video { width:100%; display:block; aspect-ratio:4/3; object-fit:cover; }
@@ -127,16 +130,16 @@
       .talk .body { min-height:50vh; }
     }
   </style>
+  <link rel="stylesheet" href="/lib/ui.css">
 </head>
-<body>
+<body data-density="explore">
   <div class="header">
-    <img src="/assets/pibo-hello.png" alt="" style="height:42px;">
-    <span style="display:flex;flex-direction:column;">
-      <span class="eyebrow" id="txtEyebrow">AI와 이야기해요 · 인터넷 없이 내 컴퓨터에서</span>
-      <span class="title" id="txtTitle">대화</span>
-    </span>
+    <div class="h-subject" style="flex-direction:row;align-items:center;gap:10px;">
+      <img src="/assets/pibo-prof.png" alt="" style="height:30px;flex:0 0 auto;">
+      <span class="title" title="인터넷 없이 내 컴퓨터에서 실행돼요"><span id="txtTitle">대화</span> <span class="od" style="font-size:.78rem;color:var(--pen-red);vertical-align:middle;">(On-Device)</span></span>
+    </div>
     <div class="h-tools">
-      <a href="/" id="homeLink" title="홈">&#8962; <span id="txtHome">홈</span></a>
+      <a href="/" id="homeLink" title="홈" style="display:inline-flex;align-items:center;justify-content:center;background:#fff;border:1.5px solid var(--line-d);color:var(--ink);width:34px;height:34px;border-radius:var(--r);text-decoration:none;font-size:1.15rem;line-height:1;">&#8962;</a>
       <button id="langButton" title="한국어 / English" style="min-width:46px;">EN</button>
     </div>
   </div>
@@ -195,7 +198,41 @@
           </div>
         </div>
 
-        <div style="border-top:1px dashed var(--line);padding-top:12px;">
+        <div style="border-top:1px dashed var(--line);padding-top:var(--sp-2, 8px);">
+          <div class="row">
+            <span class="lbl" id="txtStyleTitle">말투</span>
+            <select id="styleSel" style="flex:1 1 auto;min-width:0;">
+              <option value="" selected>그냥</option>
+            </select>
+          </div>
+          <input id="styleText" maxlength="200" placeholder="직접 적어도 돼요"
+                 style="width:100%;box-sizing:border-box;margin-top:var(--sp-1, 4px);
+                        font-family:inherit;font-size:.86rem;padding:5px 8px;
+                        border:1.5px solid var(--line);border-radius:var(--r);background:#fff;">
+          <div class="hint" id="txtStyleHint" style="margin:var(--sp-1, 4px) 0 0;">
+            고르면 아래 칸에 적혀요. 고쳐 써도 되고, 처음부터 직접 적어도 돼요.
+          </div>
+        </div>
+
+        <div style="border-top:1px dashed var(--line);padding-top:var(--sp-2, 8px);">
+          <div class="row">
+            <span class="lbl" id="txtMemTitle">앞말 기억</span>
+            <select id="memSel">
+              <option value="0" selected>안 함</option>
+              <option value="1">1번</option>
+              <option value="2">2번</option>
+              <option value="3">3번</option>
+              <option value="5">5번</option>
+              <option value="99">모두</option>
+            </select>
+          </div>
+          <div class="hint" id="txtMemHint" style="margin:var(--sp-1, 4px) 0 0;">
+            앞서 주고받은 말을 함께 보내요. "그럼 왜?" 처럼 이어서 물을 때 쓰세요.
+            사진이나 자료로 물을 때는 쓰지 않아요.
+          </div>
+        </div>
+
+        <div style="border-top:1px dashed var(--line);padding-top:var(--sp-2, 8px);">
           <div class="row">
             <span class="lbl" id="txtDbTitle">내 자료</span>
             <button class="sm" id="dbAdd"><span id="txtDbAdd">자료 넣기</span></button>
@@ -249,6 +286,19 @@
       eyebrow:"AI와 이야기해요 · 인터넷 없이 내 컴퓨터에서",
       home:"홈", langBtn:"EN", q1:"이야기해요", q2:"사진 · 자료",
       send:"보내기", newTalk:"새 대화",
+      memTitle:"앞말 기억", memOff:"안 함", memN:"번", memAll:"모두",
+      styleTitle:"말투", styleTyped:"직접 적어도 돼요",
+      styleHint:"고르면 아래 칸에 적혀요. 고쳐 써도 되고, 처음부터 직접 적어도 돼요.",
+      st_none:"그냥",
+      st_kind:"다정하게",   st_kind_v:"다정하고 따뜻하게 말해요. 칭찬을 한 마디 곁들여요.",
+      st_funny:"재미있게",  st_funny_v:"장난스럽고 재미있게 말해요.",
+      st_teacher:"선생님처럼", st_teacher_v:"선생님처럼 차근차근 설명해요. 어려운 말은 쉬운 말로 바꿔 줘요.",
+      st_robot:"로봇처럼",  st_robot_v:"로봇처럼 짧고 딱딱하게 말해요.",
+      st_pirate:"해적처럼", st_pirate_v:"해적처럼 씩씩하게 말해요.",
+      st_quiz:"퀴즈로",     st_quiz_v:"답을 알려 준 뒤 관련된 짧은 퀴즈를 하나 내요.",
+      st_short:"아주 짧게", st_short_v:"한 문장으로만 답해요.",
+      memHint:"앞서 주고받은 말을 함께 보내요. \"그럼 왜?\" 처럼 이어서 물을 때 쓰세요. 사진이나 자료로 물을 때는 쓰지 않아요.",
+      meLabel:"나", aiLabel:"AI",
       camOn:"사진 켜기", camOff:"사진 끄기", camTitle:"사진", dbTitle:"내 자료",
       sndTitle:"소리", tts:"답을 읽어주기", voice:"목소리",
       voiceSample:"안녕! 나는 이 목소리로 말해요.",
@@ -279,6 +329,19 @@
       eyebrow:"Talk with the AI · runs on your computer, no internet",
       home:"Home", langBtn:"한", q1:"Let's talk", q2:"Photo · Material",
       send:"Send", newTalk:"New talk",
+      memTitle:"Remember", memOff:"Off", memN:" turns", memAll:"All",
+      styleTitle:"Style", styleTyped:"or type your own",
+      styleHint:"Picking one fills the box below. Edit it, or write your own from scratch.",
+      st_none:"Plain",
+      st_kind:"Kind",      st_kind_v:"Speak warmly and kindly. Add a short word of praise.",
+      st_funny:"Playful",  st_funny_v:"Speak in a playful, funny way.",
+      st_teacher:"Teacher", st_teacher_v:"Explain step by step like a teacher. Swap hard words for easy ones.",
+      st_robot:"Robot",    st_robot_v:"Speak like a robot, short and flat.",
+      st_pirate:"Pirate",  st_pirate_v:"Speak like a cheerful pirate.",
+      st_quiz:"Quiz",      st_quiz_v:"Answer, then ask one short related quiz question.",
+      st_short:"Very short", st_short_v:"Answer in one sentence only.",
+      memHint:"Sends what you already said along with your question. Handy for follow-ups like \"why is that?\". Not used with a photo or a document.",
+      meLabel:"Me", aiLabel:"AI",
       camOn:"Turn photo on", camOff:"Turn photo off", camTitle:"Photo", dbTitle:"My material",
       sndTitle:"Sound", tts:"Read the answer aloud", voice:"Voice",
       voiceSample:"Hi! This is how I sound.",
@@ -313,12 +376,105 @@
   let pickedDb = "";
   try { pickedDb = localStorage.getItem("vapi-db") || ""; } catch (e) {}
   function topK() { return parseInt($("topkSel").value, 10) || 4; }
+
+  /* ---------------- 앞말 기억 ----------------
+     기본은 0(안 함) — 한 번 묻고 한 번 답하는 지금 방식 그대로다.
+     고르면 그만큼의 주고받은 말을 함께 보낸다. 기록은 이 화면만 들고 있고
+     서버에는 남지 않는다(교실에서 학생끼리 섞이지 않게). */
+  const turns = [];                       // [{q, a}, ...]
+  /* ---------------- 말투 (성격) ----------------
+     고른 값이나 직접 적은 글을 질문과 함께 보낸다. 매번 같은 크기로 한 번 붙으므로
+     대화가 길어져도 늘지 않는다. 작은 모델이라 한두 문장이 가장 잘 먹는다. */
+  const STYLES = () => [
+    { v: "", k: "st_none" },
+    { v: T("st_kind_v"), k: "st_kind" },
+    { v: T("st_funny_v"), k: "st_funny" },
+    { v: T("st_teacher_v"), k: "st_teacher" },
+    { v: T("st_robot_v"), k: "st_robot" },
+    { v: T("st_pirate_v"), k: "st_pirate" },
+    { v: T("st_quiz_v"), k: "st_quiz" },
+    { v: T("st_short_v"), k: "st_short" },
+  ];
+  /* 고른 말투는 "키"로 들고 있는다(문장이 아니라).
+     언어를 바꾸면 문장이 통째로 달라지므로, 문장을 기억하면 짝을 잃는다. */
+  let styleKey = "";          // 예: "st_pirate". 손으로 고쳐 쓰면 ""
+  function paintStyles() {
+    const sel = $("styleSel");
+    sel.innerHTML = "";
+    STYLES().forEach(s2 => {
+      const o = document.createElement("option");
+      o.value = s2.v; o.textContent = T(s2.k);
+      sel.appendChild(o);
+    });
+    if (styleKey) {                          // 고른 말투는 그 언어의 문장으로 바꿔 준다
+      const now = T(styleKey + "_v");
+      sel.value = now;
+      $("styleText").value = now;
+      try { localStorage.setItem("vapi-style-text", now); } catch (e) {}
+    } else {
+      sel.value = "";
+    }
+  }
+  /* 고른 말투는 아래 칸에 글로 써 넣는다 — 무엇이 보내지는지 눈에 보이고,
+     마음에 안 들면 그 자리에서 고칠 수 있다. 실제로 보내는 것은 늘 이 칸의 글이다. */
+  function personaText() { return $("styleText").value.trim(); }
+
+  function memN() { return parseInt($("memSel").value, 10) || 0; }
+  function paintMem() {                     // 드롭다운 글자도 언어를 따른다
+    const sel = $("memSel");
+    Array.prototype.forEach.call(sel.options, o => {
+      o.textContent = (o.value === "0") ? T("memOff")
+                    : (o.value === "99") ? T("memAll")
+                    : (o.value + T("memN"));
+    });
+  }
+  function historyText() {
+    const n = memN();
+    if (!n) return "";
+    return turns.slice(-n)
+      .map(t => T("meLabel") + ": " + t.q + "\n" + T("aiLabel") + ": " + t.a)
+      .join("\n");
+  }
   try {
     const k = localStorage.getItem("vapi-topk");
     if (k) $("topkSel").value = k;
   } catch (e) {}
   $("topkSel").addEventListener("change", function () {
     try { localStorage.setItem("vapi-topk", this.value); } catch (e) {}
+  });
+  try {
+    const mv = localStorage.getItem("vapi-mem");
+    if (mv) $("memSel").value = mv;
+  } catch (e) {}
+  $("memSel").addEventListener("change", function () {
+    try { localStorage.setItem("vapi-mem", this.value); } catch (e) {}
+  });
+  paintStyles();
+  try {
+    styleKey = localStorage.getItem("vapi-style-key") || "";
+    const st = localStorage.getItem("vapi-style-text") || "";
+    $("styleText").value = st;
+    $("styleSel").value = styleKey ? T(styleKey + "_v") : "";
+  } catch (e) {}
+  $("styleSel").addEventListener("change", function () {
+    $("styleText").value = this.value;          // 고른 문장을 칸에 써 넣는다
+    const hit = STYLES().find(x => x.v && x.v === this.value);
+    styleKey = hit ? hit.k : "";
+    try {
+      localStorage.setItem("vapi-style-key", styleKey);
+      localStorage.setItem("vapi-style-text", this.value);
+    } catch (e) {}
+  });
+  $("styleText").addEventListener("input", function () {
+    const sel = $("styleSel");
+    if (this.value.trim() !== sel.value) {                 // 고른 것과 달라졌다
+      sel.value = "";
+      styleKey = "";                                       // 이제 내가 쓴 글이다
+    }
+    try {
+      localStorage.setItem("vapi-style-text", this.value);
+      localStorage.setItem("vapi-style-key", styleKey);
+    } catch (e) {}
   });
 
   function pickDb(slug) {
@@ -637,8 +793,13 @@
           { db: pickedDb, prompt: text, lang: LANG, top_k: topK() }),
           { method: "POST" })).json();
       } else {
+        /* 앞말은 본문으로 보낸다 — 한글은 주소에 넣으면 글자당 9바이트로 부풀어
+           몇 턴만 담아도 주소 길이 한계를 넘긴다. */
         j = await (await fetch("/chat/ask?" + new URLSearchParams({ prompt: text, lang: LANG }),
-                               { method: "POST" })).json();
+                               { method: "POST",
+                                 headers: { "Content-Type": "application/json" },
+                                 body: JSON.stringify({ history: historyText(),
+                                                       persona: personaText() }) })).json();
       }
       if (j.result !== "ok") throw new Error(j.data);
       const answer = j.data.answer || "";
@@ -651,6 +812,8 @@
                 "</details>";
       }
       box.innerHTML = html;
+      turns.push({ q: text, a: answer });
+      if (turns.length > 20) turns.shift();       // 화면 기록이 한없이 늘지 않게
       speak(answer);
     } catch (e) {
       box.innerHTML = esc(T("err") + " (" + (e.message || e) + ")");
@@ -664,7 +827,15 @@
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
   });
   $("newTalk").addEventListener("click", () => {
-    $("log").innerHTML = '<div class="empty" id="txtEmpty">' + T("empty") + "</div>";
+    /* 안내문은 하나뿐이어야 한다 — 예전에는 새 대화 때마다 같은 id 를 또 만들어서
+       언어를 바꾸면 둘 중 하나만 바뀌었다. */
+    $("log").innerHTML = "";
+    var _empty = document.createElement("div");
+    _empty.className = "empty";
+    _empty.id = "txtEmpty";
+    _empty.textContent = T("empty");
+    $("log").appendChild(_empty);
+    turns.length = 0;                 // 앞말 기억도 함께 비운다 — 새 대화니까
     stopSpeak();
   });
 
@@ -672,13 +843,18 @@
   (function applyStatic() {
     const set = (id, v) => { const el = $(id); if (el) el.textContent = v; };
     document.title = T("titleTag");
-    set("txtTitle", T("title")); set("txtEyebrow", T("eyebrow"));
-    set("txtHome", T("home")); set("langButton", T("langBtn"));
+    set("txtTitle", T("title"));
+    set("langButton", T("langBtn"));
     set("txtQ1", T("q1")); set("txtQ2", T("q2"));
     set("txtSend", T("send")); set("txtNew", T("newTalk"));
     set("txtTts", T("tts")); set("txtSndTitle", T("sndTitle")); set("txtVoice", T("voice"));
     set("txtCamOn", camStream ? T("camOff") : T("camOn"));
     set("txtCamTitle", T("camTitle")); set("txtCamHint", T("camHint"));
+    set("txtStyleTitle", T("styleTitle")); set("txtStyleHint", T("styleHint"));
+    $("styleText").placeholder = T("styleTyped");
+    paintStyles();
+    set("txtMemTitle", T("memTitle")); set("txtMemHint", T("memHint"));
+    paintMem();
     set("txtDbTitle", T("dbTitle")); set("txtDbHint", T("dbHint"));
     set("txtDbAdd", T("dbAdd")); set("txtDbSample", T("dbSample"));
     set("txtTopk", T("topk")); set("txtDbModalTitle", T("dbModalTitle"));
@@ -700,5 +876,6 @@
   $("q").focus();
 </script>
 <script src="/lib/usage.js" data-page="talk"></script>
+  <script src="/lib/sysbar.js"></script>
 </body>
 </html>

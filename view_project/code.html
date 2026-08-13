@@ -47,7 +47,6 @@
       --line-d:   #2e281c;
     }
     html.hc body { background-image: none; }          /* 배경 무늬 제거 */
-    html.hc .sysbar { background: #fffdf6; }
     html.hc select, html.hc input, html.hc button,
     html.hc .panel, html.hc .q, html.hc .card { border-width: 2px; }
     html.hc .panel-head { border-width: 3px; }
@@ -57,7 +56,7 @@
       display: flex; flex-direction: column; height: 100dvh; overflow: hidden;
       color: var(--ink); background-color: var(--paper);
       font-family: "Gowun Dodum", "Apple SD Gothic Neo", system-ui, sans-serif;
-      line-height: 1.5; padding: 12px; gap: 10px;
+      line-height: 1.5; padding: var(--sp-2, 8px); gap: var(--sp-2, 8px);
     }
     a { color: var(--pen-blue-d); text-decoration: none; }
     select, input, button {
@@ -76,28 +75,12 @@
       background: var(--box); border: 2px solid var(--line-d); border-radius: 3px;
       box-shadow: 0 1px 0 rgba(44,74,124,.18);
     }
-    .header > div { display: flex; flex-direction: column; justify-content: center; padding: 10px 16px; }
+    .header > div { display: flex; flex-direction: column; justify-content: center; padding: 5px 12px; }
     .eyebrow { font-size: 0.82rem; color: var(--ink-2); letter-spacing: .04em; }
-    .title { font-family: "Gowun Dodum", sans-serif; font-weight: 700; font-size: 1.35rem; color: var(--ink); }
+    .title { font-family: "Gowun Dodum", sans-serif; font-weight: 700; font-size: 1.15rem; color: var(--ink); }
     .h-tools { flex-direction: row !important; align-items: center !important; gap: 8px; margin-left: auto; }
 
     /* ===== 시스템 상태바 ===== */
-    .sysbar {
-      flex: 0 0 auto; display: flex; align-items: center; gap: 6px 14px; flex-wrap: wrap;
-      background: #fffdf6; border: 1.5px solid var(--line-d); border-radius: 3px;
-      padding: 7px 14px;
-      font-family: "Menlo", "Consolas", ui-monospace, monospace;
-      font-size: 0.82rem; letter-spacing: .02em; color: var(--ink-2);
-      box-shadow: 0 1px 0 rgba(44,74,124,.15);
-      transform: rotate(-.25deg); position: relative;
-    }
-    .sysbar::before {
-      content: ""; position: absolute; top: -7px; left: 26px; width: 54px; height: 13px;
-      background: rgba(31, 95, 122,.38);
-      border-left: 1px solid rgba(38,38,46,.12); border-right: 1px solid rgba(38,38,46,.12);
-      transform: rotate(-2deg);
-    }
-    .sysbar .brand b { color: var(--ink); font-weight: 700; letter-spacing: .08em; }
     .chip {
       display: inline-flex; align-items: center; gap: 6px;
       background: #fff; border: 1.5px solid var(--line); border-radius: 999px;
@@ -107,11 +90,11 @@
     .chip.on { color: var(--ink); border-color: var(--ink); }
     .chip.on .dot { background: var(--cyan); box-shadow: 0 0 5px rgba(31, 95, 122,.6); }
     .sep { color: var(--line-d); opacity: .5; }
-    .meter { margin-left: auto; display: flex; gap: 14px; }
+    .meter { margin-left: auto; display: flex; gap: var(--sp-3, 12px); }
     .meter .k { color: #6b6255; } .meter .v { color: var(--ink); font-weight: 700; }
 
     /* ===== 본문 2단 ===== */
-    .main { flex: 1 1 auto; min-height: 0; display: flex; gap: 10px; }
+    .main { flex: 1 1 auto; min-height: 0; display: flex; gap: var(--sp-2, 8px); }
     .panel {
       display: flex; flex-direction: column; min-width: 0;
       background: var(--box); border: 1.5px solid var(--line); border-radius: var(--r); overflow: hidden;
@@ -120,7 +103,7 @@
     .out-panel { flex: 2 1 0; min-width: 320px; }
     .panel-head {
       flex: 0 0 auto; display: flex; align-items: center; gap: 9px;
-      margin: 12px 12px 16px; padding: 7px 14px;
+      margin: var(--sp-1, 4px) 10px var(--sp-1, 4px); padding: var(--sp-1, 4px) 12px;
       border: 2.5px solid var(--cyan); border-radius: 2px;
       font-family: "Gowun Dodum", sans-serif; font-weight: 700; color: var(--cyan-d);
       position: relative; align-self: flex-start;
@@ -130,7 +113,7 @@
       border: 7px solid transparent; border-top: 9px solid var(--cyan);
     }
     .ph-row { display: flex; align-items: center; flex-wrap: wrap; }
-    .ph-tools { margin: 12px 12px 16px auto; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .ph-tools { margin: var(--sp-1, 4px) 12px var(--sp-1, 4px) auto; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
     .ph-tools button { padding: 7px 12px; font-size: .9rem; }
     #guideButton.on {
       background: var(--cyan); border-color: var(--cyan-d); color: #fff; font-weight: 700;
@@ -204,7 +187,7 @@
                margin: 10px 0 5px; letter-spacing: .04em; }
     .h-more { margin: 0 12px 12px; font-size: .82rem; }
     .h-more summary { cursor: pointer; color: var(--pen-blue-d); }
-    .h-more table { border-collapse: collapse; width: 100%; margin-top: 8px; font-size: 0.82rem; }
+    .h-more table { border-collapse: collapse; width: 100%; margin-top: var(--sp-1, 4px); font-size: 0.82rem; }
     .h-more th, .h-more td { border: 1px solid var(--line); padding: 4px 6px; text-align: left; }
     .h-more th { background: var(--paper); }
     .h-more code { background: var(--paper); padding: 1px 4px; border-radius: 3px;
@@ -232,10 +215,10 @@
       width: min(720px, 92vw); max-height: 84vh; overflow: auto;
       background: var(--box); border: 2px solid var(--line-d); border-radius: 6px; padding: 20px;
     }
-    .modal h3 { font-family: "Gowun Dodum", sans-serif; color: var(--cyan-d); margin-bottom: 12px; }
+    .modal h3 { font-family: "Gowun Dodum", sans-serif; color: var(--cyan-d); margin-bottom: var(--sp-2, 8px); }
     .ex-card {
       border: 1.5px solid var(--line); border-radius: var(--r);
-      padding: 10px 12px; margin-bottom: 8px; cursor: pointer;
+      padding: 10px 12px; margin-bottom: var(--sp-1, 4px); cursor: pointer;
     }
     .ex-card:hover { border-color: var(--pen-blue); background: var(--paper); }
     .ex-card b { color: var(--ink); }
@@ -248,46 +231,32 @@
                   font-family: "Menlo","Consolas",ui-monospace,monospace; font-size: .85em; }
     .modal .close { float: right; }
   </style>
+  <link rel="stylesheet" href="/lib/ui.css">
 </head>
-<body>
+<body data-density="work" data-sys="state">
   <div class="header">
-    <div class="h-subject" style="flex-direction:row;align-items:center;gap:12px;">
-      <img src="/assets/pibo-prof.png" alt="" style="height:44px;flex:0 0 auto;">
-      <span style="display:flex;flex-direction:column;">
-      <span class="eyebrow" id="txtEyebrow">파이썬으로 AI를 불러 봐요 · 인터넷 없이 내 컴퓨터에서</span>
-      <span class="title"><span id="txtTitle">파이썬</span> <span style="font-size:.85rem;color:var(--pen-red);vertical-align:middle;">(On-Device)</span></span>
-    </span>
+    <div class="h-subject" style="flex-direction:row;align-items:center;gap:10px;">
+      <img src="/assets/pibo-prof.png" alt="" style="height:30px;flex:0 0 auto;">
+      <span class="title" title="인터넷 없이 내 컴퓨터에서 실행돼요"><span id="txtTitle">파이썬</span> <span class="od" style="font-size:.78rem;color:var(--pen-red);vertical-align:middle;">(On-Device)</span></span>
     </div>
     <div class="h-tools">
-      <a href="/" id="homeLink" style="display:inline-flex;align-items:center;justify-content:center;background:#fff;border:1.5px solid var(--line-d);color:var(--ink);width:38px;height:38px;border-radius:var(--r);text-decoration:none;font-size:1.15rem;line-height:1;">&#8962;</a>
+      <a href="/" id="homeLink" style="display:inline-flex;align-items:center;justify-content:center;background:#fff;border:1.5px solid var(--line-d);color:var(--ink);width:34px;height:34px;border-radius:var(--r);text-decoration:none;font-size:1.15rem;line-height:1;">&#8962;</a>
       <button id="langButton" title="한국어 / English" style="min-width:46px;">EN</button>
     </div>
   </div>
 
-  <!-- 시스템 상태바 -->
-  <div class="sysbar" id="sysbar">
-    <span class="brand"><b>VAPI-OD</b> · on-device vision runtime</span>
-    <span class="sep">|</span>
-    <span class="chip" id="chipCPU"><span class="dot"></span>CPU</span>
-    <span class="chip" id="chipGPU"><span class="dot"></span>GPU</span>
-    <span class="chip" id="chipNPU"><span class="dot"></span>NPU</span>
-    <span class="meter">
-      <span><span class="k" id="txtRunState">상태</span> <span class="v" id="runState">준비됨</span></span>
-    </span>
-  </div>
-
-  <div class="main">
+  <div class="main" data-split="h" data-split-key="code">
     <!-- 편집기 -->
-    <div class="panel ed-panel">
+    <div class="panel ed-panel" data-min="340">
       <div class="ph-row">
         <div class="panel-head" id="txtEdHead">파이썬 코드를 써요</div>
+        <!-- 지금 어느 파일을 고치는 중인지 — 저장하면 이 이름으로 덮어쓴다 -->
+        <span id="curFile" style="font-size:.86rem;color:var(--ink-2);margin-left:8px;
+              max-width:22ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
         <div class="ph-tools">
           <button id="newButton" title="Ctrl + Alt + N">새로 만들기</button>
-          <button id="guideButton">가이드</button>
-          <button id="exampleButton">예제</button>
           <button id="saveButton">저장</button>
           <button id="loadButton">불러오기</button>
-          <button id="deployButton">배포</button>
           <button id="runButton" title="Ctrl + Enter"><span id="runLabel">실행 ▶</span></button>
           <button id="stopButton" title="Esc">정지</button>
         </div>
@@ -296,10 +265,13 @@
     </div>
 
     <!-- 출력 -->
-    <div class="panel out-panel">
+    <div class="panel out-panel" data-min="300">
       <div class="ph-row">
         <div class="panel-head" id="txtOutHead">결과를 확인해요</div>
         <div class="ph-tools">
+          <button id="exampleButton">예제</button>
+          <button id="guideButton">가이드</button>
+          <button id="deployButton">배포</button>
           <button id="clearButton">지우기</button>
         </div>
       </div>
@@ -374,7 +346,7 @@
         g_basic: "기본", g_ai: "AI 로 보기", g_edit: "사진 편집", g_my: "내가 만든 AI",
         g_sound: "소리", g_flow: "반복 · 조건",
         run: "실행 ▶", running: "실행 중...", stop: "정지", clear: "지우기",
-        runStateK: "상태", stReady: "준비됨", stRun: "실행 중", stDone: "끝남", stStop: "정지됨",
+        newFile: "새 파일", openedAs: "불러왔어요: ", runStateK: "상태", stReady: "준비됨", stRun: "실행 중", stDone: "끝남", stStop: "정지됨",
         hint: "show() 결과는 위 칸에 나와요. 배포한 프로그램에서는 창으로 떠요. input() 은 지원하지 않아요.",
         exTitle: "예제 프로그램", guideTitle: "themaker 함수 가이드",
         savePrompt: "저장할 이름을 입력하세요", loadPrompt: "불러올 작품 번호를 입력하세요",
@@ -406,7 +378,7 @@
         g_basic: "Basics", g_ai: "See with AI", g_edit: "Edit photo", g_my: "Your own AI",
         g_sound: "Sound", g_flow: "Repeat · If",
         run: "Run ▶", running: "Running...", stop: "Stop", clear: "Clear",
-        runStateK: "state", stReady: "ready", stRun: "running", stDone: "done", stStop: "stopped",
+        newFile: "new file", openedAs: "opened: ", runStateK: "state", stReady: "ready", stRun: "running", stDone: "done", stStop: "stopped",
         hint: "show() draws above; a shared program opens a window instead. input() is not supported.",
         exTitle: "Example programs", guideTitle: "themaker functions",
         savePrompt: "Name to save as", loadPrompt: "Enter the number of the work to load",
@@ -439,6 +411,10 @@ show(img, r)                # 결과를 화면에서 보기 (박스가 그려져
       matchBrackets: true, autoCloseBrackets: true,
       extraKeys: { Tab: c => c.execCommand("indentMore"), "Shift-Tab": c => c.execCommand("indentLess") },
     });
+
+    /* 편집 칸 크기가 바뀌면 편집기를 다시 잰다 — CodeMirror 도 만들 때 크기를
+       기억하므로, 손잡이로 끌면 글자 자리와 커서가 어긋난다. */
+    window.addEventListener("resize", () => { if (cm) cm.refresh(); });
     /* 블록 코딩에서 "파이썬 페이지에서 열기" 로 넘어온 코드가 있으면 그것부터 */
     let startCode = null;
     try {
@@ -448,7 +424,8 @@ show(img, r)                # 결과를 화면에서 보기 (박스가 그려져
       }
     } catch (e) {}
     cm.setValue(startCode || localStorage.getItem("pycode-draft") || DEFAULT_CODE);
-    cm.on("change", () => localStorage.setItem("pycode-draft", cm.getValue()));
+
+      cm.on("change", () => localStorage.setItem("pycode-draft", cm.getValue()));
 
     /* =============================== 실행/중지 =============================== */
     const out = document.getElementById("output");
@@ -462,7 +439,10 @@ show(img, r)                # 결과를 화면에서 보기 (박스가 그려져
       out.scrollTop = out.scrollHeight;
     }
     function setState(key) {
-      document.getElementById("runState").textContent = t(key);
+      /* 상태 칸은 lib/sysbar.js 가 오버레이에 만든다 — 아직 없을 수 있으므로 확인하고 쓴다
+         (없는데 그냥 쓰면 거기서 오류가 나고 그 뒤 코드가 통째로 멈춘다). */
+      const stEl = document.getElementById("runState");
+      if (stEl) stEl.textContent = t(key);
       const running = key === "stRun";
       document.getElementById("runButton").disabled = running;
       document.getElementById("runLabel").textContent = running ? t("running") : t("run");
@@ -570,23 +550,55 @@ show(img, r)                # 결과를 화면에서 보기 (박스가 그려져
       cm.focus();
       out.textContent = "";                                  // 결과 칸도 함께 비운다
       document.getElementById("stageWrap").style.display = "none";
+      LAST_NAME = "";                                        // 새 파일이 된다
+      showFile();
       try { localStorage.setItem("pycode-draft", EMPTY_CODE); } catch (e) {}
     };
+    /* 지금 고치는 파일 이름을 머리줄에 보여 준다 — 빈 값이면 "새 파일" */
+    function showFile() {
+      const el = document.getElementById("curFile");
+      if (el) el.textContent = LAST_NAME ? "— " + LAST_NAME + ".py" : "— " + t("newFile");
+    }
+    showFile();                                              // 처음 열 때도 보이게
+
     document.getElementById("saveButton").onclick = async () => {
-      const name = prompt(t("savePrompt"), LAST_NAME);
+      /* 이름이 이미 있으면 묻지 않고 그 파일에 덮어쓴다 — 워드에서 저장 누르는 것과 같다.
+         다른 이름으로 두고 싶으면 [새로 만들기] 로 시작하면 된다. */
+      const name = LAST_NAME || prompt(t("savePrompt"), "");
       if (!name) return;
       const j = await (await fetch("/pycode/save", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, code: cm.getValue() }),
       })).json();
       if (j.result === "ok") {
-        LAST_NAME = name;
+        LAST_NAME = j.data.saved;
+        showFile();
         print("\n" + t("savedAs") + j.data.saved + "\n", "sys");   // 저장됐다는 확인
       }
     };
 
     /* 목록에서 눌러 고른다 (번호 입력은 초등학생에게 어렵다) */
+    /* 불러오기 = 탐색기 창을 띄워 작품 폴더에서 고른다.
+       창이 안 되는 PC 에서는 아래 목록 방식으로 물러선다. */
     document.getElementById("loadButton").onclick = async () => {
+      try {
+        const r = await (await fetch("/system/pick_file", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ kind: "py" }),
+        })).json();
+        if (r.result === "ok") {
+          if (r.data.canceled) return;
+          cm.setValue(r.data.text);
+          LAST_NAME = r.data.name;
+          showFile();
+          print("\n" + t("openedAs") + r.data.name + "\n", "sys");
+          return;
+        }
+      } catch (e) {}
+      loadFromList();                                  // 창이 안 되면 목록에서 고르기
+    };
+
+    const loadFromList = async () => {
       const j = await (await fetch("/pycode/works")).json();
       const list = (j.data || []);
       const box = document.getElementById("workList");
@@ -612,11 +624,11 @@ show(img, r)                # 결과를 화면에서 보기 (박스가 그려져
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ name: w.name }),
           });
-          document.getElementById("loadButton").onclick();
+          loadFromList();
         };
         d.onclick = async () => {
           const r = await (await fetch(`/pycode/work?name=${encodeURIComponent(w.name)}`)).json();
-          if (r.result === "ok") { cm.setValue(r.data.code); LAST_NAME = w.name; }
+          if (r.result === "ok") { cm.setValue(r.data.code); LAST_NAME = w.name; showFile(); }
           document.getElementById("workModal").classList.remove("show");
         };
         box.appendChild(d);
@@ -1565,7 +1577,7 @@ print(vision("look", img, lang="en")["answer"])   # 영어로 받기</pre>
     function applyLang() {
       document.title = t("titleTag");
       const set = (id, k) => { const el = document.getElementById(id); if (el) el.textContent = t(k); };
-      set("txtTitle", "title"); set("txtEyebrow", "eyebrow");
+      set("txtTitle", "title");
       set("txtEdHead", "edHead"); set("txtOutHead", "outHead");
       const helpOpen = document.getElementById("helpPanel").classList.contains("open");
       document.getElementById("guideButton").textContent = t(helpOpen ? "guideOff" : "guide");
@@ -1589,7 +1601,8 @@ print(vision("look", img, lang="en")["answer"])   # 영어로 받기</pre>
       document.getElementById("runLabel").textContent = SID ? t("running") : t("run");
       const hl = document.getElementById("homeLink");
       hl.title = t("homeLink"); hl.setAttribute("aria-label", t("homeLink"));
-      document.getElementById("runState").textContent = t(SID ? "stRun" : "stReady");
+      const st2 = document.getElementById("runState");
+      if (st2) st2.textContent = t(SID ? "stRun" : "stReady");
     }
     document.getElementById("langButton").onclick = () => {
       LANG = LANG === "ko" ? "en" : "ko";
@@ -1598,5 +1611,7 @@ print(vision("look", img, lang="en")["answer"])   # 영어로 받기</pre>
     };
     applyLang();
   </script>
+  <script src="/lib/sysbar.js"></script>
+  <script src="/lib/split.js"></script>
 </body>
 </html>

@@ -49,7 +49,7 @@
       color: var(--ink); background-color: var(--paper);
 
       font-family: "Gowun Dodum", "Apple SD Gothic Neo", system-ui, sans-serif;
-      padding: 12px; gap: 10px;
+      padding: var(--sp-2, 8px); gap: var(--sp-2, 8px);
     }
     button, select {
       font-family: inherit; font-size: .95rem; color: var(--ink); background: #fff;
@@ -58,57 +58,15 @@
     button:hover { border-color: var(--pen-blue); }
 
     /* 디바이스 HUD */
-    .devbar {
-      display: flex; align-items: center; gap: 6px 14px; flex-wrap: wrap;
-      background: #fffdf6;
-      border: 1.5px solid var(--line-d);
-      border-radius: 3px;
-      padding: 7px 14px; margin-bottom: 8px;
-      font-family: "Menlo", "Consolas", ui-monospace, monospace;
-      font-size: 0.82rem; letter-spacing: .02em;
-      color: var(--ink-2);
-      box-shadow: 0 1px 0 rgba(44,74,124,.15);
-      transform: rotate(-.25deg);
-      position: relative;
-    }
-    .devbar::before {
-      content: "";
-      position: absolute; top: -7px; left: 26px;
-      width: 54px; height: 13px;
-      background: rgba(31, 95, 122, .38);
-      border-left: 1px solid rgba(44,74,124,.15);
-      border-right: 1px solid rgba(44,74,124,.15);
-      transform: rotate(-2deg);
-    }
-    .devbar .brand { color: var(--ink-2); }
-    .devbar .brand b { color: var(--ink); letter-spacing: .08em; }
-    .devbar .chip {
-      display: inline-flex; align-items: center; gap: 6px;
-      background: #fff; border: 1.5px solid var(--line); border-radius: 999px;
-      padding: 2px 10px; color: #a3aebc;
-    }
-    .devbar .chip .dot { width: 7px; height: 7px; border-radius: 50%; background: #d9e0e8; }
-    .devbar .chip.on { color: var(--ink); border-color: var(--ink); }
-    .devbar .chip.on .dot { background: var(--cyan); box-shadow: 0 0 5px rgba(31, 95, 122,.6); }
-    .devbar .chip.busy { border-color: var(--pen-red); color: var(--pen-red); }
-    .devbar .chip.busy .dot { background: var(--pen-red); animation: devblink 1s infinite; }
-    .devbar .chip .st { color: #a3aebc; font-variant-numeric: tabular-nums; }
-    .devbar .chip.on .st { color: var(--ink-2); }
-    @keyframes devblink { 50% { opacity: .35; } }
-    @media (prefers-reduced-motion: reduce) { .devbar .chip.busy .dot { animation: none; } }
-    .devbar .sep { color: var(--line); }
-    .devbar .meter { margin-left: auto; display: flex; gap: 12px; }
-    .devbar .meter .k { color: #a3aebc; }
-    .devbar .meter .v { color: var(--pen-blue-d); font-variant-numeric: tabular-nums; font-weight: 700; }
 
     .header {
       flex: 0 0 auto; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
       background: var(--box); border: 2px solid var(--line-d); border-radius: 3px;
-      box-shadow: 0 1px 0 rgba(44,74,124,.18); padding: 10px 16px;
+      box-shadow: 0 1px 0 rgba(44,74,124,.18); padding: 5px 12px;
     }
     .h-title { display: flex; flex-direction: column; }
     .h-title .eyebrow { font-size: 0.82rem; letter-spacing: .14em; color: var(--ink-2); }
-    .h-title .title { font-family: "Gowun Batang", serif; font-size: 1.3rem; font-weight: 700; }
+    .h-title .title { font-family: "Gowun Batang", serif; font-size: 1.15rem; font-weight: 700; }
     .h-title .title .od { font-size: 0.82rem; color: var(--pen-red); }
     .h-tools {
       margin-left: auto; display: flex; flex-direction: row;
@@ -121,14 +79,14 @@
     a.back { font-size: .88rem; color: var(--pen-blue-d); text-decoration: none; margin-right: 4px; }
     a.back:hover { text-decoration: underline; }
 
-    .main { flex: 1 1 auto; min-height: 0; display: flex; gap: 12px; }
+    .main { flex: 1 1 auto; min-height: 0; display: flex; gap: var(--sp-2, 8px); }
     .work {
       flex: 1.25 1 0; min-width: 0; display: flex; flex-direction: column;
       background: var(--box); border: 1.5px solid var(--line); border-radius: var(--r); overflow: hidden;
     }
     .panel-head {
       flex: 0 0 auto; display: flex; align-items: center; gap: 9px;
-      margin: 12px 12px 16px; padding: 7px 14px;
+      margin: var(--sp-1, 4px) 10px var(--sp-1, 4px); padding: var(--sp-1, 4px) 12px;
       border: 2.5px solid var(--cyan); border-radius: 2px;
       font-family: "Gowun Dodum", sans-serif; font-weight: 700;
       color: var(--cyan-d);
@@ -144,17 +102,22 @@
     .work-head { flex: 0 0 auto; display: flex; align-items: center; flex-wrap: wrap; }
     .stage-panel .panel-head { align-self: flex-start; }   /* 조립 칸과 같은 크기로 */
     .work-head .panel-head { margin-right: 0; }
-    .work-tools {
-      margin: 12px 12px 16px auto; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    .stage-head { display: flex; align-items: center; }
+    .stage-head .panel-head { margin-right: 0; }
+    .stage-tools {
+      margin: var(--sp-1, 4px) 12px var(--sp-1, 4px) auto; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
     }
-    .work-tools button { padding: 7px 12px; font-size: .9rem; }
+    .work-tools {
+      margin: var(--sp-1, 4px) 12px var(--sp-1, 4px) auto; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    }
+    .work-tools button, .stage-tools button { padding: 7px 12px; font-size: .9rem; }
     #blocklyDiv { flex: 1 1 auto; min-height: 0; }
 
     .stage-panel {
       flex: 1 1 0; min-width: 380px; display: flex; flex-direction: column;
       background: var(--box); border: 1.5px solid var(--line); border-radius: var(--r); overflow: hidden;
     }
-    .stage-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+    .stage-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: var(--sp-2, 8px); display: flex; flex-direction: column; gap: var(--sp-2, 8px); }
     .stage {
       position: relative; width: 100%; aspect-ratio: 4/3; max-height: 60vh;
       background: #191a1f; border: 1.5px solid var(--line-d); border-radius: 4px; overflow: hidden;
@@ -195,42 +158,29 @@
       #blocklyDiv { height: 60vh; }
     }
   </style>
+  <link rel="stylesheet" href="/lib/ui.css">
 </head>
-<body>
+<body data-density="work">
   <div class="header">
-    <div class="h-title" style="flex-direction:row;align-items:center;gap:12px;display:flex;">
-      <img src="/assets/pibo-prof.png" alt="" style="height:44px;flex:0 0 auto;">
-      <span style="display:flex;flex-direction:column;">
-      <span class="eyebrow" id="txtEyebrow">인공지능 · 컴퓨터 비전 · 인터넷 없이 내 컴퓨터에서 실행돼요</span>
-      <span class="title"><span id="txtTitle">블록 코딩</span> <span class="od">(On-Device)</span></span>
-    </span>
+    <div class="h-subject" style="flex-direction:row;align-items:center;gap:10px;">
+      <img src="/assets/pibo-prof.png" alt="" style="height:30px;flex:0 0 auto;">
+      <span class="title" title="인터넷 없이 내 컴퓨터에서 실행돼요"><span id="txtTitle">블록</span> <span class="od" style="font-size:.78rem;color:var(--pen-red);vertical-align:middle;">(On-Device)</span></span>
     </div>
     <div class="h-tools">
-      <a class="back" href="/" id="homeLink" style="display:inline-flex;align-items:center;justify-content:center;background:#fff;border:1.5px solid var(--line-d);color:var(--ink);width:38px;height:38px;border-radius:var(--r);text-decoration:none;font-size:1.15rem;line-height:1;">&#8962;</a>
+      <a class="back" href="/" id="homeLink" style="display:inline-flex;align-items:center;justify-content:center;background:#fff;border:1.5px solid var(--line-d);color:var(--ink);width:34px;height:34px;border-radius:var(--r);text-decoration:none;font-size:1.15rem;line-height:1;">&#8962;</a>
       <button id="langButton" title="한국어 / English" style="min-width:46px;">EN</button>
     </div>
   </div>
 
-  <div class="devbar" id="devbar">
-    <span class="brand"><b>VAPI-OD</b> · on-device vision runtime</span>
-    <span class="sep">|</span>
-    <span class="chip" id="chipCPU"><span class="dot"></span>CPU<span class="st" id="stCPU"></span></span>
-    <span class="chip" id="chipGPU"><span class="dot"></span>GPU<span class="st" id="stGPU"></span></span>
-    <span class="chip" id="chipNPU"><span class="dot"></span>NPU<span class="st" id="stNPU"></span></span>
-    <span class="meter">
-      <span><span class="k">last</span> <span class="v" id="devLast">--</span></span>
-      <span><span class="k">exec</span> <span class="v" id="devExec">--</span></span>
-      <span><span class="k">runs</span> <span class="v" id="devCalls">0</span></span>
-    </span>
-  </div>
-
-  <div class="main">
-    <div class="work">
+  <div class="main" data-split="h" data-split-key="blocks">
+    <div class="work" data-min="340">
       <div class="work-head">
         <div class="panel-head" id="txtWorkHead">블록을 조립해요</div>
+        <!-- 지금 어느 작품을 고치는 중인지 — 저장하면 이 이름으로 덮어쓴다 -->
+        <span id="curFile" style="font-size:.86rem;color:var(--ink-2);margin-left:8px;
+              max-width:22ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
         <div class="work-tools">
           <button id="newButton">새로 만들기</button>
-          <button id="exampleButton">예제</button>
           <button id="saveButton">저장</button>
           <button id="loadButton">불러오기</button>
           <input type="file" id="loadFile" accept=".json" style="display:none">
@@ -241,8 +191,14 @@
       <div id="blocklyDiv"></div>
     </div>
 
-    <div class="stage-panel">
-      <div class="panel-head" id="txtStageHead">무대</div>
+    <div class="stage-panel" data-min="360">
+      <div class="stage-head">
+        <div class="panel-head" id="txtStageHead">무대</div>
+        <div class="stage-tools">
+          <button id="exampleButton">예제</button>
+          <button id="clearButton">지우기</button>
+        </div>
+      </div>
       <div class="stage-body">
         <div class="stage" id="stage">
           <video id="cam" autoplay playsinline muted></video>
@@ -457,6 +413,7 @@
       n_la: "라", n_si: "시", n_do2: "높은도",
       vars_title: "변수 값",
       btn_examples: "예제",
+      btn_clear: "지우기",
       pyCopy: "복사", pyCopied: "복사했어요", pyOpen: "파이썬 페이지에서 열기",
       ex_title: "예제 프로그램",
       ex_hint: "누르면 지금 블록이 예제로 바뀌어요. 저장하지 않은 블록은 사라져요.",
@@ -519,6 +476,10 @@
       m_noBlocks: "(블록이 없어요)", m_assembleFirst: "블록을 먼저 조립해 주세요.",
       m_start: "실행 시작", m_done: "실행 완료", m_stopped: "정지했어요.", m_error: "오류: ",
       m_loaded: "불러오기 완료: ", m_readFail: "파일을 읽을 수 없어요: ",
+      newFile: "새 작품", savePrompt: "작품 이름을 정해 주세요",
+      m_savedAs: "저장했어요: ", m_saveFail: "저장하지 못했어요: ",
+      m_noWorks: "저장한 작품이 아직 없어요.", m_pickWork: "불러올 작품의 번호를 적어 주세요",
+      m_notBlocks: "블록 작품 파일이 아니에요",
       m_askNew: "블록을 전부 지우고 새로 시작할까요?", m_newOk: "새로 시작해요.",
       btn_new: "새로 만들기",
       tts: "ko-KR",
@@ -666,6 +627,7 @@
       n_la: "A (la)", n_si: "B (si)", n_do2: "high C",
       vars_title: "Variables",
       btn_examples: "Examples",
+      btn_clear: "Clear",
       pyCopy: "Copy", pyCopied: "Copied", pyOpen: "Open in Python page",
       ex_title: "Example programs",
       ex_hint: "Loading replaces your current blocks. Unsaved work is lost.",
@@ -683,6 +645,12 @@
       ex_echo_d: "Listens to you and says it back. (speech to text)",
       ex_voices: "Try different voices",
       ex_voices_d: "Speaks with different voices and speeds. (sound)",
+      ex_all: "Full check (everything)",
+      ex_all_d: "Runs every block once. Use it to check a new PC. (check)",
+      sh_allStart: "Starting the full check",
+      sh_allAsk: "What is in this photo?",
+      sh_allTag: "check",
+      sh_allDone: "Full check finished!",
       sh_askSay: "Say something",
       sh_echoTail: " - that is what you said",
       sh_voiceF: "Hello, this is a female voice",
@@ -723,6 +691,10 @@
       m_noBlocks: "(no blocks yet)", m_assembleFirst: "Build some blocks first.",
       m_start: "started", m_done: "finished", m_stopped: "stopped.", m_error: "error: ",
       m_loaded: "loaded: ", m_readFail: "Could not read the file: ",
+      newFile: "new project", savePrompt: "Name this project",
+      m_savedAs: "Saved: ", m_saveFail: "Could not save: ",
+      m_noWorks: "No saved projects yet.", m_pickWork: "Type the number to open",
+      m_notBlocks: "not a blocks file",
       m_askNew: "Clear every block and start over?", m_newOk: "Starting over.",
       btn_new: "New",
       tts: "en-US",
@@ -1594,6 +1566,12 @@ def beats(a, b):
   let ws = Blockly.inject("blocklyDiv", Object.assign({ toolbox: buildToolbox() }, WS_OPTS));
   loadCustomModels();      // 내가 만든 AI 목록 (드롭다운은 열 때마다 최신 목록을 읽음)
 
+  /* 작업 칸 크기가 바뀌면 블록판을 다시 그린다.
+     Blockly 는 만들 때의 크기를 기억하므로, 손잡이로 끌어 칸만 넓혀도 캔버스는
+     옛 크기 그대로다(끌어도 안 늘어나는 것처럼 보인다). 손잡이 모듈이 흘려 주는
+     resize 를 받아 svgResize 로 맞춘다. */
+  window.addEventListener("resize", () => { if (ws) Blockly.svgResize(ws); });
+
   /* ---------------- 예제 프로그램 (C8) ---------------- */
   /* Blockly serialization JSON. 문구는 t() 로 채워 한/영을 따른다. */
   function EXAMPLES() {
@@ -1934,17 +1912,24 @@ def beats(a, b):
   exModal.addEventListener("click", e => { if (e.target === exModal) exModal.style.display = "none"; });
 
   /* ---------------- 언어 전환 ---------------- */
+  /* 지금 고치는 블록 작품 이름. 언어 적용이 이 값을 먼저 읽으므로 위쪽에서 선언한다
+     (let 로 아래쪽에 두었더니 "초기화 전 접근" 오류가 나서 그 뒤 코드가 통째로 멈췄다 —
+     그래서 왼쪽 파일 목록이 안 붙었다). */
+  var BLOCK_NAME = "";
+
   function applyStaticText() {
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
     document.documentElement.lang = LANG;
     document.title = t("titleTag");
-    set("txtTitle", t("title"));        set("txtEyebrow", t("eyebrow"));
+    set("txtTitle", t("title"));
     const hl = document.getElementById("homeLink");
     if (hl) { hl.title = t("back"); hl.setAttribute("aria-label", t("back")); }
     set("saveButton", t("save"));
     set("txtVarsTitle", t("vars_title"));
     set("newButton", t("btn_new"));
+    if (typeof showBlockFile === "function") showBlockFile();   // "새 작품" 문구도 번역
     set("exampleButton", t("btn_examples"));
+    set("clearButton", t("btn_clear"));
     set("pyCopy", t("pyCopy")); set("pyOpen", t("pyOpen"));
     set("txtExTitle", t("ex_title")); set("txtExHint", t("ex_hint"));
     set("loadButton", t("load"));       set("stopButton", t("stop"));
@@ -1988,6 +1973,16 @@ def beats(a, b):
   const bubble = document.getElementById("bubble");
   const logBox = document.getElementById("logBox");
   const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+  /* [지우기] — 무대(사진·글씨·박스)와 진행 기록을 함께 비운다.
+     블록은 그대로 둔다(그건 [새로 만들기]가 하는 일). RT.clearStage 는 아래에서
+     만들어지지만 누를 때 찾으므로 순서는 문제되지 않는다. */
+  document.getElementById("clearButton").addEventListener("click", () => {
+    try { RT.clearStage(); } catch (e) {}
+    logBox.innerHTML = "";
+    const vars = document.getElementById("varsBox");
+    if (vars) { vars.style.display = "none"; }
+  });
 
   if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
     navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } })
@@ -2068,14 +2063,12 @@ def beats(a, b):
     setTimeout(initDevbar, 1500);
   })();
 
-  function devBusy(dev) {
-    document.querySelectorAll(".devbar .chip").forEach(c => c.classList.remove("busy"));
-    const el = chipOf(dev);
-    if (el) el.classList.add("busy");
-  }
-  function devIdle() {
-    document.querySelectorAll(".devbar .chip").forEach(c => c.classList.remove("busy"));
-  }
+  /* 장치 표시는 상태 오버레이(lib/sysbar.js)가 맡는다.
+     그쪽이 fetch 를 지켜보다가 스스로 칩을 켜고 끄므로 여기서는 아무것도 안 한다.
+     예전에는 이 페이지가 자기 띠(.devbar)의 칩을 직접 켰는데, 그 띠를 오버레이로
+     옮기면서 선택자가 아무것도 못 찾게 됐다(그래서 불이 안 들어왔다). */
+  function devBusy(dev) {}
+  function devIdle() {}
   function devReport(dev, ms) {
     dev = String(dev || "").toUpperCase();
     devCalls++;
@@ -2991,6 +2984,8 @@ def beats(a, b):
   document.getElementById("newButton").addEventListener("click", () => {
     if (ws.getTopBlocks(false).length && !confirm(t("m_askNew"))) return;
     ws.clear();                       // 블록 전부 지우기
+    BLOCK_NAME = "";                  // 새 작품이 된다 (다음 저장 때 이름을 묻는다)
+    showBlockFile();
     RT.stopFlag = true;               // 돌고 있으면 멈추고
     if (RT.abort) RT.abort.abort();
     RT._stopVoice();
@@ -2999,16 +2994,66 @@ def beats(a, b):
   });
 
   /* ---------------- 저장/불러오기 ---------------- */
-  document.getElementById("saveButton").addEventListener("click", () => {
+  /* 저장은 작업 폴더(blocks)로 간다 — 파이썬 화면과 같은 규약이다.
+     예전에는 내려받기 폴더로 파일을 떨어뜨려서, 아이가 어디 갔는지 못 찾았고
+     작업 폴더를 USB 로 옮겨도 블록 작품은 따라가지 않았다. */
+  function showBlockFile() {
+    const el = document.getElementById("curFile");
+    if (el) el.textContent = BLOCK_NAME ? "— " + BLOCK_NAME : "— " + t("newFile");
+  }
+
+  document.getElementById("saveButton").addEventListener("click", async () => {
+    /* 이름이 있으면 묻지 않고 그 작품에 덮어쓴다 */
+    const name = BLOCK_NAME || prompt(t("savePrompt"), "");
+    if (!name) return;
     const state = Blockly.serialization.workspaces.save(ws);
-    const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
-    const a = document.createElement("a");
-    a.download = "ai-blocks-" + new Date().toISOString().slice(0, 10) + ".json";
-    a.href = URL.createObjectURL(blob);
-    a.click();
+    try {
+      const j = await (await fetch("/blocks/save", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name, state: JSON.stringify(state, null, 2) }),
+      })).json();
+      if (j.result !== "ok") throw new Error(j.data);
+      BLOCK_NAME = j.data.saved;
+      showBlockFile();
+      log(t("m_savedAs") + j.data.saved);
+    } catch (e) { alert(t("m_saveFail") + (e.message || e)); }
   });
-  document.getElementById("loadButton").addEventListener("click", () =>
-    document.getElementById("loadFile").click());
+
+  document.getElementById("loadButton").addEventListener("click", async () => {
+    /* 불러오기 = 탐색기 창을 띄워 작품 폴더에서 고른다.
+       창이 안 되는 PC 에서는 아래 목록 방식으로 물러선다. */
+    try {
+      const r = await (await fetch("/system/pick_file", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind: "blocks" }),
+      })).json();
+      if (r.result === "ok") {
+        if (r.data.canceled) return;
+        Blockly.serialization.workspaces.load(JSON.parse(r.data.text), ws);
+        BLOCK_NAME = r.data.name;
+        showBlockFile();
+        log(t("m_loaded") + r.data.name);
+        return;
+      }
+    } catch (e) {}
+
+    try {
+      const j = await (await fetch("/blocks/works")).json();
+      const list = j.data || [];
+      if (!list.length) { alert(t("m_noWorks")); return; }
+      const pick = prompt(t("m_pickWork") + "\n\n" +
+        list.map((w, i) => (i + 1) + ". " + w.name).join("\n"), "1");
+      const n = parseInt(pick, 10);
+      if (!n || n < 1 || n > list.length) return;
+      const w = list[n - 1];
+      const r = await (await fetch("/blocks/work?name=" + encodeURIComponent(w.name))).json();
+      if (r.result !== "ok") throw new Error(r.data);
+      Blockly.serialization.workspaces.load(JSON.parse(r.data.state), ws);
+      BLOCK_NAME = r.data.name;
+      showBlockFile();
+      log(t("m_loaded") + w.name);
+    } catch (e) { alert(t("m_readFail") + (e.message || e)); }
+  });
   document.getElementById("loadFile").addEventListener("change", function () {
     const f = this.files[0];
     if (!f) return;
@@ -3022,7 +3067,10 @@ def beats(a, b):
     rd.readAsText(f);
     this.value = "";
   });
+
   </script>
   <script src="/lib/usage.js" data-page="blocks"></script>
+  <script src="/lib/sysbar.js"></script>
+  <script src="/lib/split.js"></script>
 </body>
 </html>
