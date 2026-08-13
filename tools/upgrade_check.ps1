@@ -22,7 +22,9 @@ Set-Location (Split-Path $PSScriptRoot -Parent)
 $PY = "venv\Scripts\python.exe"
 if (-not (Test-Path $PY)) { throw "venv 가 없습니다. 먼저 setup_deploy.ps1 을 실행하세요." }
 New-Item -ItemType Directory -Force -Path data | Out-Null
-$backup = "data\requirements.before-upgrade.txt"
+# 백업은 빌드 산출물 자리(build\)에 — 프로그램 폴더에 data\ 를 만들지 않는다
+$backup = "build\requirements.before-upgrade.txt"
+New-Item -ItemType Directory -Force -Path build | Out-Null
 
 # ---------------------------------------------------------------- 되돌리기
 if ($Rollback) {

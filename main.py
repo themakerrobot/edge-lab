@@ -581,10 +581,12 @@ async def system_packages():
         except Exception:
             pkgs[name] = "?"
 
-    # 설치 기록은 설치 스크립트가 프로그램 폴더 data/ 에 남긴다.
-    # 작업 폴더가 밖으로 나가면서 자리가 갈렸으므로 두 곳을 다 본다.
+    # 설치 기록: 설치 스크립트는 앱데이터에, 번들은 압축 안(루트)에 남긴다.
+    # 예전 판은 프로그램 폴더 data/ 에 뒀으므로 세 곳을 차례로 본다.
     import paths as _p
     snap = os.path.join(DATA_DIR, "installed-packages.txt")
+    if not os.path.exists(snap):
+        snap = os.path.join(_p.ROOT, "installed-packages.txt")
     if not os.path.exists(snap):
         snap = os.path.join(_p.ROOT, "data", "installed-packages.txt")
     saved = ""

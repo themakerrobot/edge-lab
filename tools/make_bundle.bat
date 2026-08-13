@@ -111,15 +111,15 @@ xcopy /e /i /q /y view_project %BUILD%\view_project >nul
 echo   copying models\ (several GB, takes a few minutes) ...
 xcopy /e /i /q /y models %BUILD%\models >nul
 if errorlevel 1 (echo [ERROR] models copy failed & exit /b 1)
-REM data\ 는 실행하면서 생기는 작업 파일 - 배포본에는 넣지 않는다 (빈 폴더만)
+REM 작업 파일은 프로그램 폴더 밖에 생긴다 (paths.py: 작업폴더=문서\The Maker,
+REM 앱데이터=%%LOCALAPPDATA%%\TheMaker). 번들에 data\ 를 만들지 않는다 -
+REM USB 휴대용으로 쓸 때만 압축 푼 곳에 portable.txt 를 만들면 옆에 data\ 가 생긴다.
 if exist %BUILD%\models\user rmdir /s /q %BUILD%\models\user
 if exist %BUILD%\models\project rmdir /s /q %BUILD%\models\project
 if exist %BUILD%\models\stats rmdir /s /q %BUILD%\models\stats
 if exist %BUILD%\models\pycode rmdir /s /q %BUILD%\models\pycode
 if exist %BUILD%\models\blocks rmdir /s /q %BUILD%\models\blocks
 if exist %BUILD%\models\.appwin rmdir /s /q %BUILD%\models\.appwin
-mkdir %BUILD%\data 2>nul
-for %%D in (user project pycode blocks db stats tmp) do mkdir %BUILD%\data\%%D 2>nul
 
 REM bundle launcher (ASCII only, CRLF via echo)
 > %BUILD%\run.bat (

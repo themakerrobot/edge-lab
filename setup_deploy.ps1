@@ -40,13 +40,16 @@ if ($LASTEXITCODE -ne 0) { throw "package install failed" }
 & $PY -m pip install pyinstaller 2>$null | Out-Null
 $global:LASTEXITCODE = 0
 
-# 설치된 패키지 버전을 남긴다 — 나중에 "언제부터 안 되기 시작했는지" 를 찾는 근거가 된다
-New-Item -ItemType Directory -Force -Path data | Out-Null
+# 설치된 패키지 버전을 남긴다 — 나중에 "언제부터 안 되기 시작했는지" 를 찾는 근거가 된다.
+# 자리는 paths.py 의 앱데이터(기본 %LOCALAPPDATA%\TheMaker) — 프로그램 폴더에 data\ 를 만들지 않는다
+$appdata = & $PY -c "import paths; print(paths.DATA_DIR)"
+New-Item -ItemType Directory -Force -Path $appdata | Out-Null
+$snap = Join-Path $appdata "installed-packages.txt"
 $stamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-"# installed by setup_deploy.ps1 at $stamp" | Out-File -Encoding utf8 data\installed-packages.txt
-& $PY -c "import sys; print('# python ' + sys.version.split()[0])" | Out-File -Append -Encoding utf8 data\installed-packages.txt
-& $PY -m pip freeze | Out-File -Append -Encoding utf8 data\installed-packages.txt
-Write-Host "  package versions -> data\installed-packages.txt" -ForegroundColor DarkGray
+"# installed by setup_deploy.ps1 at $stamp" | Out-File -Encoding utf8 $snap
+& $PY -c "import sys; print('# python ' + sys.version.split()[0])" | Out-File -Append -Encoding utf8 $snap
+& $PY -m pip freeze | Out-File -Append -Encoding utf8 $snap
+Write-Host "  package versions -> $snap" -ForegroundColor DarkGray
 
 Write-Host "=== [3/5] models from HF ===" -ForegroundColor Cyan
 & "venv\Scripts\hf.exe" download leeyunjai/vapi-od --local-dir models --exclude "models.7z"
