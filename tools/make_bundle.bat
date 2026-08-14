@@ -83,12 +83,6 @@ if exist "%TOOLS%launcher.py" if exist themaker.ico (
       --distpath "%ROOT%." --workpath "%ROOT%build\exe" --specpath "%ROOT%build\exe" ^
       "%TOOLS%launcher.py"
     if errorlevel 1 (echo [WARN] exe build failed - continuing without exe)
-    rem 학생 작품 배포용 범용 런처 (파이썬 페이지의 [배포] 가 zip 에 넣는다)
-    "%PY_LOCAL%" -m PyInstaller --onefile --clean --noconfirm ^
-      --name themaker-run --icon "%ROOT%themaker.ico" ^
-      --distpath "%ROOT%." --workpath "%ROOT%build\exe" --specpath "%ROOT%build\exe" ^
-      "%TOOLS%runner.py"
-    if errorlevel 1 (echo [WARN] runner exe build failed - deploy will use .bat)
   )
 ) else (
   echo   tools\launcher.py / themaker.ico not found - skipping exe
@@ -105,7 +99,6 @@ for %%F in (check.py smoke_test.py bundle_check.bat) do (
   copy /y "%TOOLS%%%F" %BUILD%\ >nul
 )
 if exist themaker.exe copy /y themaker.exe %BUILD%\ >nul
-if exist themaker-run.exe copy /y themaker-run.exe %BUILD%\ >nul
 REM themaker.ico 는 빌드 때 exe 에 심는 용도라 배포본에는 넣지 않는다 -
 REM 확장자 숨김 상태에서 themaker(ico)와 themaker(exe)가 똑같이 보여 헷갈린다
 xcopy /e /i /q /y view_project %BUILD%\view_project >nul

@@ -31,6 +31,15 @@ def boot():
     import fake_engines
     sys.modules["engines"] = fake_engines         # main 이 import engines 하면 이것을 받는다
 
+    # openvino 는 시험 기기에 없다 — /system 이 버전을 물어보므로 껍데기만 끼운다
+    if "openvino" not in sys.modules:
+        try:
+            __import__("openvino")
+        except Exception:
+            ov = types.ModuleType("openvino")
+            ov.get_version = lambda: "0.0.0-schematest"
+            sys.modules["openvino"] = ov
+
     # 무거운 라우터는 시험 범위 밖이면 빈 것으로 대신한다 (없어도 나머지는 다 돈다)
     for name in ("train_routes", "speech_routes"):
         try:

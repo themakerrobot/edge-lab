@@ -29,7 +29,7 @@
       --r: 6px;
     }
 
-    /* ===== 밝은 곳 모드 (설정·점검에서 켠다) =====
+    /* ===== 밝은 곳 모드 (설정에서 켠다) =====
        색 토큰만 덮어써서 대비를 끌어올린다. 배치는 그대로다. */
     html.hc {
       --paper:    #fffdf8;
@@ -112,51 +112,12 @@
     @media (prefers-reduced-motion: reduce) { .chip.busy .dot { animation: none; } }
 
     /* ===== 메인 2단 레이아웃 (index.html 과 동일 규약) ===== */
-    .main-container {
-      flex: 1 1 auto; min-height: 0;
-      display: flex; gap: var(--sp-2, 8px);
-      
-    }
-    .panel {
-      flex: 1 1 0; min-width: 0;
-      display: flex; flex-direction: column;
-      background: var(--box);
-      border: 1.5px solid var(--line);
-      border-radius: var(--r);
-      overflow: hidden;
-    }
     .panel.right { flex: 1.15 1 0; }
-    .panel-head {
-      flex: 0 0 auto;
-      display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
-      padding: var(--sp-1, 4px) 16px;
-      border-bottom: 1.5px dashed var(--line);
-    }
-    .panel-body {
-      flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: var(--sp-3, 12px);
-      display: flex; flex-direction: column; gap: var(--sp-3, 12px);
-    }
 
     /* ===== 문항 공통 (체험툴과 동일한 시안 섹션 타이틀 + ▼) ===== */
-    .q {
-      position: relative; border: 2.5px solid var(--cyan); background: #fff;
-      padding: var(--sp-1, 4px) 16px var(--sp-1, 4px) 12px; border-radius: 2px;
-      display: inline-flex; align-items: center; gap: 6px;
-    }
-    .q::after {                            /* 활동지 섹션 타이틀의 ▼ 마커 */
-      content: ""; position: absolute; left: 14px; bottom: -12px;
-      border: 7px solid transparent; border-top: 9px solid var(--cyan);
-    }
-    .qnum {
-      display: inline-flex; align-items: center;
-      font-family: "Gowun Dodum", sans-serif; font-weight: 700; font-size: 1.05rem;
-      color: var(--cyan-d);
-    }
     .qnum::after { content: "."; }
-    .qtext { font-family: "Gowun Dodum", sans-serif; font-weight: 700; font-size: 1.02rem; color: var(--cyan-d); }
     .head { display: flex; align-items: center; gap: var(--sp-2, 6px); flex-wrap: wrap; margin-bottom: var(--sp-2, 8px); }
     .head .right { margin-left: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    .hint { color: var(--ink-2); font-size: .86rem; }
     .sect { display: flex; flex-direction: column; }
     .sect + .sect { border-top: 1px dashed var(--line); padding-top: var(--sp-2, 8px); }
 
@@ -331,18 +292,6 @@
     }
     .modeSw button.on { background: var(--cyan); color: #fff; font-weight: 700; }
 
-    /* ----- 인쇄용 활동지 ----- */
-    #printArea { display: none; }
-    @media print {
-      body { height: auto; overflow: visible; padding: 0; background: #fff; }
-      #printArea { display: block; padding: 16px; font-size: 12px; }
-      #printArea h1 { font-family: "Gowun Batang", serif; font-size: 18px; margin-bottom: 4px; }
-      #printArea table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-      #printArea th, #printArea td { border: 1px solid #888; padding: 4px 6px; text-align: left; }
-      #printArea .fill { border-bottom: 1px solid #888; height: 22px; }
-      #printArea .thumbs img { width: 46px; height: 46px; object-fit: cover; margin: 2px; border: 1px solid #bbb; }
-    }
-
     @media (max-width: 860px) {
       body { height: auto; min-height: 100dvh; overflow: auto; }
       .main-container { flex-direction: column; }
@@ -362,7 +311,6 @@
       <span class="title" title="인터넷 없이 내 컴퓨터에서 실행돼요"><span id="txtTitle">가르치기</span> <span class="od" style="font-size:.78rem;color:var(--pen-red);vertical-align:middle;">(On-Device)</span></span>
     </div>
     <div class="h-tools">
-      <a href="/" id="homeLink" style="display:inline-flex;align-items:center;justify-content:center;background:#fff;border:1.5px solid var(--line-d);color:var(--ink);width:34px;height:34px;border-radius:var(--r);text-decoration:none;font-size:1.15rem;line-height:1;">&#8962;</a>
       <button id="langButton" title="한국어 / English" style="min-width:46px;">EN</button>
     </div>
   </div>
@@ -494,7 +442,6 @@
               <input type="text" id="modelTitle" placeholder="모델 이름" style="width:150px;">
               <button class="btn primary" id="saveBtn" disabled><span id="txtSave">저장하기</span></button>
               <button class="btn" id="downloadBtn" disabled><span id="txtDownload">파일로 내려받기</span></button>
-              <button class="btn" id="printBtn"><span id="txtPrint">활동지 인쇄</span></button>
             </span>
           </div>
           <div class="hint" id="txtQ5Hint" style="margin-bottom:10px;">
@@ -531,7 +478,6 @@
   <input type="file" id="fileImgs" accept="image/*" multiple style="display:none;">
   <input type="file" id="fileZip" accept=".zip" style="display:none;">
   <input type="file" id="fileProject" accept=".zip" style="display:none;">
-  <div id="printArea"></div>
 
   <script src="/lib/tf.min-3.11.0.js"></script>
   <script src="/lib/jszip.min.js"></script>
@@ -576,7 +522,7 @@
       modelOpen: "불러오기",
       modelLoaded: "저장한 AI 를 불러왔어요 (%1). 사진은 없으니 4번에서 확인만 해 보세요.",
       holdout: "시험지 따로 두기(20%)",
-      print: "활동지 인쇄", projSave: "작품 저장", projFile: "파일에서 열기",
+      projSave: "작품 저장", projFile: "파일에서 열기",
       projSave2: "이 컴퓨터에 보관", projDown: "파일로 보관", projOpen: "이어서 하기",
       projModel: "학습 결과까지 같이 돌아왔어요. 바로 4번에서 확인해 보세요.",
       projModelFail: "사진은 돌아왔지만 학습 결과는 못 살렸어요 (%1). 3번에서 다시 학습해 주세요.",
@@ -598,10 +544,6 @@
       projSaved: "작품을 저장했어요.",
       projLoaded: "작품을 불러왔어요.",
       aNeedProj: "작품 이름을 적어 주세요.",
-      printSheet: "활동지", printName: "이름", printClass: "클래스",
-      printCount: "모은 사진 수", printGuess: "예상 정확도(%)",
-      printResult: "시험 결과", printSamples: "모은 사진 예시",
-      printThink: "AI가 틀린 이유는 무엇일까요?",
       q1: "무엇과 무엇을 구별할지 정해요", q2: "사진을 모아요",
       q3: "AI를 학습시켜요", q4: "잘 배웠는지 확인해요",
       q5: "만든 AI 를 저장해요 — 다른 데서 쓰려고",
@@ -673,7 +615,7 @@
       modelOpen: "Load",
       modelLoaded: "Loaded your saved AI (%1). It has no photos, so you can only check it in step 4.",
       holdout: "Keep a test set (20%)",
-      print: "Print worksheet", projSave: "Save work", projFile: "Open from file",
+      projSave: "Save work", projFile: "Open from file",
       projSave2: "Keep on this PC", projDown: "Save as file", projOpen: "Continue",
       projModel: "The trained result came back too — try it in step 4.",
       projModelFail: "Photos are back, but the trained result could not be restored (%1). Train again in step 3.",
@@ -695,10 +637,6 @@
       projSaved: "Work saved.",
       projLoaded: "Work loaded.",
       aNeedProj: "Please enter a name for your work.",
-      printSheet: "worksheet", printName: "Name", printClass: "Class",
-      printCount: "Photos collected", printGuess: "Predicted accuracy (%)",
-      printResult: "Test result", printSamples: "Sample photos",
-      printThink: "Why did the AI get it wrong?",
       q1: "Decide what to tell apart", q2: "Collect photos",
       q3: "Train your AI", q4: "Check what it learned",
       q5: "Save your AI — to use it elsewhere",
@@ -1706,7 +1644,7 @@
           correct: vaY.filter((y, i) => y === ci && preds[i] === ci).length,
         })),
       };
-      /* 성적표를 서버에도 기록한다 — 모델을 저장하지 않아도 [설정·점검] 도표에 남는다. */
+      /* 성적표를 서버에도 기록한다 — 모델을 저장하지 않아도 [설정] 도표에 남는다. */
       try {
         fetch("/custom/report", {
           method: "POST", headers: { "Content-Type": "application/json" },
@@ -2029,28 +1967,6 @@
   }
   loadProjects();
 
-  /* ---------------- 활동지 인쇄 ---------------- */
-  $("printBtn").addEventListener("click", () => {
-    const useable = CLASSES.filter(c => c.feats.length > 0);
-    const rows = useable.map(c =>
-      '<tr><td>' + esc(c.name) + '</td><td>' + c.feats.length + '</td><td class="fill"></td></tr>').join("");
-    const scoreHtml = $("score").style.display === "none" ? "" : $("score").innerHTML;
-    const thumbs = useable.map(c =>
-      '<div><b>' + esc(c.name) + '</b><div class="thumbs">' +
-      c.thumbs.slice(0, 8).filter(Boolean).map(th => '<img src="' + th + '">').join("") +
-      '</div></div>').join("");
-    $("printArea").innerHTML =
-      '<h1>' + t("title") + ' — ' + t("printSheet") + '</h1>' +
-      '<div>' + t("printName") + ' <span class="fill" style="display:inline-block;width:180px;"></span></div>' +
-      '<table><tr><th>' + t("printClass") + '</th><th>' + t("printCount") + '</th>' +
-      '<th>' + t("printGuess") + '</th></tr>' + rows + '</table>' +
-      (scoreHtml ? '<h3>' + t("printResult") + '</h3><div>' + scoreHtml + '</div>' : "") +
-      '<h3>' + t("printSamples") + '</h3>' + thumbs +
-      '<h3>' + t("printThink") + '</h3>' +
-      '<div class="fill"></div><div class="fill"></div><div class="fill"></div>';
-    window.print();
-  });
-
   /* ---------------- 임시 저장 (새로고침 복구) ---------------- */
   function b64(f32) {
     const u8 = new Uint8Array(f32.buffer, f32.byteOffset, f32.byteLength);
@@ -2100,7 +2016,6 @@
     set("txtModeFace", t("modeFace"));
     set("txtModeUp", t("modeUp")); set("txtModeBody", t("modeBody"));
     set("txtHoldout", t("holdout")); set("txtQ7", t("q7"));
-    set("txtPrint", t("print"));
     set("txtProjSave", t("projSave2")); set("txtProjFile", t("projFile"));
     set("txtProjDown", t("projDown")); set("txtProjListT", t("projListT"));
     html("txtQ5Hint", t("q5hint")); html("txtQ7Hint", t("q7hintFull"));
@@ -2137,6 +2052,7 @@
   }
   </script>
   <script src="/lib/usage.js" data-page="train"></script>
+  <script src="/lib/nav.js"></script>
   <script src="/lib/sysbar.js"></script>
 </body>
 </html>

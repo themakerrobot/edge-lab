@@ -15,7 +15,7 @@ python tools\schema_test\run.py    (직접 부를 때)
 ## 무엇을 보는가
 | 항목 | 내용 |
 |---|---|
-| 엔드포인트 | 인식 계열 전부 + 한/영 두 언어 + `prompt`·`detect_mode` 가 서버까지 가는지 |
+| 엔드포인트 | 인식 계열 전부 + 한/영 두 언어 + `prompt` 가 서버까지 가는지 |
 | 삭제한 경로 | `face_pose`·`_e` 접미사·`txt2image` 등이 되살아나지 않았는지(404) |
 | 화면 | `/`·`/blocks`·`/code`·`/train`·`/options` 가 열리는지 |
 | themaker | 기능 이름·한글 별칭·언어 전환·`draw()` 한글 라벨·오류 안내·이미지 편집 |
@@ -25,6 +25,6 @@ python tools\schema_test\run.py    (직접 부를 때)
 
 ## 손볼 때
 `fake_engines.py` 는 진짜 `engines.py` 에서 **표와 순수 계산**(COCO 이름,
-`DIRECTION`, `direction_words`, `CUSTOM_KO`)을 그대로 읽어 쓴다 — 이 부분을
+`DIRECTION`, `direction_words`)을 그대로 읽어 쓴다 — 이 부분을
 흉내 내면 시험이 무의미해지므로 그대로 두고, 추론하는 부분만 대신한다.
 기능을 더하면 `check_api.py` 의 `CASES`, `check_themaker.py` 에 한 줄씩 넣는다.

@@ -31,7 +31,7 @@
       --r: 6px;
     }
 
-    /* ===== 밝은 곳 모드 (설정·점검에서 켠다) =====
+    /* ===== 밝은 곳 모드 (설정에서 켠다) =====
        색 토큰만 덮어써서 대비를 끌어올린다. 배치는 그대로다. */
     html.hc {
       --paper:    #fffdf8;
@@ -94,27 +94,10 @@
     .meter .k { color: #6b6255; } .meter .v { color: var(--ink); font-weight: 700; }
 
     /* ===== 본문 2단 ===== */
-    .main { flex: 1 1 auto; min-height: 0; display: flex; gap: var(--sp-2, 8px); }
-    .panel {
-      display: flex; flex-direction: column; min-width: 0;
-      background: var(--box); border: 1.5px solid var(--line); border-radius: var(--r); overflow: hidden;
-    }
     .ed-panel { flex: 3 1 0; }
     .out-panel { flex: 2 1 0; min-width: 320px; }
-    .panel-head {
-      flex: 0 0 auto; display: flex; align-items: center; gap: 9px;
-      margin: var(--sp-1, 4px) 10px var(--sp-1, 4px); padding: var(--sp-1, 4px) 12px;
-      border: 2.5px solid var(--cyan); border-radius: 2px;
-      font-family: "Gowun Dodum", sans-serif; font-weight: 700; color: var(--cyan-d);
-      position: relative; align-self: flex-start;
-    }
-    .panel-head::after {
-      content: ""; position: absolute; left: 14px; bottom: -12px;
-      border: 7px solid transparent; border-top: 9px solid var(--cyan);
-    }
-    .ph-row { display: flex; align-items: center; flex-wrap: wrap; }
     .ph-tools { margin: var(--sp-1, 4px) 12px var(--sp-1, 4px) auto; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-    .ph-tools button { padding: 7px 12px; font-size: .9rem; }
+    
     #guideButton.on {
       background: var(--cyan); border-color: var(--cyan-d); color: #fff; font-weight: 700;
     }
@@ -148,8 +131,9 @@
     }
 
     /* ===== 도움말 패널 (열어 둔 채로 코딩한다) ===== */
-    .help-panel { flex: 0 0 300px; min-width: 260px; display: none; }
-    .help-panel.open { display: flex; }
+    /* .panel 의 display:flex 를 이기려면 특정도가 더 높아야 한다 */
+    .panel.help-panel { flex: 0 0 300px; min-width: 260px; display: none; }
+    .panel.help-panel.open { display: flex; }
     #helpSearch { margin: 0 12px 8px; width: calc(100% - 24px); flex: 0 0 auto; }
     #helpScroll { flex: 1 1 auto; min-height: 0; overflow: auto; }
     #helpList { padding: 0 12px 4px; }
@@ -240,16 +224,15 @@
       <span class="title" title="인터넷 없이 내 컴퓨터에서 실행돼요"><span id="txtTitle">파이썬</span> <span class="od" style="font-size:.78rem;color:var(--pen-red);vertical-align:middle;">(On-Device)</span></span>
     </div>
     <div class="h-tools">
-      <a href="/" id="homeLink" style="display:inline-flex;align-items:center;justify-content:center;background:#fff;border:1.5px solid var(--line-d);color:var(--ink);width:34px;height:34px;border-radius:var(--r);text-decoration:none;font-size:1.15rem;line-height:1;">&#8962;</a>
       <button id="langButton" title="한국어 / English" style="min-width:46px;">EN</button>
     </div>
   </div>
 
-  <div class="main" data-split="h" data-split-key="code">
+  <div class="main-container" data-split="h" data-split-key="code">
     <!-- 편집기 -->
     <div class="panel ed-panel" data-min="340">
-      <div class="ph-row">
-        <div class="panel-head" id="txtEdHead">파이썬 코드를 써요</div>
+      <div class="panel-head">
+        <div class="q"><span class="qnum">1</span><span class="qtext" id="txtEdHead">파이썬 코드를 써요</span></div>
         <!-- 지금 어느 파일을 고치는 중인지 — 저장하면 이 이름으로 덮어쓴다 -->
         <span id="curFile" style="font-size:.86rem;color:var(--ink-2);margin-left:8px;
               max-width:22ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
@@ -266,12 +249,11 @@
 
     <!-- 출력 -->
     <div class="panel out-panel" data-min="300">
-      <div class="ph-row">
-        <div class="panel-head" id="txtOutHead">결과를 확인해요</div>
+      <div class="panel-head">
+        <div class="q"><span class="qnum">2</span><span class="qtext" id="txtOutHead">결과를 확인해요</span></div>
         <div class="ph-tools">
           <button id="exampleButton">예제</button>
           <button id="guideButton">가이드</button>
-          <button id="deployButton">배포</button>
           <button id="clearButton">지우기</button>
         </div>
       </div>
@@ -281,14 +263,14 @@
         <div id="stageCap" style="font-size:0.82rem;color:var(--ink-2);margin-top:3px;"></div>
       </div>
       <div id="output"></div>
-      <div class="hintline" id="txtHint">show() 결과는 위 칸에 나와요. 배포한 프로그램에서는 창으로 떠요. input() 은 지원하지 않아요.</div>
+      <div class="hintline" id="txtHint">show() 결과는 위 칸에 나와요. input() 은 지원하지 않아요.</div>
       <div class="hintline" id="keysHint" style="opacity:.85;">단축키 — Ctrl+Enter 실행 · Esc 정지 · Ctrl+/ 주석 · Alt+↑↓ 줄 옮기기 · Shift+Alt+↓ 줄 복제 · Ctrl+D 줄 지우기 · Ctrl+Space 자동완성 · Ctrl+S 저장</div>
     </div>
 
     <!-- 도움말 (열어 둔 채로 코딩) -->
     <div class="panel help-panel" id="helpPanel">
-      <div class="ph-row">
-        <div class="panel-head" id="txtHelpHead">도움말</div>
+      <div class="panel-head">
+        <div class="q"><span class="qnum">3</span><span class="qtext" id="txtHelpHead">도움말</span></div>
         <div class="ph-tools">
           <button id="helpClose" title="닫기">✕</button>
         </div>
@@ -335,7 +317,7 @@
         eyebrow: "파이썬으로 AI를 불러 봐요 · 인터넷 없이 내 컴퓨터에서",
         homeLink: "The Maker (홈)", langBtn: "EN",
         edHead: "파이썬 코드를 써요", outHead: "결과를 확인해요",
-        guide: "도움말", guideOff: "도움말 ✕", example: "예제", save: "저장", load: "불러오기", deploy: "배포",
+        guide: "도움말", guideOff: "도움말 ✕", example: "예제", save: "저장", load: "불러오기",
         newCode: "새로 만들기",
         askNew: "쓰던 코드를 지우고 새로 시작할까요?",
         keysTitle: "단축키",
@@ -347,16 +329,13 @@
         g_sound: "소리", g_flow: "반복 · 조건",
         run: "실행 ▶", running: "실행 중...", stop: "정지", clear: "지우기",
         newFile: "새 파일", openedAs: "불러왔어요: ", runStateK: "상태", stReady: "준비됨", stRun: "실행 중", stDone: "끝남", stStop: "정지됨",
-        hint: "show() 결과는 위 칸에 나와요. 배포한 프로그램에서는 창으로 떠요. input() 은 지원하지 않아요.",
+        hint: "show() 결과는 위 칸에 나와요. input() 은 지원하지 않아요.",
         exTitle: "예제 프로그램", guideTitle: "themaker 함수 가이드",
         savePrompt: "저장할 이름을 입력하세요", loadPrompt: "불러올 작품 번호를 입력하세요",
-        deployPrompt: "배포할 이름을 입력하세요",
         workTitle: "저장한 작품", savedAs: "저장했어요 · ", del: "삭제", delAsk: "지울까요? ",
         waitTts: "[소리 모델을 여는 중이에요. 처음 한 번만 몇 초 걸려요]",
         waitStt: "[음성 인식 모델을 여는 중이에요. 처음 한 번만 몇 초 걸려요]",
         waitYolo: "[모델 파일을 읽는 중이에요. 처음 한 번만 걸려요]",
-        deployDone: "배포 파일을 내려받았어요. 압축을 풀고 실행 파일을 두 번 누르면 돼요.\n(The Maker 가 깔린 컴퓨터에서 동작해요)",
-        deployFail: "배포 파일을 만들지 못했어요: ",
         noWorks: "저장된 작품이 없어요.", started: "[실행 시작]",
         finished: "[끝났어요 · 코드 ", okEnd: "[끝났어요]", stopped: "[정지했어요]",
         memEnd: "[프로그램이 갑자기 멈췄어요]",
@@ -371,7 +350,7 @@
         askNew: "Clear what you wrote and start over?",
         keysTitle: "Shortcuts",
         keysBody: "Ctrl+Enter run · Esc stop · Ctrl+/ comment · Alt+↑↓ move line · Shift+Alt+↓ duplicate · Ctrl+D delete line · Ctrl+Space autocomplete · Ctrl+S save",
-        guide: "Help", guideOff: "Help ✕", example: "Examples", save: "Save", load: "Load", deploy: "Share",
+        guide: "Help", guideOff: "Help ✕", example: "Examples", save: "Save", load: "Load",
         helpHead: "Help", helpMore: "Kinds & tables", helpSearch: "search (e.g. face, sound)",
         put: "insert", detail: "what?", noHit: "Nothing found.",
         argsK: "takes", retK: "returns", exK: "example (click to insert)",
@@ -379,16 +358,13 @@
         g_sound: "Sound", g_flow: "Repeat · If",
         run: "Run ▶", running: "Running...", stop: "Stop", clear: "Clear",
         newFile: "new file", openedAs: "opened: ", runStateK: "state", stReady: "ready", stRun: "running", stDone: "done", stStop: "stopped",
-        hint: "show() draws above; a shared program opens a window instead. input() is not supported.",
+        hint: "show() draws above. input() is not supported.",
         exTitle: "Example programs", guideTitle: "themaker functions",
         savePrompt: "Name to save as", loadPrompt: "Enter the number of the work to load",
-        deployPrompt: "Name for the shared file",
         workTitle: "Saved works", savedAs: "Saved · ", del: "delete", delAsk: "Delete? ",
         waitTts: "[opening the voice model - a few seconds, only the first time]",
         waitStt: "[opening the speech model - a few seconds, only the first time]",
         waitYolo: "[reading the model file - only the first time]",
-        deployDone: "Downloaded. Unzip it and double-click the runner.\n(Works on a PC with The Maker installed)",
-        deployFail: "Could not build the package: ",
         noWorks: "No saved works yet.", started: "[started]",
         finished: "[finished · exit ", okEnd: "[finished]", stopped: "[stopped]",
         memEnd: "[the program crashed]",
@@ -636,23 +612,6 @@ show(img, r)                # 결과를 화면에서 보기 (박스가 그려져
       document.getElementById("workModal").classList.add("show");
     };
 
-    /* =============================== 배포 =============================== */
-    document.getElementById("deployButton").onclick = async () => {
-      const name = prompt(t("deployPrompt"));
-      if (!name) return;
-      try {
-        const j = await (await fetch("/pycode/deploy", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, code: cm.getValue() }),
-        })).json();
-        if (j.result !== "ok") { alert(t("deployFail") + j.data); return; }
-        const a = document.createElement("a");        /* 브라우저로 내려받기 */
-        a.href = j.data.url; a.download = name + ".zip";
-        document.body.appendChild(a); a.click(); a.remove();
-        alert(t("deployDone"));
-      } catch (e) { alert(t("deployFail") + e); }
-    };
-
     /* =============================== 예제 =============================== */
     const EXAMPLES = [
       { ko: ["웹캠으로 사물 찾기", "웹캠 사진에서 사물을 찾아 창으로 보여줘요."],
@@ -707,32 +666,43 @@ if r:
 else:
     print("아직 인식할 대상이 안 보여요")
 ` },
-      { ko: ["내 YOLO 모델 파일 쓰기", "직접 학습한 .pt 파일을 경로로 지정해 써요."],
-        en: ["Use your own YOLO file", "Run a .pt model you trained, by path."],
+      { ko: ["내 YOLO 모델 파일 쓰기", "모델 폴더에 넣은 .pt 파일로 찾아요."],
+        en: ["Use your own YOLO file", "Run a .pt model you dropped in the models folder."],
         code: `from themaker import *
 
-MODEL = r"C:\\내모델\\best.pt"      # 내 모델 파일 경로로 바꾸세요
+# .pt 파일은 [설정] > [모델 폴더 열기] 로 열리는 곳에 넣으세요.
+print("모델 폴더:", models_folder())
+print("있는 모델:", models())
 
-img = camera()
-r = detect(MODEL, img, conf=0.5)
-for it in r:
-    print(it["name"], round(it["score"] * 100), "%")
-show(img, r)
+if not models():
+    print("모델 파일을 먼저 넣어 주세요")
+else:
+    MODEL = models()[0]            # 첫 번째 모델로 해 볼게요
+    img = camera()
+    r = detect(MODEL, img, conf=0.5)
+    for it in r:
+        print(it["name"], it["score"], "%")
+    show(img, r)
 ` },
-      { ko: ["불이 났는지 살펴보기", "개별 인식 AI로 불·연기를 찾아요."],
-        en: ["Watch for fire", "Use the specially trained fire model."],
+      { ko: ["무언가 나타나는지 지켜보기", "가져다 둔 모델로 계속 살펴봐요."],
+        en: ["Watch for something", "Keep checking with a model you added."],
         code: `from themaker import *
 import time
 
-for i in range(10):
-    img = camera()
-    r = vision("fire", img)["object"]
-    if r:
-        print("불을 찾았어요!", r[0]["name"])
-        show(img, r)
-        break
-    print(i + 1, "번째 — 이상 없음")
-    time.sleep(2)
+# .pt 파일은 [설정] > [모델 폴더 열기] 로 열리는 곳에 넣으세요.
+if not models():
+    print("모델 파일을 먼저 넣어 주세요:", models_folder())
+else:
+    MODEL = models()[0]
+    for i in range(10):
+        img = camera()
+        r = detect(MODEL, img)
+        if r:
+            print("찾았어요!", r[0]["name"])
+            show(img, r)
+            break
+        print(i + 1, "번째 — 아무것도 없음")
+        time.sleep(2)
 ` },
       { ko: ["사진 꾸미기", "효과를 넣고 글자·도형을 그려 저장해요."],
         en: ["Decorate a photo", "Add an effect, text and shapes, then save."],
@@ -909,18 +879,14 @@ print("글자:", [t["text"] for t in vision("ocr", img)])
 print("QR:", [q["data"] for q in vision("qr", img)])
 print("마스크:", [m["name"] for m in vision("mask", img)])
 
-print("=== 3. 개별 인식 AI ===")
-for kind in ["fire", "fall", "ball", "rps", "number", "helmet", "box"]:
-    found = vision(kind, img)["object"]
-    print(" ", kind, "->", [it["name"] for it in found])
+print("=== 3. 가져다 둔 모델 ===")
+print("모델 폴더:", models_folder())
+for name in models():
+    print(" ", name, "->", [it["name"] for it in detect(name, img)])
 
 print("=== 4. 말로 하는 AI (조금 느려요) ===")
 print("설명:", vision("look", img)["answer"])
 print("질문:", vision("look", img, prompt="이 사진에 무엇이 있어?")["answer"])
-print("태그:", vision("tag", img)["tag"])
-print("장소:", vision("place", img)["place"])
-print("시간:", vision("time", img)["time"])
-print("날씨:", vision("weather", img)["weather"])
 print("고르기:", vision("look", img, prompt="사람·동물·물건 중 무엇이야? 한 낱말로")["answer"])
 
 print("=== 5. 사진 바꾸기 ===")
@@ -1009,26 +975,11 @@ print("전체 점검 끝!")
 <tr><td><code>seg</code></td><td>분할</td><td>영역 나누기</td></tr>
 <tr><td><code>look</code></td><td>보기·설명·질문</td><td>사진 보고 답하기 (안 물으면 설명)</td></tr>
 
-<tr><td><code>place</code></td><td>장소</td><td>장소 맞히기 (교실·공원 …)</td></tr>
-<tr><td><code>time</code></td><td>시간</td><td>시간대 맞히기 (아침·낮·저녁·밤)</td></tr>
-<tr><td><code>weather</code></td><td>날씨</td><td>날씨 맞히기 (맑음·흐림·비·눈·바람·실내)</td></tr>
-<tr><td><code>tag</code></td><td>태그</td><td>주제어 뽑기 (글자)</td></tr>
 <tr><td><code>ocr</code></td><td>글자</td><td>글자 읽기</td></tr>
 <tr><td><code>qr</code></td><td>큐알</td><td>QR 읽기</td></tr>
 <tr><td><code>bg_remove</code></td><td>배경제거</td><td>배경 지우기</td></tr>
 <tr><td><code>sr</code></td><td>화질개선</td><td>4배 선명하게</td></tr>
 <tr><td><code>mask</code></td><td>마스크</td><td>마스크 착용</td></tr>
-</table>
-<p style="margin:10px 0 6px;"><b>개별 인식 AI 7종</b></p>
-<table>
-<tr><th>kind</th><th>한글</th><th>찾는 것</th></tr>
-<tr><td><code>fire</code></td><td>불</td><td>불·연기</td></tr>
-<tr><td><code>fall</code></td><td>쓰러짐</td><td>넘어진 사람</td></tr>
-<tr><td><code>ball</code></td><td>공</td><td>공</td></tr>
-<tr><td><code>rps</code></td><td>가위바위보</td><td>가위·바위·보</td></tr>
-<tr><td><code>number</code></td><td>숫자</td><td>숫자 0~9</td></tr>
-<tr><td><code>helmet</code></td><td>안전모</td><td>안전모 착용/미착용</td></tr>
-<tr><td><code>box</code></td><td>상자</td><td>상자</td></tr>
 </table>
 <p style="margin:10px 0 6px;"><b>내가 가르친 AI — 종류에 따라 보는 것이 달라요</b></p>
 <table>
@@ -1046,7 +997,10 @@ print(r)              # {'answer': '고양이가 앉아 있어요'}
 print(r["answer"])    # 고양이가 앉아 있어요
 print(vision("look", img, lang="en")["answer"])   # 영어로 받기</pre>
 <p style="margin-top:8px;">이름이 헷갈리면 <code>my_models()</code> 로 확인하세요.
-띄어쓴 제목(<code>"my:우리 반 얼굴"</code>)도 그대로 돼요.<br>
+띄어쓴 제목(<code>"my:우리 반 얼굴"</code>)도 그대로 돼요.</p>
+<p style="margin-top:8px;"><b>가져온 YOLO 모델 파일</b> — <code>.pt</code> 파일을 [설정]의
+[모델 폴더 열기]로 열리는 폴더에 넣으면 <code>models()</code> 목록에 바로 나와요.
+넣은 이름을 그대로 <code>detect("이름.pt", img)</code> 에 쓰면 돼요 (경로는 안 적어도 돼요).<br>
 상대경로 기준 폴더는 <code>models\\pycode</code> 예요. cv2 · numpy 도 쓸 수 있어요.</p>`,
       en: `
 <p style="margin-bottom:6px;"><b>vision() kinds (Korean names also work)</b></p>
@@ -1059,28 +1013,12 @@ print(vision("look", img, lang="en")["answer"])   # 영어로 받기</pre>
 <tr><td><code>hand</code></td><td>hand gesture</td></tr>
 <tr><td><code>pose</code></td><td>body joints</td></tr>
 <tr><td><code>seg</code></td><td>segmentation</td></tr>
-<tr><td><code>place</code></td><td>guess the place</td></tr>
-<tr><td><code>time</code></td><td>guess the time of day</td></tr>
-<tr><td><code>weather</code></td><td>guess the weather</td></tr>
 <tr><td><code>look</code></td><td>ask about the photo (describes if you ask nothing)</td></tr>
-
-<tr><td><code>tag</code></td><td>keywords</td></tr>
 <tr><td><code>ocr</code></td><td>read text</td></tr>
 <tr><td><code>qr</code></td><td>read QR</td></tr>
 <tr><td><code>bg_remove</code></td><td>remove background</td></tr>
 <tr><td><code>sr</code></td><td>upscale 4x</td></tr>
 <tr><td><code>mask</code></td><td>mask on/off</td></tr>
-</table>
-<p style="margin:10px 0 6px;"><b>Specially trained (7)</b></p>
-<table>
-<tr><th>kind</th><th>Finds</th></tr>
-<tr><td><code>fire</code></td><td>fire &amp; smoke</td></tr>
-<tr><td><code>fall</code></td><td>a fallen person</td></tr>
-<tr><td><code>ball</code></td><td>balls</td></tr>
-<tr><td><code>rps</code></td><td>rock · paper · scissors</td></tr>
-<tr><td><code>number</code></td><td>digits 0-9</td></tr>
-<tr><td><code>helmet</code></td><td>helmet on/off</td></tr>
-<tr><td><code>box</code></td><td>boxes</td></tr>
 </table>
 <p style="margin:10px 0 6px;"><b>Your trained AI — kinds</b></p>
 <table>
@@ -1091,8 +1029,11 @@ print(vision("look", img, lang="en")["answer"])   # 영어로 받기</pre>
 <tr><td>상반신 upper</td><td>11 upper-body joints</td></tr>
 <tr><td>전신 body</td><td>17 full-body joints</td></tr>
 </table>
-<p style="margin-top:8px;">Check names with <code>my_models()</code>. Relative paths resolve from
-<code>models\\pycode</code>. cv2 and numpy work as usual.</p>`,
+<p style="margin-top:8px;">Check names with <code>my_models()</code>.</p>
+<p style="margin-top:8px;"><b>Your own YOLO files</b> — drop a <code>.pt</code> file into the folder that
+[Open models folder] opens in Settings. It shows up in <code>models()</code> right away, and you
+pass the file name straight to <code>detect("name.pt", img)</code> — no path needed.<br>
+Relative paths resolve from <code>models\\pycode</code>. cv2 and numpy work as usual.</p>`,
     };
 
     /* ---------------- 도움말 패널 : 항목을 누르면 커서 자리에 코드가 들어간다 ---------------- */
@@ -1109,7 +1050,7 @@ print(vision("look", img, lang="en")["answer"])   # 영어로 받기</pre>
         en: { d: "open an image file", a: "file path", r: "image" },
         x: 'img = load(r"C:\\사진\\cat.jpg")' },
       { g: "basic", n: "show(img, r)", ins: "show(img, r)",
-        ko: { d: "결과를 화면에 보여주기 (배포한 프로그램에서는 창으로)", a: "사진, (선택) vision 결과 그대로, window=True 면 항상 창", r: "박스를 그린 사진" },
+        ko: { d: "결과를 화면에 보여주기", a: "사진, (선택) vision 결과 그대로, window=True 면 창으로", r: "박스를 그린 사진" },
         en: { d: "show the result", a: "image, (optional) result, window=True", r: "the drawn image" },
         x: 'r = vision("face", img)\nshow(img, r)' },
       { g: "basic", n: 'save(img, "결과.jpg")', ins: 'save(img, "결과.jpg")',
@@ -1170,30 +1111,12 @@ print(vision("look", img, lang="en")["answer"])   # 영어로 받기</pre>
         ko: { d: "만들어 둔 자료 목록", a: "없음", r: "목록 [{slug, title, count}]" },
         en: { d: "list your knowledge bases", a: "none", r: "list of {slug, title, count}" },
         x: 'print([k["title"] for k in db_list()])' },
-      { g: "ai", n: 'vision("tag", img)', ins: 'vision("tag", img)',
-        ko: { d: "사진의 주제어 뽑기", a: "기능 이름, 사진", r: '{"tag": "고양이, 소파"}' },
-        en: { d: "extract keywords", a: "kind, image", r: '{"tag": ...}' },
-        x: 'print(vision("tag", img)["tag"])' },
-      { g: "ai", n: 'vision("place", img)', ins: 'vision("place", img)',
-        ko: { d: "장소 맞히기 — 교실·도서관·식당·부엌·거실·침실·사무실·운동장·공원·길거리·가게·자연 중 하나",
-              a: "기능 이름, 사진", r: '{"place": "교실"}' },
-        en: { d: "guess the place (one word)", a: "kind, image", r: '{"place": "classroom"}' },
-        x: 'print(vision("place", img)["place"])' },
       { g: "ai", n: 'vision("seg", img)', ins: 'vision("seg", img)',
         ko: { d: "사물의 영역을 색으로 칠하고, 무엇을 칠했는지도 알려줘요",
               a: "기능 이름, 사진", r: '{"image": 칠한 그림, "object": [{"name","score","box"}]}' },
         en: { d: "color each object's area and list what was found",
               a: "kind, image", r: '{"image": ..., "object": [...]}' },
         x: 'r = vision("seg", img)\nshow(r["image"], r["object"])\nfor it in r["object"]:\n    print(it["name"], it["score"])' },
-      { g: "ai", n: 'vision("time", img)', ins: 'vision("time", img)',
-        ko: { d: "시간대 맞히기 — 아침·낮·저녁·밤 중 하나", a: "기능 이름, 사진", r: '{"time": "낮"}' },
-        en: { d: "guess the time of day", a: "kind, image", r: '{"time": "afternoon"}' },
-        x: 'print(vision("time", img)["time"])' },
-      { g: "ai", n: 'vision("weather", img)', ins: 'vision("weather", img)',
-        ko: { d: "날씨 맞히기 — 맑음·흐림·비·눈·바람 중 하나. 바깥이 안 보이면 실내",
-              a: "기능 이름, 사진", r: '{"weather": "맑음"}' },
-        en: { d: "guess the weather", a: "kind, image", r: '{"weather": "sunny"}' },
-        x: 'print(vision("weather", img)["weather"])' },
       { g: "ai", n: 'vision("ocr", img)', ins: 'vision("ocr", img)',
         ko: { d: "사진 속 글자 읽기", a: "기능 이름, 사진", r: "목록 [{text 글자, score 확신도, box 위치}, ...]" },
         en: { d: "read text in the photo", a: "kind, image", r: "list of {text, score, box}" },
@@ -1219,14 +1142,6 @@ print(vision("look", img, lang="en")["answer"])   # 영어로 받기</pre>
         ko: { d: "흐린 사진을 4배 선명하게", a: "기능 이름, 사진", r: "선명해진 사진" },
         en: { d: "upscale 4x", a: "kind, image", r: "the upscaled image" },
         x: 'big = vision("sr", img)\nshow(big)\nsave(big, "big.jpg")' },
-      { g: "ai", n: 'vision("fire", img)', ins: 'vision("fire", img)',
-        ko: { d: "불·연기 찾기 (개별 인식)", a: "기능 이름, 사진", r: '{"object": [{name, name_en, score, box}, ...]} — 없으면 목록이 비어요' },
-        en: { d: "find fire and smoke", a: "kind, image", r: '{"object": [...]}' },
-        x: 'r = vision("fire", camera())\nif r["object"]:\n    print("불이야!")\n    show(camera(), r)' },
-      { g: "ai", n: 'vision("rps", img)', ins: 'vision("rps", img)',
-        ko: { d: "가위바위보 알아보기 (개별 인식)", a: "기능 이름, 사진", r: '{"object": [{name 가위/바위/보, name_en rock/paper/scissors, score, box}, ...]}' },
-        en: { d: "rock paper scissors", a: "kind, image", r: '{"object": [{name, name_en, score, box}, ...]}' },
-        x: 'r = vision("rps", camera())["object"]\nif r:\n    print(r[0]["name"])' },
 
       { g: "edit", n: "resize(img, 2)", ins: "resize(img, 2)",
         ko: { d: "크기 바꾸기 (1보다 크면 가운데를 잘라 확대)", a: "사진, 배율", r: "바뀐 사진" },
@@ -1356,10 +1271,14 @@ print(vision("look", img, lang="en")["answer"])   # 영어로 받기</pre>
         ko: { d: "내가 가르친 AI 로 분류하기", a: "my: + 저장한 이름, 사진", r: "목록 [{name 클래스, score 확신도}, ...] 확신도 높은 순 — 대상이 안 보이면 []" },
         en: { d: "classify with your AI", a: "my: + saved name, image", r: "list of {name, score}, best first" },
         x: 'r = vision("my:가위바위보", camera())\nif r:\n    print(r[0]["name"], round(r[0]["score"]*100), "%")' },
-      { g: "my", n: 'detect("내모델.pt", img)', ins: 'detect(r"내모델.pt", img)',
-        ko: { d: "내가 학습한 YOLO 파일로 인식하기", a: "모델 파일 경로, 사진, conf=낮은 점수 자르기", r: "목록 [{name, score, box}, ...]" },
-        en: { d: "run your own YOLO file", a: "model path, image, conf=", r: "list of {name, score, box}" },
-        x: 'r = detect(r"C:\\모델\\best.pt", img, conf=0.5)\nshow(img, r)' },
+      { g: "my", n: "models()", ins: "models()",
+        ko: { d: "가져다 둔 모델 파일 목록 보기 — [설정]의 [모델 폴더 열기]에 넣은 것들", a: "없음", r: "목록 ['cat.pt', 'my-best.pt', ...]" },
+        en: { d: "list model files you added (via [Open models folder] in Settings)", a: "none", r: "list of file names" },
+        x: 'print(models())\nprint(models_folder())   # 어디에 넣는지' },
+      { g: "my", n: 'detect("내모델.pt", img)', ins: 'detect("내모델.pt", img)',
+        ko: { d: "가져다 둔 YOLO 파일로 인식하기 — 모델 폴더의 파일 이름만 적으면 돼요", a: "모델 파일 이름, 사진, conf=낮은 점수 자르기", r: "목록 [{name 이름, score 0~100, box 위치}, ...]" },
+        en: { d: "run a model file you added — just the file name", a: "model file name, image, conf=", r: "list of {name, score, box}" },
+        x: 'for name in models():\n    print(name)\nr = detect(models()[0], img, conf=0.5)\nshow(img, r)' },
 
       { g: "sound", n: 'speak("안녕하세요")', ins: 'speak("안녕하세요")',
         ko: { d: "글자를 소리로 읽어 주기", a: "글자, voice=목소리(F1~F5 여자·M1~M5 남자), lang=\"en\", save_as=\"a.wav\"", r: "없음 (save_as 를 주면 파일 이름)" },
@@ -1468,12 +1387,10 @@ print(vision("look", img, lang="en")["answer"])   # 영어로 받기</pre>
 
     /* ---------------- 자동완성 ---------------- */
     const KINDS = ["object", "face", "face_attr", "distance", "hand", "pose", "seg",
-                   "look", "place", "time", "weather",
-                   "tag", "ocr", "qr",
-                   "bg_remove", "sr", "mask", "fire", "fall", "ball", "rps",
-                   "number", "helmet", "box"];
+                   "look", "ocr", "qr",
+                   "bg_remove", "sr", "mask"];
     const FUNCS = ["camera", "load", "save", "show", "draw", "vision", "detect", "language", "chat", "db_add", "db_list", "db_find", "db_delete",
-                   "speak", "listen", "wav_to_text", "my_models",
+                   "speak", "listen", "wav_to_text", "my_models", "models", "models_folder",
                    "resize", "rotate", "flip", "crop", "crop_xy", "crop_found",
                    "attach", "put_on", "put_on_xy", "put_sticker",
                    "speaker", "adjust", "img_filter", "draw_text", "draw_text_xy",
@@ -1583,7 +1500,7 @@ print(vision("look", img, lang="en")["answer"])   # 영어로 받기</pre>
       document.getElementById("guideButton").textContent = t(helpOpen ? "guideOff" : "guide");
       set("exampleButton", "example");
       set("newButton", "newCode");
-      set("saveButton", "save"); set("loadButton", "load"); set("deployButton", "deploy");
+      set("saveButton", "save"); set("loadButton", "load");
       const kb = document.getElementById("keysHint");
       if (kb) kb.textContent = t("keysTitle") + " — " + t("keysBody");
       set("stopButton", "stop"); set("clearButton", "clear");
@@ -1611,6 +1528,8 @@ print(vision("look", img, lang="en")["answer"])   # 영어로 받기</pre>
     };
     applyLang();
   </script>
+  <script src="/lib/usage.js" data-page="code"></script>
+  <script src="/lib/nav.js"></script>
   <script src="/lib/sysbar.js"></script>
   <script src="/lib/split.js"></script>
 </body>

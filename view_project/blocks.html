@@ -21,7 +21,7 @@
       --line: #9a8f7d; --line-d: #4a3f2e; --r: 6px;
     }
 
-    /* ===== 밝은 곳 모드 (설정·점검에서 켠다) =====
+    /* ===== 밝은 곳 모드 (설정에서 켠다) =====
        색 토큰만 덮어써서 대비를 끌어올린다. 배치는 그대로다. */
     html.hc {
       --paper:    #fffdf8;
@@ -79,38 +79,18 @@
     a.back { font-size: .88rem; color: var(--pen-blue-d); text-decoration: none; margin-right: 4px; }
     a.back:hover { text-decoration: underline; }
 
-    .main { flex: 1 1 auto; min-height: 0; display: flex; gap: var(--sp-2, 8px); }
     .work {
       flex: 1.25 1 0; min-width: 0; display: flex; flex-direction: column;
       background: var(--box); border: 1.5px solid var(--line); border-radius: var(--r); overflow: hidden;
     }
-    .panel-head {
-      flex: 0 0 auto; display: flex; align-items: center; gap: 9px;
-      margin: var(--sp-1, 4px) 10px var(--sp-1, 4px); padding: var(--sp-1, 4px) 12px;
-      border: 2.5px solid var(--cyan); border-radius: 2px;
-      font-family: "Gowun Dodum", sans-serif; font-weight: 700;
-      color: var(--cyan-d);
-      position: relative;
-    }
-    .panel-head::after {
-      content: "";
-      position: absolute; left: 14px; bottom: -12px;
-      border: 7px solid transparent;
-      border-top: 9px solid var(--cyan);
-    }
     /* 문항 상자와 작업 버튼을 한 줄에 둔다 (버튼은 오른쪽 끝) */
-    .work-head { flex: 0 0 auto; display: flex; align-items: center; flex-wrap: wrap; }
-    .stage-panel .panel-head { align-self: flex-start; }   /* 조립 칸과 같은 크기로 */
-    .work-head .panel-head { margin-right: 0; }
-    .stage-head { display: flex; align-items: center; }
-    .stage-head .panel-head { margin-right: 0; }
     .stage-tools {
       margin: var(--sp-1, 4px) 12px var(--sp-1, 4px) auto; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
     }
     .work-tools {
       margin: var(--sp-1, 4px) 12px var(--sp-1, 4px) auto; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
     }
-    .work-tools button, .stage-tools button { padding: 7px 12px; font-size: .9rem; }
+    
     #blocklyDiv { flex: 1 1 auto; min-height: 0; }
 
     .stage-panel {
@@ -138,7 +118,7 @@
       padding: 8px 14px; font-size: 1rem; display: none;
     }
     .stage-tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-    .stage-tools .hint { font-size: 0.82rem; color: var(--ink-2); }
+    
     #logBox {
       flex: 0 0 auto; background: #fdfcf8; border: 1.5px solid var(--line); border-radius: var(--r);
       padding: 8px 12px; font-family: "Menlo","Consolas",ui-monospace,monospace; font-size: 0.82rem;
@@ -167,15 +147,14 @@
       <span class="title" title="인터넷 없이 내 컴퓨터에서 실행돼요"><span id="txtTitle">블록</span> <span class="od" style="font-size:.78rem;color:var(--pen-red);vertical-align:middle;">(On-Device)</span></span>
     </div>
     <div class="h-tools">
-      <a class="back" href="/" id="homeLink" style="display:inline-flex;align-items:center;justify-content:center;background:#fff;border:1.5px solid var(--line-d);color:var(--ink);width:34px;height:34px;border-radius:var(--r);text-decoration:none;font-size:1.15rem;line-height:1;">&#8962;</a>
       <button id="langButton" title="한국어 / English" style="min-width:46px;">EN</button>
     </div>
   </div>
 
-  <div class="main" data-split="h" data-split-key="blocks">
+  <div class="main-container" data-split="h" data-split-key="blocks">
     <div class="work" data-min="340">
-      <div class="work-head">
-        <div class="panel-head" id="txtWorkHead">블록을 조립해요</div>
+      <div class="panel-head">
+        <div class="q"><span class="qnum">1</span><span class="qtext" id="txtWorkHead">블록을 조립해요</span></div>
         <!-- 지금 어느 작품을 고치는 중인지 — 저장하면 이 이름으로 덮어쓴다 -->
         <span id="curFile" style="font-size:.86rem;color:var(--ink-2);margin-left:8px;
               max-width:22ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
@@ -192,8 +171,8 @@
     </div>
 
     <div class="stage-panel" data-min="360">
-      <div class="stage-head">
-        <div class="panel-head" id="txtStageHead">무대</div>
+      <div class="panel-head">
+        <div class="q"><span class="qnum">2</span><span class="qtext" id="txtStageHead">결과를 확인해요</span></div>
         <div class="stage-tools">
           <button id="exampleButton">예제</button>
           <button id="clearButton">지우기</button>
@@ -258,7 +237,7 @@
   <script>
   "use strict";
   /**********************************************************************
-   * vapi-od AI 블록 코딩 — Blockly 워크스페이스 + 무대 + async 실행기
+   * vapi-od AI 블록 코딩 — Blockly 워크스페이스 + 결과 칸 + async 실행기
    * 서버는 기존 vapi-od API 그대로 사용 (백엔드 수정 없음)
    **********************************************************************/
   const G = javascript.javascriptGenerator;
@@ -274,25 +253,30 @@
       eyebrow: "블록으로 나만의 프로그램을 · 인터넷 없이 내 컴퓨터에서",
       back: "The Maker (홈)", save: "저장", load: "불러오기", stop: "정지", run: "실행 ▶",
       running: "실행 중...", langBtn: "EN",
-      workHead: "블록을 조립해요", stageHead: "무대",
+      workHead: "블록을 조립해요", stageHead: "결과를 확인해요",
       upload: "사진 올리기", uploadHint: "「업로드한 사진」 블록에서 사용돼요",
       uploadReady: "사진이 준비됐어요",
       codeView: "파이썬 코드로 보기",
 
-      cat_input: "입력", cat_vision: "AI 인식", cat_lang: "AI 언어·변환", cat_stage: "무대",
-      cat_loop: "반복", cat_logic: "판단", cat_math: "계산", cat_text: "글자",
-      cat_list: "리스트", cat_var: "변수",
+      cat_image: "이미지", cat_img_edit: "이미지 바꾸기", cat_img_draw: "이미지 그리기",
+      cat_vision: "AI 인식", cat_sound: "소리",
+      cat_lang: "AI 언어", cat_event: "이벤트",
+      cat_logic: "논리", cat_loop: "반복", cat_math: "수학", cat_text: "텍스트",
+      cat_list: "목록", cat_var: "변수", cat_func: "함수",
+      lbl_img_ask: "— 사진에게 물어보기 —", lbl_basic: "— 기본 인식 —",
+      lbl_my_model: "— 내가 만든 · 가져온 모델 —", lbl_draw_box: "— 찾은 자리에 박스 —",
 
       b_capture: "웹캠에서 사진 찍기", b_capture_tip: "웹캠 화면을 한 장 찍어서 사진으로 돌려줘요.",
-      b_upload: "업로드한 사진", b_upload_tip: "무대의 [사진 올리기]로 올린 사진이에요.",
+      b_upload: "업로드한 사진", b_upload_tip: "오른쪽 [사진 올리기]로 올린 사진이에요.",
       b_detect_draw: "%1 에서 %2 인식하고 박스 그리기",
       b_detect_draw_tip: "인식해서 찾은 위치에 박스를 그려요. 같은 사진이면 결과가 겹쳐 쌓여요.",
-      b_detect_one: "%1 에서 %2 인식하기",
-      b_detect_one_tip: "가장 확실한 것 하나의 이름을 알려줘요. 없으면 '없음'.",
       b_objects: "%1 에서 사물 모두 찾기", b_objects_tip: "찾은 사물 이름들의 리스트를 돌려줘요.",
       b_custom: "%1 을(를) %2 로 분류하기",
       b_custom_tip: "[가르치기]에서 내가 학습시킨 AI로 분류해요. 가장 확실한 이름을 돌려줘요. (손모양) 모델은 손이 안 보이면 \"없음\"이 나와요.",
       o_noCustom: "(만든 모델 없음)", o_poseTag: "(손모양)", o_faceTag: "(표정)", o_upTag: "(상반신)", o_bodyTag: "(전신)",
+      b_detect_file: "%1 에서 %2 로 찾기",
+      b_detect_file_tip: "가져다 둔 모델 파일로 찾아요. 찾은 것을 무대에 상자로 그리고 이름을 돌려줘요. 파일은 [설정]의 [모델 폴더 열기]에 넣어요.",
+      o_noFile: "(모델 파일 없음)",
       b_face: "%1 얼굴의 %2", b_face_tip: "첫 번째 얼굴의 정보를 알려줘요. 나이는 숫자예요.",
       b_face_count: "%1 에서 얼굴 개수",
       b_ocr: "%1 의 글자 읽기", b_qr: "%1 의 QR 읽기",
@@ -300,11 +284,8 @@
       b_chat: "%1 물어보기 (사진 없이)",
       b_chat_tip: "사진 없이 글로만 물어봐요. 앞에 한 말은 기억하지 않아요.",
       sh_chatQ: "무지개는 왜 생겨?",
-      b_guess: "%1 의 %2 추측하기",
       b_transform: "%1 을(를) %2 로 바꾸기",
       b_transform_tip: "바뀐 사진을 돌려줘요. 다른 AI 블록에 다시 넣을 수도 있어요.",
-      b_beats: "%1 이(가) %2 을(를) 이기면", b_beats_tip: "가위바위보 승패를 판단해요.",
-      b_random_rps: "가위·바위·보 중 랜덤",
       b_say: "%1 을(를) %2 목소리로 %3 말하기",
       b_say_tip: "소리 내어 읽고 말풍선으로 보여줘요. 목소리(여자·남자)와 빠르기도 함께 골라요.",
       o_slow: "느리게", o_normal: "보통", o_fast: "빠르게",
@@ -315,20 +296,16 @@
       o_F4: "여자 4", o_F5: "여자 5", o_M4: "남자 4", o_M5: "남자 5",
       o_F1: "여자 1", o_F2: "여자 2", o_F3: "여자 3",
       o_M1: "남자 1", o_M2: "남자 2", o_M3: "남자 3",
-      b_show_text: "%1 크게 보여주기", b_show_image: "사진 %1 보여주기",
+      b_show_image: "사진 %1 보여주기",
       b_boxes: "인식 결과 박스 그리기", b_boxes_tip: "마지막 인식에서 찾은 위치에 박스를 그려요.",
-      b_clear: "무대 지우기", b_wait: "%1 초 기다리기",
-      b_exec: "실행하기 %1", b_exec_tip: "값 블록을 결과 없이 실행만 해요.",
+      b_clear: "화면 지우기", b_wait: "%1 초 기다리기",
 
       o_face: "얼굴", o_objects: "사물", o_ocr: "글자", o_qr: "QR", o_rps: "가위바위보",
-      o_fire: "불", o_ball: "공", o_number: "숫자", o_fall: "낙상", o_helmet: "안전모", o_box: "박스",
       o_emotion: "감정", o_age: "나이", o_gender: "성별", o_dir: "방향",
-      o_place: "장소", o_time: "시간", o_weather: "날씨", o_tag: "태그",
       o_portrait: "배경 제거", o_sr: "화질 개선",
       o_hand: "손 모양", o_dist: "얼굴 거리",
 
       /* --- 사진 편집 --- */
-      cat_edit: "사진 편집",
       b_resize: "%1 을(를) %2 배로 확대/축소",
       b_resize_tip: "2는 두 배로 키우고, 0.5는 절반으로 줄여요.",
       b_rotate: "%1 을(를) %2 도 돌리기",
@@ -392,10 +369,8 @@
       b_wait_ev_tip: "웹캠을 계속 보다가 조건이 되면 다음으로 넘어가요. 60초가 지나면 그냥 넘어가요.",
 
       /* --- 로그 / 저장 --- */
-      b_print: "%1 로그에 쓰기",
-      b_print_tip: "무대는 그대로 두고 아래 로그 창에만 써요 (프로그램 확인용).",
-      b_save_stage: "무대 사진 파일로 저장",
-      b_save_stage_tip: "지금 무대에 보이는 사진을 컴퓨터에 내려받아요.",
+      b_save_stage: "사진 %1 저장하기",
+      b_save_stage_tip: "사진을 컴퓨터에 내려받아요. 비워 두면 지금 보이는 사진을 저장해요.",
       m_saved: "사진을 저장했어요",
       b_note: "음 %1 을(를) %2 박자 연주",
       b_note_tip: "삐 소리로 음을 연주해요. 소리가 나려면 스피커를 켜 주세요.",
@@ -421,6 +396,10 @@
       ex_greet_d: "얼굴이 나타날 때까지 기다렸다가 인사해요. (이벤트 대기)",
       ex_rps: "가위바위보 대결",
       ex_rps_d: "내 손모양과 컴퓨터의 랜덤을 겨뤄요. (인식·판단)",
+      ex_mymodel: "내가 가르친 AI 로 맞히기",
+      ex_mymodel_d: "[가르치기]에서 학습한 AI 로 분류하고 말해 줘요. (나만의 AI)",
+      ex_modelfile: "모델 파일로 찾기",
+      ex_modelfile_d: "모델 폴더에 넣은 .pt 파일로 찾아 박스를 그려요. (가져온 모델)",
       ex_selfie: "흑백 셀카 만들기",
       ex_selfie_d: "사진을 찍고 흑백으로 바꿔 글자를 써서 저장해요. (사진 편집)",
       ex_color: "가운데 색 말하기",
@@ -448,7 +427,7 @@
       m_waitTimeout: "60초가 지나서 그냥 넘어가요",
 
       /* --- 상급생용 (픽셀 좌표) --- */
-      cat_edit_xy: "사진 편집 (좌표)",
+      cat_edit_xy: "이미지 (좌표)",
       lbl_xy_note: "왼쪽 위가 (0,0)이에요. 사진 크기는 보통 640×480.",
       b_crop_xy: "%1 을(를) x %2 y %3 너비 %4 높이 %5 로 자르기",
       b_text_xy: "%1 에 글자 %2 — x %3 y %4 크기 %5 색 %6 회전 %7 도",
@@ -466,6 +445,7 @@
       m_noCam: "웹캠을 사용할 수 없어요 (사진 올리기로 진행 가능)",
       m_noImage: "사진이 없어요 (사진 블록을 연결하세요)",
       m_noCustom: "모델을 골라주세요 ([가르치기]에서 먼저 학습하세요)",
+      m_noFile: "모델 파일을 골라주세요 ([설정]의 [모델 폴더 열기]에 넣으세요)",
       m_aiError: "AI 오류: ", m_fail: "실패",
       m_camNotReady: "웹캠이 준비되지 않았어요",
       m_needUpload: "먼저 무대에서 [사진 올리기]를 해주세요",
@@ -489,25 +469,30 @@
       eyebrow: "write your own program with blocks · runs on this computer",
       back: "The Maker (home)", save: "Save", load: "Load", stop: "Stop", run: "Run ▶",
       running: "Running...", langBtn: "한",
-      workHead: "Build your blocks", stageHead: "Stage",
+      workHead: "Build your blocks", stageHead: "Check the result",
       upload: "Upload photo", uploadHint: "Used by the “uploaded photo” block",
       uploadReady: "Photo ready",
       codeView: "See as Python code",
 
-      cat_input: "Input", cat_vision: "AI Vision", cat_lang: "AI Language", cat_stage: "Stage",
-      cat_loop: "Loops", cat_logic: "Logic", cat_math: "Math", cat_text: "Text",
-      cat_list: "Lists", cat_var: "Variables",
+      cat_image: "Image", cat_img_edit: "Change image", cat_img_draw: "Draw on image",
+      cat_vision: "AI Vision", cat_sound: "Sound",
+      cat_lang: "AI Language", cat_event: "Events",
+      cat_logic: "Logic", cat_loop: "Loops", cat_math: "Math", cat_text: "Text",
+      cat_list: "Lists", cat_var: "Variables", cat_func: "Functions",
+      lbl_img_ask: "— ask about the photo —", lbl_basic: "— basic detection —",
+      lbl_my_model: "— my / added models —", lbl_draw_box: "— boxes where found —",
 
       b_capture: "take a photo with the webcam", b_capture_tip: "Grabs one frame from the webcam.",
       b_upload: "uploaded photo", b_upload_tip: "The photo you added with [Upload photo].",
       b_detect_draw: "detect %2 in %1 and draw boxes",
       b_detect_draw_tip: "Draws a box where each result was found. Boxes stack on the same photo.",
-      b_detect_one: "detect %2 in %1",
-      b_detect_one_tip: "Returns the name of the most confident result, or 'none'.",
       b_objects: "find every object in %1", b_objects_tip: "Returns a list of object names.",
       b_custom: "classify %1 with %2",
       b_custom_tip: "Uses an AI you trained in [Train]. Returns the most confident label. A (hand) model returns \"none\" when no hand is visible.",
       o_noCustom: "(no model yet)", o_poseTag: "(hand)", o_faceTag: "(face)", o_upTag: "(upper)", o_bodyTag: "(body)",
+      b_detect_file: "find with %2 in %1",
+      b_detect_file_tip: "Uses a model file you put in the models folder. Draws boxes on the stage and returns what it found. Add files via [Open models folder] in Settings.",
+      o_noFile: "(no model file)",
       b_face: "%2 of the face in %1", b_face_tip: "Info about the first face. Age is a number.",
       b_face_count: "number of faces in %1",
       b_ocr: "read the text in %1", b_qr: "read the QR code in %1",
@@ -515,11 +500,8 @@
       b_chat: "ask %1 (no photo)",
       b_chat_tip: "Ask with words only, no photo. It does not remember earlier turns.",
       sh_chatQ: "Why do rainbows happen?",
-      b_guess: "guess the %2 of %1",
       b_transform: "turn %1 into %2",
       b_transform_tip: "Returns the changed photo. You can feed it into another AI block.",
-      b_beats: "%1 beats %2", b_beats_tip: "Decides a rock-paper-scissors round.",
-      b_random_rps: "random rock, paper or scissors",
       b_say: "say %1 in the %2 voice, %3",
       b_say_tip: "Reads it aloud and shows a speech bubble. Pick the voice and the speed too.",
       o_slow: "slow", o_normal: "normal", o_fast: "fast",
@@ -530,19 +512,15 @@
       o_F4: "female 4", o_F5: "female 5", o_M4: "male 4", o_M5: "male 5",
       o_F1: "female 1", o_F2: "female 2", o_F3: "female 3",
       o_M1: "male 1", o_M2: "male 2", o_M3: "male 3",
-      b_show_text: "show %1 in big letters", b_show_image: "show photo %1",
+      b_show_image: "show photo %1",
       b_boxes: "draw detection boxes", b_boxes_tip: "Draws boxes from the latest detection.",
-      b_clear: "clear the stage", b_wait: "wait %1 seconds",
-      b_exec: "run %1", b_exec_tip: "Runs a value block without using its result.",
+      b_clear: "clear the screen", b_wait: "wait %1 seconds",
 
       o_face: "faces", o_objects: "objects", o_ocr: "text", o_qr: "QR", o_rps: "rock-paper-scissors",
-      o_fire: "fire", o_ball: "ball", o_number: "numbers", o_fall: "a fall", o_helmet: "helmets", o_box: "boxes",
       o_emotion: "emotion", o_age: "age", o_gender: "gender", o_dir: "direction",
-      o_place: "place", o_time: "time of day", o_weather: "weather", o_tag: "tags",
       o_portrait: "no background", o_sr: "higher quality",
       o_hand: "hand gesture", o_dist: "face distance",
       /* --- Photo editing --- */
-      cat_edit: "Photo Editing",
       b_resize: "scale %1 by %2 ×",
       b_resize_tip: "2 doubles the size, 0.5 halves it.",
       b_rotate: "rotate %1 by %2 °",
@@ -606,10 +584,8 @@
       b_wait_ev_tip: "Keeps watching the webcam and moves on when it happens. Gives up after 60 s.",
 
       /* --- Log / save --- */
-      b_print: "write %1 to the log",
-      b_print_tip: "Writes only to the log below, without touching the stage.",
-      b_save_stage: "save the stage as an image file",
-      b_save_stage_tip: "Downloads what the stage currently shows.",
+      b_save_stage: "save photo %1",
+      b_save_stage_tip: "Downloads the photo. Leave it empty to save what is on screen.",
       m_saved: "Image saved",
       b_note: "play note %1 for %2 beats",
       b_note_tip: "Plays a beep tone. Turn your speakers on.",
@@ -635,6 +611,10 @@
       ex_greet_d: "Waits for a face, then says hello. (event wait)",
       ex_rps: "Rock-paper-scissors duel",
       ex_rps_d: "Your hand vs. a random pick. (detection & logic)",
+      ex_mymodel: "Use the AI I trained",
+      ex_mymodel_d: "Classify with an AI trained in [Train] and say the answer. (your own AI)",
+      ex_modelfile: "Find with a model file",
+      ex_modelfile_d: "Use a .pt file from the models folder and draw boxes. (added model)",
       ex_selfie: "Black-and-white selfie",
       ex_selfie_d: "Take a photo, make it B&W, add text, save. (editing)",
       ex_color: "Say the center color",
@@ -662,7 +642,7 @@
       m_waitTimeout: "60 seconds passed, moving on",
 
       /* --- Advanced (pixel coordinates) --- */
-      cat_edit_xy: "Photo Editing (x, y)",
+      cat_edit_xy: "Image (x, y)",
       lbl_xy_note: "Top-left is (0,0). Photos are usually 640×480.",
       b_crop_xy: "crop %1 at x %2 y %3 width %4 height %5",
       b_text_xy: "write %2 on %1 — x %3 y %4 size %5 color %6 rotate %7 °",
@@ -681,6 +661,7 @@
       m_noCam: "No webcam available (you can still upload a photo)",
       m_noImage: "No photo (connect a photo block)",
       m_noCustom: "Pick a model first (train one in [Train])",
+      m_noFile: "Pick a model file first (add one via [Open models folder] in Settings)",
       m_aiError: "AI error: ", m_fail: "failed",
       m_camNotReady: "The webcam is not ready yet",
       m_needUpload: "Use [Upload photo] on the stage first",
@@ -764,16 +745,102 @@
         for (let i = 0; i < n; i++) parts.push(val(b, "ADD" + i, "None"));
         return "[" + parts.join(", ") + "]";
       },
+      logic_null: () => "None",
+      logic_ternary: b =>
+        "(" + val(b, "THEN", "None") + " if " + val(b, "IF", "False") + " else " + val(b, "ELSE", "None") + ")",
+      math_single: b => {
+        const v = val(b, "NUM", "0"), op = field(b, "OP");
+        if (op === "NEG") return "(-" + v + ")";
+        if (op === "ABS") return "abs(" + v + ")";
+        needMath = true;
+        return { ROOT: "math.sqrt", LN: "math.log", LOG10: "math.log10",
+                 EXP: "math.exp", POW10: "10 ** " }[op] === "10 ** "
+          ? "(10 ** " + v + ")"
+          : ({ ROOT: "math.sqrt", LN: "math.log", LOG10: "math.log10", EXP: "math.exp" }[op] || "abs") + "(" + v + ")";
+      },
+      math_trig: b => {
+        needMath = true;
+        const v = val(b, "NUM", "0"), op = field(b, "OP").toLowerCase();
+        return "math." + op + "(math.radians(" + v + "))";
+      },
+      math_constant: b => {
+        const k = field(b, "CONSTANT");
+        if (k === "INFINITY") return "float('inf')";
+        needMath = true;
+        return { PI: "math.pi", E: "math.e", SQRT2: "math.sqrt(2)",
+                 SQRT1_2: "math.sqrt(0.5)", GOLDEN_RATIO: "((1 + math.sqrt(5)) / 2)" }[k] || "math.pi";
+      },
+      math_number_property: b => {
+        const v = val(b, "NUMBER_TO_CHECK", "0"), k = field(b, "PROPERTY");
+        if (k === "EVEN") return "(" + v + " % 2 == 0)";
+        if (k === "ODD") return "(" + v + " % 2 == 1)";
+        if (k === "POSITIVE") return "(" + v + " > 0)";
+        if (k === "NEGATIVE") return "(" + v + " < 0)";
+        if (k === "DIVISIBLE_BY") return "(" + v + " % " + val(b, "DIVISOR", "1") + " == 0)";
+        return "(" + v + " == int(" + v + "))";
+      },
+      math_round: b => {
+        const v = val(b, "NUM", "0"), k = field(b, "OP");
+        if (k === "ROUNDUP") { needMath = true; return "math.ceil(" + v + ")"; }
+        if (k === "ROUNDDOWN") { needMath = true; return "math.floor(" + v + ")"; }
+        return "round(" + v + ")";
+      },
+      math_on_list: b => {
+        const v = val(b, "LIST", "[]");
+        return { SUM: "sum", MIN: "min", MAX: "max" }[field(b, "OP")]
+          ? ({ SUM: "sum", MIN: "min", MAX: "max" }[field(b, "OP")]) + "(" + v + ")"
+          : "(sum(" + v + ") / len(" + v + "))";
+      },
+      math_modulo: b => "(" + val(b, "DIVIDEND", "0") + " % " + val(b, "DIVISOR", "1") + ")",
+      math_constrain: b =>
+        "min(max(" + val(b, "VALUE", "0") + ", " + val(b, "LOW", "0") + "), " + val(b, "HIGH", "100") + ")",
+      math_random_float: () => { needRandom = true; return "random.random()"; },
+      text_isEmpty: b => "(len(" + val(b, "VALUE", "''") + ") == 0)",
+      text_indexOf: b =>
+        "(" + val(b, "VALUE", "''") + ".find(" + val(b, "FIND", "''") + ") + 1)",
+      text_charAt: b => {
+        const v = val(b, "VALUE", "''"), w = field(b, "WHERE");
+        if (w === "FIRST") return v + "[0]";
+        if (w === "LAST") return v + "[-1]";
+        return v + "[" + val(b, "AT", "1") + " - 1]";
+      },
+      text_getSubstring: b =>
+        val(b, "STRING", "''") + "[" + val(b, "AT1", "1") + " - 1:" + val(b, "AT2", "1") + "]",
+      text_changeCase: b => {
+        const v = val(b, "TEXT", "''");
+        return v + "." + ({ UPPERCASE: "upper", LOWERCASE: "lower", TITLECASE: "title" }[field(b, "CASE")] || "upper") + "()";
+      },
+      text_trim: b => val(b, "TEXT", "''") + "." +
+        ({ LEFT: "lstrip", RIGHT: "rstrip", BOTH: "strip" }[field(b, "MODE")] || "strip") + "()",
+      lists_isEmpty: b => "(len(" + val(b, "VALUE", "[]") + ") == 0)",
+      lists_repeat: b => "([" + val(b, "ITEM", "None") + "] * " + val(b, "NUM", "1") + ")",
+      lists_indexOf: b => "(" + val(b, "VALUE", "[]") + ".index(" + val(b, "FIND", "None") + ") + 1)",
+      lists_getIndex: b => {
+        const v = val(b, "VALUE", "[]"), w = field(b, "WHERE");
+        if (w === "RANDOM") { needRandom = true; return "random.choice(" + v + ")"; }
+        if (w === "FIRST") return v + "[0]";
+        if (w === "LAST") return v + "[-1]";
+        return v + "[" + val(b, "AT", "1") + " - 1]";
+      },
+      lists_getSublist: b =>
+        val(b, "LIST", "[]") + "[" + val(b, "AT1", "1") + " - 1:" + val(b, "AT2", "1") + "]",
+      lists_split: b => {
+        const v = val(b, "INPUT", "''");
+        return field(b, "MODE") === "SPLIT"
+          ? v + ".split(" + val(b, "DELIM", "','") + ")"
+          : val(b, "DELIM", "','") + ".join(" + v + ")";
+      },
+      lists_sort: b => "sorted(" + val(b, "LIST", "[]") + ")",
 
       /* ---- 사진 가져오기 ---- */
       ai_capture: () => "camera()",
       ai_upload: () => "load('사진.jpg')",
 
       /* ---- AI 로 보기 ---- */
-      ai_detect_one: b =>
-        "first_name(vision(" + q(pick(M_MODE, field(b, "MODE"))) + ", " + img(b, "IMG") + "))",
       ai_objects: b => "names_of(vision('object', " + img(b, "IMG") + "))",
       ai_custom: b => "first_name(vision('my:" + field(b, "MODEL") + "', " + img(b, "IMG") + "))",
+      ai_detect_file: b =>
+        "first_name(detect(" + q(field(b, "FILE")) + ", " + img(b, "IMG") + "))",
       ai_face: b => {
         const w = field(b, "WHAT");
         if (w === "dir") return "first_of(vision('distance', " + img(b, "IMG") + "), 'direction')";
@@ -786,16 +853,9 @@
       ai_qr: b => "first_of(vision('qr', " + img(b, "IMG") + "), 'data')",
       ai_chat: b => "chat(" + val(b, "Q", "''") + ")",
       ai_ask: b => "vision('look', " + img(b, "IMG") + ", prompt=" + val(b, "Q", "''") + ")['answer']",
-      ai_guess: b => {
-        /* 장소·시간·날씨는 전용 기능이 있다 — 블록이 부르는 것과 같은 것을 쓴다 */
-        const k = field(b, "KIND");
-        return "vision(" + q(k) + ", " + img(b, "IMG") + ")[" + q(k) + "]";
-      },
       ai_transform: b =>
         "vision(" + q(pick(M_TRANS, field(b, "KIND"))) + ", " + img(b, "IMG") + ")",
       ai_listen: b => "listen(" + field(b, "SEC") + ")",
-      ai_beats: b => "beats(" + val(b, "A", "''") + ", " + val(b, "B", "''") + ")",
-      ai_random_rps: () => { needRandom = true; return "random.choice(['가위', '바위', '보'])"; },
 
       /* ---- 사진 편집 (아홉 칸) ---- */
       ed_resize: b => "resize(" + img(b, "IMG") + ", " + num(b, "F", 2) + ")",
@@ -861,11 +921,10 @@
                       sndChime: "ding", sndFanfare: "ok" };
     /* 인식 종류 -> vision() 기능 이름 */
     const M_MODE  = { face: "face", hand: "hand", dist: "distance", objects: "object",
-                      ocr: "ocr", qr: "qr", rps: "rps", fire: "fire", ball: "ball",
-                      number: "number", fall: "fall", helmet: "helmet", box: "box" };
+                      ocr: "ocr", qr: "qr" };
     const M_TRANS = { portrait: "bg_remove", sr: "sr" };
     const pick = (map, v, dflt) => map[v] || dflt || v;
-    let needRandom = false;
+    let needRandom = false, needMath = false;
 
     /* 블록의 색은 #rrggbb 로 온다 — themaker 가 아는 이름으로 바꾼다 */
     function colName(hex) {
@@ -897,15 +956,9 @@
         lastShown = img(b, "IMG");
         out.push(p + "r = vision(" + q(pick(M_MODE, field(b, "MODE"))) + ", " + lastShown + ")");
         out.push(p + "show(" + lastShown + ", r)");
-      } else if (T === "ai_exec") {
-        out.push(p + val(b, "V", "None"));
       } else if (T === "st_say") {
         out.push(p + "speak(" + val(b, "TEXT", "''")
                  + voiceArg(field(b, "V"), field(b, "S")) + ")");
-      } else if (T === "st_print") {
-        out.push(p + "print(" + val(b, "V", "''") + ")");
-      } else if (T === "st_show_text") {
-        out.push(p + "print(" + val(b, "TEXT", "''") + ")");
       } else if (T === "st_show_image") {
         lastShown = img(b, "IMG");         // 무대에 보인 것을 기억 (저장·박스가 이걸 쓴다)
         out.push(p + "show(" + lastShown + ")");
@@ -918,9 +971,9 @@
           out.push(p + "show(img, r)");
         }
       } else if (T === "st_clear") {
-        return "";                       // 파이썬에는 무대가 없다 — 조용히 건너뛴다
+        return "";                       // 파이썬에는 화면 칸이 없다 — 조용히 건너뛴다
       } else if (T === "st_save_stage") {
-        out.push(p + "save(" + lastShown + ", 'themaker.jpg')");
+        out.push(p + "save(" + img(b, "IMG") + ", 'themaker.jpg')");
       } else if (T === "st_wait") {
         needTime = true;
         out.push(p + "time.sleep(" + num(b, "SEC", 1) + ")");
@@ -975,6 +1028,21 @@
         out.push(p + v + " = " + v + " + " + val(b, "DELTA", "1"));
       } else if (T === "controls_flow_statements") {
         out.push(p + (field(b, "FLOW") === "BREAK" ? "break" : "continue"));
+      } else if (T === "controls_for") {
+        const v = pyName(b.getField("VAR").getText());
+        out.push(p + "for " + v + " in range(" + val(b, "FROM", "1") + ", "
+                 + val(b, "TO", "10") + " + 1, " + val(b, "BY", "1") + "):");
+        out.push(body(b, "DO", ind + 4, p));
+      } else if (T === "text_print") {
+        out.push(p + "print(" + val(b, "TEXT", "''") + ")");
+      } else if (T === "text_append") {
+        const v = pyName(b.getField("VAR").getText());
+        out.push(p + v + " = str(" + v + ") + str(" + val(b, "TEXT", "''") + ")");
+      } else if (T === "lists_setIndex") {
+        const L = val(b, "LIST", "[]"), w = field(b, "WHERE"), it = val(b, "TO", "None");
+        const idx = w === "FIRST" ? "0" : w === "LAST" ? "-1" : val(b, "AT", "1") + " - 1";
+        if (field(b, "MODE") === "INSERT") out.push(p + L + ".insert(" + idx + ", " + it + ")");
+        else out.push(p + L + "[" + idx + "] = " + it);
       } else {
         out.push(p + "# " + T + " (파이썬에 아직 없어요)");
       }
@@ -1011,7 +1079,7 @@
 
     return {
       generate(workspace) {
-        needTime = false; needCam = false; needRandom = false;
+        needTime = false; needCam = false; needRandom = false; needMath = false;
         lastShown = "img"; hasResult = false;
         const tops = workspace.getTopBlocks(true).filter(b => !b.outputConnection);
         const bodyLines = tops.map(b => chain(b, 0)).filter(s => s.trim()).join("\n");
@@ -1020,6 +1088,7 @@
         const head = ["from themaker import *"];
         if (needTime) head.push("import time");
         if (needRandom) head.push("import random");
+        if (needMath) head.push("import math");
         head.push("");
 
         /* 도우미는 실제로 쓴 것만 — 안 쓰는 함수가 붙으면 코드가 길어 보인다 */
@@ -1040,7 +1109,7 @@
   })();
 
   /* 블록이 쓰는 편의 기능 — 만든 코드에 필요한 것만 함께 넣는다 */
-  const HELP_ORDER = ["first_of", "first_name", "names_of", "texts_of", "beats"];
+  const HELP_ORDER = ["first_of", "first_name", "names_of", "texts_of"];
   const HELPERS = {
     first_of: `
 def first_of(result, key, default=""):
@@ -1072,13 +1141,6 @@ def texts_of(result):
     """읽은 글자들을 한 줄로."""
     return " ".join(it.get("text", "") for it in result if isinstance(it, dict))
 `,
-    beats: `
-def beats(a, b):
-    """가위바위보 승부. a 가 이기면 True."""
-    win = {"가위": "보", "바위": "가위", "보": "바위",
-           "scissors": "paper", "rock": "scissors", "paper": "rock"}
-    return win.get(str(a)) == str(b)
-`,
   };
 
   const RT_SPEED = { slow: 0.85, normal: 1.05, fast: 1.35 };
@@ -1093,8 +1155,18 @@ def beats(a, b):
     } catch (e) { /* 목록이 없어도 나머지 블록은 정상 동작 */ }
   }
 
+  /* 가져다 둔 모델 파일 목록 — 폴더에 넣기만 하면 드롭다운에 나온다 */
+  let MODEL_FILES = [];
+  async function loadModelFiles() {
+    try {
+      const j = await (await fetch("/object/model_files")).json();
+      if (j.result === "ok" && Array.isArray(j.data.files)) MODEL_FILES = j.data.files;
+    } catch (e) { /* 폴더가 없어도 나머지 블록은 정상 동작 */ }
+  }
+
   /* ---------------- 커스텀 블록 정의 ---------------- */
-  const C_INPUT = 200, C_AI = 220, C_VLM = 260, C_JUDGE = 40, C_STAGE = 20, C_EDIT = 175, C_EDITX = 190;
+  const C_AI = 220, C_VLM = 260, C_JUDGE = 40, C_SOUND = 20, C_EVENT = 45,
+        C_EDIT = 175, C_EDITX = 190;
   const IMG = { type: "input_value", name: "IMG", check: "String" };
   const opt = keys => keys.map(k => [t("o_" + k), k]);
   const POS9 = () => opt(["tl", "tc", "tr", "ml", "mc", "mr", "bl", "bc", "br"]);
@@ -1106,20 +1178,16 @@ def beats(a, b):
   function defineBlocks() {
     Blockly.defineBlocksWithJsonArray([
       // 입력
-      { type: "ai_capture", message0: t("b_capture"), output: "String", colour: C_INPUT,
+      { type: "ai_capture", message0: t("b_capture"), output: "String", colour: C_EDIT,
         tooltip: t("b_capture_tip") },
-      { type: "ai_upload", message0: t("b_upload"), output: "String", colour: C_INPUT,
+      { type: "ai_upload", message0: t("b_upload"), output: "String", colour: C_EDIT,
         tooltip: t("b_upload_tip") },
       // AI 인식
       { type: "ai_detect_draw", message0: t("b_detect_draw"),
         previousStatement: null, nextStatement: null, colour: C_AI,
         args0: [ IMG, { type: "field_dropdown", name: "MODE", options: opt(
-          ["face","hand","dist","objects","ocr","qr","rps","fire","ball","number","fall","helmet","box"]) } ],
+          ["face","hand","dist","objects","ocr","qr"]) } ],
         tooltip: t("b_detect_draw_tip") },
-      { type: "ai_detect_one", message0: t("b_detect_one"), output: "String", colour: C_AI,
-        args0: [ IMG, { type: "field_dropdown", name: "MODE", options: opt(
-          ["rps","fire","ball","number","fall","helmet","box"]) } ],
-        tooltip: t("b_detect_one_tip") },
       { type: "ai_objects", message0: t("b_objects"), output: "Array", colour: C_AI,
         args0: [ IMG ], tooltip: t("b_objects_tip") },
       /* --- 사진 편집 (브라우저 canvas — 서버 불필요) --- */
@@ -1211,16 +1279,16 @@ def beats(a, b):
         inputsInline: true, tooltip: t("b_sticker_tip") },
 
       /* --- 기다리기(이벤트) --- */
-      { type: "ev_wait_face", message0: t("b_wait_face"), colour: C_JUDGE,
+      { type: "ev_wait_face", message0: t("b_wait_face"), colour: C_EVENT,
         previousStatement: null, nextStatement: null, tooltip: t("b_wait_ev_tip") },
-      { type: "ev_wait_hand", message0: t("b_wait_hand"), colour: C_JUDGE,
+      { type: "ev_wait_hand", message0: t("b_wait_hand"), colour: C_EVENT,
         previousStatement: null, nextStatement: null,
         args0: [ { type: "field_dropdown", name: "G", options: () => [
           [t("g_Thumb_Up"), "Thumb_Up"], [t("g_Victory"), "Victory"],
           [t("g_Open_Palm"), "Open_Palm"], [t("g_Closed_Fist"), "Closed_Fist"],
           [t("g_Pointing_Up"), "Pointing_Up"], [t("g_ILoveYou"), "ILoveYou"] ] } ],
         tooltip: t("b_wait_ev_tip") },
-      { type: "ev_wait_custom", message0: t("b_wait_custom"), colour: C_JUDGE,
+      { type: "ev_wait_custom", message0: t("b_wait_custom"), colour: C_EVENT,
         previousStatement: null, nextStatement: null,
         args0: [ { type: "field_dropdown", name: "MODEL",
                    options: () => (CUSTOM_MODELS.length
@@ -1230,35 +1298,33 @@ def beats(a, b):
         inputsInline: true, tooltip: t("b_wait_ev_tip") },
 
       /* --- 로그 / 저장 --- */
-      { type: "st_note", message0: t("b_note"), colour: C_STAGE,
+      { type: "st_note", message0: t("b_note"), colour: C_SOUND,
         previousStatement: null, nextStatement: null,
         args0: [ { type: "field_dropdown", name: "N", options: () => [
           [t("n_do"), "262"], [t("n_re"), "294"], [t("n_mi"), "330"], [t("n_fa"), "349"],
           [t("n_sol"), "392"], [t("n_la"), "440"], [t("n_si"), "494"], [t("n_do2"), "523"] ] },
           { type: "input_value", name: "B", check: "Number" } ],
         inputsInline: true, tooltip: t("b_note_tip") },
-      { type: "st_beep", message0: t("b_beep"), colour: C_STAGE,
+      { type: "st_beep", message0: t("b_beep"), colour: C_SOUND,
         previousStatement: null, nextStatement: null,
         args0: [ { type: "field_dropdown", name: "K",
           options: () => opt(["beepOk", "beepNo", "sndSiren", "sndLaser", "sndCoin",
                               "sndJump", "sndDrum", "sndClap", "sndChime", "sndFanfare"]) } ],
         tooltip: t("b_note_tip") },
-      { type: "st_melody", message0: t("b_melody"), colour: C_STAGE,
+      { type: "st_melody", message0: t("b_melody"), colour: C_SOUND,
         previousStatement: null, nextStatement: null,
         args0: [ { type: "input_value", name: "M", check: "String" },
                  { type: "field_dropdown", name: "T", options: () => [
                    ["♩=90", "90"], ["♩=120", "120"], ["♩=150", "150"] ] } ],
         inputsInline: true, tooltip: t("b_melody_tip") },
-      { type: "st_freq", message0: t("b_freq"), colour: C_STAGE,
+      { type: "st_freq", message0: t("b_freq"), colour: C_SOUND,
         previousStatement: null, nextStatement: null,
         args0: [ { type: "input_value", name: "F", check: "Number" },
                  { type: "input_value", name: "S", check: "Number" } ],
         inputsInline: true, tooltip: t("b_freq_tip") },
-      { type: "st_print", message0: t("b_print"), colour: C_STAGE,
-        previousStatement: null, nextStatement: null,
-        args0: [ { type: "input_value", name: "V" } ], tooltip: t("b_print_tip") },
-      { type: "st_save_stage", message0: t("b_save_stage"), colour: C_STAGE,
-        previousStatement: null, nextStatement: null, tooltip: t("b_save_stage_tip") },
+      { type: "st_save_stage", message0: t("b_save_stage"), colour: C_EDIT,
+        previousStatement: null, nextStatement: null, args0: [ IMG ],
+        tooltip: t("b_save_stage_tip") },
 
       /* --- 상급생용 (픽셀 좌표) --- */
       { type: "edx_crop", message0: t("b_crop_xy"), output: "String", colour: C_EDITX,
@@ -1324,6 +1390,12 @@ def beats(a, b):
                          : m.kind === "body" ? " " + t("o_bodyTag") : ""), m.slug])
             : [[t("o_noCustom"), ""]]) } ],
         tooltip: t("b_custom_tip") },
+      { type: "ai_detect_file", message0: t("b_detect_file"), output: "String", colour: C_AI,
+        args0: [ IMG, { type: "field_dropdown", name: "FILE",
+          options: () => (MODEL_FILES.length
+            ? MODEL_FILES.map(n => [n, n])
+            : [[t("o_noFile"), ""]]) } ],
+        tooltip: t("b_detect_file_tip") },
       { type: "ai_face", message0: t("b_face"), output: null, colour: C_AI,
         args0: [ IMG, { type: "field_dropdown", name: "WHAT",
           options: opt(["emotion","age","gender","dir"]) } ],
@@ -1343,44 +1415,31 @@ def beats(a, b):
       { type: "ai_chat", message0: t("b_chat"), output: "String", colour: C_VLM,
         args0: [ { type: "input_value", name: "Q", check: "String" } ],
         tooltip: t("b_chat_tip") },
-      { type: "ai_guess", message0: t("b_guess"), output: "String", colour: C_VLM,
-        args0: [ IMG, { type: "field_dropdown", name: "KIND",
-          options: opt(["place","time","weather","tag"]) } ] },
       { type: "ai_transform", message0: t("b_transform"), output: "String", colour: C_VLM,
         args0: [ IMG, { type: "field_dropdown", name: "KIND",
           options: opt(["portrait","sr"]) } ],
         tooltip: t("b_transform_tip") },
-      // 판단 도우미
-      { type: "ai_beats", message0: t("b_beats"), output: "Boolean", colour: C_JUDGE,
-        args0: [ { type: "input_value", name: "A", check: "String" },
-                 { type: "input_value", name: "B", check: "String" } ],
-        tooltip: t("b_beats_tip") },
-      { type: "ai_random_rps", message0: t("b_random_rps"), output: "String", colour: C_JUDGE },
-      { type: "ai_exec", message0: t("b_exec"), previousStatement: null, nextStatement: null,
-        colour: C_JUDGE, args0: [ { type: "input_value", name: "V" } ], tooltip: t("b_exec_tip") },
       // 무대
       { type: "st_say", message0: t("b_say"), previousStatement: null, nextStatement: null,
-        colour: C_STAGE, tooltip: t("b_say_tip"),
+        colour: C_SOUND, tooltip: t("b_say_tip"),
         args0: [ { type: "input_value", name: "TEXT" },
                  { type: "field_dropdown", name: "V",
                    options: opt(["F1", "F2", "F3", "F4", "F5",
                                  "M1", "M2", "M3", "M4", "M5"]) },
                  { type: "field_dropdown", name: "S",
                    options: opt(["slow", "normal", "fast"]) } ] },
-      { type: "ai_listen", message0: t("b_listen"), output: "String", colour: C_AI,
+      { type: "ai_listen", message0: t("b_listen"), output: "String", colour: C_SOUND,
         tooltip: t("b_listen_tip"),
         args0: [ { type: "field_dropdown", name: "SEC",
                    options: [["2", "2"], ["3", "3"], ["4", "4"], ["5", "5"], ["8", "8"]] } ] },
-      { type: "st_show_text", message0: t("b_show_text"), previousStatement: null, nextStatement: null,
-        colour: C_STAGE, args0: [ { type: "input_value", name: "TEXT" } ] },
       { type: "st_show_image", message0: t("b_show_image"), previousStatement: null, nextStatement: null,
-        colour: C_STAGE, args0: [ IMG ] },
+        colour: C_EDIT, args0: [ IMG ] },
       { type: "st_boxes", message0: t("b_boxes"), previousStatement: null, nextStatement: null,
-        colour: C_STAGE, tooltip: t("b_boxes_tip") },
+        colour: C_AI, tooltip: t("b_boxes_tip") },
       { type: "st_clear", message0: t("b_clear"), previousStatement: null, nextStatement: null,
-        colour: C_STAGE },
+        colour: C_EDIT },
       { type: "st_wait", message0: t("b_wait"), previousStatement: null, nextStatement: null,
-        colour: C_STAGE, args0: [ { type: "input_value", name: "SEC", check: "Number" } ] },
+        colour: C_EVENT, args0: [ { type: "input_value", name: "SEC", check: "Number" } ] },
     ]);
   }
   defineBlocks();
@@ -1390,9 +1449,9 @@ def beats(a, b):
   G.forBlock["ai_capture"]    = () => ["(await AI.capture())", Order.ATOMIC];
   G.forBlock["ai_upload"]     = () => ["(AI.uploaded())", Order.ATOMIC];
   G.forBlock["ai_detect_draw"] = b => `await AI.detectDraw(${V(b,"IMG","null")}, '${b.getFieldValue("MODE")}');\n`;
-  G.forBlock["ai_detect_one"] = b => [`(await AI.detectOne(${V(b,"IMG","null")}, '${b.getFieldValue("MODE")}'))`, Order.ATOMIC];
   G.forBlock["ai_objects"]    = b => [`(await AI.objects(${V(b,"IMG","null")}))`, Order.ATOMIC];
   G.forBlock["ai_custom"]     = b => [`(await AI.custom(${V(b,"IMG","null")}, '${b.getFieldValue("MODEL")}'))`, Order.ATOMIC];
+  G.forBlock["ai_detect_file"]= b => [`(await AI.detectFile(${V(b,"IMG","null")}, '${b.getFieldValue("FILE")}'))`, Order.ATOMIC];
   G.forBlock["ed_resize"]  = b => [`(await ED.resize(${V(b,"IMG","null")}, ${V(b,"F","1")}))`, Order.ATOMIC];
   G.forBlock["ed_rotate"]  = b => [`(await ED.rotate(${V(b,"IMG","null")}, ${V(b,"DEG","90")}))`, Order.ATOMIC];
   G.forBlock["ed_flip"]    = b => [`(await ED.flip(${V(b,"IMG","null")}, '${b.getFieldValue("DIR")}'))`, Order.ATOMIC];
@@ -1414,12 +1473,11 @@ def beats(a, b):
   G.forBlock["ev_wait_face"]    = () => "await RT.waitUntil('face');\n";
   G.forBlock["ev_wait_hand"]    = b => `await RT.waitUntil('hand', '${b.getFieldValue("G")}');\n`;
   G.forBlock["ev_wait_custom"]  = b => `await RT.waitUntil('custom', { slug: '${b.getFieldValue("MODEL")}', label: ${V(b,"LABEL","''")} });\n`;
-  G.forBlock["st_print"]        = b => `RT.print(${V(b,"V","''")});\n`;
   G.forBlock["st_note"]         = b => `await RT.note(${b.getFieldValue("N")}, ${V(b,"B","1")});\n`;
   G.forBlock["st_beep"]         = b => `await RT.beep('${b.getFieldValue("K")}');\n`;
   G.forBlock["st_melody"]       = b => `await RT.melody(${V(b,"M","''")}, ${b.getFieldValue("T")});\n`;
   G.forBlock["st_freq"]         = b => `await RT.freq(${V(b,"F","440")}, ${V(b,"S","0.5")});\n`;
-  G.forBlock["st_save_stage"]   = () => "RT.saveStage();\n";
+  G.forBlock["st_save_stage"]   = b => `RT.saveStage(${V(b,"IMG","null")});\n`;
   G.forBlock["edx_crop"]    = b => [`(await ED.cropXY(${V(b,"IMG","null")}, ${V(b,"X","0")}, ${V(b,"Y","0")}, ${V(b,"W","100")}, ${V(b,"H","100")}))`, Order.ATOMIC];
   G.forBlock["edx_text"]    = b => [`(await ED.textXY(${V(b,"IMG","null")}, ${V(b,"TXT","''")}, ${V(b,"X","20")}, ${V(b,"Y","20")}, ${V(b,"SIZE","40")}, '${b.getFieldValue("COL")}', ${V(b,"DEG","0")}))`, Order.ATOMIC];
   G.forBlock["edx_rect"]    = b => [`(await ED.rectXY(${V(b,"IMG","null")}, ${V(b,"X","0")}, ${V(b,"Y","0")}, ${V(b,"W","100")}, ${V(b,"H","100")}, '${b.getFieldValue("FILL")}', '${b.getFieldValue("COL")}'))`, Order.ATOMIC];
@@ -1435,20 +1493,15 @@ def beats(a, b):
   G.forBlock["ai_qr"]         = b => [`(await AI.qr(${V(b,"IMG","null")}))`, Order.ATOMIC];
   G.forBlock["ai_ask"]        = b => [`(await AI.ask(${V(b,"IMG","null")}, ${V(b,"Q","''")}))`, Order.ATOMIC];
   G.forBlock["ai_chat"]       = b => [`(await AI.chat(${V(b,"Q","''")}))`, Order.ATOMIC];
-  G.forBlock["ai_guess"]      = b => [`(await AI.guess(${V(b,"IMG","null")}, '${b.getFieldValue("KIND")}'))`, Order.ATOMIC];
   G.forBlock["ai_transform"]  = b => [`(await AI.transform(${V(b,"IMG","null")}, '${b.getFieldValue("KIND")}'))`, Order.ATOMIC];
-  G.forBlock["ai_beats"]      = b => [`(AI.beats(${V(b,"A","''")}, ${V(b,"B","''")}))`, Order.ATOMIC];
-  G.forBlock["ai_random_rps"] = () => ["(AI.randomRps())", Order.ATOMIC];
   G.forBlock["st_say"]        = b =>
     `await RT.say(${V(b,"TEXT","''")}, "${b.getFieldValue("V")}", "${b.getFieldValue("S")}");\n`;
   G.forBlock["ai_listen"]     = b => [`(await AI.listen(${b.getFieldValue("SEC")}))`, Order.ATOMIC];
-  G.forBlock["st_show_text"]  = b => `RT.showText(${V(b,"TEXT","''")});\n`;
   G.forBlock["st_show_image"] = b => `await RT.showImage(${V(b,"IMG","null")});\n`;
   G.forBlock["st_boxes"]      = () => "await RT.drawBoxes();\n";
   G.forBlock["st_clear"]      = () => "RT.clearStage();\n";
   G.forBlock["st_wait"]       = b => `await RT.wait(${V(b,"SEC","1")});\n`;
   G.forBlock["ai_detect_draw"]= b => `await AI.detectDraw(${V(b,"IMG","null")}, '${b.getFieldValue("MODE")}');\n`;
-  G.forBlock["ai_exec"]       = b => `${V(b,"V","null")};\n`;
 
   /* 변수 대입 블록을 감싸 실행 중 값이 화면에 보이게 한다 (C10) */
   (function () {
@@ -1471,35 +1524,89 @@ def beats(a, b):
 
   function buildToolbox() {
     return { kind: "categoryToolbox", contents: [
-      { kind: "category", name: t("cat_input"), colour: C_INPUT, contents: [
-        { kind: "block", type: "ai_capture" }, { kind: "block", type: "ai_upload" } ] },
-      { kind: "category", name: t("cat_vision"), colour: C_AI, contents: [
-        { kind: "block", type: "ai_detect_draw" },
-        { kind: "block", type: "ai_detect_one" }, { kind: "block", type: "ai_objects" },
-        { kind: "block", type: "ai_custom" },
-        { kind: "block", type: "ai_face" }, { kind: "block", type: "ai_face_count" },
-        { kind: "block", type: "ai_hand" }, { kind: "block", type: "ai_face_dist" },
-        { kind: "block", type: "ai_ocr" }, { kind: "block", type: "ai_qr" },
-        { kind: "block", type: "ai_listen" } ] },
-      { kind: "category", name: t("cat_edit"), colour: C_EDIT, contents: [
+      /* ---------- 기본 블록 (Blockly 표준 — 이름·순서 그대로) ---------- */
+      { kind: "category", name: t("cat_logic"), colour: 210, contents: [
+        { kind: "block", type: "controls_if" },
+        { kind: "block", type: "logic_compare" },
+        { kind: "block", type: "logic_operation" },
+        { kind: "block", type: "logic_negate" },
+        { kind: "block", type: "logic_boolean" },
+        { kind: "block", type: "logic_null" },
+        { kind: "block", type: "logic_ternary" } ] },
+      { kind: "category", name: t("cat_loop"), colour: 120, contents: [
+        { kind: "block", type: "controls_repeat_ext", inputs: { TIMES: num(10) } },
+        { kind: "block", type: "controls_whileUntil" },
+        { kind: "block", type: "controls_for",
+          inputs: { FROM: num(1), TO: num(10), BY: num(1) } },
+        { kind: "block", type: "controls_forEach" },
+        { kind: "block", type: "controls_flow_statements" } ] },
+      { kind: "category", name: t("cat_math"), colour: 230, contents: [
+        { kind: "block", type: "math_number" },
+        { kind: "block", type: "math_arithmetic" },
+        { kind: "block", type: "math_single" },
+        { kind: "block", type: "math_trig" },
+        { kind: "block", type: "math_constant" },
+        { kind: "block", type: "math_number_property" },
+        { kind: "block", type: "math_round" },
+        { kind: "block", type: "math_on_list" },
+        { kind: "block", type: "math_modulo" },
+        { kind: "block", type: "math_constrain",
+          inputs: { LOW: num(1), HIGH: num(100) } },
+        { kind: "block", type: "math_random_int", inputs: { FROM: num(1), TO: num(100) } },
+        { kind: "block", type: "math_random_float" } ] },
+      { kind: "category", name: t("cat_text"), colour: 160, contents: [
+        { kind: "block", type: "text" },
+        { kind: "block", type: "text_join" },
+        { kind: "block", type: "text_append" },
+        { kind: "block", type: "text_length" },
+        { kind: "block", type: "text_isEmpty" },
+        { kind: "block", type: "text_indexOf" },
+        { kind: "block", type: "text_charAt" },
+        { kind: "block", type: "text_getSubstring" },
+        { kind: "block", type: "text_changeCase" },
+        { kind: "block", type: "text_trim" },
+        { kind: "block", type: "text_print" } ] },
+      { kind: "category", name: t("cat_list"), colour: 260, contents: [
+        { kind: "block", type: "lists_create_with" },
+        { kind: "block", type: "lists_repeat", inputs: { NUM: num(5) } },
+        { kind: "block", type: "lists_length" },
+        { kind: "block", type: "lists_isEmpty" },
+        { kind: "block", type: "lists_indexOf" },
+        { kind: "block", type: "lists_getIndex" },
+        { kind: "block", type: "lists_setIndex" },
+        { kind: "block", type: "lists_getSublist" },
+        { kind: "block", type: "lists_split" },
+        { kind: "block", type: "lists_sort" } ] },
+      { kind: "category", name: t("cat_var"), custom: "VARIABLE", colour: 330 },
+      { kind: "category", name: t("cat_func"), custom: "PROCEDURE", colour: 290 },
+      { kind: "sep" },
+      /* ---------- 커스텀 (이 프로그램만의 블록) ---------- */
+      { kind: "category", name: t("cat_image"), colour: C_EDIT, contents: [
+        { kind: "block", type: "ai_capture" }, { kind: "block", type: "ai_upload" },
+        { kind: "block", type: "st_show_image" },
+        { kind: "block", type: "st_save_stage" },
+        { kind: "block", type: "st_clear" } ] },
+      { kind: "category", name: t("cat_img_edit"), colour: C_EDIT, contents: [
         { kind: "block", type: "ed_resize", inputs: { F: num(2) } },
         { kind: "block", type: "ed_rotate", inputs: { DEG: num(90) } },
         { kind: "block", type: "ed_flip" },
         { kind: "block", type: "ed_crop" },
+        { kind: "block", type: "ed_crop_detected" },
         { kind: "block", type: "ed_merge" },
         { kind: "block", type: "ed_overlay" },
         { kind: "block", type: "ed_tone", inputs: { V: num(30) } },
-        { kind: "block", type: "ed_filter" },
+        { kind: "block", type: "ed_filter" } ] },
+      { kind: "category", name: t("cat_img_draw"), colour: C_EDIT, contents: [
         { kind: "block", type: "ed_text", inputs: { TXT: txt(t("sh_hello")), SIZE: num(48) } },
         { kind: "block", type: "ed_text_rot", inputs: { TXT: txt(t("sh_hello")), DEG: num(-15) } },
         { kind: "block", type: "ed_rect" },
         { kind: "block", type: "ed_circle" },
         { kind: "block", type: "ed_line" },
+        { kind: "block", type: "ed_sticker" },
+        { kind: "label", text: t("lbl_img_ask") },
         { kind: "block", type: "ed_size_of" },
         { kind: "block", type: "ed_color_at" },
-        { kind: "block", type: "ed_main_color" },
-        { kind: "block", type: "ed_crop_detected" },
-        { kind: "block", type: "ed_sticker" } ] },
+        { kind: "block", type: "ed_main_color" } ] },
       { kind: "category", name: t("cat_edit_xy"), colour: C_EDITX, contents: [
         { kind: "label", text: t("lbl_xy_note") },
         { kind: "block", type: "edx_crop",
@@ -1515,44 +1622,34 @@ def beats(a, b):
         { kind: "block", type: "edx_overlay",
           inputs: { X: num(20), Y: num(20), W: num(160) } },
         { kind: "block", type: "edx_color", inputs: { X: num(320), Y: num(240) } } ] },
+      { kind: "category", name: t("cat_vision"), colour: C_AI, contents: [
+        { kind: "label", text: t("lbl_basic") },
+        { kind: "block", type: "ai_face" }, { kind: "block", type: "ai_face_count" },
+        { kind: "block", type: "ai_face_dist" }, { kind: "block", type: "ai_hand" },
+        { kind: "block", type: "ai_objects" },
+        { kind: "block", type: "ai_ocr" }, { kind: "block", type: "ai_qr" },
+        { kind: "label", text: t("lbl_my_model") },
+        { kind: "block", type: "ai_custom" },
+        { kind: "block", type: "ai_detect_file" },
+        { kind: "label", text: t("lbl_draw_box") },
+        { kind: "block", type: "ai_detect_draw" },
+        { kind: "block", type: "st_boxes" } ] },
+      { kind: "category", name: t("cat_sound"), colour: C_SOUND, contents: [
+        { kind: "block", type: "st_say", inputs: { TEXT: txt(t("sh_hello")) } },
+        { kind: "block", type: "ai_listen" },
+        { kind: "block", type: "st_note", inputs: { B: num(1) } },
+        { kind: "block", type: "st_melody", inputs: { M: txt(t("sh_melody")) } },
+        { kind: "block", type: "st_beep" },
+        { kind: "block", type: "st_freq", inputs: { F: num(440), S: num(1) } } ] },
       { kind: "category", name: t("cat_lang"), colour: C_VLM, contents: [
         { kind: "block", type: "ai_ask", inputs: { Q: txt(t("sh_question")) } },
         { kind: "block", type: "ai_chat", inputs: { Q: txt(t("sh_chatQ")) } },
-        { kind: "block", type: "ai_guess" }, { kind: "block", type: "ai_transform" } ] },
-      { kind: "category", name: t("cat_stage"), colour: C_STAGE, contents: [
-        { kind: "block", type: "st_say", inputs: { TEXT: txt(t("sh_hello")) } },
-        { kind: "block", type: "st_show_text", inputs: { TEXT: txt(t("sh_win")) } },
-        { kind: "block", type: "st_show_image" }, { kind: "block", type: "st_boxes" },
-        { kind: "block", type: "st_note", inputs: { B: num(1) } },
-        { kind: "block", type: "st_beep" },
-        { kind: "block", type: "st_melody", inputs: { M: txt(t("sh_melody")) } },
-        { kind: "block", type: "st_freq", inputs: { F: num(440), S: num(1) } },
-        { kind: "block", type: "st_print" },
-        { kind: "block", type: "st_save_stage" },
-        { kind: "block", type: "st_clear" },
-        { kind: "block", type: "st_wait", inputs: { SEC: num(1) } } ] },
-      { kind: "sep" },
-      { kind: "category", name: t("cat_loop"), colour: 120, contents: [
-        { kind: "block", type: "controls_repeat_ext", inputs: { TIMES: num(5) } },
-        { kind: "block", type: "controls_whileUntil" } ] },
-      { kind: "category", name: t("cat_logic"), colour: C_JUDGE, contents: [
-        { kind: "block", type: "controls_if" }, { kind: "block", type: "logic_compare" },
-        { kind: "block", type: "logic_operation" }, { kind: "block", type: "logic_negate" },
-        { kind: "block", type: "logic_boolean" },
+        { kind: "block", type: "ai_transform" } ] },
+      { kind: "category", name: t("cat_event"), colour: C_EVENT, contents: [
+        { kind: "block", type: "st_wait", inputs: { SEC: num(1) } },
         { kind: "block", type: "ev_wait_face" },
         { kind: "block", type: "ev_wait_hand" },
-        { kind: "block", type: "ev_wait_custom", inputs: { LABEL: txt("") } },
-        { kind: "block", type: "ai_beats" }, { kind: "block", type: "ai_random_rps" },
-        { kind: "block", type: "ai_exec" } ] },
-      { kind: "category", name: t("cat_math"), colour: 230, contents: [
-        { kind: "block", type: "math_number" }, { kind: "block", type: "math_arithmetic" },
-        { kind: "block", type: "math_random_int", inputs: { FROM: num(1), TO: num(10) } } ] },
-      { kind: "category", name: t("cat_text"), colour: 160, contents: [
-        { kind: "block", type: "text" }, { kind: "block", type: "text_join" } ] },
-      { kind: "category", name: t("cat_list"), colour: 260, contents: [
-        { kind: "block", type: "lists_create_with" }, { kind: "block", type: "lists_length" },
-        { kind: "block", type: "lists_indexOf" } ] },
-      { kind: "category", name: t("cat_var"), custom: "VARIABLE", colour: 330 },
+        { kind: "block", type: "ev_wait_custom", inputs: { LABEL: txt("") } } ] },
     ] };
   }
 
@@ -1565,6 +1662,7 @@ def beats(a, b):
 
   let ws = Blockly.inject("blocklyDiv", Object.assign({ toolbox: buildToolbox() }, WS_OPTS));
   loadCustomModels();      // 내가 만든 AI 목록 (드롭다운은 열 때마다 최신 목록을 읽음)
+  loadModelFiles();        // 가져다 둔 모델 파일 목록
 
   /* 작업 칸 크기가 바뀌면 블록판을 다시 그린다.
      Blockly 는 만들 때의 크기를 기억하므로, 손잡이로 끌어 칸만 넓혀도 캔버스는
@@ -1586,7 +1684,7 @@ def beats(a, b):
     const VG = n => B("variables_get", { fields: { VAR: { name: n } } });
     const SET = (n, blk) => B("variables_set",
       { fields: { VAR: { name: n } }, inputs: { VALUE: { block: blk } } });
-    const PR = blk => B("st_print", { inputs: { V: { block: blk } } });
+    const PR = blk => B("text_print", { inputs: { TEXT: { block: blk } } });
     return [
       { id: "greet", name: t("ex_greet"), desc: t("ex_greet_d"),
         state: { blocks: { languageVersion: 0, blocks: [ chain([
@@ -1600,25 +1698,61 @@ def beats(a, b):
           CLEAR(),
           B("st_say", { inputs: { TEXT: shadowTxt(t("o_rps") + "!") } }),
           B("st_wait", { inputs: { SEC: shadowNum(1) } }),
-          /* YOLO 가위바위보 모델을 쓴다 — 손모양(브이·주먹...)과 달리 가위/바위/보를 돌려준다 */
-          B("variables_set", { fields: { VAR: { name: "me" } },
-            inputs: { VALUE: { block: B("ai_detect_one", { fields: { MODE: "rps" },
-              inputs: { IMG: { block: B("ai_capture") } } }) } } }),
-          B("variables_set", { fields: { VAR: { name: "com" } },
-            inputs: { VALUE: { block: B("ai_random_rps") } } }),
-          B("st_say", { inputs: { TEXT: { block: B("variables_get",
-            { fields: { VAR: { name: "com" } } }) } } }),
+          /* 손 모양으로 낸다 — 브이=가위, 주먹=바위, 손바닥=보.
+             컴퓨터는 목록에서 무작위로 고르고, 승패는 [만약]·[그리고]·[=] 로 직접 짠다. */
+          B("variables_set", { fields: { VAR: { name: "나" } },
+            inputs: { VALUE: { block: B("ai_hand",
+              { inputs: { IMG: { block: B("ai_capture") } } }) } } }),
+          B("variables_set", { fields: { VAR: { name: "컴퓨터" } },
+            inputs: { VALUE: { block: B("lists_getIndex",
+              { fields: { MODE: "GET", WHERE: "RANDOM" },
+                inputs: { VALUE: { block: B("lists_create_with", {
+                  extraState: { itemCount: 3 },
+                  inputs: { ADD0: shadowTxt(t("g_Victory")),
+                            ADD1: shadowTxt(t("g_Closed_Fist")),
+                            ADD2: shadowTxt(t("g_Open_Palm")) } }) } } }) } } }),
+          PR(B("variables_get", { fields: { VAR: { name: "컴퓨터" } } })),
           B("controls_if", { extraState: { hasElse: true },
             inputs: {
-              IF0: { block: B("ai_beats", { inputs: {
-                A: { block: B("variables_get", { fields: { VAR: { name: "me" } } }) },
-                B: { block: B("variables_get", { fields: { VAR: { name: "com" } } }) } } }) },
+              IF0: { block: B("logic_operation", { fields: { OP: "AND" },
+                inputs: {
+                  A: { block: B("logic_compare", { fields: { OP: "EQ" }, inputs: {
+                    A: { block: B("variables_get", { fields: { VAR: { name: "나" } } }) },
+                    B: shadowTxt(t("g_Victory")) } }) },
+                  B: { block: B("logic_compare", { fields: { OP: "EQ" }, inputs: {
+                    A: { block: B("variables_get", { fields: { VAR: { name: "컴퓨터" } } }) },
+                    B: shadowTxt(t("g_Open_Palm")) } }) } } }) },
               DO0: { block: chain([
-                B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_win")) } }),
+                B("st_say", { inputs: { TEXT: shadowTxt(t("sh_win")) } }),
                 B("st_beep", { fields: { K: "sndFanfare" } }),
               ]) },
               ELSE: { block: B("st_beep", { fields: { K: "beepNo" } }) },
             } }),
+        ]) ] } } },
+      /* 내가 가르친 AI 로 분류하기 — [가르치기]에서 학습한 모델을 쓴다 */
+      { id: "mymodel", name: t("ex_mymodel"), desc: t("ex_mymodel_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
+          CLEAR(),
+          B("variables_set", { fields: { VAR: { name: "사진" } },
+            inputs: { VALUE: { block: B("ai_capture") } } }),
+          B("variables_set", { fields: { VAR: { name: "답" } },
+            inputs: { VALUE: { block: B("ai_custom",
+              { inputs: { IMG: { block: VG("사진") } } }) } } }),
+          PR(B("variables_get", { fields: { VAR: { name: "답" } } })),
+          B("st_say", { inputs: { TEXT: { block: B("variables_get",
+            { fields: { VAR: { name: "답" } } }) } } }),
+        ]) ] } } },
+      /* 가져다 둔 모델 파일(.pt) 로 찾기 — [설정]의 [모델 폴더 열기]에 넣은 것 */
+      { id: "modelfile", name: t("ex_modelfile"), desc: t("ex_modelfile_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
+          CLEAR(),
+          B("variables_set", { fields: { VAR: { name: "사진" } },
+            inputs: { VALUE: { block: B("ai_capture") } } }),
+          B("variables_set", { fields: { VAR: { name: "찾은것" } },
+            inputs: { VALUE: { block: B("ai_detect_file",
+              { inputs: { IMG: { block: VG("사진") } } }) } } }),
+          PR(B("variables_get", { fields: { VAR: { name: "찾은것" } } })),
+          B("st_show_image", { inputs: { IMG: { block: VG("사진") } } }),
         ]) ] } } },
       { id: "selfie", name: t("ex_selfie"), desc: t("ex_selfie_d"),
         state: { blocks: { languageVersion: 0, blocks: [ chain([
@@ -1632,7 +1766,8 @@ def beats(a, b):
                 TXT: shadowTxt(t("sh_hello")), SIZE: shadowNum(48) } }) } } }),
           B("st_show_image", { inputs: { IMG: { block: B("variables_get",
             { fields: { VAR: { name: "photo" } } }) } } }),
-          B("st_save_stage"),
+          B("st_save_stage", { inputs: { IMG: { block: B("variables_get",
+            { fields: { VAR: { name: "photo" } } }) } } }),
         ]) ] } } },
       { id: "color", name: t("ex_color"), desc: t("ex_color_d"),
         state: { blocks: { languageVersion: 0, blocks: [ chain([
@@ -1654,12 +1789,12 @@ def beats(a, b):
       { id: "sound", name: t("ex_sound"), desc: t("ex_sound_d"),
         state: { blocks: { languageVersion: 0, blocks: [ chain([
           CLEAR(),
-          B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_melody")) } }),
+          PR(B("text", { fields: { TEXT: t("sh_melody") } })),
           B("st_melody", { fields: { T: "120" }, inputs: { M: shadowTxt(t("sh_melody")) } }),
           /* 같은 음을 주파수로도 내 보며 "소리 = 떨림"을 확인한다 */
-          B("st_show_text", { inputs: { TEXT: shadowTxt("262 Hz") } }),
+          PR(B("text", { fields: { TEXT: "262 Hz" } })),
           B("st_freq", { inputs: { F: shadowNum(262), S: shadowNum(1) } }),
-          B("st_show_text", { inputs: { TEXT: shadowTxt("524 Hz") } }),
+          PR(B("text", { fields: { TEXT: "524 Hz" } })),
           B("st_freq", { inputs: { F: shadowNum(524), S: shadowNum(1) } }),
           B("st_beep", { fields: { K: "sndChime" } }),
         ]) ] } } },
@@ -1670,8 +1805,7 @@ def beats(a, b):
           B("st_say", { inputs: { TEXT: shadowTxt(t("sh_askSay")) } }),
           B("variables_set", { fields: { VAR: { name: t("v_word") } },
             inputs: { VALUE: { block: B("ai_listen", { fields: { SEC: "4" } }) } } }),
-          B("st_show_text", { inputs: { TEXT: { block: B("variables_get",
-            { fields: { VAR: { name: t("v_word") } } }) } } }),
+          PR(B("variables_get", { fields: { VAR: { name: t("v_word") } } })),
           B("st_say", { inputs: { TEXT: { block: B("text_join", {
             extraState: { itemCount: 2 },
             inputs: { ADD0: { block: B("variables_get", { fields: { VAR: { name: t("v_word") } } }) },
@@ -1724,20 +1858,10 @@ def beats(a, b):
           PR(B("ai_face_dist", { inputs: { IMG: { block: VG("사진") } } })),
           PR(B("ai_ocr", { inputs: { IMG: { block: VG("사진") } } })),
           PR(B("ai_qr", { inputs: { IMG: { block: VG("사진") } } })),
-          PR(B("ai_detect_one", { fields: { MODE: "rps" },
-                                  inputs: { IMG: { block: VG("사진") } } })),
 
           /* 3) 언어 AI */
           PR(B("ai_ask", { inputs: { IMG: { block: VG("사진") },
                                      Q: shadowTxt(t("sh_allAsk")) } })),
-          PR(B("ai_guess", { fields: { KIND: "place" },
-                             inputs: { IMG: { block: VG("사진") } } })),
-          PR(B("ai_guess", { fields: { KIND: "time" },
-                             inputs: { IMG: { block: VG("사진") } } })),
-          PR(B("ai_guess", { fields: { KIND: "weather" },
-                             inputs: { IMG: { block: VG("사진") } } })),
-          PR(B("ai_guess", { fields: { KIND: "tag" },
-                             inputs: { IMG: { block: VG("사진") } } })),
 
           /* 4) 박스 그려 보기 + 인식한 것 잘라 오기 */
           B("ai_detect_draw", { fields: { MODE: "objects" },
@@ -1818,7 +1942,7 @@ def beats(a, b):
                                                    X: shadowNum(5), Y: shadowNum(5),
                                                    W: shadowNum(60) } })),
           B("st_show_image", { inputs: { IMG: { block: VG("편집") } } }),
-          B("st_save_stage"),
+          B("st_save_stage", { inputs: { IMG: { block: VG("편집") } } }),
 
           /* 9) 사진 살펴보기 */
           PR(B("ed_size_of", { fields: { WHAT: "width" },
@@ -1829,16 +1953,8 @@ def beats(a, b):
           PR(B("edx_color", { inputs: { IMG: { block: VG("편집") },
                                         X: shadowNum(10), Y: shadowNum(10) } })),
 
-          /* 10) 판단 도우미 */
-          SET("낸것", B("ai_random_rps")),
-          PR(B("ai_beats", { inputs: { A: { block: VG("낸것") },
-                                       B: { block: B("ai_random_rps") } } })),
-
-          /* 10-2) 사진 없이 물어보기 */
+          /* 10) 사진 없이 물어보기 */
           PR(B("ai_chat", { inputs: { Q: shadowTxt(t("sh_chatQ")) } })),
-
-          /* 11) 값 블록을 그냥 실행해 보기 */
-          B("ai_exec", { inputs: { V: { block: B("ai_capture") } } }),
 
           /* 11) 소리 */
           B("st_note", { fields: { N: "392" }, inputs: { B: shadowNum(1) } }),
@@ -1847,7 +1963,7 @@ def beats(a, b):
           B("st_beep", { fields: { K: "sndFanfare" } }),
 
           /* 12) 마무리 */
-          B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_allDone")) } }),
+          PR(B("text", { fields: { TEXT: t("sh_allDone") } })),
           B("st_wait", { inputs: { SEC: shadowNum(1) } }),
           B("st_say", { fields: { V: "M1", S: "fast" },
                         inputs: { TEXT: shadowTxt(t("sh_allDone")) } }),
@@ -2155,8 +2271,9 @@ def beats(a, b):
       if (!uploadedURL) throw t("m_needUpload");
       return uploadedURL;
     },
-    async detectOne(img, mode) {
-      const d = await post("object/object_custom", img, { detect_mode: mode });
+    async detectFile(img, name) {
+      if (!name) throw t("m_noFile");
+      const d = await post("object/detect_file", img, { model: name });
       const objs = (d && d.object) || [];
       AI._setBoxes(img, objs.map(o => ({ box: o.box, label: o.name })), COLOR.custom);
       return objs.length ? objs[0].name : t("r_none");
@@ -2232,22 +2349,6 @@ def beats(a, b):
         return j.data.answer;
       } finally { devIdle(); }
     },
-    async guess(img, kind) {
-      if (kind === "place") {
-        const d = await post("vlm/place", img);
-        return d.place;
-      }
-      if (kind === "time") {
-        const d = await post("vlm/time", img);
-        return d.time;
-      }
-      if (kind === "weather") {
-        const d = await post("vlm/weather", img);
-        return d.weather;
-      }
-      const d = await post("vlm/tag", img);
-      return d.tag;
-    },
     async transform(img, kind) {
       const d = await post("gan/" + kind, img);
       return "data:image/jpeg;base64," + d;
@@ -2259,7 +2360,6 @@ def beats(a, b):
       else if (mode === "objects") await AI.objects(img);
       else if (mode === "ocr") await AI.ocr(img);
       else if (mode === "qr") await AI.qr(img);
-      else await AI.detectOne(img, mode);
       await RT.drawBoxes();
     },
     async detectDraw(img, mode) {
@@ -2269,15 +2369,8 @@ def beats(a, b):
       else if (mode === "objects") await AI.objects(img);
       else if (mode === "ocr") await AI.ocr(img);
       else if (mode === "qr") await AI.qr(img);
-      else await AI.detectOne(img, mode);
       await RT.drawBoxes();
     },
-    beats(a, b) {
-      const R = RPS[LANG];                       // [가위, 바위, 보]
-      const w = {}; w[R[0]] = R[2]; w[R[1]] = R[0]; w[R[2]] = R[1];
-      return w[a] === b;
-    },
-    randomRps() { return RPS[LANG][Math.floor(Math.random() * 3)]; },
   };
 
   /* ---------------- 실행기 (RT) ---------------- */
@@ -2856,8 +2949,8 @@ def beats(a, b):
       if (Array.isArray(v)) v = v.join(", ");
       log("▷ " + String(v));
     },
-    saveStage() {
-      const url = shownURL;
+    saveStage(img) {
+      const url = img || shownURL;           /* 준 사진이 있으면 그것, 없으면 지금 보이는 것 */
       if (!url) { log(t("m_noImage")); return; }
       const a = document.createElement("a");
       a.href = url;
@@ -3074,6 +3167,7 @@ def beats(a, b):
 
   </script>
   <script src="/lib/usage.js" data-page="blocks"></script>
+  <script src="/lib/nav.js"></script>
   <script src="/lib/sysbar.js"></script>
   <script src="/lib/split.js"></script>
 </body>

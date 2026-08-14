@@ -33,8 +33,10 @@
     "#sysPanel .v{color:var(--ink,#2a2620);font-variant-numeric:tabular-nums;}",
     "#sysPanel .sysrow{flex:1 0 100%;display:flex;gap:12px;}",
     "#sysBtn{display:inline-flex;align-items:center;justify-content:center;",
-    "  background:#fff;border:1.5px solid var(--line-d,#4a3f2e);color:var(--ink-2,#4a423a);",
-    "  min-width:46px;height:34px;padding:0 10px;border-radius:var(--r,3px);cursor:pointer;}",
+    "  background:#fff;color:var(--ink-2,#4a423a);",
+    "  min-width:46px;height:34px;padding:0 10px;cursor:pointer;}",
+    /* 테두리·모서리(알약)는 lib/ui.css 가 도구 무리로 묶어 정한다 —
+       여기서 또 정하면 한/영 단추와 어긋난다. */
     /* 글꼴·크기·굵기는 lib/ui.css 가 헤더 단추 전부에 한 번에 정한다.
        여기서 또 정하면 이 단추만 달라 보인다(전에 고정폭 700 이라 혼자 굵었다). */
     "#sysBtn.idle{color:var(--ink-2,#4a423a);opacity:.75;}",
@@ -285,20 +287,14 @@
      이름이 제대로 잡혔는지 매번 설정에 들어가 보지 않아도 안다.
      이름을 따로 정하지 않았으면(윈도우 로그인 이름을 쓰는 상태) 톱니만 둔다 —
      admin·user01 같은 계정명이 헤더에 뜨면 오히려 어수선하다. */
+  /* 이름은 AI 패널에만 보여 준다.
+     전에는 헤더의 톱니 옆에 이름을 덧그렸는데, 이제 그 자리가 [⚙ 설정] 탭이라
+     탭 글자를 이름으로 갈아치우게 된다 — 어디로 가는 단추인지 안 읽힌다. */
   async function paintName() {
-    var link = document.getElementById("optionsLink");
-    if (!link) return;                       // 톱니가 없는 페이지(서브 화면)
     try {
       var r = await fetch("/system/workdir");
       var d = (await r.json()).data || {};
-      if (d.name && window.vapiSetWho) window.vapiSetWho(d.name);   // 오버레이도 함께
-      if (!d.name || d.name_is_default) return;
-      link.style.width = "auto";
-      link.style.padding = "0 10px";
-      link.style.gap = "7px";
-      link.style.fontSize = ".88rem";
-      link.innerHTML = "\u2699 <span>" + String(d.name).replace(/[<&]/g, "") + "</span>";
-      link.title = d.name + " — 설정 · 점검";
+      if (d.name && window.vapiSetWho) window.vapiSetWho(d.name);
     } catch (e) {}
   }
 

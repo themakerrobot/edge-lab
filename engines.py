@@ -184,48 +184,86 @@ class ObjectEngine:
 
 # 개별 인식 모델이 내는 영문 클래스 이름 -> 한국어. 없으면 영문을 그대로 쓴다
 # (숫자 모델의 "0"~"9", "+" 같은 것은 번역할 게 없다)
-CUSTOM_KO = {
-    "fire": "불", "smoke": "연기", "fall": "낙상", "fallen": "낙상",
-    "person": "사람", "helmet": "안전모", "head": "맨머리", "box": "박스",
-    "rock": "바위", "paper": "보", "scissors": "가위",
-    "red": "빨강공", "yellow": "노랑공", "green": "초록공", "blue": "파랑공",
-    "ball": "공",
-}
-# 모델마다 표기가 갈리는 것들을 한 이름으로 모은다 (Scissor / Scissors 등)
-CUSTOM_EN_NORM = {"scissor": "scissors", "fallen": "fall"}
+class UserYolo:
+    """사람이 가져다 둔 YOLO 모델 파일(.pt)로 인식한다.
 
+    프로그램이 들고 오는 모델과 다른 점 둘:
+      - 기동 때 안 올린다. 처음 쓸 때 올리고 그대로 들고 있는다(_cache).
+      - 이름은 파일 이름 그대로 — 번역표가 없으므로 name 과 name_en 이 같다.
+    파일은 작업폴더의 models 칸(paths.YOLO_DIR)에서만 찾는다. 바깥 경로를
+    받지 않는 것은 화면에서 고른 이름이 그대로 파일 경로가 되기 때문이다.
+    """
 
-class CustomEngine:
-    MODES = ["fire", "fall", "ball", "rps", "number", "helmet", "box"]
-    TASKS = {"box": "segment"}  # box-11s는 seg 모델 (boxes만 사용)
+    EXTS = (".pt", ".onnx")
 
     def __init__(self):
-        self.models = {}
-        for m in self.MODES:
-            self.models[m] = Yolo(MODELS / f"object/{m}-11s_openvino_model",
-                                  task=self.TASKS.get(m, "detect"))
+        self._cache = {}
+        self.lock = threading.Lock()
 
-    def predict(self, mode, image_path, lang="ko"):
-        if mode not in self.models:
-            return []
-        r = self.models[mode](image_path)[0]
-        ko = str(lang).startswith("ko")
-        data = []
+    @staticmethod
+    def folder():
+        import paths as _p
+        os.makedirs(_p.YOLO_DIR, exist_ok=True)
+        return _p.YOLO_DIR
+
+    @classmethod
+    def files(cls):
+        """쓸 수 있는 모델 이름 목록 (확장자 포함, 이름순)."""
+        d = cls.folder()
+        out = []
+        try:
+            for n in sorted(os.listdir(d)):
+                full = os.path.join(d, n)
+                if os.path.isfile(full) and n.lower().endswith(cls.EXTS):
+                    out.append(n)
+                elif os.path.isdir(full) and n.endswith("_openvino_model"):
+                    out.append(n)
+        except Exception as ex:
+            print("[user-yolo] 폴더를 읽지 못했어요:", ex)
+        return out
+
+    def _resolve(self, name):
+        """이름 하나를 실제 경로로. 폴더 밖으로는 못 나간다."""
+        base = os.path.basename(str(name or "").strip())
+        if not base:
+            raise ValueError("모델 이름이 비었어요.")
+        d = self.folder()
+        cand = [base] if (base.lower().endswith(self.EXTS)
+                          or base.endswith("_openvino_model")) else \
+               [base + e for e in self.EXTS] + [base + "_openvino_model"]
+        for c in cand:
+            full = os.path.join(d, c)
+            if os.path.exists(full):
+                return full
+        have = ", ".join(self.files()) or "(아직 없어요)"
+        raise FileNotFoundError(
+            "모델 파일이 없어요: %s\n모델 폴더: %s\n지금 있는 것: %s" % (base, d, have))
+
+    def _model(self, name):
+        full = self._resolve(name)
+        with self.lock:
+            m = self._cache.get(full)
+            if m is None:
+                m = Yolo(full)                 # 처음 쓸 때만 올린다
+                self._cache[full] = m
+            return m
+
+    def predict(self, name, image_path, conf=0.3):
+        r = self._model(name)(image_path)[0]
+        out = []
         for box in (r.boxes or []):
             score = float(box.conf[0])
-            if score < 0.3:
+            if score < conf:
                 continue
             x1, y1, x2, y2 = map(int, box.xyxy[0])
             names = r.names
-            raw = names.get(int(box.cls[0]), "Unknown") if isinstance(names, dict) \
+            raw = names.get(int(box.cls[0]), "?") if isinstance(names, dict) \
                 else names[int(box.cls[0])]
-            en = str(raw).strip().lower().replace(" ", "-")
-            en = CUSTOM_EN_NORM.get(en, en)
-            data.append({"name": CUSTOM_KO.get(en, en) if ko else en, "name_en": en,
-                         "percent": int(score * 100),
-                         "score": int(score * 100), "box": (x1, y1, x2, y2)})
-        return data
-
+            en = str(raw).strip()
+            out.append({"name": en, "name_en": en,
+                        "percent": int(score * 100), "score": int(score * 100),
+                        "box": (x1, y1, x2, y2)})
+        return out
 
 # ---------------------------------------------------------------- 얼굴 스위트 (OV 프리트레인 + YOLO mask cls)
 class OVModel:
@@ -628,7 +666,6 @@ class Embed:
 # 로딩 단계 정의 — 화면(진행바)과 순서를 맞추기 위해 여기에 모아 둔다.
 LOAD_STEPS = [
     ("object", "사물 찾기", "Object detection"),
-    ("custom", "개별 인식 8종", "8 individual detectors"),
     ("face", "얼굴 분석", "Face analysis"),
     ("gan", "그림 바꾸기", "Image transform"),
     ("code", "글자 · 코드 읽기", "Text & code"),
@@ -636,7 +673,6 @@ LOAD_STEPS = [
 ]
 WARM_STEPS = [
     ("w_yolo", "사물 찾기 준비", "Warming up detection"),
-    ("w_custom", "개별 인식 준비", "Warming up detectors"),
     ("w_face", "얼굴 분석 준비", "Warming up face"),
     ("w_gan", "그림 바꾸기 준비", "Warming up transform"),
     ("w_vlm", "그림 보고 말하기 준비", "Warming up vision language"),
@@ -650,12 +686,13 @@ class Engines:
         self._progress = progress or (lambda *a: None)
         self._n = 0
         print(f"[engines] devices={core.available_devices} face={DEV_FACE} gan={DEV_GAN} vlm={DEV_VLM}")
-        builders = [("object", ObjectEngine), ("custom", CustomEngine), ("face", FaceEngine),
+        builders = [("object", ObjectEngine), ("face", FaceEngine),
                     ("gan", GanEngine), ("code", CodeEngine), ("vlm", VlmEngine)]
         for key, cls in builders:
             self._step(key)
             setattr(self, key, cls())
         self.embed = Embed()          # 지연 로딩 — 자료 찾기 수업에서만 올라온다
+        self.user = UserYolo()        # 지연 로딩 — 가져온 모델을 처음 쓸 때만 올린다
         print("[engines] all models loaded")
         if warmup:
             self.warmup()
@@ -671,8 +708,6 @@ class Engines:
         steps = [
             ("yolo", lambda: (self.object.det(dummy), self.object.pose(dummy),
                               self.object.seg(dummy))),
-            ("custom", lambda: [m(dummy, imgsz=224 if k == "mask" else 640)
-                                for k, m in self.custom.models.items()]),
             ("face", lambda: (self.face.detect.predict(dummy),
                               self.face.age_gender.predict(face),
                               self.face.emotion.predict(face),

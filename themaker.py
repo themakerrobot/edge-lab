@@ -52,35 +52,20 @@ _API = {
     "distance":   ("/face/mesh", {}),
     # 사진을 보고 답한다 — 물으면 그 질문에, 안 물으면 사진 설명
     "look":       ("/vlm/look", {}),
-    "place":      ("/vlm/place", {}),
-    "time":       ("/vlm/time", {}),
-    "weather":    ("/vlm/weather", {}),
-    "tag":        ("/vlm/tag", {}),
     "ocr":        ("/code/ocr", {}),
     "qr":         ("/code/barcode", {}),
     "bg_remove":  ("/gan/portrait", {}),
     "sr":         ("/gan/sr", {}),
     "mask":       ("/face/mask_detect", {}),
-    # 개별 인식 YOLO 7종 (detect_mode 로 구분)
-    "fire":       ("/object/object_custom", {"detect_mode": "fire"}),
-    "fall":       ("/object/object_custom", {"detect_mode": "fall"}),
-    "ball":       ("/object/object_custom", {"detect_mode": "ball"}),
-    "rps":        ("/object/object_custom", {"detect_mode": "rps"}),
-    "number":     ("/object/object_custom", {"detect_mode": "number"}),
-    "helmet":     ("/object/object_custom", {"detect_mode": "helmet"}),
-    "box":        ("/object/object_custom", {"detect_mode": "box"}),
 }
 
 # 한글 이름도 그대로 쓸 수 있다
 _ALIAS_KO = {
     "사물": "object", "자세": "pose", "분할": "seg", "손": "hand",
     "얼굴": "face", "얼굴분석": "face_attr", "얼굴거리": "distance",
-    "보기": "look", "설명": "look", "질문": "look", "태그": "tag",
-    "장소": "place", "시간": "time", "날씨": "weather",
+    "보기": "look", "설명": "look", "질문": "look",
     "글자": "ocr", "큐알": "qr", "배경제거": "bg_remove", "화질개선": "sr",
     "마스크": "mask",
-    "불": "fire", "화재": "fire", "쓰러짐": "fall", "공": "ball",
-    "가위바위보": "rps", "숫자": "number", "안전모": "helmet", "상자": "box",
 }
 
 
@@ -234,7 +219,7 @@ def vision(kind, image, prompt=None, **params):
     data.update({k: str(v) for k, v in params.items()})
 
     # 서버는 이 값들을 주소(쿼리)로 받는다 — 본문에 넣으면 조용히 무시된다.
-    # (prompt·lang·detect_mode 가 안 먹던 원인)
+    # (prompt·lang 이 안 먹던 원인)
     if data:
         url += ("&" if "?" in url else "?") + urllib.parse.urlencode(data)
     j = _post(url, files={"uploadFile": ("input.jpg", _to_jpg(image), "image/jpeg")})
@@ -316,6 +301,32 @@ def db_find(question, db, top_k=4):
     if j.get("result") != "ok":
         raise TheMakerError("찾지 못했어요: %s" % j.get("data"))
     return j["data"]["found"]
+
+
+def models():
+    """가져다 둔 YOLO 모델 파일 목록 — detect() 에 그대로 넣으면 된다.
+
+    >>> models()
+    ['cat.pt', 'my-best.pt']
+    >>> r = detect(models()[0], camera())
+
+    파일은 [설정·점검]의 [모델 폴더 열기]로 열리는 폴더에 넣는다
+    (문서\\The Maker\\models). 넣자마자 이 목록에 나온다.
+    """
+    try:
+        j = _get("/object/model_files")
+        return list((j.get("data") or {}).get("files") or [])
+    except Exception:
+        return []
+
+
+def models_folder():
+    """모델 파일을 넣는 폴더의 경로 — 아이에게 어디에 넣는지 알려줄 때."""
+    try:
+        j = _get("/object/model_files")
+        return (j.get("data") or {}).get("folder", "")
+    except Exception:
+        return ""
 
 
 def my_models():
@@ -551,51 +562,33 @@ def _play_wav(raw, wait=True):
         sd.wait()
 
 
-_yolo_cache = {}
-
-
 def detect(model_path, image, conf=0.3):
-    """내가 학습한 YOLO 모델 파일로 인식한다 (경로로 지정).
+    """가져다 둔 YOLO 모델 파일로 인식한다.
 
-    >>> r = detect("my_model.pt", camera())
-    >>> r = detect(r"C:\\models\\cat.pt", load("cat.jpg"))
+    >>> r = detect("cat.pt", camera())          # 모델 폴더에 있는 이름
+    >>> r = detect(models()[0], camera())       # 목록에서 골라서
     >>> show(camera(), r)
 
-    model_path : .pt 파일, 또는 OpenVINO 로 변환한 폴더(*_openvino_model)
-                 상대경로는 실행 폴더(data/pycode) 기준이다.
+    model_path : 모델 폴더의 파일 이름. models() 로 목록을 볼 수 있다.
+                 파일은 [설정·점검]의 [모델 폴더 열기]로 열리는 곳에 넣는다.
     conf       : 이 확신도보다 낮은 결과는 버린다 (0~1).
-    돌려주는 것: [{"name": 이름, "score": 0~1, "box": [x1,y1,x2,y2]}, ...]
+    돌려주는 것: [{"name": 이름, "score": 0~100, "box": [x1,y1,x2,y2]}, ...]
+
+    블록의 "모델 파일로 찾기" 와 같은 것을 부른다 — 서버가 모델을 한 번만
+    올려 두고 함께 쓰므로, 학생 코드가 모델을 또 읽지 않는다.
     """
-    path = os.path.abspath(str(model_path))
-    if not os.path.exists(path):
-        raise TheMakerError("모델 파일이 없어요: %s\n경로를 확인하세요." % path)
-
-    model = _yolo_cache.get(path)
-    if model is None:
-        try:
-            from ultralytics import YOLO
-        except ImportError:
-            raise TheMakerError("ultralytics 가 없어서 내 YOLO 모델을 쓸 수 없어요.")
-        model = YOLO(path)
-        _yolo_cache[path] = model              # 한 번 읽으면 캐시 (반복 실행이 빨라진다)
-
-    img = image
-    if isinstance(image, str):
-        img = load(image)
-    out = []
-    for box in (model(img, verbose=False)[0].boxes or []):
-        score = float(box.conf[0])
-        if score < conf:
-            continue
-        x1, y1, x2, y2 = [int(v) for v in box.xyxy[0]]
-        out.append({"name": model.names[int(box.cls[0])],
-                    "score": round(score, 4), "box": [x1, y1, x2, y2]})
-    return out
+    name = os.path.basename(str(model_path).strip())
+    url = "/object/detect_file?" + urllib.parse.urlencode(
+        {"model": name, "conf": conf, "lang": LANG})
+    j = _post(url, files={"uploadFile": ("input.jpg", _to_jpg(image), "image/jpeg")})
+    if j.get("result") != "ok":
+        raise TheMakerError(str(j.get("data")))
+    return (j.get("data") or {}).get("object", [])
 
 
 __all__ = [
     # 기본
-    "camera", "load", "save", "show", "draw", "my_models",
+    "camera", "load", "save", "show", "draw", "my_models", "models", "models_folder",
     # AI
     "vision", "detect",
     # 소리 (말)

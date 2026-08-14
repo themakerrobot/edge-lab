@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """살아 있는 서버에 실제로 요청을 보내 응답 모양을 확인한다."""
 import json
+import os
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -38,12 +39,6 @@ CASES = [
      lambda d: "image" in d and "name_en" in d["object"][0]),
     ("분할(en)", "/object/object_seg", {"lang": "en"},
      lambda d: d["object"][0]["name"] == "chair"),
-    ("개별인식(불)", "/object/object_custom", {"detect_mode": "fire"},
-     lambda d: d["object"][0]["name"] == "불" and d["object"][0]["name_en"] == "fire"),
-    ("개별인식(가위바위보)", "/object/object_custom", {"detect_mode": "rps"},
-     lambda d: d["object"][0]["name"] == "바위" and d["object"][0]["name_en"] == "rock"),
-    ("개별인식(en)", "/object/object_custom", {"detect_mode": "rps", "lang": "en"},
-     lambda d: d["object"][0]["name"] == "rock"),
     ("얼굴 찾기", "/face/face_detect", None,
      lambda d: d[0]["name"] == "얼굴" and d[0]["name_en"] == "face"),
     ("얼굴 찾기(en)", "/face/face_detect", {"lang": "en"}, lambda d: d[0]["name"] == "face"),
@@ -59,17 +54,8 @@ CASES = [
      lambda d: d[0]["age"] == 34 and d[0]["gender_en"] == "man"),
     ("마스크", "/face/mask_detect", None,
      lambda d: d[0]["name"] == "마스크 씀" and d[0]["name_en"] == "mask"),
-    ("장소", "/vlm/place", None,
-     lambda d: d["place"] == "거실" and d["place_en"] == "living-room"),
-    ("장소(en)", "/vlm/place", {"lang": "en"},
-     lambda d: d["place"] == "living-room"),
-    ("시간", "/vlm/time", None,
-     lambda d: d["time"] == "저녁" and d["time_en"] == "evening"),
-    ("날씨", "/vlm/weather", None,
-     lambda d: d["weather"] == "실내" and d["weather_en"] == "indoor"),
     ("질문(프롬프트 전달)", "/vlm/look", {"prompt": "PROBE_XYZ"},
      lambda d: "PROBE_XYZ" in d["answer"] and "answer_en" not in d),
-    ("태그", "/vlm/tag", None, lambda d: "tag" in d and "tag_en" not in d),
     ("배경 제거", "/gan/portrait", None, lambda d: isinstance(d, str) and len(d) > 100),
     ("화질 개선", "/gan/sr", None, lambda d: isinstance(d, str)),
     ("글자 인식", "/code/ocr", None, lambda d: d[0]["text"] == "안녕"),
@@ -82,12 +68,16 @@ CHAT = "/chat/ask"
 GONE = ["/caption/caption", "/object/object_cls", "/face/face_attribute", "/caption/caption_place",
         "/caption/caption_question", "/vlm/vlm_inference", "/vlm/ask", "/face/face_pose", "/vlm/place_e", "/object/object_search_e",
         "/face/face_analyze_e", "/gan/txt2image", "/speech/wav_to_text",
-        "/face/mesh_calibrate", "/custom/predict_zip"]
+        "/face/mesh_calibrate", "/custom/predict_zip",
+        "/vlm/place", "/vlm/time", "/vlm/weather", "/vlm/tag",
+        "/pycode/deploy", "/object/object_custom"]
 
-PAGES = ["/", "/blocks", "/code", "/train", "/options", "/talk", "/ready"]
+PAGES = ["/", "/blocks", "/code", "/train", "/options", "/talk", "/ready",
+         "/system/packages", "/system/workdir"]
 
 # 있어야 하는 GET 경로 (없으면 화면에서 기능이 통째로 막힌다)
-NEEDED_GET = ["/custom/models", "/custom/projects", "/system/files"]
+NEEDED_GET = ["/custom/models", "/custom/projects", "/system/files",
+              "/object/model_files"]
 
 
 def run(host):
@@ -157,6 +147,32 @@ def run(host):
     except Exception as ex:
         print("  FAIL  %-20s %s" % ("자료(RAG) 흐름", ex)); fail += 1
 
+    # 가져온 모델 파일 — 폴더에 넣으면 목록에 나오고, 그 이름으로 인식된다.
+    # 폴더 밖 경로를 주면 막혀야 한다(화면이 고른 이름이 그대로 파일이 되므로).
+    try:
+        import paths as _p
+        os.makedirs(_p.YOLO_DIR, exist_ok=True)
+        probe = os.path.join(_p.YOLO_DIR, "_schematest.pt")
+        open(probe, "wb").write(b"not-a-real-model")
+        try:
+            with urllib.request.urlopen(host + "/object/model_files", timeout=10) as r:
+                d = json.loads(r.read().decode())
+            assert "_schematest.pt" in d["data"]["files"], d
+            print("  PASS  %-20s %s" % ("모델 목록에 나옴", "/object/model_files")); ok += 1
+
+            d = _post(host, "/object/detect_file", {"model": "_schematest.pt"})
+            assert d["result"] == "ok" and d["data"]["object"][0]["name"] == "cat", d
+            print("  PASS  %-20s %s" % ("가져온 모델로 인식", "/object/detect_file")); ok += 1
+
+            for bad in ["../secret.pt", "없는모델.pt", ""]:
+                d = _post(host, "/object/detect_file", {"model": urllib.parse.quote(bad)})
+                assert d["result"] == "fail", (bad, d)
+            print("  PASS  %-20s %s" % ("폴더 밖·없는 이름 막음", "detect_file")); ok += 1
+        finally:
+            os.path.exists(probe) and os.remove(probe)
+    except Exception as ex:
+        print("  FAIL  %-20s %s" % ("가져온 모델 흐름", ex)); fail += 1
+
     for path in GONE:
         try:
             _post(host, path)
@@ -166,6 +182,17 @@ def run(host):
                 print("  PASS  삭제 확인(404)      %s" % path); ok += 1
             else:
                 print("  FAIL  %s -> %s" % (path, e.code)); fail += 1
+
+    # 상태판(/system) — 화면 헤더가 매번 부른다. 필드가 빠지면 여기서 잡힌다.
+    try:
+        with urllib.request.urlopen(host + "/system", timeout=10) as r:
+            d = json.loads(r.read().decode())
+        for k in ("devices", "assign", "device_of", "models", "runtime", "mem", "cpu"):
+            assert k in d, ("빠진 키", k, d)
+        assert "user" in d["models"] and "vlm" in d["models"], d["models"]
+        print("  PASS  %-20s %s" % ("상태판", "/system")); ok += 1
+    except Exception as ex:
+        print("  FAIL  %-20s %s" % ("상태판 /system", ex)); fail += 1
 
     for path in NEEDED_GET:
         try:

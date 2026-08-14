@@ -52,7 +52,8 @@ $stamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 Write-Host "  package versions -> $snap" -ForegroundColor DarkGray
 
 Write-Host "=== [3/5] models from HF ===" -ForegroundColor Cyan
-& "venv\Scripts\hf.exe" download leeyunjai/vapi-od --local-dir models --exclude "models.7z"
+# org/ 는 모델 변환용 원본(.pt) 이라 교실 PC 에는 필요 없다 — 서버는 IR 만 읽는다
+& "venv\Scripts\hf.exe" download leeyunjai/vapi-od --local-dir models --exclude "models.7z" "org/*"
 if ($LASTEXITCODE -ne 0) { throw "model download failed (check token / network)" }
 
 Write-Host "=== [4/5] fonts ===" -ForegroundColor Cyan

@@ -28,14 +28,9 @@
   --edge: clamp(4px, 0.55vh, 7px);
 }
 
-/* 작업용 — 편집기처럼 테두리까지 꽉 채운다.
-   체험용과의 차이는 이제 크지 않다(체험용도 함께 좁혔다). 남긴 차이는
-   "글을 읽는 화면"과 "만드는 화면"의 최소한의 결 차이 정도. */
-body[data-density="work"] {
-  --sp-1: 2px;
-  --sp-2: clamp(2px, 0.25vh, 3px);
-  --sp-3: clamp(3px, 0.5vh, 6px);
-}
+/* 간격 변수는 한 벌뿐이다. 전에는 작업용(블록·파이썬)만 --sp-* 를 절반으로
+   줄여서, 같은 서비스인데 헤더 아래 간격·패널 여백이 페이지마다 달랐다.
+   화면을 넘겨도 "배경은 그대로고 내용만 바뀐다" 가 기준이므로 가르지 않는다. */
 
 /* 헤더 공통 규격 — 여섯 페이지가 이 파일 하나를 쓴다.
  *
@@ -98,7 +93,7 @@ body[data-density="work"] {
   gap: 8px;
   padding: 6px 12px;
 }
-.header .h-tools > a,
+.header .h-tools > a:not(.nav-tab),
 .header .h-tools > button {
   height: 34px !important;
   box-sizing: border-box;
@@ -109,25 +104,13 @@ body[data-density="work"] {
   font-size: .88rem !important;
   line-height: 1;
 }
-/* 홈은 아이콘만이라 정사각형 */
-.header .h-tools > a[id="homeLink"] {
-  width: 34px !important;
-  padding: 0 !important;
-}
-/* 톱니는 이름이 붙으면 넓어진다(이름을 정한 경우). 그 폭은 sysbar.js 가 정하므로
-   여기서 크기를 못박지 않는다 — 못박으면 이름이 잘린다. */
-.header .h-tools > a[id="optionsLink"] {
-  min-width: 34px;
-  padding: 0 10px;
-}
 /* 헤더 단추의 생김새는 여기서 "완결적으로" 정한다 — 글꼴·크기·굵기·테두리·높이까지.
    일부만 정하면 나머지를 페이지 CSS 가 채우는데 그 값이 페이지마다 달라서 또 어긋난다.
    실제로 그랬다: 굵기가 써보기·대화만 600 이고 나머지는 지정 없음(400),
-   글씨 크기도 1.08rem / .95rem 으로 갈렸으며, 상태 단추만 고정폭 글꼴 700 이었다. */
-   페이지마다 두면 어긋난다 — 실제로 대화 화면은 한/영 단추에 규칙이 없어
-   브라우저 기본 테두리가 나왔고(굵고 진해 보임), 써보기는 #4a3f2e 를 직접 적어
-   두어 다른 페이지(--line)보다 진했다. */
-.header .h-tools > a,
+   글씨 크기도 1.08rem / .95rem 으로 갈렸으며, 상태 단추만 고정폭 글꼴 700 이었다.
+   페이지마다 두면 어긋난다 — 대화 화면은 한/영 단추에 규칙이 없어 브라우저 기본
+   테두리가 나왔고, 써보기는 #4a3f2e 를 직접 적어 다른 페이지(--line)보다 진했다. */
+.header .h-tools > a:not(.nav-tab),
 .header .h-tools > button {
   background: #fff;
   border: 1.5px solid var(--line-d, #4a3f2e);
@@ -147,22 +130,244 @@ body[data-density="work"] {
 /* 아이콘 글자(⌂ ⚙)는 크게, 그러나 굵기는 주지 않는다.
    이 글리프들은 획이 이미 두꺼워서 600 을 걸면 혼자 뭉개져 보인다
    (글자 단추 EN·AI 는 600 이 맞다 — 획이 얇아 그래야 같은 무게로 읽힌다). */
-.header .h-tools > a[id="homeLink"],
-.header .h-tools > a[id="optionsLink"] {
-  font-size: 1.1rem !important;
-  font-weight: 400 !important;
-}
-/* 톱니 옆 이름은 글자이므로 다시 600 */
-.header .h-tools > a[id="optionsLink"] span {
-  font-size: .88rem;
-  font-weight: 600;
-}
 
 /* 글자 단추(한/영, 지금 도는 장치)는 글씨가 들어갈 만큼만 */
 .header .h-tools > button#langButton,
 .header .h-tools > button#sysBtn {
   min-width: 46px;
   padding: 0 10px !important;
+}
+
+
+/* ---------------------------------------------------------------------------
+   헤더 오른쪽은 성격이 다른 두 무리가 섞여 있다.
+
+     ① 이동  — [블록][파이썬][가르치기][대화][⚙] / 서브페이지의 [⌂]
+                : 누르면 다른 화면으로 간다.
+     ② 도구  — [한/영][AI]
+                : 화면은 그대로 두고 이 화면의 상태를 바꾸거나 보여준다.
+
+   전에는 둘이 똑같이 생겨서, 처음 보는 사람은 [EN] 을 누르면 영어 화면으로
+   "넘어간다" 고 읽었다. 그래서 모양으로 가른다 — 이동은 한 덩어리로 묶은
+   탭 줄, 도구는 낱개 알약. 그 사이는 여백으로 끊는다.
+   --------------------------------------------------------------------------- */
+.header .h-tools { position: relative; gap: 0; }
+
+/* ① 이동 — 탭 한 줄. lib/nav.js 가 여섯 페이지에 같은 것을 만든다(.nav-tab)
+ *
+ * 낱개 단추 여섯 개를 늘어놓으면 헤더가 시끄럽다. 그래서 한 덩어리로 묶는다 —
+ * 바깥 테두리는 묶음에만 한 번, 사이는 가는 선으로 나눈다. 지금 보고 있는
+ * 화면만 색으로 채워 "여기 있다"를 말한다. 탭 줄에서 옮겨 다니는 느낌이 목적. */
+.header .h-tools > a.nav-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  box-sizing: border-box;
+  background: transparent;
+  border: 0;
+  border-left: 1px solid var(--line, #9a8f7d);
+  border-radius: 0;
+  color: var(--ink-2, #4a423a);
+  text-decoration: none;
+  font-family: inherit;
+  font-size: .86rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background .12s, color .12s;
+}
+/* 묶음의 바깥 테두리 — 첫 탭과 마지막 탭이 모서리를 맡는다 */
+.header .h-tools > a.nav-tab:first-of-type {
+  border-left: 0;
+  border-radius: 999px 0 0 999px;
+  padding-left: 15px;
+}
+.header .h-tools > a.nav-tab:last-of-type {
+  border-radius: 0 999px 999px 0;
+  padding-right: 15px;
+}
+/* 아이콘은 글자보다 한 톤 연하게 — 읽는 것은 글자다 */
+.header .h-tools > a.nav-tab .ic {
+  font-size: .92rem;
+  font-weight: 400;
+  line-height: 1;
+  opacity: .55;
+}
+.header .h-tools > a.nav-tab:hover {
+  background: rgba(31, 95, 122, .08);
+  color: var(--cyan-d, #17475c);
+}
+.header .h-tools > a.nav-tab:hover .ic { opacity: .85; }
+
+/* 묶음 전체를 감싸는 선 — 위·아래는 모든 탭, 좌·우는 첫·마지막만 */
+.header .h-tools > a.nav-tab {
+  border-top: 1px solid var(--line, #9a8f7d);
+  border-bottom: 1px solid var(--line, #9a8f7d);
+}
+.header .h-tools > a.nav-tab:first-of-type { border-left: 1px solid var(--line, #9a8f7d); }
+.header .h-tools > a.nav-tab:last-of-type { border-right: 1px solid var(--line, #9a8f7d); }
+
+/* 지금 보고 있는 화면 */
+.header .h-tools > a.nav-tab.on {
+  background: var(--cyan, #1f5f7a);
+  color: #fff;
+  cursor: default;
+}
+.header .h-tools > a.nav-tab.on .ic { opacity: .9; }
+.header .h-tools > a.nav-tab.on + a.nav-tab { border-left-color: transparent; }
+
+/* ② 도구 — 낱개 알약. 탭 묶음에서 여백으로 떨어뜨리고, 테두리를 한 단계
+   연하게 해 이동보다 뒤로 물러나 보이게 한다. */
+.header .h-tools > button#langButton { margin-left: 14px; }
+.header .h-tools > button#sysBtn { margin-left: 6px; }
+.header .h-tools > button#langButton,
+.header .h-tools > button#sysBtn {
+  height: 30px !important;
+  background: #fff !important;
+  border: 1.5px solid var(--line, #9a8f7d) !important;
+  border-radius: 999px !important;
+  color: var(--ink-2, #4a423a) !important;
+  font-size: .82rem !important;
+}
+.header .h-tools > button#langButton:hover,
+.header .h-tools > button#sysBtn:hover {
+  border-color: var(--cyan, #1f5f7a) !important;
+  color: var(--cyan-d, #17475c) !important;
+}
+
+/* AI 단추가 도는 동안 켜지는 모양(sysbar.js 의 .open)은 알약을 유지한다 */
+.header .h-tools > button#sysBtn.open {
+  border-radius: 999px !important;
+}
+
+/* 밝은 곳 모드에서는 테두리를 한 단계 굵고 진하게 — 위 !important 가
+   페이지의 html.hc 규칙을 덮으므로 여기서 다시 챙긴다. */
+html.hc .header .h-tools > button#langButton,
+html.hc .header .h-tools > button#sysBtn {
+  border-width: 2px !important;
+  border-color: var(--line-d, #2e281c) !important;
+}
+html.hc .header .h-tools > a.nav-tab {
+  border-color: var(--line-d, #2e281c);
+  color: var(--ink, #1a1712);
+}
+html.hc .header .h-tools > a.nav-tab .ic { opacity: .8; }
+
+
+/* ===========================================================================
+   화면 뼈대 — 헤더 아래는 어느 페이지나 같은 구조다.
+   "배경은 그대로고 내용만 바뀐다" 가 기준이므로 아래 값은 여기서만 정한다.
+
+       .main-container   헤더 아래 전체 (좌우 분할)
+         .panel          한 칸 (분할 비율만 페이지가 정한다 — flex)
+           .panel-head   머리표 줄 (문항 상자 + 오른쪽 버튼들)
+             .q          파란 문항 상자
+               .qnum .qtext
+           .panel-body   내용
+
+   전에는 이 일곱 규칙이 여섯 페이지에 각자 적혀 있어서 조금씩 어긋났다 —
+   머리표가 어떤 페이지는 점선 아래줄, 어떤 페이지는 떠 있는 파란 상자였고,
+   .panel-body 의 gap 이 0/8/12px 로 갈렸으며 .q 좌우 여백도 14/11 과 16/12 로
+   달랐다. 페이지 CSS 에서 이 규칙들을 지우고 여기로 모았다.
+   **간격·글씨를 고칠 일이 생기면 이 절만 고칠 것.**
+   =========================================================================== */
+.main-container {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  gap: var(--sp-2, 8px);
+}
+.panel {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--box, #fff);
+  border: 1.5px solid var(--line, #9a8f7d);
+  border-radius: var(--r, 3px);
+  overflow: hidden;
+}
+.panel-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  padding: var(--sp-1, 4px) 16px;
+  border-bottom: 1.5px dashed var(--line, #9a8f7d);
+}
+.panel-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--sp-3, 12px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2, 8px);
+}
+/* 세로 flex 가 자식을 눌러 줄이지 않게 — 넘치면 스크롤이 생기는 게 맞다 */
+.panel-body > * { flex: 0 0 auto; }
+
+/* 문항 제목 — "번호 + 제목" 글자만. 상자(파란 네모)는 걷어냈다.
+   여섯 페이지가 같은 줄을 갖는데 상자까지 두르니 화면마다 두께·여백이
+   조금만 달라도 눈에 띄었다. 글자만 남기면 어긋날 것 자체가 없다.
+   번호와 제목은 **같은 글꼴·같은 크기**다 — 번호만 색으로 구분한다. */
+.q {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.q,
+.qnum,
+.qtext {
+  font-family: "Gowun Dodum", sans-serif;
+  font-weight: 700;
+  font-size: 1.02rem;
+  line-height: 1.3;
+  color: var(--cyan-d, #17475c);
+}
+/* 번호는 연한 청록 — 제목보다 뒤로 물러나되 자리는 지킨다 */
+.qnum {
+  color: var(--cyan, #1f5f7a);
+  font-variant-numeric: tabular-nums;
+  opacity: .75;
+}
+
+/* 머리표 줄의 글씨 — 문항 상자 밖의 곁글(파일 이름 등)도 같은 크기로 */
+.panel-head { font-size: 1rem; }
+/* 머리표 버튼은 어느 페이지나 같은 크기 (전에는 13.1 / 13.4 / 14.4 / 15.2px 네 가지였다) */
+.panel-head button,
+.panel-head .btn {
+  font-family: inherit;
+  font-size: .86rem;
+  font-weight: 600;
+  padding: 6px 12px;
+}
+/* 안내 글씨도 한 값으로 (전에는 .82 / .86rem 로 갈렸다) */
+.hint { font-size: .84rem; color: var(--ink-2, #4a423a); }
+
+/* 감춘 칸은 감춘 채로 — .panel 의 display:flex 가 페이지의 display:none 을
+   덮어서 파이썬 도움말 패널이 늘 열려 보이던 사고가 있었다. 같은 특정도라
+   나중에 실리는 ui.css 가 이겼던 것. 여기서 되돌린다. */
+.panel[hidden],
+.panel.is-hidden { display: none !important; }
+
+/* 머리표 오른쪽 버튼 묶음은 어디서나 오른쪽 끝으로 */
+.panel-head > .right,
+.panel-head > .work-tools,
+.panel-head > .stage-tools,
+.panel-head > .ph-tools {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 
@@ -177,37 +382,11 @@ body[data-density="work"] {
  */
 
 
-/* ── 작업용 화면(블록·파이썬) — 편집기처럼 꽉 채운다 ─────────────────────
- * 체험용 페이지의 학습지 분위기(둥근 테두리·머리표 꼬리표)는 그대로 두고,
- * 작업용에서만 바깥 여백과 패널 사이를 최소로 줄인다. 헤더는 건드리지 않는다
- * — 같은 서비스이므로 위쪽은 어느 페이지나 똑같아야 한다.
- */
-
-body[data-density="work"] .panel,
-body[data-density="work"] .work,
-body[data-density="work"] .stage-panel {
-  border-radius: 3px;
-}
-/* 패널 안쪽 스크롤 영역은 테두리에 바짝 */
-body[data-density="work"] .panel-body,
-body[data-density="work"] .stage-body {
-  padding: var(--sp-2, 4px);
-}
-/* 머리표(탭 꼬리표)는 작업용에서 한 줄로 눌러 앉힌다 */
-body[data-density="work"] .panel-head {
-  margin: var(--sp-1, 2px) var(--sp-3, 8px) var(--sp-1, 2px) !important;
-  padding: var(--sp-1, 2px) 10px !important;
-  font-size: .92rem;
-}
-body[data-density="work"] .ph-row,
-body[data-density="work"] .work-head {
-  padding: 0 var(--sp-2, 4px);
-}
-
-/* ── 체험용 화면 — 분위기 유지, 여백만 정리 ─────────────────────────── */
-body[data-density="explore"] .panel-body {
-  padding: var(--sp-3, 12px);
-}
+/* data-density(work/explore) 로 블록·파이썬만 다르게 주던 분기는 폐기했다.
+ * 머리표 글씨(.92rem)와 여백을 따로 정하는 바람에 "페이지마다 글씨 크기가
+ * 다르다"로 드러났다. 위 뼈대 한 벌로 통일한다 — body 의 data-density 속성은
+ * 남겨 두되(다른 스크립트가 볼 수 있다) 생김새는 여기서 가르지 않는다.
+ * 작업용 화면이 여백을 더 줄여야 한다면 --sp-* 변수를 화면 높이로 조절할 것. */
 
 /* 끌어서 크기 바꾸기가 켜진 상자는 자식이 스스로 줄어들 수 있어야 한다
    (flex 항목 기본 min-width:auto 때문에 안 줄어드는 문제) */

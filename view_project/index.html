@@ -91,7 +91,7 @@
       --r: 6px;
     }
 
-    /* ===== 밝은 곳 모드 (설정·점검에서 켠다) =====
+    /* ===== 밝은 곳 모드 (설정에서 켠다) =====
        색 토큰만 덮어써서 대비를 끌어올린다. 배치는 그대로다. */
     html.hc {
       --paper:    #fffdf8;
@@ -208,26 +208,7 @@
     @media (prefers-reduced-motion: reduce) { .chip.busy .dot { animation: none; } }
 
     /* ===== 문항 공통 ===== */
-    .q {
-      position: relative;
-      border: 2.5px solid var(--cyan);
-      background: #fff;
-      padding: var(--sp-1, 4px) 16px var(--sp-1, 4px) 12px;
-      border-radius: 2px;
-    }
-    .q::after {                            /* 활동지 섹션 타이틀의 ▼ 마커 */
-      content: "";
-      position: absolute; left: 14px; bottom: -12px;
-      border: 7px solid transparent;
-      border-top: 9px solid var(--cyan);
-    }
-    .qnum {
-      display: inline-flex; align-items: center;
-      font-family: "Gowun Dodum", sans-serif; font-weight: 700; font-size: 1.05rem;
-      color: var(--cyan-d);
-    }
     .qnum::after { content: "."; }
-    .qtext { font-family: "Gowun Dodum", sans-serif; font-weight: 700; font-size: 1.02rem; color: var(--cyan-d); }
 
     /* ===== 문항 1 : 모델 고르기 ===== */
     .subheader {
@@ -317,29 +298,6 @@
     }
 
     /* ===== 답안 영역 (좌우) ===== */
-    .main-container {
-      flex: 1 1 auto; min-height: 0;
-      display: flex; gap: var(--sp-2, 8px);
-      
-    }
-    .panel {
-      flex: 1 1 0; min-width: 0;
-      display: flex; flex-direction: column;
-      background: var(--box);
-      border: 1.5px solid var(--line);
-      border-radius: var(--r);
-      overflow: hidden;
-    }
-    .panel-head {
-      flex: 0 0 auto;
-      display: flex; align-items: center; gap: 9px;
-      padding: var(--sp-1, 4px) 16px;
-      border-bottom: 1.5px dashed var(--line);
-    }
-    .panel-body {
-      flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: var(--sp-3, 12px);
-      display: flex; flex-direction: column;   /* 남는 세로 공간을 자식이 채우도록 */
-    }
 
     .tab-content { display: none; }
     .tab-content.active {
@@ -359,7 +317,7 @@
       padding: 14px;
     }
     .upload-container:hover { border-color: var(--pen-blue); color: var(--ink); background: #f7f8ff; }
-    .upload-container .hint { font-size: 0.82rem; margin-top: 6px; color: #6b6255; }
+    .upload-container .hint { margin-top: 6px; }
     #uploadPreview {
       max-width: 100%; max-height: 100%; height: auto;
       object-fit: contain; display: none; border-radius: 3px;
@@ -613,31 +571,6 @@
       <span class="title" title="인터넷 없이 내 컴퓨터에서 실행돼요"><span id="txtTitle">The Maker</span> <span class="od" style="font-size:.78rem;color:var(--pen-red);vertical-align:middle;">(On-Device)</span></span>
     </div>
     <div class="h-tools">
-      <a href="/blocks" id="blocksLink" title="블록 코딩 — 블록으로 나만의 프로그램" style="
-        display:inline-flex;align-items:center;gap:7px;background:#fff;
-        border:1.5px solid var(--line-d);color:var(--ink);font-weight:600;
-        padding:5px 11px;border-radius:var(--r);text-decoration:none;font-size:.88rem;">
-        &#9632; <span id="txtBlocksLink">블록</span></a>
-      <a href="/code" id="codeLink" title="파이썬 — 코드로 AI를 불러 봐요" style="
-        display:inline-flex;align-items:center;gap:7px;background:#fff;
-        border:1.5px solid var(--line-d);color:var(--ink);font-weight:600;
-        padding:5px 11px;border-radius:var(--r);text-decoration:none;font-size:.88rem;">
-        &#10095; <span id="txtCodeLink">파이썬</span></a>
-      <a href="/train" id="trainLink" title="가르치기 — 내가 직접 AI를 학습시켜요" style="
-        display:inline-flex;align-items:center;gap:7px;background:#fff;
-        border:1.5px solid var(--line-d);color:var(--ink);font-weight:600;
-        padding:5px 11px;border-radius:var(--r);text-decoration:none;font-size:.88rem;">
-        &#9679; <span id="txtTrainLink">가르치기</span></a>
-      <a href="/talk" id="talkLink" title="대화 — AI와 이야기해요" style="
-        display:inline-flex;align-items:center;gap:7px;background:#fff;
-        border:1.5px solid var(--line-d);color:var(--ink);font-weight:600;
-        padding:5px 11px;border-radius:var(--r);text-decoration:none;font-size:.88rem;">
-        &#128172; <span id="txtTalkLink">대화</span></a>
-      <a href="/options" id="optionsLink" title="설정 · 점검" aria-label="설정 · 점검" style="
-        display:inline-flex;align-items:center;justify-content:center;background:#fff;
-        border:1.5px solid var(--line-d);color:var(--ink-2);
-        width:34px;height:34px;border-radius:var(--r);text-decoration:none;
-        font-size:1.05rem;line-height:1;">&#9881;</a>
       <button id="langButton" title="한국어 / English" style="min-width:46px;">EN</button>
 
     </div>
@@ -788,7 +721,7 @@
       ko: {
         titleTag: "The Maker", title: "The Maker",
         eyebrow: "써보기 · AI 12가지를 눌러 봐요 · 인터넷 없이 내 컴퓨터에서",
-        blocksLink: "블록", trainLink: "가르치기", codeLink: "파이썬", talkLink: "대화", optionsTip: "설정 · 점검", langBtn: "EN",
+        blocksLink: "블록", trainLink: "가르치기", codeLink: "파이썬", talkLink: "대화", optionsTip: "설정", langBtn: "EN",
         bootSub: "인터넷 없이 내 컴퓨터에서 실행돼요",
         bootSkip: "건너뛰기", bootWait: "준비 중...", bootStart: "시작하기",
         bootDone: "준비 끝!", bootError: "문제가 생겼어요: ",
@@ -831,7 +764,7 @@
       en: {
         titleTag: "The Maker", title: "The Maker",
         eyebrow: "Use · try 12 AIs · runs on this computer, no internet",
-        blocksLink: "Blocks", trainLink: "Train", codeLink: "Python", talkLink: "Talk", optionsTip: "Settings & Check", langBtn: "한",
+        blocksLink: "Blocks", trainLink: "Train", codeLink: "Python", talkLink: "Talk", optionsTip: "Settings", langBtn: "한",
         bootSub: "Runs on this computer, no internet needed",
         bootSkip: "Skip", bootWait: "Getting ready...", bootStart: "Start",
         bootDone: "Ready!", bootError: "Something went wrong: ",
@@ -983,7 +916,6 @@
       ["face",    "얼굴",           "Face"],
       ["body",    "몸 · 손",        "Body & hands"],
       ["object",  "사물",           "Objects"],
-      ["special", "개별 인식",       "Individual detectors"],
       ["vlm",     "말로 답하는 AI",  "AI that answers in words"],
       ["image",   "사진 바꾸기",     "Change the photo"],
       ["text",    "글자 · QR",      "Text & QR"],
@@ -1007,20 +939,9 @@
       "사물 분할": { "g": "object", "api": "object/object_seg", "params": {}, "tooltip": "80가지 사물의 영역을 색으로 칠해 표시합니다.", "en": "Object segmentation", "tooltip_en": "Colors in the exact area of each object." },
 
       /* ----- 개별 인식 (하나만 따로 훈련한 AI) ----- */
-      "가위바위보 인식": { "g": "special", "api": "object/object_custom", "params": {"detect_mode":"rps"}, "tooltip": "가위바위보를 인식합니다.", "en": "Rock-paper-scissors", "tooltip_en": "Recognizes rock, paper and scissors hands." },
-      "불 인식": { "g": "special", "api": "object/object_custom", "params": {"detect_mode":"fire"}, "tooltip": "불, 연기를 인식합니다.", "en": "Fire detection", "tooltip_en": "Detects fire and smoke." },
-      "공 인식": { "g": "special", "api": "object/object_custom", "params": {"detect_mode":"ball"}, "tooltip": "공을 인식합니다.(빨강,노랑,초록)", "en": "Ball detection", "tooltip_en": "Detects balls (red, yellow, green)." },
-      "숫자 인식": { "g": "special", "api": "object/object_custom", "params": {"detect_mode":"number"}, "tooltip": "숫자, 연산자를 인식합니다.", "en": "Number detection", "tooltip_en": "Detects digits and math operators." },
-      "낙상 인식": { "g": "special", "api": "object/object_custom", "params": {"detect_mode":"fall"}, "tooltip": "낙상을 인식합니다.", "en": "Fall detection", "tooltip_en": "Detects a person falling down." },
-      "안전모 인식": { "g": "special", "api": "object/object_custom", "params": {"detect_mode":"helmet"}, "tooltip": "안전모 착용 여부를 인식합니다.", "en": "Helmet detection", "tooltip_en": "Checks whether a safety helmet is worn." },
-      "박스 인식": { "g": "special", "api": "object/object_custom", "params": {"detect_mode":"box"}, "tooltip": "박스를 인식합니다.", "en": "Box detection", "tooltip_en": "Detects boxes." },
 
       /* ----- 말로 답하는 AI (VLM — 몇 초 걸려요) ----- */
       "이미지 질문·설명": { "g": "vlm", "api": "vlm/look", "params": {}, "tooltip": "사진에 대해 물어봐요. 프롬프트를 비우면 사진을 설명해 줍니다.", "en": "Ask about the image", "tooltip_en": "Ask about the photo. Leave the prompt empty to get a description." },
-      "이미지 태그": { "g": "vlm", "api": "vlm/tag", "params": {}, "tooltip": "이미지에 대한 태그를 생성합니다.", "en": "Image tags", "tooltip_en": "Creates tags for the image." },
-      "이미지 장소 인식": { "g": "vlm", "api": "vlm/place", "params": {}, "tooltip": "이미지에 대한 장소를 추측합니다.", "en": "Guess the place", "tooltip_en": "Guesses where the photo was taken." },
-      "이미지 시간 인식": { "g": "vlm", "api": "vlm/time", "params": {}, "tooltip": "이미지에 대한 시간대를 추측합니다.", "en": "Guess the time", "tooltip_en": "Guesses the time of day in the photo." },
-      "이미지 날씨 인식": { "g": "vlm", "api": "vlm/weather", "params": {}, "tooltip": "이미지에 대한 날씨를 추측합니다.", "en": "Guess the weather", "tooltip_en": "Guesses the weather in the photo." },
 
       /* ----- 사진 바꾸기 ----- */
       "배경 제거": { "g": "image", "api": "gan/portrait", "params": {}, "tooltip": "인물/사물만 남기고 배경을 제거합니다.", "en": "Remove background", "tooltip_en": "Keeps the subject and removes the background." },
@@ -1119,10 +1040,7 @@
       const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
       document.title = T("titleTag");
       set("txtTitle", T("title"));
-      set("txtBlocksLink", T("blocksLink")); set("txtTrainLink", T("trainLink"));
-      set("txtCodeLink", T("codeLink")); set("txtTalkLink", T("talkLink"));
-      const ol = document.getElementById("optionsLink");
-      if (ol) { ol.title = T("optionsTip"); ol.setAttribute("aria-label", T("optionsTip")); }
+      if (window.navRepaint) window.navRepaint();   /* 이동 탭 글자는 lib/nav.js 가 갖고 있다 */
       set("langButton", T("langBtn"));
       set("txtQ1", T("q1")); set("txtQ2", T("q2")); set("txtQ3", T("q3"));
       set("txtModelLabel", T("modelLabel")); set("txtGuideLabel", T("guideLabel"));
@@ -1454,11 +1372,6 @@
     function esc(s) {
       return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
-    /* 서버가 낱말 하나를 그대로 보내준다. 여기서는 그림글자만 덧붙인다. */
-    const WEATHER_ICON = { '맑음':'☀', 'sunny':'☀', '눈':'☃', 'snowy':'☃',
-                           '비':'☂', 'rainy':'☂', '흐림':'☁', 'cloudy':'☁',
-                           '바람':'🍃', 'windy':'🍃' };
-    const isIndoor = w => (w === '실내' || w === 'indoor');
     function nameCounts(items, key) {
       const m = {};
       (items || []).forEach(it => { const n = it[key]; if (n) m[n] = (m[n] || 0) + 1; });
@@ -1474,20 +1387,8 @@
       const d = res.data;
       if (LANG === 'en') {
         switch (res.type) {
-          case 'place':
-            return `This looks like a <b>${esc(d.place)}</b>.`;
-          case 'time':
-            return `The photo was probably taken in the <b>${esc(d.time)}</b>.`;
-          case 'weather':
-            return isIndoor(d.weather)
-              ? `Can't tell the weather. <span class="sub">(no outdoor view in the photo)</span>`
-              : `The weather in the photo looks <b>${esc(d.weather)}</b> ${WEATHER_ICON[d.weather] || ''}`;
           case 'look':
             return `Answer: <b>${esc(d.answer)}</b>`;
-          case 'tag': {
-            const tags = Array.isArray(d.tag) ? d.tag.join(', ') : d.tag;
-            return `Tags found: <b>${esc(tags)}</b>`;
-          }
           case 'custom': {
             if (!d || !d.length) return `Nothing to answer.`;
             const t0 = d[0];
@@ -1532,16 +1433,6 @@
             if (objs.length) parts.push(`objects: <b>${nameCounts(objs, 'name')}</b>`);
             return parts.length ? `Found ${parts.join(' / ')}!` : `No objects found.`;
           }
-          case 'object_custom': {
-            const objs = (d && d.object) || [];
-            if (!objs.length) return `Nothing found.`;
-            const mode = res.detect_mode;
-            if (mode === 'rps') {
-              const names = objs.map(o => `<b>${esc(o.name)}</b>`).join(', ');
-              return `You played ${names}!`;
-            }
-            return `Found <b>${nameCounts(objs, 'name')}</b>!`;
-          }
           case 'object_pose':
             return d.length
               ? `Found the pose of <b>${d.length}</b> ${d.length > 1 ? 'people' : 'person'} (17 key points). Check the dots and lines above!`
@@ -1569,20 +1460,8 @@
       }
       switch (res.type) {
         /* --- 텍스트 계열 --- */
-        case 'place':
-          return `사진 속 장소는 <b>${esc(d.place)}</b>(으)로 보여요.`;
-        case 'time':
-          return `사진을 찍은 시간대는 <b>${esc(d.time)}</b>인 것 같아요.`;
-        case 'weather':
-          return isIndoor(d.weather)
-            ? `날씨를 알 수 없어요. <span class="sub">(바깥 풍경이 보이지 않아요)</span>`
-            : `사진 속 날씨는 <b>${esc(d.weather)}</b>이에요. ${WEATHER_ICON[d.weather] || ''}`;
         case 'look':
           return `질문에 대한 답: <b>${esc(d.answer)}</b>`;
-        case 'tag': {
-          const tags = Array.isArray(d.tag) ? d.tag.join(', ') : d.tag;
-          return `사진에서 찾은 태그: <b>${esc(tags)}</b>`;
-        }
 
         /* --- 검출 계열 --- */
         case 'face_detect':
@@ -1623,16 +1502,6 @@
           if (people.length) parts.push(`사람 <b>${people.length}명</b>`);
           if (objs.length) parts.push(`사물: <b>${nameCounts(objs, 'name')}</b>`);
           return parts.length ? `사진에서 ${parts.join(' / ')}을(를) 찾았어요!` : `사물을 찾지 못했어요.`;
-        }
-        case 'object_custom': {
-          const objs = (d && d.object) || [];
-          if (!objs.length) return `찾지 못했어요.`;
-          const mode = res.detect_mode;
-          if (mode === 'rps') {
-            const names = objs.map(o => `<b>${esc(o.name)}</b>`).join(', ');
-            return `${names}을(를) 냈어요!`;
-          }
-          return `<b>${nameCounts(objs, 'name')}</b>을(를) 찾았어요!`;
         }
         case 'object_pose':
           return d.length
@@ -1764,15 +1633,6 @@
 
             drawRect(ctx, x1, y1, x2, y2, "rgb(43, 75, 216)", label, scaleX, scaleY);
           });
-        }
-        else if (res.type === "object_custom") {
-          if (res.data.object) {
-            res.data.object.forEach((item, idx) => {
-              const [x1, y1, x2, y2] = item.box;
-              const label = `${item.name} (${item.score}%)`;
-              drawRect(ctx, x1, y1, x2, y2, "rgb(217, 65, 65)", label, scaleX, scaleY);
-            });
-          }
         }
         else if (res.type === "object_search") {
           (res.data.object || []).forEach((item) => {
@@ -1996,8 +1856,8 @@
     /* ----- 라이브 모드 (웹캠 연속 인식) — 빠른 모델만 ----- */
     const LIVE_OK = new Set([
       "얼굴 인식","얼굴 분석","얼굴 감정 분석","얼굴 나이/성별 분석","마스크 인식",
-      "사물 인식","사람 포즈 인식","가위바위보 인식","불 인식","공 인식","숫자 인식",
-      "낙상 인식","안전모 인식","박스 인식","QR코드 인식","얼굴 거리·방향","손동작 인식"
+      "사물 인식","사람 포즈 인식",
+      "QR코드 인식","얼굴 거리·방향","손동작 인식"
     ]);
     const liveToggle = document.getElementById('liveToggle');
     const liveCheck = document.getElementById('liveCheck');
@@ -2113,6 +1973,7 @@
     });
   </script>
   <script src="/lib/usage.js" data-page="index"></script>
+  <script src="/lib/nav.js"></script>
   <script src="/lib/sysbar.js"></script>
 </body>
 </html>

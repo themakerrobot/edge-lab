@@ -23,7 +23,7 @@ import subprocess
 from pathlib import Path
 
 from fastapi import APIRouter, Body, File, Query, UploadFile
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import Response
 
 router = APIRouter()
 
@@ -258,85 +258,6 @@ def pycode_work(name: str = Query(...)):
     if not p.exists():
         return _fail("no such work")
     return _ok({"name": p.stem, "code": p.read_text(encoding="utf-8")})
-
-
-# ---------------------------------------------------------------- 배포 (zip)
-DEPLOY_DIR = WORK_DIR / ".deploy"
-
-_README = """{name} — The Maker 로 만든 프로그램
-
-[실행 방법]
-  themaker-run.exe 를 두 번 눌러요.  (없으면 실행.bat 을 눌러요)
-
-[준비물]
-  이 프로그램은 The Maker 가 설치된 컴퓨터에서 돌아가요.
-  The Maker 를 먼저 켜 두면 AI 기능이 동작해요.
-
-[설치 폴더가 다르면]
-  themaker_home.txt 를 열어 The Maker 폴더 경로를 적어 주세요.
-
-[소리가 안 들리면]
-  윈도우 소리 설정에서 기본 출력이 스피커인지 확인해 주세요.
-  그래도 안 들리면 코드 맨 위에 speaker() 를 넣고 한 번 실행해
-  스피커 목록을 본 뒤 speaker(번호) 로 골라 주세요.
-
-[영어로 답하게 하려면]
-  코드 맨 위에 language("en") 을 넣어 주세요.
-"""
-
-_BAT = """@echo off
-chcp 65001 >nul
-cd /d "%~dp0"
-set "HOME_DIR="
-if exist themaker_home.txt (set /p HOME_DIR=<themaker_home.txt)
-if "%HOME_DIR%"=="" set "HOME_DIR={home}"
-set "PYTHONPATH=%HOME_DIR%;%PYTHONPATH%"
-set "PYTHONIOENCODING=utf-8"
-if exist "%HOME_DIR%\\venv\\Scripts\\python.exe" (
-  "%HOME_DIR%\\venv\\Scripts\\python.exe" code.py
-) else if exist "%HOME_DIR%\\python\\python.exe" (
-  "%HOME_DIR%\\python\\python.exe" code.py
-) else (
-  python code.py
-)
-echo.
-pause
-"""
-
-
-@router.post("/pycode/deploy", tags=["pycode"], summary="배포 파일(zip) 만들기")
-def pycode_deploy(name: str = Body(...), code: str = Body(...)):
-    """코드를 zip 한 개로 묶는다 — 다른 사람에게 주면 두 번 눌러 실행할 수 있다.
-
-    exe 는 빌드해 둔 themaker-run.exe 가 있을 때만 함께 넣는다(없으면 .bat).
-    """
-    import zipfile
-    safe = _safe(name)
-    DEPLOY_DIR.mkdir(parents=True, exist_ok=True)
-    zip_path = DEPLOY_DIR / (safe + ".zip")
-    exe = ROOT / "themaker-run.exe"
-    try:
-        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
-            z.writestr("code.py", code)
-            z.writestr("themaker_home.txt", str(ROOT))
-            # 윈도우 배치·메모장 호환을 위해 줄바꿈은 CRLF 로
-            z.writestr("실행.bat", _BAT.format(home=str(ROOT)).replace("\n", "\r\n"))
-            z.writestr("읽어보세요.txt", _README.format(name=safe).replace("\n", "\r\n"))
-            if exe.exists():
-                z.write(exe, "themaker-run.exe")
-    except Exception as ex:
-        return _fail("배포 파일을 만들지 못했어요: %s" % ex)
-    return _ok({"name": safe, "exe": exe.exists(),
-                "size": zip_path.stat().st_size,
-                "url": "/pycode/download?name=" + safe})
-
-
-@router.get("/pycode/download", tags=["pycode"], summary="배포 파일 내려받기")
-def pycode_download(name: str = Query(...)):
-    p = DEPLOY_DIR / (_safe(name) + ".zip")
-    if not p.exists():
-        return _fail("no such file")
-    return FileResponse(str(p), filename=p.name, media_type="application/zip")
 
 
 @router.post("/pycode/delete", tags=["pycode"], summary="작품 삭제")

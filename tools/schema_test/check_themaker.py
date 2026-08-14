@@ -29,24 +29,27 @@ def run(host):
     case("vision('object')", lambda: T.vision("object", img),
          lambda r: r["object"][0]["name"] == "사람" and r["object"][0]["name_en"] == "person")
     case("vision('사물')", lambda: T.vision("사물", img), lambda r: "object" in r)
-    case("vision('place')", lambda: T.vision("place", img),
-         lambda r: r["place"] == "거실" and r["place_en"] == "living-room")
-    case("vision('장소')", lambda: T.vision("장소", img), lambda r: "place" in r)
-    case("vision('time')", lambda: T.vision("time", img), lambda r: r["time"] == "저녁")
-    case("vision('weather')", lambda: T.vision("weather", img),
-         lambda r: r["weather"] == "실내")
     case("vision('look') 설명", lambda: T.vision("look", img), lambda r: "answer" in r)
     case("vision('look') 질문", lambda: T.vision("look", img, prompt="몇 명이야?"),
          lambda r: "몇 명이야?" in r["answer"])          # 프롬프트가 서버까지 가는지
-    case("vision('tag')", lambda: T.vision("tag", img), lambda r: "tag" in r)
+    # 가져온 모델 — models() 로 보고, 그 이름으로 detect()
+    import os as _os, paths as _p
+    _os.makedirs(_p.YOLO_DIR, exist_ok=True)
+    _probe = _os.path.join(_p.YOLO_DIR, "_tmcheck.pt")
+    open(_probe, "wb").write(b"x")
+    try:
+        case("models()", lambda: T.models(), lambda r: "_tmcheck.pt" in r)
+        case("detect(이름만)", lambda: T.detect("_tmcheck.pt", img),
+             lambda r: r[0]["name"] == "cat")
+    finally:
+        _os.path.exists(_probe) and _os.remove(_probe)
+
     case("vision('face_attr')", lambda: T.vision("face_attr", img),
          lambda r: r[0]["gender"] == "남성" and r[0]["pos"]["direction"] == "왼쪽 위")
     case("vision('face')", lambda: T.vision("face", img), lambda r: r[0]["name"] == "얼굴")
     case("vision('ocr')", lambda: T.vision("ocr", img), lambda r: r[0]["text"] == "안녕")
     case("vision('qr')", lambda: T.vision("qr", img),
          lambda r: r[0]["data"].startswith("http"))
-    case("vision('rps')", lambda: T.vision("rps", img),
-         lambda r: r["object"][0]["name"] == "바위")     # detect_mode 가 가는지
     case("vision('bg_remove')", lambda: T.vision("bg_remove", img),
          lambda r: isinstance(r, np.ndarray))
     case("vision('seg') 그림+이름", lambda: T.vision("seg", img),

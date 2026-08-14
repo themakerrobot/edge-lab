@@ -8,7 +8,7 @@
 | 메뉴 | 내용 |
 |---|---|
 | 써보기 (Use) | AI 12가지를 눌러 보는 체험 실습 — 라이브 모드, 시스템 상태바 |
-| 파이썬 (Python) | 파이썬 코딩 — themaker 라이브러리로 AI 호출, 실행·정지, 배포 zip |
+| 파이썬 (Python) | 파이썬 코딩 — themaker 라이브러리로 AI 호출, 실행·정지, 작품 저장 |
 | 만들기 (Code) | 블록 코딩 — 인식·사진 편집·소리·이벤트 블록, 예제 6종, 무대 |
 | 가르치기 (Train) | 나만의 AI 학습 — 사진/손모양/표정/상반신/전신 5개 모드, 학습 곡선·특징 지도 |
 | 설정 · 점검 (⚙) | 수업 전 점검, 결과물 관리, 학습 결과 도표, 사용 통계, 전체 초기화 |
@@ -40,7 +40,7 @@ powershell -ExecutionPolicy Bypass -File setup_deploy.ps1 -Token hf_xxxx
 | `mp_routes.py` | MediaPipe — 얼굴 거리·방향, 손 제스처 |
 | `train_routes.py` | 나만의 AI 학습 API — 특징 추출(5모드)·모델 저장·작품·성적표 |
 | `stats_routes.py` | 사용 통계 수집 |
-| `code_routes.py` | 파이썬 IDE API — 실행·정지·출력·작품 저장·배포 zip |
+| `code_routes.py` | 파이썬 IDE API — 실행·정지·출력·작품 저장 |
 | `speech_routes.py` | 음성 인식(STT)·음성 합성(TTS) API |
 | `hub.py` | 실행 중인 main 모듈·엔진 찾기 (`import main` 은 금물 — main.py 가 다시 실행된다) |
 | `db_routes.py` | 내가 준 자료에서 찾아 답하기(RAG) — 자료 저장·검색·답변 |
@@ -76,7 +76,7 @@ powershell -ExecutionPolicy Bypass -File setup_deploy.ps1 -Token hf_xxxx
 | `/gan/` `/code/` | 이미지 변환 · 글자 읽기 |
 | `/custom/` `/pycode/` `/speech/` `/stats/` `/system/` | 나만의 AI · 파이썬 IDE · 음성 · 통계 · 시스템 |
 
-묶음 이름을 기능에 또 쓰지 않는다 — `caption_place` 가 아니라 `/vlm/place`.
+묶음 이름을 기능에 또 쓰지 않는다 — `caption_question` 이 아니라 `/vlm/look`.
 
 ## API 응답 규칙
 모든 추론 API 는 `{"type", "result", "data", "elapsed_ms", "device"}` 형태로 답한다.
@@ -88,29 +88,21 @@ powershell -ExecutionPolicy Bypass -File setup_deploy.ps1 -Token hf_xxxx
 - **언어는 `lang` 하나로** — `?lang=ko`(기본) 또는 `?lang=en`. 이름·감정·성별·손모양·
   VLM 답변 모두 요청한 언어로 **한 벌만** 온다. 예전처럼 `answer` 와 `answer_en` 이
   같이 오지 않는다 (출력 토큰이 두 배라 느렸고, 화면에도 같은 말이 두 번 나왔다).
-- **표에서 꺼내는 값은 `X` 와 `X_en` 둘 다** — 장소·시간·날씨·사물 이름·얼굴 감정·성별·
-  손 모양·개별 인식 클래스처럼 코드가 표에서 꺼내는 값은 영어를 함께 줘도 추론 비용이 0이다. 화면 표시는 `X`, **값 비교는
-  `X_en`** 을 쓴다 — 화면 언어를 바꿔도 안 변한다. 모델이 만드는 문장(설명·질문·태그)만
+- **표에서 꺼내는 값은 `X` 와 `X_en` 둘 다** — 사물 이름·얼굴 감정·성별·
+  손 모양처럼 코드가 표에서 꺼내는 값은 영어를 함께 줘도 추론 비용이 0이다. 화면 표시는 `X`, **값 비교는
+  `X_en`** 을 쓴다 — 화면 언어를 바꿔도 안 변한다. 모델이 만드는 문장(설명·질문)만
   한 언어로 한 벌 온다.
 - **영어 값의 띄어쓰기는 하이픈** — `living-room`, `cell-phone`, `traffic-light`.
   비교 키로 쓰는 값이라 공백을 남기지 않는다(모델에게 보여 주는 프롬프트에서는 공백으로 편다).
-- **장소·시간·날씨는 정해진 낱말 중 하나** — 아이가 사진만 보고 맞았는지 스스로
-  판단할 수 있어야 수업이 된다. 낱말 목록은 `prompts.py` 의 `PLACE`/`TIME`/`WEATHER`
-  표 한 곳에서 관리하고, 파서가 별칭까지 흡수해 그 낱말로 맞춰 준다.
 
 | 기능 | 경로 | data |
 |---|---|---|
-| 장소 | `/vlm/place` | `{"place": "교실", "place_en": "classroom"}` — 교실·도서관·식당·부엌·거실·침실·사무실·운동장·공원·길거리·가게·자연·기타 |
-| 시간 | `/vlm/time` | `{"time": "낮", "time_en": "afternoon"}` — 아침·낮·저녁·밤 |
-| 날씨 | `/vlm/weather` | `{"weather": "맑음", "weather_en": "sunny"}` — 맑음·흐림·비·눈·바람, 바깥이 안 보이면 실내 |
 | 사물 | `/object/object_search` | `{"object": [{"name","name_en","score","box","pos"}]}` — **사람도 한 목록에 함께**, `name_en == "person"` 으로 거른다 |
-| 개별 인식 | `/object/object_custom` | `{"object": [{"name","name_en","score","box"}]}` — `name_en` 은 rock·paper·scissors·fire 처럼 소문자 |
 | 얼굴 분석 | `/face/face_analyze` | `[{"age","gender","gender_en","emotion","emotion_en","pos","box"}]` |
 | 손 모양 | `/object/hand` | `[{"gesture","gesture_en","score","hand","box","points"}]` — `gesture_en` 은 MediaPipe 코드(`Thumb_Up`) |
 | 얼굴 거리·방향 | `/face/mesh` | `[{"box","distance","direction","direction_en"}]` — 얼굴 찾기·방향은 OpenVINO 얼굴 스위트(NPU), 거리는 MediaPipe 홍채(CPU) |
 | 마스크 | `/face/mask_detect` | `{"mask": 0\|1, "name": "마스크 씀", "name_en": "mask", "score"}` |
 | 사진 보고 답하기 | `/vlm/look` | `{"answer": "..."}` — 설명은 물음을 미리 넣은 질문일 뿐이라 따로 두지 않는다 |
-| 태그 | `/vlm/tag` | `{"tag": "낱말, 낱말"}` |
 | 자료 만들기 | `/chat/db` (POST) · 목록/미리보기(GET) · 삭제(DELETE) | 아이가 준 글을 조각으로 나눠 임베딩까지 저장 — `data/db/<slug>.json` |
 | 자료에서 찾기 | `/chat/find` | 답은 안 만들고 닮은 조각만 — "어디서 가져왔나" 를 보여 주는 수업용 |
 | 자료에서 답하기 | `/chat/rag` | 찾은 조각만 보고 답한다. 없으면 "자료에서 찾지 못했어요" |
@@ -296,9 +288,8 @@ USB 로 들고 다니기: `[폴더 열기]` 로 작업 폴더를 열어 통째�
 ## 모델
 | 용도 | 모델 | 디바이스 |
 |---|---|---|
-| 캡션·질문·태그·분류·얼굴속성 | Gemma 3 4B INT4 (`engines.py` 의 `VLM_NAME`) | GPU |
+| 사진 질문·대화 | Gemma 3 4B INT4 (`engines.py` 의 `VLM_NAME`) | GPU |
 | 사물/자세/분할 | YOLO11m (+pose/seg) | CPU |
-| 커스텀 7종 (fire·fall·ball·rps·number·helmet·box) | YOLO11s | CPU |
 | 마스크 | YOLO11s-cls | CPU |
 | 얼굴 검출·나이성별·감정·방향 | OpenVINO 프리트레인 | NPU |
 | 얼굴 거리·방향 / 손 제스처 / 표정 학습 | MediaPipe | CPU |
@@ -337,14 +328,19 @@ USB 로 들고 다니기: `[폴더 열기]` 로 작업 폴더를 열어 통째�
 기계 생성물임을 밝히지 않은 배포, 의료 조언·판독, 법집행·출입국 자동판정 등.
 이 제한은 AGPL 코드가 아니라 **TTS 모델 가중치에만** 적용된다 (코드와 모델은 별개 저작물).
 
-## 개발용: 모델 직접 변환
-pt 원본에서 처음부터 변환할 때만 필요하다 (30~50분). 배포 기기에서는 위 설치만으로 충분하다.
+## 개발용: HF 모델 저장소 다시 만들기
+배포·개발 PC 는 모두 HF 에서 받아 쓴다. 이 절은 **모델을 새로 만들어 HF 에 올릴 때만** 쓴다 (30~50분).
+`models/org/mask-11s-cls.pt` 하나만 있으면 나머지는 전부 원본 저장소에서 받아 오므로,
+HF 저장소가 비어도 다시 만들 수 있다 — 다만 **변환 PC 는 인터넷이 필요하다**.
+VLM(gemma3) 만은 요구 버전이 달라 전용 venv 에서 따로 변환한다 (아래 "VLM 모델 바꾸기").
 ```
 git clone https://github.com/themakerrobot/vapi-od.git
 cd vapi-od
 python -m venv venv && venv\Scripts\activate      # linux: source venv/bin/activate
-:: 커스텀 pt 8종을 models\org\ 에 복사
+:: mask-11s-cls.pt 를 models\org\ 에 복사 (표준 YOLO11m 3종은 자동으로 받아온다)
 powershell -ExecutionPolicy Bypass -File tools\setup.ps1   # linux: bash tools/setup.sh
 python tools\check.py                                 # fail = 0 이어야 함
 ```
-변환이 모두 성공하면 `models/org/`는 자동 삭제되고, 결과를 HF repo에 업로드해 두면 이후 기기는 내려받기만 하면 된다.
+변환이 끝나면 결과를 올린다 — `hf upload leeyunjai/vapi-od models .`
+`models/org/mask-11s-cls.pt` 도 함께 올려 두어야 이 저장소만으로 전부 다시 만들 수 있다.
+이후 기기는 `setup_deploy.ps1` 로 내려받기만 하면 된다.

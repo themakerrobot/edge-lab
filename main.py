@@ -132,7 +132,7 @@ def build_device_map():
     for k in face:
         DEVICE_OF[k] = dev_face
     for k in ("object_search", "object_pose", "object_seg",
-              "object_custom", "mask_detect"):
+              "detect_file", "mask_detect"):
         DEVICE_OF[k] = "CPU"
     for k in ("ocr", "barcode"):
         DEVICE_OF[k] = "CPU"
@@ -140,7 +140,7 @@ def build_device_map():
         DEVICE_OF[k] = "CPU"
 
     print(f"[devices] face={DEVICE_OF.get('face_analyze')} "
-          f"gan={DEVICE_OF.get('portrait')} vlm={DEVICE_OF.get('place')} "
+          f"gan={DEVICE_OF.get('portrait')} vlm={DEVICE_OF.get('look')} "
           f"yolo={DEVICE_OF.get('object_search')} code=CPU  (런타임 보고값)")
 
 
@@ -313,26 +313,53 @@ def object_seg(path, lang: str = "ko"):
     return eng.object.segment(path, lang)
 
 
-@app.post("/object/object_custom", tags=["object"],
-          summary="Custom Yolo (fire|fall|ball|rps|number|helmet|box)")
-async def object_custom(request: Request, uploadFile: UploadFile = File(...),
-                          detect_mode: str = "fire", lang: str = "ko"):
-    name = "object_custom"
+@app.get("/object/model_files", tags=["object"], summary="가져온 모델 목록")
+async def model_files():
+    """작업폴더의 models 칸에 있는 YOLO 모델 파일 이름을 돌려준다.
+
+    화면(블록 드롭다운·파이썬 도움말)이 이 목록을 그대로 보여 준다 —
+    아이가 경로를 적을 일이 없게 하려는 것이다."""
+    import engines as E
+    folder = E.UserYolo.folder()
+    return {"result": "ok", "data": {"folder": folder, "files": E.UserYolo.files()}}
+
+
+@app.post("/object/detect_file", tags=["object"], summary="가져온 모델로 인식")
+async def detect_file(request: Request, uploadFile: UploadFile = File(...),
+                      model: str = "", conf: float = 0.3, lang: str = "ko"):
+    """model 은 /object/model_files 가 준 이름 하나 (경로가 아니라 이름)."""
+    name = "detect_file"
     path = save_upload(uploadFile, name)
-    dev = DEVICE_OF.get(name, "CPU")
     t0 = time.perf_counter()
     try:
-        data = eng.custom.predict(detect_mode, path, lang)
-        return {"type": name, "result": "ok", "detect_mode": detect_mode,
+        data = eng.user.predict(model, path, conf)
+        return {"type": name, "result": "ok", "model": model,
                 "data": {"object": data},
-                "elapsed_ms": int((time.perf_counter() - t0) * 1000), "device": dev}
+                "elapsed_ms": int((time.perf_counter() - t0) * 1000), "device": "CPU"}
     except Exception as ex:
-        return {"type": name, "result": "fail", "detect_mode": detect_mode,
-                "data": "Inference error:" + str(ex),
-                "elapsed_ms": int((time.perf_counter() - t0) * 1000), "device": dev}
+        return {"type": name, "result": "fail", "model": model,
+                "data": str(ex),
+                "elapsed_ms": int((time.perf_counter() - t0) * 1000), "device": "CPU"}
     finally:
         os.path.exists(path) and os.remove(path)
 
+
+@app.post("/system/open_models", tags=["system"], summary="모델 폴더 열기")
+async def open_models():
+    """가져온 YOLO 모델을 넣어 두는 폴더를 탐색기로 띄운다."""
+    import subprocess
+    import engines as E
+    target = E.UserYolo.folder()
+    try:
+        if os.name == "nt":
+            subprocess.Popen(["explorer", target])
+        elif sys.platform == "darwin":
+            subprocess.Popen(["open", target])
+        else:
+            subprocess.Popen(["xdg-open", target])
+    except Exception as ex:
+        return {"result": "fail", "data": str(ex)}
+    return {"result": "ok", "data": target}
 
 # ---------------------------------------------------------------- face
 def _faces(path):
@@ -405,35 +432,6 @@ def mask_detect(path, lang: str = "ko"):
 
 
 # ---------------------------------------------------------------- vlm (사진을 보고 답한다)
-# 접두사 규칙: /<묶음>/<기능>. 같은 이름을 두 번 쓰지 않는다(caption_place → place).
-@app.post("/vlm/place", tags=["vlm"], summary="장소 맞히기")
-@service("place")
-def vlm_place(path, lang: str = "ko"):
-    text = eng.vlm.generate(read_bgr(path), P.p_place(lang), P.MAX_TOKENS["place"])
-    return P.parse_place(text, lang)
-
-
-@app.post("/vlm/time", tags=["vlm"], summary="시간대 맞히기")
-@service("time")
-def vlm_time(path, lang: str = "ko"):
-    text = eng.vlm.generate(read_bgr(path), P.p_time(lang), P.MAX_TOKENS["time"])
-    return P.parse_time(text, lang)
-
-
-@app.post("/vlm/weather", tags=["vlm"], summary="날씨 맞히기")
-@service("weather")
-def vlm_weather(path, lang: str = "ko"):
-    text = eng.vlm.generate(read_bgr(path), P.p_weather(lang), P.MAX_TOKENS["weather"])
-    return P.parse_weather(text, lang)
-
-
-@app.post("/vlm/tag", tags=["vlm"], summary="핵심 낱말 뽑기")
-@service("tag")
-def vlm_tag(path, lang: str = "ko"):
-    text = eng.vlm.generate(read_bgr(path), P.p_tag(lang), P.MAX_TOKENS["tag"])
-    return P.parse_tag(text)
-
-
 @app.post("/vlm/look", tags=["vlm"], summary="사진 보고 답하기 (질문을 비우면 설명)")
 @service("look")
 def vlm_look(path, prompt: str = "", lang: str = "ko"):
@@ -474,7 +472,7 @@ async def chat_ask(request: Request, prompt: str = "", lang: str = "ko",
                                        P.MAX_TOKENS["chat"])
         return {"type": name, "result": "ok", "data": {"answer": answer},
                 "elapsed_ms": int((time.perf_counter() - t0) * 1000),
-                "device": DEVICE_OF.get("place", "GPU")}
+                "device": DEVICE_OF.get("look", "GPU")}
     except Exception as ex:
         import traceback
         traceback.print_exc()
@@ -851,7 +849,7 @@ async def system():
     return {
         "ready": eng is not None,
         "devices": E.core.available_devices,
-        "assign": {"vlm": DEVICE_OF.get("place", E.DEV_VLM),
+        "assign": {"vlm": DEVICE_OF.get("look", E.DEV_VLM),
                    "vision": DEVICE_OF.get("portrait", E.DEV_GAN),
                    "face": DEVICE_OF.get("face_analyze", E.DEV_FACE),
                    "code": "CPU"},
@@ -860,7 +858,7 @@ async def system():
         "models": {
             "vlm": "Gemma 3 4B INT4",
             "detect": "YOLO11m (+pose/seg)",
-            "custom": len(eng.custom.models) if eng else 0,
+            "user": len(E.UserYolo.files()),   # 사람이 가져다 둔 모델 파일 수
             "face": 5, "transform": 4, "ocr": "easyocr ko/en",
         },
         "runtime": {"openvino": ov.get_version().split("-")[0], "port": PORT},

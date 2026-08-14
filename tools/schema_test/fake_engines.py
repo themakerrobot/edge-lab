@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """모델 없이 서버를 띄우기 위한 가짜 엔진.
 
-진짜 engines.py 에서 **표와 순수 계산**(COCO 이름, DIRECTION, direction_words,
-CUSTOM_KO, CUSTOM_EN_NORM)은 그대로 읽어 쓴다 — 스키마 검증이 목적이라 이 부분을
+진짜 engines.py 에서 **표와 순수 계산**(COCO 이름, DIRECTION, direction_words)은
+그대로 읽어 쓴다 — 스키마 검증이 목적이라 이 부분을
 흉내 내면 시험이 무의미해진다. 추론하는 부분만 그럴듯한 값으로 대신한다.
 """
 import ast
@@ -27,8 +27,6 @@ COCO_EN = _ns["COCO_EN"]
 COCO_KO = _ns["COCO_KO"]
 DIRECTION = _ns["DIRECTION"]
 direction_words = _ns["direction_words"]
-CUSTOM_KO = _ns["CUSTOM_KO"]
-CUSTOM_EN_NORM = _ns["CUSTOM_EN_NORM"]
 
 DEV_VLM, DEV_GAN, DEV_FACE = "GPU", "GPU", "NPU"
 TOTAL_STEPS = 3
@@ -72,15 +70,36 @@ class _Object:
                             "score": 77, "box": [200, 150, 320, 300]}]}
 
 
-class _Custom:
-    models = {"fire": 1, "rps": 1}
+class UserYolo:
+    """가져온 모델 파일 — 진짜와 같은 규칙(폴더 안에서만 찾기)으로 흉내 낸다."""
 
-    def predict(self, mode, path, lang="ko"):
-        raw = {"fire": "fire", "rps": "Rock"}.get(mode, mode)
-        en = CUSTOM_EN_NORM.get(raw.lower().replace(" ", "-"), raw.lower().replace(" ", "-"))
-        ko = CUSTOM_KO.get(en, en)
-        return [{"name": ko if str(lang).startswith("ko") else en, "name_en": en,
-                 "percent": 80, "score": 80, "box": (5, 5, 60, 60)}]
+    EXTS = (".pt", ".onnx")
+
+    @staticmethod
+    def folder():
+        import paths as _p
+        os.makedirs(_p.YOLO_DIR, exist_ok=True)
+        return _p.YOLO_DIR
+
+    @classmethod
+    def files(cls):
+        d = cls.folder()
+        try:
+            return sorted(n for n in os.listdir(d)
+                          if n.lower().endswith(cls.EXTS)
+                          or n.endswith("_openvino_model"))
+        except Exception:
+            return []
+
+    def predict(self, name, path, conf=0.3):
+        base = os.path.basename(str(name or "").strip())
+        if not base:
+            raise ValueError("모델 이름이 비었어요.")
+        if base not in self.files():
+            raise FileNotFoundError("모델 파일이 없어요: %s\n지금 있는 것: %s"
+                                    % (base, ", ".join(self.files()) or "(아직 없어요)"))
+        return [{"name": "cat", "name_en": "cat", "percent": 88,
+                 "score": 88, "box": (5, 5, 60, 60)}]
 
 
 class _Detect:
@@ -130,18 +149,10 @@ class _VLM:
             return json.dumps({"answer": q or "(질문 없음)"}, ensure_ascii=False)
         if "caption" in p:
             return '{"caption": "남자가 방에 앉아 있어요"}'
-        if "tag" in p:
-            return '{"tag": "사람, 의자, 방"}'
         if "score" in p and "name" in p:
             return '[{"name": "실내", "score": 90}, {"name": "사람", "score": 70}]'
         if "Eyeglasses" in p:
             return '{"Eyeglasses": 80, "Mustache": 5, "Beard": 3, "Hat": 1}'
-        if "장소" in p or "place in this photo" in p:
-            return "거실"
-        if "시간대" in p or "time of day" in p:
-            return "저녁"
-        if "날씨" in p or "weather" in p:
-            return "실내"
         return "이 사진에는 사람이 있어요."
 
 
@@ -196,7 +207,7 @@ class Engines:
         if progress:
             progress("fake", 1)
         self.object = _Object()
-        self.custom = _Custom()
+        self.user = UserYolo()
         self.face = _Face()
         self.vlm = _VLM()
         self.gan = _Gan()

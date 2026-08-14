@@ -56,21 +56,8 @@
       padding:8px 13px; border-radius:var(--r); font-size:.92rem;
     }
 
-    .main { flex:1 1 auto; min-height:0; display:flex; gap: var(--sp-2, 8px); }
-    .panel {
-      background:var(--box); border:1.5px solid var(--line); border-radius:var(--r);
-      display:flex; flex-direction:column; overflow:hidden;
-    }
-    .panel > .head {
-      flex:0 0 auto; display:flex; align-items:center; gap:9px; flex-wrap:wrap;
-      padding:var(--sp-1, 4px) 14px; border-bottom:1.5px dashed var(--line);
-    }
-    .q { position:relative; border:2.5px solid var(--cyan); background:#fff;
-         padding: var(--sp-1, 4px) 14px var(--sp-1, 4px) 11px; border-radius:2px; display:inline-flex;
-         align-items:center; gap:6px; font-weight:700; color:var(--cyan-d); }
     .side { flex:0 0 300px; }
     .talk { flex:1 1 auto; min-width:0; }
-    .body { flex:1 1 auto; min-height:0; overflow-y:auto; padding: var(--sp-2, 8px); }
     .body > * { flex:0 0 auto; }
 
     /* ----- 말풍선 ----- */
@@ -107,7 +94,6 @@
     .camwrap video { width:100%; display:block; aspect-ratio:4/3; object-fit:cover; }
     .row { display:flex; gap:7px; align-items:center; flex-wrap:wrap; }
     .lbl { font-weight:700; font-size:.9rem; }
-    .hint { font-size:.82rem; color:var(--ink-2); }
     .dbitem { display:flex; align-items:center; gap:7px; padding:6px 8px;
               border:1.5px solid var(--line); border-radius:var(--r); background:#fff;
               font-size:.86rem; }
@@ -139,23 +125,22 @@
       <span class="title" title="인터넷 없이 내 컴퓨터에서 실행돼요"><span id="txtTitle">대화</span> <span class="od" style="font-size:.78rem;color:var(--pen-red);vertical-align:middle;">(On-Device)</span></span>
     </div>
     <div class="h-tools">
-      <a href="/" id="homeLink" title="홈" style="display:inline-flex;align-items:center;justify-content:center;background:#fff;border:1.5px solid var(--line-d);color:var(--ink);width:34px;height:34px;border-radius:var(--r);text-decoration:none;font-size:1.15rem;line-height:1;">&#8962;</a>
       <button id="langButton" title="한국어 / English" style="min-width:46px;">EN</button>
     </div>
   </div>
 
-  <div class="main">
+  <div class="main-container">
     <!-- 왼쪽: 대화 -->
     <div class="panel talk">
-      <div class="head">
-        <span class="q"><span id="txtQ1">이야기해요</span></span>
+      <div class="panel-head">
+        <span class="q"><span class="qnum">1</span><span class="qtext" id="txtQ1">이야기해요</span></span>
         <span class="hint" id="txtMode">그냥 대화</span>
         <span class="hint" id="ttsState"></span>
         <span style="margin-left:auto;display:flex;gap:7px;">
           <button class="sm" id="newTalk"><span id="txtNew">새 대화</span></button>
         </span>
       </div>
-      <div class="body" id="log">
+      <div class="panel-body" id="log">
         <div class="empty" id="txtEmpty">무엇이든 물어보세요. 사진을 켜면 사진을 보고 답해요.</div>
       </div>
       <div class="ask">
@@ -167,8 +152,8 @@
 
     <!-- 오른쪽: 사진 · 자료 -->
     <div class="panel side">
-      <div class="head"><span class="q"><span id="txtQ2">사진 · 자료</span></span></div>
-      <div class="body">
+      <div class="panel-head"><span class="q"><span class="qnum">2</span><span class="qtext" id="txtQ2">사진 · 자료</span></span></div>
+      <div class="panel-body">
         <div>
           <div class="row">
             <span class="lbl" id="txtCamTitle">사진</span>
@@ -322,7 +307,7 @@
       camDenied:"카메라를 쓸 수 없어요. 권한을 확인해 주세요.",
       camBusy:"다른 프로그램이 카메라를 쓰고 있어요.",
       err:"앗, 잘 안 됐어요.",
-      ttsWait:"소리 만드는 중...", ttsFail:"소리를 내지 못했어요 (설정·점검에서 소리 시험)",
+      ttsWait:"소리 만드는 중...", ttsFail:"소리를 내지 못했어요 (설정에서 소리 시험)",
     },
     en: {
       titleTag:"Talk — The Maker", title:"Talk",
@@ -876,6 +861,7 @@
   $("q").focus();
 </script>
 <script src="/lib/usage.js" data-page="talk"></script>
+  <script src="/lib/nav.js"></script>
   <script src="/lib/sysbar.js"></script>
 </body>
 </html>

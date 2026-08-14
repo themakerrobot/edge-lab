@@ -23,9 +23,12 @@ from paths import STATS_DIR  # noqa: E402
 STATS_PATH = os.path.join(STATS_DIR, "usage.json")
 FLUSH_EVERY = 20          # 이만큼 쌓이면 저장
 FLUSH_SECONDS = 15        # 또는 이만큼 지나면 저장
-PAGES = ("index", "blocks", "train", "options")
+PAGES = ("index", "blocks", "code", "train", "talk", "options")
 SKIP_PREFIX = ("/stats", "/assets", "/fonts", "/lib", "/blockly", "/docs", "/openapi",
-               "/favicon")
+               "/favicon",
+               # 아래는 화면이 배경에서 계속 부르는 내부 호출이다 — 아이가 "쓴" 것이
+               # 아니므로 리포트에서 빼야 한다. 전에는 /ready 가 1등으로 찍혔다.
+               "/ready", "/system", "/pycode/out", "/pycode/frame", "/custom/reports")
 
 _lock = threading.Lock()
 _dirty = 0

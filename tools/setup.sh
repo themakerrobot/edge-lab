@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # =============================================================================
 # vapi-ondevice setup - Ubuntu - always full install, no skip
-# Usage: put 8 custom pt files in models/org/ then:  bash setup.sh
+# Usage: put mask-11s-cls.pt in models/org/ then:  bash setup.sh
 # Existing outputs are overwritten.
 # =============================================================================
 set -e
@@ -10,21 +10,23 @@ cd "$BASE"
 MODELS="$BASE/models"
 mkdir -p "$MODELS"/{org,vlm,object,face,gan,code}
 
-echo "=== [1/6] packages ==="
+echo "=== [1/9] packages ==="
 sudo apt-get update -qq && sudo apt-get install -y -qq wget
 pip install -r requirements.txt        # 실행에 필요한 것 (루트의 목록)
 pip install "optimum[openvino]" nncf torchvision
 pip install mediapipe
 
-echo "=== [2/6] VLM ==="
+echo "=== [2/9] VLM ==="
 echo "  VLM 은 따로 변환합니다 (README 참고)"
 
-echo "=== [3/6] YOLO standard x3 export ==="
+echo "=== [3/9] YOLO standard x3 export (auto-downloaded by ultralytics) ==="
 cd "$MODELS/object"
 python - <<'PY'
 import shutil
 from pathlib import Path
 from ultralytics import YOLO
+
+# 이 셋은 HF 에 두지 않는다 — ultralytics 가 GitHub 에서 받아온다(인터넷 필요).
 for name in ["yolo11m.pt", "yolo11m-pose.pt", "yolo11m-seg.pt"]:
     out = Path(name.replace(".pt", "_openvino_model"))
     if out.exists():
@@ -33,7 +35,7 @@ for name in ["yolo11m.pt", "yolo11m-pose.pt", "yolo11m-seg.pt"]:
     print("OK  ", out)
 PY
 
-echo "=== [4/6] custom x8 export (models/org -> models/object) ==="
+echo "=== [4/9] mask classifier export (models/org -> models/object) ==="
 cd "$MODELS"
 python - <<'PY'
 import shutil, sys
@@ -41,9 +43,8 @@ from pathlib import Path
 from ultralytics import YOLO
 
 ORG, OBJ = Path("org"), Path("object")
-EXPECTED = ["ball-11s.pt", "box-11s.pt", "fall-11s.pt", "fire-11s.pt",
-            "helmet-11s.pt", "mask-11s-cls.pt", "number-11s.pt", "rps-11s.pt"]
-# box-11s: seg model used as detect / helmet-11s: face+helmet / mask-11s-cls: 224 classifier
+EXPECTED = ["mask-11s-cls.pt"]
+# mask-11s-cls: 224 classifier, input = face crop
 
 missing, failed = [], []
 for name in EXPECTED:
@@ -65,12 +66,12 @@ if missing or failed:
     print("keeping models/org (missing=%s failed=%s)" % (missing, failed))
     sys.exit(1)
 
-shutil.rmtree(ORG)
-print("custom x8 done, models/org removed")
+shutil.rmtree(ORG)  # 원본은 HF org/ 에 있다
+print("mask classifier done, models/org removed")
 PY
 cd "$BASE"
 
-echo "=== [5/6] face suite + SR + transform models ==="
+echo "=== [5/9] face suite + SR + transform models ==="
 OMZ="https://storage.openvinotoolkit.org/repositories/open_model_zoo/2023.0/models_bin/1"
 dl_omz () {
   for ext in xml bin; do
@@ -87,19 +88,19 @@ dl_omz single-image-super-resolution-1032 "$MODELS/gan"
 wget -q --show-progress -O "$MODELS/gan/u2net.onnx" \
   "https://github.com/danielgatis/rembg/releases/download/v0.0.0/u2net.onnx"
 
-echo "=== [5.8/6] speech models (STT / TTS) ==="
-hf download OpenVINO/whisper-small-int8-ov --local-dir "$MODELS/stt"
-hf download Supertone/supertonic-3 --local-dir "$MODELS/tts"
-
-echo "=== [5.5/6] local fonts ==="
+echo "=== [6/9] local fonts ==="
 python tools/fonts_download.py
 
-echo "=== [5.7/6] mediapipe models ==="
+echo "=== [7/9] mediapipe models ==="
 mkdir -p models/mediapipe
 wget -q -O models/mediapipe/face_landmarker.task "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task"
 wget -q -O models/mediapipe/gesture_recognizer.task "https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/latest/gesture_recognizer.task"
 
-echo "=== [6/6] easyocr + offline check ==="
+echo "=== [8/9] speech models (STT / TTS) ==="
+hf download OpenVINO/whisper-small-int8-ov --local-dir "$MODELS/stt"
+hf download Supertone/supertonic-3 --local-dir "$MODELS/tts"
+
+echo "=== [9/9] easyocr + offline check ==="
 python - <<'PY'
 import easyocr
 easyocr.Reader(['ko', 'en'], gpu=False,
@@ -131,3 +132,6 @@ PY
 
 echo ""
 echo "DONE. offline run:  export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 YOLO_OFFLINE=1"
+echo ""
+echo "HF 에 올리려면:  hf upload leeyunjai/vapi-od models ."
+echo "  (models/org/mask-11s-cls.pt 도 함께 올려 두면 이 저장소만으로 전부 다시 만들 수 있다)"

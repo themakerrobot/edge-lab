@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>설정 · 점검 — The Maker</title>
+  <title>설정 — The Maker</title>
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
@@ -19,7 +19,7 @@
       --pen-red:#b4451c; --line:#9a8f7d; --line-d:#4a3f2e; --r:6px;
     }
 
-    /* ===== 밝은 곳 모드 (설정·점검에서 켠다) =====
+    /* ===== 밝은 곳 모드 (설정에서 켠다) =====
        색 토큰만 덮어써서 대비를 끌어올린다. 배치는 그대로다. */
     html.hc {
       --paper:    #fffdf8;
@@ -87,27 +87,9 @@
     .sysbar .meter .k { color:#6b6255; }
     .sysbar .meter .v { color:var(--pen-blue-d); font-weight:700; font-variant-numeric:tabular-nums; }
     /* 레이아웃 */
-    .main-container { flex:1 1 auto; min-height:0; display:flex; gap: var(--sp-2, 8px);  }
-    .panel {
-      flex:1 1 0; min-width:0; display:flex; flex-direction:column;
-      background:var(--box); border:1.5px solid var(--line); border-radius:var(--r); overflow:hidden;
-    }
-    .panel-head {
-      flex:0 0 auto; display:flex; align-items:center; gap:9px; flex-wrap:wrap;
-      padding:var(--sp-1, 4px) 16px; border-bottom:1.5px dashed var(--line);
-    }
-    .panel-body { flex:1 1 auto; min-height:0; overflow-y:auto; padding:var(--sp-3, 12px); display:flex; flex-direction:column; gap:var(--sp-2, 8px); }
     /* 세로 flex 는 자식을 기본으로 줄인다 — 그대로 두면 내용이 넘쳐도 스크롤이 안 생기고
        웹캠 미리보기 같은 아래쪽 항목만 납작하게 눌린다. 줄이지 말고 넘치게 해서 스크롤을 낸다. */
-    .panel-body > * { flex:0 0 auto; }
-    .q { position:relative; border:2.5px solid var(--cyan); background:#fff; padding:var(--sp-1, 4px) 16px var(--sp-1, 4px) 12px;
-         border-radius:2px; display:inline-flex; align-items:center; gap:6px; }
-    .q::after { content:""; position:absolute; left:14px; bottom:-12px;
-                border:7px solid transparent; border-top:9px solid var(--cyan); }
-    .qnum { font-family:"Gowun Dodum",sans-serif; font-weight:700; font-size:1.05rem; color:var(--cyan-d); }
     .qnum::after { content:"."; }
-    .qtext { font-family:"Gowun Dodum",sans-serif; font-weight:700; font-size:1.02rem; color:var(--cyan-d); }
-    .hint { color:var(--ink-2); font-size:.86rem; }
     .btn { border:1.5px solid var(--line-d); background:#fff; font-weight:600; padding:7px 13px;
            border-radius:var(--r); cursor:pointer; }
     .btn.primary { background:var(--pen-blue); border-color:var(--pen-blue-d); color:#fff; }
@@ -186,10 +168,9 @@
   <div class="header">
     <div class="h-subject" style="flex-direction:row;align-items:center;gap:10px;">
       <img src="/assets/pibo-prof.png" alt="" style="height:30px;flex:0 0 auto;">
-      <span class="title" title="인터넷 없이 내 컴퓨터에서 실행돼요"><span id="txtTitle">설정 · 점검</span> <span class="od" style="font-size:.78rem;color:var(--pen-red);vertical-align:middle;">(On-Device)</span></span>
+      <span class="title" title="인터넷 없이 내 컴퓨터에서 실행돼요"><span id="txtTitle">설정</span> <span class="od" style="font-size:.78rem;color:var(--pen-red);vertical-align:middle;">(On-Device)</span></span>
     </div>
     <div class="h-tools">
-      <a href="/" id="homeLink" style="display:inline-flex;align-items:center;justify-content:center;background:#fff;border:1.5px solid var(--line-d);color:var(--ink);width:34px;height:34px;border-radius:var(--r);text-decoration:none;font-size:1.15rem;line-height:1;">&#8962;</a>
       <button id="langButton" title="한국어 / English" style="min-width:46px;">EN</button>
     </div>
   </div>
@@ -258,6 +239,18 @@
             <span class="hint" id="txtWsHint" style="margin:0;">
               만든 작품·가르친 AI·기록이 모두 이 폴더에 있어요. 통째로 옮기거나 USB 에 담아
               다른 컴퓨터에서 불러오면 하던 작업을 이어서 할 수 있어요.</span>
+          </div>
+        </div>
+
+        <div style="margin-top:var(--sp-2, 8px);padding-top:var(--sp-2, 8px);border-top:1px dashed var(--line);">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <b style="font-size:.9rem;" id="txtMdTitle">모델 폴더</b>
+            <button class="btn" id="mdOpen" style="padding:5px 12px;font-size:.86rem;">
+              <span id="txtMdOpen">모델 폴더 열기</span></button>
+            <span id="mdCount" class="hint" style="margin:0;"></span>
+            <span class="hint" id="txtMdHint" style="margin:0;">
+              직접 학습한 YOLO 모델 파일(.pt)을 여기에 넣으면 블록의 모델 목록과
+              파이썬 models() 에 바로 나와요.</span>
           </div>
         </div>
 
@@ -339,7 +332,7 @@
   try { LANG = localStorage.getItem("vapiLang") || "ko"; } catch (e) {}
   const I18N = {
     ko: {
-      titleTag: "설정 · 점검 — The Maker", title: "설정 · 점검",
+      titleTag: "설정 — The Maker", title: "설정",
       eyebrow: "인공지능 · 컴퓨터 비전 · 이 PC의 준비 상태와 결과물",
       homeLink: "The Maker (홈)", langBtn: "EN",
       q1: "수업 전 점검", q2: "결과물", q3: "학습 결과 도표",
@@ -365,7 +358,7 @@
         example_loaded: "예제 불러오기",
       },
       pgName: { index: "써보기", blocks: "블록 코딩", train: "가르치기",
-                code: "파이썬", options: "설정 · 점검", etc: "기타" },
+                code: "파이썬", options: "설정", etc: "기타" },
       notRun: "아직 점검하지 않았어요.", none: "아직 없어요.",
       sndTitle: "소리", sndTest: "소리 시험", sndOpen: "윈도우 소리 설정 열기",
       sndHint: "소리가 안 들리면 윈도우 기본 장치가 모니터로 잡혀 있을 수 있어요.",
@@ -384,6 +377,9 @@
       nameSaved: "이름을 정했어요:", nameCleared: "이름을 비웠어요. 지금은 이 컴퓨터의 로그인 이름을 써요:",
       nameFail: "이름을 저장하지 못했어요 —",
       wsTitle: "작업 폴더", wsOpen: "폴더 열기", wsChange: "바꾸기",
+      mdTitle: "모델 폴더", mdOpen: "모델 폴더 열기",
+      mdHint: "직접 학습한 YOLO 모델 파일(.pt)을 여기에 넣으면 블록의 모델 목록과 파이썬 models() 에 바로 나와요.",
+      mdCount: "지금 %n개 있어요", mdNone: "아직 넣은 파일이 없어요",
       wsHint: "만든 작품·가르친 AI·기록이 모두 이 폴더에 있어요. 통째로 옮기거나 USB 에 담아 다른 컴퓨터에서 불러오면 하던 작업을 이어서 할 수 있어요.",
       wsInProgram: "지금은 프로그램 폴더 안을 쓰고 있어요. 문서 폴더처럼 프로그램 밖으로 옮기면 프로그램을 다시 깔아도 작업이 남아요.",
       wsAsk: "작업 폴더로 쓸 곳을 적어 주세요. 새 폴더거나, 전에 쓰던 작업 폴더여야 해요.",
@@ -409,7 +405,7 @@
       err: "오류: ",
     },
     en: {
-      titleTag: "Settings & Check — The Maker", title: "Settings & Check",
+      titleTag: "Settings — The Maker", title: "Settings",
       eyebrow: "AI · computer vision · readiness and results on this PC",
       homeLink: "The Maker (home)", langBtn: "한",
       q1: "Pre-class check", q2: "Saved results", q3: "Training report",
@@ -454,6 +450,9 @@
       nameSaved: "Name set:", nameCleared: "Name cleared. Using this computer's login name:",
       nameFail: "Could not save the name —",
       wsTitle: "Work folder", wsOpen: "Open folder", wsChange: "Change",
+      mdTitle: "Models folder", mdOpen: "Open models folder",
+      mdHint: "Drop your own YOLO model files (.pt) here — they appear in the Blocks model list and in models() right away.",
+      mdCount: "%n file(s) now", mdNone: "no files yet",
       wsHint: "Your projects, trained AIs and records all live in this folder. Move it or copy it to a USB stick and load it on another computer to carry on.",
       wsInProgram: "You are using a folder inside the program. Moving it outside (for example to Documents) keeps your work when the program is reinstalled.",
       wsAsk: "Type the folder to use. It must be a new folder, or a work folder you used before.",
@@ -651,6 +650,21 @@
       if (r.result !== "ok") $("txtWsHint").textContent = r.data;
     } catch (e) { $("txtWsHint").textContent = String(e); }
   });
+  $("mdOpen").addEventListener("click", async () => {
+    try {
+      const r = await (await fetch("/system/open_models", { method: "POST" })).json();
+      if (r.result !== "ok") $("txtMdHint").textContent = r.data;
+    } catch (e) { $("txtMdHint").textContent = String(e); }
+  });
+  async function loadModelCount() {
+    try {
+      const j = await (await fetch("/object/model_files")).json();
+      const n = ((j.data || {}).files || []).length;
+      $("mdCount").textContent = n ? t("mdCount").replace("%n", n) : t("mdNone");
+    } catch (e) { $("mdCount").textContent = ""; }
+  }
+  loadModelCount();
+
   $("wsChange").addEventListener("click", async () => {
     const now = $("wsPath").textContent;
 
@@ -1025,6 +1039,9 @@
     set("txtNameHint", t("nameHint"));
     set("txtWsTitle", t("wsTitle")); set("txtWsOpen", t("wsOpen"));
     set("txtWsChange", t("wsChange")); set("txtWsHint", t("wsHint"));
+    set("txtMdTitle", t("mdTitle")); set("txtMdOpen", t("mdOpen"));
+    set("txtMdHint", t("mdHint"));
+    if (typeof loadModelCount === "function") loadModelCount();
     set("txtHcTitle", t("hcTitle")); set("txtHcHint", t("hcHint"));
     if (typeof paintHc === "function") paintHc();
     set("txtVerTitle", t("verTitle")); set("txtVerCopy", t("verCopy"));
@@ -1038,6 +1055,7 @@
   loadAll();
   </script>
   <script src="/lib/usage.js" data-page="options"></script>
+  <script src="/lib/nav.js"></script>
   <script src="/lib/sysbar.js"></script>
 </body>
 </html>
