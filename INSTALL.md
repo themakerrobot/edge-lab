@@ -121,7 +121,7 @@ class DepthOnly(torch.nn.Module):
 with torch.no_grad():
     ov_model = ov.convert_model(
         DepthOnly(m), example_input=torch.zeros(1, 3, SIDE, SIDE))
-ov.save_model(ov_model, "depth-v2s/openvino_model.xml", compress_to_fp16=True)
+ov.save_model(ov_model, "depth-v2s.xml", compress_to_fp16=True)   # .bin 은 같은 이름으로 나온다
 
 out = list(ov.Core().compile_model(ov_model, "CPU")(
     {0: np.zeros((1, 3, SIDE, SIDE), np.float32)}).values())[0]
@@ -129,7 +129,8 @@ print("출력 모양", np.squeeze(out).shape)     # (518, 518) 이면 정상
 ```
 
 ```
-hf upload leeyunjai/vapi-od depth-v2s gan/depth-v2s
+hf upload leeyunjai/vapi-od depth-v2s.xml gan/depth-v2s.xml
+hf upload leeyunjai/vapi-od depth-v2s.bin gan/depth-v2s.bin
 
 deactivate
 Remove-Item -Recurse -Force venv-convert

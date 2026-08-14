@@ -104,7 +104,7 @@ Invoke-WebRequest -Uri "https://github.com/danielgatis/rembg/releases/download/v
 
 # 깊이 지도 — Depth Anything V2 Small (Apache-2.0)
 # 미리 변환해 HF(leeyunjai/vapi-od)에 올려둔 IR을 그대로 받는다 (다시 만들려면 INSTALL.md)
-& hf download leeyunjai/vapi-od --include "gan/depth-v2s/*" --local-dir $MODELS
+& hf download leeyunjai/vapi-od --include "gan/depth-v2s.*" --local-dir $MODELS
 if ($LASTEXITCODE -ne 0) { throw "depth download failed" }
 
 Write-Host "=== [6/9] local fonts ===" -ForegroundColor Cyan
