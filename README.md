@@ -45,7 +45,7 @@
 | `setup_deploy.ps1` | 설치 — 패키지 + 모델 다운로드 |
 | `requirements.txt` | 패키지 목록 (lock 파일이 있으면 그쪽 우선) |
 | `tools/schema_test/` | 모델 없이 응답 스키마 회귀 시험 — `tools\schema_test\run.bat` (가짜 엔진으로 서버를 띄워 엔드포인트·themaker 를 실제 호출) |
-| `tools/` | 개발·점검용 — 모델 변환(`setup.ps1`·`setup.sh`·`convert_depth.py`), 번들 생성(`make_bundle.bat`), 점검(`check.py`·`smoke_test.py`·`bundle_check.bat`), 버전 잠금(`freeze.ps1`)·업그레이드 시험(`upgrade_check.ps1`), 폰트, 런처 소스. 쓰는 법은 [INSTALL.md](INSTALL.md) |
+| `tools/` | 개발·점검용 — 모델 변환(`setup.ps1`·`setup.sh`), 번들 생성(`make_bundle.bat`), 점검(`check.py`·`smoke_test.py`·`bundle_check.bat`), 버전 잠금(`freeze.ps1`)·업그레이드 시험(`upgrade_check.ps1`), 폰트, 런처 소스. 쓰는 법은 [INSTALL.md](INSTALL.md) |
 
 ## 로그
 기본은 조용히 뜬다 — 교실에서는 요청 한 줄 한 줄이 콘솔을 가득 채우기 때문이다.

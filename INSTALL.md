@@ -99,14 +99,43 @@ python -m venv venv-convert
 venv-convert\Scripts\activate
 pip install torch transformers openvino huggingface_hub
 hf auth login                                    # private repo 이므로 write 토큰
+```
 
-python tools\convert_depth.py                    # -> depth-v2s\openvino_model.xml
+아래를 `conv.py` 로 저장해 `python conv.py` 로 돌린다. 입력 518 은
+`engines.DepthAnything` 이 쓰는 크기라 반드시 맞춘다. 출력이 dict(ModelOutput) 이면
+변환기가 헷갈리므로 깊이 텐서 하나만 내보내게 감싼다.
+
+```python
+import numpy as np, openvino as ov, torch
+from transformers import AutoModelForDepthEstimation
+
+SIDE = 518
+m = AutoModelForDepthEstimation.from_pretrained(
+        "depth-anything/Depth-Anything-V2-Small-hf").eval()
+
+class DepthOnly(torch.nn.Module):
+    def __init__(s, m): super().__init__(); s.m = m
+    def forward(s, pixel_values):
+        return s.m(pixel_values=pixel_values).predicted_depth
+
+with torch.no_grad():
+    ov_model = ov.convert_model(
+        DepthOnly(m), example_input=torch.zeros(1, 3, SIDE, SIDE))
+ov.save_model(ov_model, "depth-v2s/openvino_model.xml", compress_to_fp16=True)
+
+out = list(ov.Core().compile_model(ov_model, "CPU")(
+    {0: np.zeros((1, 3, SIDE, SIDE), np.float32)}).values())[0]
+print("출력 모양", np.squeeze(out).shape)     # (518, 518) 이면 정상
+```
+
+```
 hf upload leeyunjai/vapi-od depth-v2s gan/depth-v2s
 
 deactivate
 Remove-Item -Recurse -Force venv-convert
 ```
-`.bin` 이 약 49MB 면 정상이다. 스크립트가 끝에 CPU 로 한 번 돌려 출력 모양(518×518)까지 확인해 준다.
+`.bin` 이 약 49MB 면 정상이다. 출력 값은 **클수록 가까운 쪽**이고,
+서버가 이것을 INFERNO 색지도(밝을수록 가까움)로 칠한다.
 
 ## HF 모델 저장소 다시 만들기
 배포·개발 PC 는 모두 HF 에서 받아 쓴다. 이 절은 **모델을 새로 만들어 HF 에 올릴 때만** 쓴다 (30~50분).
