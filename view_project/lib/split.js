@@ -81,6 +81,7 @@
          패널로 세면 손잡이가 그 옆에도 생겨서 엉뚱한 자리를 끌게 된다. */
       return n.nodeType === 1 && !n.classList.contains("split-bar") &&
              n.id !== "filePanel" &&
+             !n.hasAttribute("data-split-skip") &&
              getComputedStyle(n).display !== "none";
     });
   }

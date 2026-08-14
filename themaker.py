@@ -56,6 +56,7 @@ _API = {
     "qr":         ("/code/barcode", {}),
     "bg_remove":  ("/gan/portrait", {}),
     "sr":         ("/gan/sr", {}),
+    "depth":      ("/gan/depth", {}),
     "mask":       ("/face/mask_detect", {}),
 }
 
@@ -64,7 +65,7 @@ _ALIAS_KO = {
     "사물": "object", "자세": "pose", "분할": "seg", "손": "hand",
     "얼굴": "face", "얼굴분석": "face_attr", "얼굴거리": "distance",
     "보기": "look", "설명": "look", "질문": "look",
-    "글자": "ocr", "큐알": "qr", "배경제거": "bg_remove", "화질개선": "sr",
+    "글자": "ocr", "큐알": "qr", "배경제거": "bg_remove", "화질개선": "sr", "깊이지도": "depth", "깊이": "depth",
     "마스크": "mask",
 }
 
@@ -227,7 +228,7 @@ def vision(kind, image, prompt=None, **params):
         raise TheMakerError("AI 실행 실패: %s" % j.get("data"))
     data = j.get("data")
     # 그림으로 오는 기능은 base64 글자 대신 이미지로 풀어 준다 (show·save 에 바로 넣게)
-    if kind in ("bg_remove", "sr") and isinstance(data, str):
+    if kind in ("bg_remove", "sr", "depth") and isinstance(data, str):
         return _b64_to_image(data)
     # 분할은 칠한 그림과 찾은 이름을 함께 준다 — 그림만 이미지로 풀어 준다
     if kind == "seg" and isinstance(data, dict) and isinstance(data.get("image"), str):

@@ -72,7 +72,7 @@
       margin-left: auto; display: flex; flex-direction: row;
       gap: 8px; align-items: center; flex-wrap: wrap;
     }
-    #runButton { background: var(--pen-blue); border-color: var(--pen-blue); color: #fff; font-weight: 700; padding: 8px 26px; }
+    #runButton { background: var(--pen-blue); border-color: var(--pen-blue); color: #fff; font-weight: 700; }
     #runButton:hover { background: var(--pen-blue-d); }
     #runButton:disabled { background: #b9b7ac; border-color: #b9b7ac; cursor: wait; }
     #stopButton { border-color: var(--pen-red); color: var(--pen-red); font-weight: 700; }
@@ -302,7 +302,7 @@
 
       o_face: "얼굴", o_objects: "사물", o_ocr: "글자", o_qr: "QR", o_rps: "가위바위보",
       o_emotion: "감정", o_age: "나이", o_gender: "성별", o_dir: "방향",
-      o_portrait: "배경 제거", o_sr: "화질 개선",
+      o_portrait: "배경 제거", o_sr: "화질 개선", o_depth: "깊이 지도",
       o_hand: "손 모양", o_dist: "얼굴 거리",
 
       /* --- 사진 편집 --- */
@@ -518,7 +518,7 @@
 
       o_face: "faces", o_objects: "objects", o_ocr: "text", o_qr: "QR", o_rps: "rock-paper-scissors",
       o_emotion: "emotion", o_age: "age", o_gender: "gender", o_dir: "direction",
-      o_portrait: "no background", o_sr: "higher quality",
+      o_portrait: "no background", o_sr: "higher quality", o_depth: "depth map",
       o_hand: "hand gesture", o_dist: "face distance",
       /* --- Photo editing --- */
       b_resize: "scale %1 by %2 ×",
@@ -922,7 +922,7 @@
     /* 인식 종류 -> vision() 기능 이름 */
     const M_MODE  = { face: "face", hand: "hand", dist: "distance", objects: "object",
                       ocr: "ocr", qr: "qr" };
-    const M_TRANS = { portrait: "bg_remove", sr: "sr" };
+    const M_TRANS = { portrait: "bg_remove", sr: "sr", depth: "depth" };
     const pick = (map, v, dflt) => map[v] || dflt || v;
     let needRandom = false, needMath = false;
 
@@ -1417,7 +1417,7 @@ def texts_of(result):
         tooltip: t("b_chat_tip") },
       { type: "ai_transform", message0: t("b_transform"), output: "String", colour: C_VLM,
         args0: [ IMG, { type: "field_dropdown", name: "KIND",
-          options: opt(["portrait","sr"]) } ],
+          options: opt(["portrait","sr","depth"]) } ],
         tooltip: t("b_transform_tip") },
       // 무대
       { type: "st_say", message0: t("b_say"), previousStatement: null, nextStatement: null,

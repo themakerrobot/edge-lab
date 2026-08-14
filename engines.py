@@ -461,10 +461,41 @@ class SuperRes:
         return cv2.resize(out, (w * 4, h * 4))        # 정확히 4x 크기로 정합
 
 
+class DepthAnything:
+    """Depth Anything V2 Small — 깊이(거리) 지도. 입력 [1,3,518,518] RGB ImageNet normalize.
+       출력은 상대 깊이(클수록 가까움) → 0~255로 펴서 INFERNO 색지도(밝을수록 가까움)로 칠한다."""
+
+    MEAN = np.array([0.485, 0.456, 0.406], dtype=np.float32)
+    STD = np.array([0.229, 0.224, 0.225], dtype=np.float32)
+
+    def __init__(self, device):
+        self.compiled = core.compile_model(
+            core.read_model(MODELS / "gan/depth-v2s/openvino_model.xml"), device)
+        self.lock = threading.Lock()
+
+    def predict(self, bgr):
+        h, w = bgr.shape[:2]
+        rgb = cv2.cvtColor(cv2.resize(bgr, (518, 518)), cv2.COLOR_BGR2RGB).astype(np.float32)
+        rgb = ((rgb / 255.0) - self.MEAN) / self.STD
+        blob = rgb.transpose(2, 0, 1)[None]
+        with self.lock:
+            out = list(self.compiled({0: blob}).values())[0]
+        depth = np.squeeze(out).astype(np.float32)
+        depth = (depth - depth.min()) / (depth.max() - depth.min() + 1e-8)   # 0~1, 클수록 가까움
+        gray = (cv2.resize(depth, (w, h)) * 255).astype(np.uint8)
+        return cv2.applyColorMap(gray, cv2.COLORMAP_INFERNO)                  # BGR, 밝을수록 가까움
+
+
 class GanEngine:
     def __init__(self):
         self.bgremove = U2Net(DEV_GAN)
         self.sr = SuperRes(DEV_GAN)
+        # 깊이 모델은 아직 HF 저장소에 없을 수 있다 — 없으면 나머지는 그대로 뜬다
+        try:
+            self.depth = DepthAnything(DEV_GAN)
+        except Exception as ex:
+            self.depth = None
+            print(f"[gan] depth 모델 없음 — tools/setup 으로 변환하세요 ({ex})")
 
 
 # ---------------------------------------------------------------- code (ocr / qr)
@@ -713,7 +744,8 @@ class Engines:
                               self.face.emotion.predict(face),
                               self.face.head_pose.predict(face),
                               self.face.mask.predict(face))),
-            ("gan", lambda: (self.gan.bgremove.predict(face), self.gan.sr.predict(face))),
+            ("gan", lambda: (self.gan.bgremove.predict(face), self.gan.sr.predict(face),
+                              self.gan.depth and self.gan.depth.predict(face))),
             ("vlm", lambda: self.vlm.generate(face, "hi", 1)),
         ]
         for name, fn in steps:

@@ -167,6 +167,7 @@ class _Gan:
             return img
     bgremove = _M()
     sr = _M()
+    depth = _M()
 
 
 class _Code:

@@ -118,7 +118,7 @@ def exec_device(obj, fallback="CPU"):
 def build_device_map():
     import engines as E
     vlm = {"place", "time", "weather", "tag", "look", "chat_ask"}
-    gan = {"portrait", "sr"}
+    gan = {"portrait", "sr", "depth"}
     face = {"face_detect", "face_analyze", "face_emotion", "face_age_gender"}
     # 실측: 각 그룹의 대표 모델에게 직접 물어본다
     dev_face = exec_device(eng.face.detect, E.DEV_FACE) if eng else E.DEV_FACE
@@ -493,6 +493,15 @@ def gan_portrait(path):
 def gan_sr(path):
     from engines import to_b64_jpg
     return to_b64_jpg(eng.gan.sr.predict(read_bgr(path)))
+
+
+@app.post("/gan/depth", tags=["gan"], summary="깊이 지도 (Depth Anything V2 Small)")
+@service("depth")
+def gan_depth(path):
+    from engines import to_b64_jpg
+    if eng.gan.depth is None:
+        raise ValueError("깊이 모델이 없습니다 — tools/setup 으로 변환하세요")
+    return to_b64_jpg(eng.gan.depth.predict(read_bgr(path)))
 
 
 # ---------------------------------------------------------------- code

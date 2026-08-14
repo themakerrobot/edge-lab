@@ -52,6 +52,8 @@ def run(host):
          lambda r: r[0]["data"].startswith("http"))
     case("vision('bg_remove')", lambda: T.vision("bg_remove", img),
          lambda r: isinstance(r, np.ndarray))
+    case("vision('depth')", lambda: T.vision("depth", img),
+         lambda r: isinstance(r, np.ndarray))
     case("vision('seg') 그림+이름", lambda: T.vision("seg", img),
          lambda r: isinstance(r["image"], np.ndarray) and r["object"][0]["name"] == "의자")
 

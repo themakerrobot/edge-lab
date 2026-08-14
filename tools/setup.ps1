@@ -102,6 +102,11 @@ Get-Omz "single-image-super-resolution-1032" $ganDir    # 4x SR
 Invoke-WebRequest -Uri "https://github.com/danielgatis/rembg/releases/download/v0.0.0/u2net.onnx" `
   -OutFile (Join-Path $ganDir "u2net.onnx")
 
+# 깊이 지도 — Depth Anything V2 Small (Apache-2.0)
+# 미리 변환해 HF(leeyunjai/vapi-od)에 올려둔 IR을 그대로 받는다 (변환은 tools/convert_depth.py)
+& hf download leeyunjai/vapi-od --include "gan/depth-v2s/*" --local-dir $MODELS
+if ($LASTEXITCODE -ne 0) { throw "depth download failed" }
+
 Write-Host "=== [6/9] local fonts ===" -ForegroundColor Cyan
 python tools\fonts_download.py
 if ($LASTEXITCODE -ne 0) { throw "font download failed" }

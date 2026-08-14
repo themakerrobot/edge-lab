@@ -268,7 +268,7 @@
     </div>
 
     <!-- 도움말 (열어 둔 채로 코딩) -->
-    <div class="panel help-panel" id="helpPanel">
+    <div class="panel help-panel" id="helpPanel" data-split-skip>
       <div class="panel-head">
         <div class="q"><span class="qnum">3</span><span class="qtext" id="txtHelpHead">도움말</span></div>
         <div class="ph-tools">
@@ -1388,7 +1388,7 @@ Relative paths resolve from <code>models\\pycode</code>. cv2 and numpy work as u
     /* ---------------- 자동완성 ---------------- */
     const KINDS = ["object", "face", "face_attr", "distance", "hand", "pose", "seg",
                    "look", "ocr", "qr",
-                   "bg_remove", "sr", "mask"];
+                   "bg_remove", "sr", "depth", "mask"];
     const FUNCS = ["camera", "load", "save", "show", "draw", "vision", "detect", "language", "chat", "db_add", "db_list", "db_find", "db_delete",
                    "speak", "listen", "wav_to_text", "my_models", "models", "models_folder",
                    "resize", "rotate", "flip", "crop", "crop_xy", "crop_found",

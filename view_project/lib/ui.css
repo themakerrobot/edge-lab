@@ -296,7 +296,8 @@ html.hc .header .h-tools > a.nav-tab .ic { opacity: .8; }
   align-items: center;
   flex-wrap: wrap;
   gap: 9px;
-  padding: var(--sp-1, 4px) 16px;
+  min-height: 2.5rem;              /* 머리표 높이 고정 — 좌·우 점선이 늘 같은 자리에 */
+  padding: 0 16px;
   border-bottom: 1.5px dashed var(--line, #9a8f7d);
 }
 .panel-body {
@@ -338,6 +339,8 @@ html.hc .header .h-tools > a.nav-tab .ic { opacity: .8; }
   font-variant-numeric: tabular-nums;
   opacity: .75;
 }
+/* 번호 뒤 점은 여기서 한 번만 — 페이지마다 따로 두지 않는다 */
+.qnum::after { content: "."; }
 
 /* 머리표 줄의 글씨 — 문항 상자 밖의 곁글(파일 이름 등)도 같은 크기로 */
 .panel-head { font-size: 1rem; }
