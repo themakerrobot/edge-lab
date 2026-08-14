@@ -470,7 +470,7 @@ class DepthAnything:
 
     def __init__(self, device):
         self.compiled = core.compile_model(
-            core.read_model(MODELS / "gan/depth-v2s/openvino_model.xml"), device)
+            core.read_model(MODELS / "gan/depth-v2s.xml"), device)
         self.lock = threading.Lock()
 
     def predict(self, bgr):
