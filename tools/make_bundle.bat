@@ -76,9 +76,12 @@ python -m pip list --path %BUILD%\pylib >> %BUILD%\installed-packages.txt 2>nul
 echo.
 echo === [5/8] build launcher exe ===
 if exist "%TOOLS%launcher.py" if exist themaker.ico (
-  "%PY_LOCAL%" -m pip install --quiet pyinstaller
+  REM 런타임 venv 를 더럽히지 않게 exe 빌드용 venv 를 따로 쓴다 — venv 에 깔면
+  REM freeze.ps1 이 pyinstaller 까지 잠가 교실 PC 가 그것을 받게 된다.
+  if not exist "%ROOT%build\venv-exe\Scripts\python.exe" python -m venv "%ROOT%build\venv-exe"
+  "%ROOT%build\venv-exe\Scripts\python.exe" -m pip install --quiet pyinstaller
   if errorlevel 1 (echo [WARN] pyinstaller install failed - skipping exe) else (
-    "%PY_LOCAL%" -m PyInstaller --onefile --clean --noconfirm ^
+    "%ROOT%build\venv-exe\Scripts\python.exe" -m PyInstaller --onefile --clean --noconfirm ^
       --name themaker --icon "%ROOT%themaker.ico" ^
       --distpath "%ROOT%." --workpath "%ROOT%build\exe" --specpath "%ROOT%build\exe" ^
       "%TOOLS%launcher.py"
