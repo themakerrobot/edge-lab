@@ -290,8 +290,11 @@ def db_delete(db):
     return j["data"]
 
 
-def db_find(question, db, top_k=4):
-    """답을 만들지 않고, 자료에서 비슷한 곳만 찾아 본다 (어디서 가져오는지 보기)."""
+def db_find(db, question, top_k=4):
+    """답을 만들지 않고, 자료에서 비슷한 곳만 찾아 본다 (어디서 가져오는지 보기).
+
+    자료 이름이 앞이다 — db_add·db_delete 와 같은 순서로 맞췄다.
+    """
     url = "/chat/find?" + urllib.parse.urlencode(
         {"db": str(db), "prompt": str(question), "top_k": int(top_k)})
     j = _post(url)

@@ -62,7 +62,7 @@ def run(host):
 
     def _db():
         T.db_add("시험자료", "무지개는 빛이 물방울에 꺾여서 생긴다.\n\n달은 지구를 도는 위성이다.")
-        found = T.db_find("무지개는 왜 생겨?", "시험자료", 1)
+        found = T.db_find("시험자료", "무지개는 왜 생겨?", 1)
         answer = T.chat("무지개는 왜 생겨?", db="시험자료")
         titles = [k["title"] for k in T.db_list()]
         gone = [T.db_delete(k["slug"])["deleted"]        # db_delete 도 함께 확인

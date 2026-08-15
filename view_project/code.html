@@ -829,7 +829,7 @@ print("\\n[2] 우리 자료에서 찾아 답하기")
 print(chat(물음, db="우리자료"))
 
 print("\\n[3] 어디서 가져왔는지 보기")
-for h in db_find(물음, "우리자료", 2):
+for h in db_find("우리자료", 물음, 2):
     print(" ", h["score"], h["text"][:40], "...")
 
 # 자료에 없는 것을 물으면 어떻게 될까요?
@@ -1001,6 +1001,7 @@ print("전체 점검 끝!")
 <tr><td><code>qr</code></td><td>큐알</td><td>QR 읽기</td></tr>
 <tr><td><code>bg_remove</code></td><td>배경제거</td><td>배경 지우기</td></tr>
 <tr><td><code>sr</code></td><td>화질개선</td><td>4배 선명하게</td></tr>
+<tr><td><code>depth</code></td><td>깊이지도</td><td>가까울수록 밝게</td></tr>
 <tr><td><code>mask</code></td><td>마스크</td><td>마스크 착용</td></tr>
 </table>
 <p style="margin:10px 0 6px;"><b>내가 가르친 AI — 종류에 따라 보는 것이 달라요</b></p>
@@ -1039,6 +1040,7 @@ print(vision("look", img, lang="en")["answer"])   # 영어로 받기</pre>
 <tr><td><code>ocr</code></td><td>read text</td></tr>
 <tr><td><code>qr</code></td><td>read QR</td></tr>
 <tr><td><code>bg_remove</code></td><td>remove background</td></tr>
+<tr><td><code>depth</code></td><td>depth map (brighter is closer)</td></tr>
 <tr><td><code>sr</code></td><td>upscale 4x</td></tr>
 <tr><td><code>mask</code></td><td>mask on/off</td></tr>
 </table>
@@ -1121,10 +1123,10 @@ Relative paths resolve from <code>models\\pycode</code>. cv2 and numpy work as u
         ko: { d: "내가 만든 자료에서 찾아 답해요 — 자료에 없으면 없다고 말해요", a: "물어볼 말, db=자료 이름", r: "답 (글자)" },
         en: { d: "answer from your own material only", a: "question, db=title", r: "answer text" },
         x: 'print(chat("제갈량은 누구야?", db="삼국지"))' },
-      { g: "ai", n: 'db_find("...", "이름")', ins: 'db_find("제갈량은 누구야?", "삼국지")',
-        ko: { d: "답은 안 만들고 자료에서 비슷한 곳만 찾아요 — 어디서 가져오는지 보기", a: "물어볼 말, 자료 이름, 개수", r: "목록 [{text 조각, score 닮은 정도}]" },
-        en: { d: "find similar parts without answering", a: "question, title, count", r: "list of {text, score}" },
-        x: 'for h in db_find("제갈량은 누구야?", "삼국지"):\n    print(h["score"], h["text"])' },
+      { g: "ai", n: 'db_find("이름", "...")', ins: 'db_find("삼국지", "제갈량은 누구야?")',
+        ko: { d: "답은 안 만들고 자료에서 비슷한 곳만 찾아요 — 어디서 가져오는지 보기", a: "자료 이름, 물어볼 말, 개수", r: "목록 [{text 조각, score 닮은 정도}]" },
+        en: { d: "find similar parts without answering", a: "title, question, count", r: "list of {text, score}" },
+        x: 'for h in db_find("삼국지", "제갈량은 누구야?"):\n    print(h["score"], h["text"])' },
       { g: "ai", n: 'db_delete("이름")', ins: 'db_delete("삼국지")',
         ko: { d: "자료 지우기", a: "자료 이름", r: "{slug, deleted}" },
         en: { d: "delete a knowledge base", a: "title", r: "{slug, deleted}" },
@@ -1164,6 +1166,18 @@ Relative paths resolve from <code>models\\pycode</code>. cv2 and numpy work as u
         ko: { d: "흐린 사진을 4배 선명하게", a: "기능 이름, 사진", r: "선명해진 사진" },
         en: { d: "upscale 4x", a: "kind, image", r: "the upscaled image" },
         x: 'big = vision("sr", img)\nshow(big)\nsave(big, "big.jpg")' },
+      { g: "ai", n: 'vision("mask", img)', ins: 'vision("mask", img)',
+        ko: { d: "마스크를 썼는지 보기", a: "기능 이름, 사진",
+              r: "목록 [{name 마스크 씀/맨얼굴, name_en mask·no-mask, score 확신도, box 위치}, ...]" },
+        en: { d: "check if a mask is worn", a: "kind, image",
+              r: "list of {name, name_en, score, box}" },
+        x: 'r = vision("mask", img)\nfor m in r:\n    print(m["name"], m["score"])\nshow(img, r)' },
+      { g: "ai", n: 'vision("depth", img)', ins: 'vision("depth", img)',
+        ko: { d: "가까운 곳과 먼 곳을 색으로 — 밝을수록 가까워요", a: "기능 이름, 사진",
+              r: "색으로 칠한 그림 — show 에 바로 넣을 수 있어요" },
+        en: { d: "show near and far as colors (brighter is closer)", a: "kind, image",
+              r: "the colored image" },
+        x: 'd = vision("depth", camera())\nshow(d)' },
 
       { g: "edit", n: "resize(img, 2)", ins: "resize(img, 2)",
         ko: { d: "크기 바꾸기 (1보다 크면 가운데를 잘라 확대)", a: "사진, 배율", r: "바뀐 사진" },

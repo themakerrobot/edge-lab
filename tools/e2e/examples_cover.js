@@ -81,6 +81,24 @@ const EXP = examples(codeHtml, "const EXAMPLES = [", "\n    ];");
 const fullCheck = EXP[EXP.length - 1].code;
 const funcs = [...themaker.matchAll(/^def ([a-z_]+)\(/gm)].map(m => m[1]).filter(f => !f.startsWith("_"));
 const missFuncs = funcs.filter(f => !SKIP_FUNCS[f] && !new RegExp("\\b" + f + "\\s*\\(").test(fullCheck));
+/* ---- vision(kind) 가 도움말·자동완성에 다 있는가 ----
+   themaker 에 기능을 더하고 code.html 을 안 고치면 아이가 그 기능을 못 찾는다
+   (depth 가 실제로 자동완성에만 있고 도움말에는 빠져 있었다). */
+const kindsBlock = themaker.match(/_API\s*=\s*\{([\s\S]*?)\n\}/);
+if (kindsBlock) {
+  const kinds = [...new Set([...kindsBlock[1].matchAll(/"([a-z_0-9]+)":\s*\(/g)].map(m => m[1]))];
+  /* 예제 코드 안의 vision(...) 까지 세면 도움말이 비어도 통과한다 —
+     도움말 항목의 n: 'vision("kind" ...' 형태만 센다. */
+  const inHelp = new Set([...codeHtml.matchAll(/n: 'vision\("([a-z_0-9]+)"/g)].map(m => m[1]));
+  const autoM = codeHtml.match(/const KINDS = \[([\s\S]*?)\];/);
+  const inAuto = new Set(autoM ? [...autoM[1].matchAll(/"([a-z_0-9]+)"/g)].map(m => m[1]) : []);
+  const noHelp = kinds.filter(k => !inHelp.has(k));
+  const noAuto = kinds.filter(k => !inAuto.has(k));
+  console.log("vision 기능 " + kinds.length + "종 | 도움말 빠짐: " +
+              (noHelp.join(" ") || "없음") + " | 자동완성 빠짐: " + (noAuto.join(" ") || "없음"));
+  if (noHelp.length || noAuto.length) fail("vision 기능이 code.html 에 빠짐");
+}
+
 if (missFuncs.length) fail("전체 점검에 없는 함수: " + missFuncs.join(" "));
 console.log(`  파이썬 예제 ${EXP.length}종 | themaker 함수 ${funcs.length} 중`
   + ` ${funcs.filter(f => new RegExp("\\b" + f + "\\s*\\(").test(fullCheck)).length} 를 전체 점검이 사용`

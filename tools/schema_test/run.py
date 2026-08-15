@@ -104,8 +104,20 @@ def main_():
     print("가짜 엔진으로 서버를 띄웁니다 ... (%s)" % HOST)
     boot()
 
+    # MediaPipe 는 시험 기기에 태스크 파일이 없다 — 얼굴 메시·손동작만 가짜로 끼운다.
+    # 이걸 안 하면 전체 점검 예제가 그 줄에서 멈춰 뒷부분(자료·소리)을 못 본다.
+    import mp_routes
+    mp_routes._load = lambda: None
+    mp_routes._mesh_boxes = lambda bgr: [((100, 80, 300, 320), 12.0)]
+    mp_routes._hand_items = lambda bgr, lang="ko": [
+        {"gesture": "엄지 척" if str(lang).startswith("ko") else "Thumb_Up",
+         "gesture_en": "Thumb_Up", "score": 90,
+         "hand": "오른손" if str(lang).startswith("ko") else "Right",
+         "hand_en": "Right", "box": [10, 10, 110, 110], "points": []}]
+
     import check_api
     import check_asmain
+    import check_pyexamples
     import check_themaker
 
     print("\n[1] 엔드포인트 응답")
@@ -114,14 +126,17 @@ def main_():
     t_ok, t_fail = check_themaker.run(HOST)
     print("\n[3] python main.py 로 띄운 상태 (__main__)")
     m_ok, m_fail = check_asmain.run()
-    print("\n[4] 예제 커버리지 (블록·파이썬)")
+    print("\n[4] 파이썬 예제 실제 실행")
+    p_ok, p_fail = check_pyexamples.run(HOST)
+    print("\n[5] 예제 커버리지 (블록·파이썬)")
     e_ok, e_fail = check_examples()
 
-    ok, fail = a_ok + t_ok + m_ok + e_ok, a_fail + t_fail + m_fail + e_fail
+    ok, fail = a_ok + t_ok + m_ok + p_ok + e_ok, a_fail + t_fail + m_fail + p_fail + e_fail
     print("\n" + "=" * 46)
     print("  엔드포인트  %2d PASS / %d FAIL" % (a_ok, a_fail))
     print("  themaker   %2d PASS / %d FAIL" % (t_ok, t_fail))
     print("  직접 기동   %2d PASS / %d FAIL" % (m_ok, m_fail))
+    print("  예제 실행   %2d PASS / %d FAIL" % (p_ok, p_fail))
     print("  예제        %2d PASS / %d FAIL" % (e_ok, e_fail))
     print("  합계       %2d PASS / %d FAIL" % (ok, fail))
     print("=" * 46)
