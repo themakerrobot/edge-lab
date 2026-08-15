@@ -255,6 +255,7 @@ USB 로 들고 다니기: `[폴더 열기]` 로 작업 폴더를 열어 통째�
 | Supertonic 3 (모델 가중치) | OpenRAIL-M (BigScience Open RAIL-M) |
 | Supertonic 추론 절차 (speech_routes.py) | 공식 예제(supertone-inc/supertonic) MIT 기반 이식 |
 | Blockly / TensorFlow.js / JSZip | Apache-2.0 / Apache-2.0 / MIT |
+| Font Awesome Free 6 (툴박스 아이콘) | 아이콘 CC BY 4.0 · 폰트 SIL OFL 1.1 · 코드 MIT |
 
 ### TTS 모델(OpenRAIL-M) 재배포 시 지켜야 할 것
 상업 사용·재배포·서비스 호스팅은 허용된다. 다만 모델(또는 그 파생물)을 남에게 넘길 때:
