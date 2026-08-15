@@ -36,9 +36,9 @@ if (Test-Path "requirements.lock.txt") {
   & $PY -m pip install -r requirements.txt
 }
 if ($LASTEXITCODE -ne 0) { throw "package install failed" }
-# pyinstaller: 배포용 exe 빌드(tools\make_bundle.bat)에만 필요 — 실패해도 무방
-& $PY -m pip install pyinstaller 2>$null | Out-Null
-$global:LASTEXITCODE = 0
+# pyinstaller 는 여기서 깔지 않는다 — 런처 exe 를 만들 때만 쓰는데, 여기서 깔면
+# freeze.ps1 이 그것까지 잠가 교실 PC 도 pyinstaller·altgraph·pefile 을 받게 된다.
+# 필요할 때 tools\make_bundle.bat 이 스스로 설치한다.
 
 # 설치된 패키지 버전을 남긴다 — 나중에 "언제부터 안 되기 시작했는지" 를 찾는 근거가 된다.
 # 자리는 paths.py 의 앱데이터(기본 %LOCALAPPDATA%\TheMaker) — 프로그램 폴더에 data\ 를 만들지 않는다

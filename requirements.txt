@@ -23,6 +23,8 @@ easyocr
 fastapi
 uvicorn[standard]
 python-multipart
+# huggingface_hub: 런타임 코드는 import 하지 않는다. 설치할 때 hf 명령으로
+# 모델을 받는 용도뿐이라, 번들(모델이 이미 든 zip)에는 사실상 필요 없다.
 huggingface_hub
 
 # --- 영상 / 소리 ---

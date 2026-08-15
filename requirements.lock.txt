@@ -4,7 +4,6 @@
 #
 # 이 파일을 지우면 requirements.txt(범위 고정)로 설치된다.
 absl-py==2.5.0
-altgraph==0.17.5
 annotated-doc==0.0.5
 annotated-types==0.8.0
 anyio==4.14.2
@@ -55,7 +54,6 @@ openvino-genai==2026.3.0.0
 openvino-telemetry==2025.2.0
 openvino-tokenizers==2026.3.0.0
 packaging==26.3
-pefile==2024.8.26
 pillow==12.3.0
 polars==1.43.2
 polars-runtime-32==1.43.2
@@ -67,15 +65,12 @@ pydantic==2.13.4
 pydantic_core==2.46.4
 pydot==3.0.4
 Pygments==2.20.0
-pyinstaller==6.22.0
-pyinstaller-hooks-contrib==2026.6
 pyparsing==3.3.2
 pyreadline3==3.5.6
 python-bidi==0.6.11
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.2
 python-multipart==0.0.32
-pywin32-ctypes==0.2.3
 PyYAML==6.0.3
 regex==2026.7.19
 requests==2.34.2
