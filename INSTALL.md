@@ -8,7 +8,7 @@
 | PC 에 깔기 (교실·개발 공통) | [설치](#설치) |
 | 패키지 버전을 맞추거나 올리기 | [패키지 버전](#패키지-버전) |
 | VLM(그림 보고 말하기) 모델 바꾸기 | [VLM 모델 바꾸기](#vlm-모델-바꾸기-개발-pc-전용) |
-| 깊이 지도 모델 다시 만들기 | [깊이 지도 모델](#깊이-지도-모델-다시-만들기) |
+| 깊이·거리 모델 다시 만들기 | [깊이와 거리 모델](#깊이와-거리-모델-다시-만들기) |
 | HF 저장소를 통째로 다시 만들기 | [HF 모델 저장소](#hf-모델-저장소-다시-만들기) |
 
 ---
@@ -89,10 +89,11 @@ venv\Scripts\python -c "from huggingface_hub import HfApi; HfApi().upload_folder
 아주 새로운 구조는 정식 릴리스에 아직 안 들어와 있고, 모델 카드가 nightly 빌드를 권하기도 한다.
 **교실에 배포하는 제품이므로 nightly 는 쓰지 않는다** — 정식 릴리스에 들어올 때까지 기다린다.
 
-## 깊이 지도 모델 다시 만들기
+## 깊이와 거리 모델 다시 만들기
 평소에는 쓸 일이 없다 — HF 에 올려 둔 IR 을 `setup` 이 받아 쓴다.
-`optimum-intel` 이 `depth_anything` 을 아직 모르기 때문에(custom or unsupported
-architecture) optimum 을 거치지 않고 `openvino.convert_model` 로 직접 만든다.
+쓰는 것은 **Metric** 판(출력이 미터)이고 실내·실외 두 벌이다. 상대 깊이 판은
+숫자를 못 쓰기 때문에 쓰지 않는다. `optimum-intel` 이 `depth_anything` 을 아직
+모르므로(custom or unsupported architecture) `openvino.convert_model` 로 직접 만든다.
 
 ```
 python -m venv venv-convert
@@ -102,41 +103,45 @@ hf auth login                                    # private repo 이므로 write 
 ```
 
 아래를 `conv.py` 로 저장해 `python conv.py` 로 돌린다. 입력 518 은
-`engines.DepthAnything` 이 쓰는 크기라 반드시 맞춘다. 출력이 dict(ModelOutput) 이면
-변환기가 헷갈리므로 깊이 텐서 하나만 내보내게 감싼다.
+`engines.DepthMetric.SIDE` 와 같아야 한다. 출력이 dict(ModelOutput) 이면 변환기가
+헷갈리므로 깊이 텐서 하나만 내보내게 감싼다.
 
 ```python
 import numpy as np, openvino as ov, torch
 from transformers import AutoModelForDepthEstimation
 
 SIDE = 518
-m = AutoModelForDepthEstimation.from_pretrained(
-        "depth-anything/Depth-Anything-V2-Small-hf").eval()
+JOBS = [("depth-anything/Depth-Anything-V2-Metric-Indoor-Small-hf",  "depth-indoor.xml"),
+        ("depth-anything/Depth-Anything-V2-Metric-Outdoor-Small-hf", "depth-outdoor.xml")]
 
 class DepthOnly(torch.nn.Module):
     def __init__(s, m): super().__init__(); s.m = m
     def forward(s, pixel_values):
         return s.m(pixel_values=pixel_values).predicted_depth
 
-with torch.no_grad():
-    ov_model = ov.convert_model(
-        DepthOnly(m), example_input=torch.zeros(1, 3, SIDE, SIDE))
-ov.save_model(ov_model, "depth-v2s.xml", compress_to_fp16=True)   # .bin 은 같은 이름으로 나온다
-
-out = list(ov.Core().compile_model(ov_model, "CPU")(
-    {0: np.zeros((1, 3, SIDE, SIDE), np.float32)}).values())[0]
-print("출력 모양", np.squeeze(out).shape)     # (518, 518) 이면 정상
+for repo, out in JOBS:
+    m = AutoModelForDepthEstimation.from_pretrained(repo).eval()
+    with torch.no_grad():
+        ov_model = ov.convert_model(DepthOnly(m), example_input=torch.zeros(1, 3, SIDE, SIDE))
+    ov.save_model(ov_model, out, compress_to_fp16=True)
+    r = np.squeeze(list(ov.Core().compile_model(ov_model, "CPU")(
+        {0: np.zeros((1, 3, SIDE, SIDE), np.float32)}).values())[0])
+    print(out, r.shape, "값(m)", round(float(r.min()), 2), "~", round(float(r.max()), 2))
 ```
 
+값 범위가 미터답게 나와야 한다(0~1 이면 metric 이 아니다).
+
 ```
-hf upload leeyunjai/vapi-od depth-v2s.xml gan/depth-v2s.xml
-hf upload leeyunjai/vapi-od depth-v2s.bin gan/depth-v2s.bin
+hf upload leeyunjai/vapi-od depth-indoor.xml  gan/depth-indoor.xml
+hf upload leeyunjai/vapi-od depth-indoor.bin  gan/depth-indoor.bin
+hf upload leeyunjai/vapi-od depth-outdoor.xml gan/depth-outdoor.xml
+hf upload leeyunjai/vapi-od depth-outdoor.bin gan/depth-outdoor.bin
 
 deactivate
 Remove-Item -Recurse -Force venv-convert
 ```
-`.bin` 이 약 49MB 면 정상이다. 출력 값은 **클수록 가까운 쪽**이고,
-서버가 이것을 INFERNO 색지도(밝을수록 가까움)로 칠한다.
+각 `.bin` 이 약 49MB 면 정상이다. 값은 **작을수록 가까운 쪽**(미터)이고,
+서버가 뒤집어 INFERNO 색지도(밝을수록 가까움)로 칠한다.
 
 ## HF 모델 저장소 다시 만들기
 배포·개발 PC 는 모두 HF 에서 받아 쓴다. 이 절은 **모델을 새로 만들어 HF 에 올릴 때만** 쓴다 (30~50분).

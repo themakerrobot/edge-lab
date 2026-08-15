@@ -929,7 +929,8 @@
       /* ----- 사진 바꾸기 ----- */
       "배경 제거": { "g": "image", "api": "gan/portrait", "params": {}, "tooltip": "인물/사물만 남기고 배경을 제거합니다.", "en": "Remove background", "tooltip_en": "Keeps the subject and removes the background." },
       "화질 개선(4배)": { "g": "image", "api": "gan/sr", "params": {}, "tooltip": "이미지 화질을 4배로 개선합니다.", "en": "Upscale (4x)", "tooltip_en": "Improves the image quality four times." },
-      "깊이 지도": { "g": "image", "api": "gan/depth", "params": {}, "tooltip": "가까운 곳과 먼 곳을 색으로 나타냅니다 (밝을수록 가까움).", "en": "Depth map", "tooltip_en": "Shows near and far as colors (brighter is closer)." },
+      "깊이 지도(실내)": { "g": "image", "api": "gan/depth", "params": { "place": "indoor" }, "tooltip": "가까운 곳과 먼 곳을 색으로 나타냅니다 (밝을수록 가까움). 교실·실내 사진용.", "en": "Depth map (indoor)", "tooltip_en": "Shows near and far as colors (brighter is closer). For indoor photos." },
+      "깊이 지도(실외)": { "g": "image", "api": "gan/depth", "params": { "place": "outdoor" }, "tooltip": "바깥 사진용 깊이 지도입니다.", "en": "Depth map (outdoor)", "tooltip_en": "Depth map for outdoor photos." },
 
       /* ----- 글자 · QR ----- */
       "글자 인식": { "g": "text", "api": "code/ocr", "params": {}, "tooltip": "이미지에서 문자/숫자를 인식합니다.", "en": "Text recognition", "tooltip_en": "Reads letters and numbers in the image." },

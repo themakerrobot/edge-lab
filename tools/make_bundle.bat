@@ -143,6 +143,10 @@ for %%F in (view_project\index.html view_project\blocks.html view_project\train.
 for %%F in (mobilenetv2_feat.xml mobilenetv2_feat.bin mobilenetv2_feat.json) do (
   if not exist %BUILD%\models\backbone\%%F (echo [ERROR] missing in bundle: models\backbone\%%F & exit /b 1)
 )
+REM 깊이·거리(실내/바깥)는 지연 로딩이라 서버가 떠도 안 걸린다 — 번들에 들었는지 여기서 본다
+for %%F in (gan\depth-indoor.xml gan\depth-indoor.bin gan\depth-outdoor.xml gan\depth-outdoor.bin) do (
+  if not exist %BUILD%\models\%%F (echo [ERROR] missing in bundle: models\%%F & exit /b 1)
+)
 %BUILD%\python\python.exe -c "import openvino,cv2,numpy;print('  import OK  openvino',openvino.__version__.split('-')[0])"
 if errorlevel 1 (echo [ERROR] import failed inside bundle & exit /b 1)
 

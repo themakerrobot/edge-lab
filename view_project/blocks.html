@@ -266,6 +266,7 @@
       cat_lang: "AI 언어", cat_event: "이벤트",
       cat_logic: "논리", cat_loop: "반복", cat_math: "수학", cat_text: "텍스트",
       cat_list: "목록", cat_var: "변수", cat_func: "함수",
+      lbl_img_draw: "— 그리기 —", lbl_ai_edit: "— AI 로 바꾸기 —", lbl_hand_edit: "— 직접 바꾸기 —",
       lbl_img_ask: "— 사진에게 물어보기 —", lbl_basic: "— 기본 인식 —",
       lbl_my_model: "— 내가 만든 · 가져온 모델 —", lbl_draw_box: "— 찾은 자리에 박스 —",
 
@@ -411,6 +412,11 @@
       ex_sound_d: "멜로디를 연주하고, 같은 음을 주파수로 내 봐요. (소리·과학)",
       ex_echo: "말 따라 하기",
       ex_echo_d: "내가 한 말을 듣고 그대로 따라 말해요. (음성 인식)",
+      ex_dist: "거리 재기", ex_dist_d: "깊이 지도를 보여주고 화면 한가운데까지 몇 미터인지 말해요.",
+      ex_basic: "기본 블록 점검", ex_basic_d: "논리·반복·수학·글자·목록 블록을 한 번씩 지나가요. AI 없이 돌아요. (점검)",
+      sh_distSay: "가운데까지 ", sh_basicStart: "기본 블록 점검 시작",
+      sh_basicList: "다,가,나", sh_basicBig: "커요", sh_basicSmall: "작아요",
+      sh_basicDone: "기본 블록 점검 끝",
       ex_all: "전체 점검 (모든 기능)",
       ex_all_d: "모든 블록을 한 번씩 지나가요. 새 PC 에서 잘 도는지 확인할 때 쓰세요. (점검)",
       sh_allStart: "전체 점검을 시작할게요",
@@ -454,6 +460,11 @@
       m_needUpload: "먼저 무대에서 [사진 올리기]를 해주세요",
       m_tooManyAI: "AI를 너무 많이 불렀어요 (한 번 실행에 %1번까지)",
       m_tooManyLoop: "반복이 너무 많아요 (5000회 초과)",
+      b_depth_map: "%1 의 깊이 지도 %2",
+      b_depth_map_tip: "가까운 곳이 밝게 보이는 그림을 돌려줘요. 실내/바깥을 골라요.",
+      b_depth_at: "%1 의 가로 %2 세로 %3 까지 거리(m) %4",
+      b_depth_at_tip: "사진에서 그 자리까지 몇 미터인지 어림해요. 실내/바깥을 골라야 해요.",
+      o_indoor: "실내", o_outdoor: "바깥",
       cat_start: "시작",
       b_flag: "클릭했을 때", b_flag_tip: "여기에 붙인 블록만 실행돼요.",
       m_say: "말하기: ", m_show: "보여주기: ",
@@ -484,6 +495,7 @@
       cat_lang: "AI Language", cat_event: "Events",
       cat_logic: "Logic", cat_loop: "Loops", cat_math: "Math", cat_text: "Text",
       cat_list: "Lists", cat_var: "Variables", cat_func: "Functions",
+      lbl_img_draw: "— draw —", lbl_ai_edit: "— change with AI —", lbl_hand_edit: "— change by hand —",
       lbl_img_ask: "— ask about the photo —", lbl_basic: "— basic detection —",
       lbl_my_model: "— my / added models —", lbl_draw_box: "— boxes where found —",
 
@@ -630,6 +642,11 @@
       ex_echo_d: "Listens to you and says it back. (speech to text)",
       ex_voices: "Try different voices",
       ex_voices_d: "Speaks with different voices and speeds. (sound)",
+      ex_dist: "Measure distance", ex_dist_d: "Shows a depth map and says how many meters to the center.",
+      ex_basic: "Basic block check", ex_basic_d: "Runs logic, loop, math, text and list blocks once. No AI needed. (check)",
+      sh_distSay: "center is ", sh_basicStart: "basic block check start",
+      sh_basicList: "c,a,b", sh_basicBig: "big", sh_basicSmall: "small",
+      sh_basicDone: "basic block check done",
       ex_all: "Full check (everything)",
       ex_all_d: "Runs every block once. Use it to check a new PC. (check)",
       sh_allStart: "Starting the full check",
@@ -672,6 +689,11 @@
       m_needUpload: "Use [Upload photo] on the stage first",
       m_tooManyAI: "Too many AI calls (limit is %1 per run)",
       m_tooManyLoop: "Too many loops (over 5000)",
+      b_depth_map: "depth map of %1 %2",
+      b_depth_map_tip: "Returns an image where closer is brighter. Pick indoor or outdoor.",
+      b_depth_at: "distance to x %2 y %3 in %1 (m) %4",
+      b_depth_at_tip: "Estimates how many meters away that spot is. Pick indoor or outdoor.",
+      o_indoor: "indoor", o_outdoor: "outdoor",
       cat_start: "Start",
       b_flag: "when clicked", b_flag_tip: "Only blocks attached here will run.",
       m_say: "say: ", m_show: "show: ",
@@ -840,6 +862,9 @@
       lists_sort: b => "sorted(" + val(b, "LIST", "[]") + ")",
 
       /* ---- 사진 가져오기 ---- */
+      ai_depth_map: b => "vision('depth', " + img(b, "IMG") + ", place=" + q(field(b, "PLACE")) + ")",
+      ai_depth_at: b => "depth_at(" + img(b, "IMG") + ", " + num(b, "X", 0) + ", " + num(b, "Y", 0)
+                        + ", " + q(field(b, "PLACE")) + ")",
       ai_capture: () => "camera()",
       ai_upload: () => "load('사진.jpg')",
 
@@ -929,7 +954,7 @@
     /* 인식 종류 -> vision() 기능 이름 */
     const M_MODE  = { face: "face", hand: "hand", dist: "distance", objects: "object",
                       ocr: "ocr", qr: "qr" };
-    const M_TRANS = { portrait: "bg_remove", sr: "sr", depth: "depth" };
+    const M_TRANS = { portrait: "bg_remove", sr: "sr" };   // 깊이 지도는 ai_depth_map 이 따로 낸다
     const pick = (map, v, dflt) => map[v] || dflt || v;
     let needRandom = false, needMath = false;
 
@@ -1443,6 +1468,11 @@ def texts_of(result):
         args0: [ IMG ] },
       { type: "ai_hand", message0: t("b_hand"), output: "String", colour: C_AI,
         args0: [ IMG ], tooltip: t("b_hand_tip") },
+      { type: "ai_depth_at", message0: t("b_depth_at"), output: "Number", colour: C_AI,
+        args0: [ IMG, { type: "input_value", name: "X", check: "Number" },
+                 { type: "input_value", name: "Y", check: "Number" },
+                 { type: "field_dropdown", name: "PLACE", options: opt(["indoor", "outdoor"]) } ],
+        inputsInline: true, tooltip: t("b_depth_at_tip") },
       { type: "ai_face_dist", message0: t("b_face_dist"), output: "Number", colour: C_AI,
         args0: [ IMG ], tooltip: t("b_face_dist_tip") },
       { type: "ai_ocr", message0: t("b_ocr"), output: "String", colour: C_AI, args0: [ IMG ] },
@@ -1454,10 +1484,16 @@ def texts_of(result):
       { type: "ai_chat", message0: t("b_chat"), output: "String", colour: C_VLM,
         args0: [ { type: "input_value", name: "Q", check: "String" } ],
         tooltip: t("b_chat_tip") },
-      { type: "ai_transform", message0: t("b_transform"), output: "String", colour: C_VLM,
+      { type: "ai_transform", message0: t("b_transform"), output: "String", colour: C_EDIT,
         args0: [ IMG, { type: "field_dropdown", name: "KIND",
-          options: opt(["portrait","sr","depth"]) } ],
+          options: opt(["portrait","sr"]) } ],
         tooltip: t("b_transform_tip") },
+      /* 깊이 지도는 실내/바깥을 골라야 해서 따로 뺀다 — 한 블록에 드롭다운이 둘이면
+         무엇을 고르는 건지 헷갈린다. */
+      { type: "ai_depth_map", message0: t("b_depth_map"), output: "String", colour: C_EDIT,
+        args0: [ IMG, { type: "field_dropdown", name: "PLACE",
+          options: opt(["indoor", "outdoor"]) } ],
+        inputsInline: true, tooltip: t("b_depth_map_tip") },
       // 무대
       { type: "st_say", message0: t("b_say"), previousStatement: null, nextStatement: null,
         colour: C_SOUND, tooltip: t("b_say_tip"),
@@ -1536,6 +1572,8 @@ def texts_of(result):
   G.forBlock["ai_qr"]         = b => [`(await AI.qr(${V(b,"IMG","null")}))`, Order.ATOMIC];
   G.forBlock["ai_ask"]        = b => [`(await AI.ask(${V(b,"IMG","null")}, ${V(b,"Q","''")}))`, Order.ATOMIC];
   G.forBlock["ai_chat"]       = b => [`(await AI.chat(${V(b,"Q","''")}))`, Order.ATOMIC];
+  G.forBlock["ai_depth_map"]  = b => [`(await AI.depthMap(${V(b,"IMG","null")}, '${b.getFieldValue("PLACE")}'))`, Order.ATOMIC];
+  G.forBlock["ai_depth_at"]   = b => [`(await AI.depthAt(${V(b,"IMG","null")}, ${V(b,"X","0")}, ${V(b,"Y","0")}, '${b.getFieldValue("PLACE")}'))`, Order.ATOMIC];
   G.forBlock["ai_transform"]  = b => [`(await AI.transform(${V(b,"IMG","null")}, '${b.getFieldValue("KIND")}'))`, Order.ATOMIC];
   G.forBlock["st_say"]        = b =>
     `await RT.say(${V(b,"TEXT","''")}, "${b.getFieldValue("V")}", "${b.getFieldValue("S")}");\n`;
@@ -1632,6 +1670,10 @@ def texts_of(result):
         { kind: "block", type: "st_save_stage" },
         { kind: "block", type: "st_clear" } ] },
       { kind: "category", name: t("cat_img_edit"), colour: C_EDIT, cssConfig: { icon: "customIcon fa-solid fa-wand-magic-sparkles" }, contents: [
+        { kind: "label", text: t("lbl_ai_edit") },
+        { kind: "block", type: "ai_transform" },
+        { kind: "block", type: "ai_depth_map" },
+        { kind: "label", text: t("lbl_hand_edit") },
         { kind: "block", type: "ed_resize", inputs: { F: num(2) } },
         { kind: "block", type: "ed_rotate", inputs: { DEG: num(90) } },
         { kind: "block", type: "ed_flip" },
@@ -1642,6 +1684,7 @@ def texts_of(result):
         { kind: "block", type: "ed_tone", inputs: { V: num(30) } },
         { kind: "block", type: "ed_filter" } ] },
       { kind: "category", name: t("cat_img_draw"), colour: C_DRAW, cssConfig: { icon: "customIcon fa-solid fa-paintbrush" }, contents: [
+        { kind: "label", text: t("lbl_img_draw") },
         { kind: "block", type: "ed_text", inputs: { TXT: txt(t("sh_hello")), SIZE: num(48) } },
         { kind: "block", type: "ed_text_rot", inputs: { TXT: txt(t("sh_hello")), DEG: num(-15) } },
         { kind: "block", type: "ed_rect" },
@@ -1671,6 +1714,7 @@ def texts_of(result):
         { kind: "label", text: t("lbl_basic") },
         { kind: "block", type: "ai_face" }, { kind: "block", type: "ai_face_count" },
         { kind: "block", type: "ai_face_dist" }, { kind: "block", type: "ai_hand" },
+        { kind: "block", type: "ai_depth_at", inputs: { X: num(320), Y: num(240) } },
         { kind: "block", type: "ai_objects" },
         { kind: "block", type: "ai_ocr" }, { kind: "block", type: "ai_qr" },
         { kind: "label", text: t("lbl_my_model") },
@@ -1688,8 +1732,7 @@ def texts_of(result):
         { kind: "block", type: "st_freq", inputs: { F: num(440), S: num(1) } } ] },
       { kind: "category", name: t("cat_lang"), colour: C_VLM, cssConfig: { icon: "customIcon fa-solid fa-comment-dots" }, contents: [
         { kind: "block", type: "ai_ask", inputs: { Q: txt(t("sh_question")) } },
-        { kind: "block", type: "ai_chat", inputs: { Q: txt(t("sh_chatQ")) } },
-        { kind: "block", type: "ai_transform" } ] },
+        { kind: "block", type: "ai_chat", inputs: { Q: txt(t("sh_chatQ")) } } ] },
       { kind: "category", name: t("cat_event"), colour: C_EVENT, cssConfig: { icon: "customIcon fa-solid fa-hourglass-half" }, contents: [
         { kind: "block", type: "st_wait", inputs: { SEC: num(1) } },
         { kind: "block", type: "ev_wait_face" },
@@ -1742,7 +1785,11 @@ def texts_of(result):
   const WS_OPTS = {
     media: "/blockly/media/",              // 오프라인용 (휴지통·확대축소 아이콘, 효과음)
     trashcan: true, renderer: "zelos", theme: makeTheme(),
-    zoom: { controls: true, wheel: true, startScale: 0.9 },
+    /* 시작 배율 0.7 은 파이보 랩과 같은 값 — modest 테마 글꼴이 16px bold 라
+       0.9 로 두면 처음 열었을 때 블록이 화면을 다 먹는다. 최소·최대도 함께 정해
+       휠로 너무 작아지거나 커지지 않게 한다. */
+    zoom: { controls: true, wheel: true, startScale: 0.7,
+            maxScale: 3, minScale: 0.3, scaleSpeed: 1.2, pinch: true },
     grid: { spacing: 24, length: 2, colour: "#e6e3d8", snap: true },
   };
 
@@ -1932,6 +1979,73 @@ def texts_of(result):
       /* 모든 기능을 한 번씩 지나가는 점검용 예제.
          기다리는 블록(얼굴/손 기다리기·음성 인식)과 내가 만든 AI 는 뺐다 —
          멈춰 서거나 학습한 모델이 있어야 해서 "한 번에 쭉" 이 안 된다. */
+      /* 새로 들어온 깊이·거리 기능을 쓰는 예제. 실내 기준으로 보여 준다. */
+      { id: "distance", name: t("ex_dist"), desc: t("ex_dist_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ top([
+          CLEAR(),
+          SET("사진", B("ai_capture")),
+          B("st_show_image", { inputs: { IMG: { block:
+            B("ai_depth_map", { fields: { PLACE: "indoor" },
+                                inputs: { IMG: { block: VG("사진") } } }) } } }),
+          SET("거리", B("ai_depth_at", { fields: { PLACE: "indoor" },
+            inputs: { IMG: { block: VG("사진") },
+                      X: shadowNum(320), Y: shadowNum(240) } })),
+          B("st_say", { fields: { V: "F1", S: "normal" }, inputs: { TEXT: { block:
+            B("text_join", { inputs: { A: shadowTxt(t("sh_distSay")),
+                                       B: { block: VG("거리") } } }) } } }),
+          PR(VG("거리")),
+        ]) ] } } },
+
+      /* 기본 블록(논리·반복·수학·글·목록)을 한 번씩 지나가는 점검용.
+         AI 를 안 쓰므로 모델이 없어도 돌고, 결과는 전부 로그 칸에 찍힌다. */
+      { id: "checkbasic", name: t("ex_basic"), desc: t("ex_basic_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ top([
+          CLEAR(),
+          PR(shadowTxt(t("sh_basicStart")).shadow ? shadowTxt(t("sh_basicStart")).shadow : B("text", { fields: { TEXT: t("sh_basicStart") } })),
+          /* 수학 */
+          SET("수", B("math_random_int", { inputs: { FROM: shadowNum(1), TO: shadowNum(10) } })),
+          PR(B("math_arithmetic", { fields: { OP: "ADD" },
+              inputs: { A: { block: VG("수") }, B: shadowNum(2) } })),
+          PR(B("math_single", { fields: { OP: "ROOT" }, inputs: { NUM: shadowNum(16) } })),
+          PR(B("math_round", { fields: { OP: "ROUND" },
+              inputs: { NUM: { block: B("math_random_float") } } })),
+          PR(B("math_modulo", { inputs: { DIVIDEND: { block: VG("수") }, DIVISOR: shadowNum(3) } })),
+          PR(B("math_constrain", { inputs: { VALUE: { block: VG("수") },
+              LOW: shadowNum(1), HIGH: shadowNum(5) } })),
+          PR(B("math_trig", { fields: { OP: "SIN" }, inputs: { NUM: shadowNum(30) } })),
+          PR(B("math_constant", { fields: { CONSTANT: "PI" } })),
+          PR(B("math_number_property", { fields: { PROPERTY: "EVEN" },
+              inputs: { NUMBER_TO_CHECK: { block: VG("수") } } })),
+          /* 목록 */
+          SET("목록", B("lists_split", { fields: { MODE: "SPLIT" },
+              inputs: { INPUT: shadowTxt(t("sh_basicList")), DELIM: shadowTxt(",") } })),
+          PR(B("lists_length", { inputs: { VALUE: { block: VG("목록") } } })),
+          PR(B("lists_sort", { fields: { TYPE: "TEXT", DIRECTION: "1" },
+              inputs: { LIST: { block: VG("목록") } } })),
+          PR(B("math_on_list", { fields: { OP: "MAX" },
+              inputs: { LIST: { block: B("lists_create_with") } } })),
+          PR(B("lists_repeat", { inputs: { ITEM: shadowTxt("*"), NUM: shadowNum(3) } })),
+          /* 글자 */
+          SET("글", B("text", { fields: { TEXT: t("sh_hello") } })),
+          B("text_append", { fields: { VAR: { name: "글" } }, inputs: { TEXT: shadowTxt("!") } }),
+          PR(B("text_length", { inputs: { VALUE: { block: VG("글") } } })),
+          PR(B("text_trim", { fields: { MODE: "BOTH" }, inputs: { TEXT: shadowTxt("  " + t("sh_hello") + "  ") } })),
+          /* 논리 */
+          PR(B("logic_negate", { inputs: { BOOL: { block: B("logic_boolean", { fields: { BOOL: "FALSE" } }) } } })),
+          PR(B("logic_ternary", {
+              inputs: { IF: { block: B("logic_compare", { fields: { OP: "GT" },
+                              inputs: { A: { block: VG("수") }, B: shadowNum(5) } }) },
+                        THEN: shadowTxt(t("sh_basicBig")), ELSE: shadowTxt(t("sh_basicSmall")) } })),
+          SET("빈값", B("logic_null")),
+          /* 반복 */
+          B("controls_for", { fields: { VAR: { name: "i" } },
+            inputs: { FROM: shadowNum(1), TO: shadowNum(3), BY: shadowNum(1),
+                      DO: { block: PR(VG("i")) } } }),
+          B("controls_repeat_ext", { inputs: { TIMES: shadowNum(5),
+            DO: { block: B("controls_flow_statements", { fields: { FLOW: "BREAK" } }) } } }),
+          B("st_say", { fields: { V: "F1", S: "normal" }, inputs: { TEXT: shadowTxt(t("sh_basicDone")) } }),
+        ]) ] } } },
+
       { id: "checkall", name: t("ex_all"), desc: t("ex_all_d"),
         state: { blocks: { languageVersion: 0, blocks: [ top([
           CLEAR(),
@@ -2443,6 +2557,17 @@ def texts_of(result):
         devReport(j.device, j.elapsed_ms || 0);
         return j.data.answer;
       } finally { devIdle(); }
+    },
+    async depthMap(img, place) {
+      const d = await post("gan/depth", img, { place: place });
+      return "data:image/jpeg;base64," + d;
+    },
+    async depthAt(img, x, y, place) {
+      /* 그 자리까지의 거리(m). 어림값이라 계측기가 아니다 —
+         실내/바깥 모델이 갈리므로 place 를 그대로 넘긴다. */
+      const d = await post("gan/distance", img, { x: Math.round(x), y: Math.round(y), place: place });
+      AI.addLayer(img, [{ box: [d.x - 8, d.y - 8, d.x + 8, d.y + 8], label: d.meter + "m" }], COLORS.face);
+      return d.meter;
     },
     async transform(img, kind) {
       const d = await post("gan/" + kind, img);

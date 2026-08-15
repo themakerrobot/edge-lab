@@ -118,7 +118,7 @@ def exec_device(obj, fallback="CPU"):
 def build_device_map():
     import engines as E
     vlm = {"place", "time", "weather", "tag", "look", "chat_ask"}
-    gan = {"portrait", "sr", "depth"}
+    gan = {"portrait", "sr", "depth", "distance"}
     face = {"face_detect", "face_analyze", "face_emotion", "face_age_gender"}
     # 실측: 각 그룹의 대표 모델에게 직접 물어본다
     dev_face = exec_device(eng.face.detect, E.DEV_FACE) if eng else E.DEV_FACE
@@ -495,13 +495,23 @@ def gan_sr(path):
     return to_b64_jpg(eng.gan.sr.predict(read_bgr(path)))
 
 
-@app.post("/gan/depth", tags=["gan"], summary="깊이 지도 (Depth Anything V2 Small)")
+@app.post("/gan/depth", tags=["gan"], summary="깊이 지도 (가까울수록 밝게)")
 @service("depth")
-def gan_depth(path):
+def gan_depth(path, place: str = "indoor"):
+    """place: indoor(교실·실내) / outdoor(바깥). 서로 바꿔 쓰면 거리가 크게 틀린다."""
     from engines import to_b64_jpg
-    if eng.gan.depth is None:
-        raise ValueError("깊이 모델이 없습니다 — tools/setup 으로 변환하세요")
-    return to_b64_jpg(eng.gan.depth.predict(read_bgr(path)))
+    return to_b64_jpg(eng.gan.depth.colorize(eng.gan.depth.meters(read_bgr(path), place)))
+
+
+@app.post("/gan/distance", tags=["gan"], summary="그 자리까지의 거리 (m)")
+@service("distance")
+def gan_distance(path, x: int = 0, y: int = 0, place: str = "indoor"):
+    """사진 위 한 점(x, y)까지의 거리를 미터로 돌려준다.
+       카메라 한 대로 어림하는 값이라 정확한 계측기가 아니다."""
+    img = read_bgr(path)
+    h, w = img.shape[:2]
+    return {"x": int(x), "y": int(y), "meter": eng.gan.depth.at(img, x, y, place),
+            "width": w, "height": h, "place": place}
 
 
 # ---------------------------------------------------------------- code

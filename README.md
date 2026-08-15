@@ -46,7 +46,8 @@
 | `setup_deploy.ps1` | 설치 — 패키지 + 모델 다운로드 |
 | `requirements.txt` | 패키지 목록 (lock 파일이 있으면 그쪽 우선) |
 | `tools/schema_test/` | 모델 없이 응답 스키마 회귀 시험 — `tools\schema_test\run.bat` (가짜 엔진으로 서버를 띄워 엔드포인트·themaker 를 실제 호출) |
-| `tools/` | 개발·점검용 — 모델 변환(`setup.ps1`·`setup.sh`), 번들 생성(`make_bundle.bat`), 점검(`check.py`·`smoke_test.py`·`bundle_check.bat`), 버전 잠금(`freeze.ps1`)·업그레이드 시험(`upgrade_check.ps1`), 폰트, 런처 소스. 쓰는 법은 [INSTALL.md](INSTALL.md) |
+| `tools/e2e/examples_cover.js` | 예제가 블록·함수를 빠짐없이 지나가는지 — `node tools\e2e\examples_cover.js` (회귀 시험 [4]단계에서도 자동으로 돈다. 기능을 늘리고 예제를 안 고치면 여기서 걸린다) |
+| `tools/` | 개발·점검용 — 모델 변환(`setup.ps1`·`setup.sh`), 번들 생성(`make_bundle.bat`), 점검(`check.py`·`smoke_test.py`·`bundle_check.bat`·`e2e/`), 버전 잠금(`freeze.ps1`)·업그레이드 시험(`upgrade_check.ps1`), 폰트, 런처 소스. 쓰는 법은 [INSTALL.md](INSTALL.md) |
 
 ## 로그
 기본은 조용히 뜬다 — 교실에서는 요청 한 줄 한 줄이 콘솔을 가득 채우기 때문이다.
@@ -229,7 +230,8 @@ USB 로 들고 다니기: `[폴더 열기]` 로 작업 폴더를 열어 통째�
 | 마스크 | YOLO11s-cls | CPU |
 | 얼굴 검출·나이성별·감정·방향 | OpenVINO 프리트레인 | NPU |
 | 얼굴 거리·방향 / 손 제스처 / 표정 학습 | MediaPipe | CPU |
-| 변환 (배경제거·화질개선·깊이지도) | U2Net / SR-1032 / Depth Anything V2 Small | GPU |
+| 변환 (배경제거·화질개선) | U2Net / SR-1032 | GPU |
+| 깊이·거리 (실내/실외, 미터) | Depth Anything V2 Metric Small ×2 | GPU |
 | 글자 인식 | easyocr (ko/en) | CPU |
 | QR 인식 | OpenCV QRCodeDetector | CPU |
 | 나만의 AI 특징 추출 | MobileNetV2 1280d | NPU |
@@ -250,7 +252,7 @@ USB 로 들고 다니기: `[폴더 열기]` 로 작업 폴더를 열어 통째�
 | OpenVINO / open_model_zoo 얼굴 모델 | Apache-2.0 |
 | MediaPipe | Apache-2.0 |
 | U2Net | Apache-2.0 |
-| Depth Anything V2 Small | Apache-2.0 |
+| Depth Anything V2 Metric Small (실내·실외) | Apache-2.0 |
 | easyocr | Apache-2.0 |
 | Whisper (OpenVINO 변환본) | Apache-2.0 |
 | Supertonic 3 (모델 가중치) | OpenRAIL-M (BigScience Open RAIL-M) |

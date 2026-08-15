@@ -10,6 +10,7 @@
 포트는 57799 를 쓴다 — 진짜 서버(57711)가 켜져 있어도 상관없다.
 """
 import os
+import pathlib
 import sys
 import threading
 import time
@@ -69,6 +70,36 @@ def boot():
     raise RuntimeError("시험 서버가 뜨지 않았습니다")
 
 
+def check_examples():
+    """예제가 블록·함수를 빠짐없이 지나가는지 — node 로 돈다(없으면 건너뜀).
+
+    화면 파일(html)을 읽는 검사라 파이썬 쪽 하네스와 섞지 않고 따로 뒀다.
+    """
+    import shutil
+    import subprocess
+    e2e = pathlib.Path(__file__).resolve().parents[1] / "e2e"
+    jobs = [("예제 커버리지", e2e / "examples_cover.js"),
+            ("블록 한/영 문구", e2e / "blocks_check.js")]
+    if not shutil.which("node"):
+        print("  [skip] node 가 없어 화면 쪽 점검은 건너뜁니다")
+        return 0, 0
+    ok = ng = 0
+    for label, script in jobs:
+        if not script.exists():
+            print(f"  [skip] {script.name} 이 없어 건너뜁니다")
+            continue
+        r = subprocess.run(["node", str(script)], capture_output=True, text=True)
+        for line in (r.stdout or "").strip().splitlines():
+            print("  " + line.strip())
+        if r.returncode == 0:
+            print(f"  PASS  {label}")
+            ok += 1
+        else:
+            print(f"  FAIL  {label}")
+            ng += 1
+    return ok, ng
+
+
 def main_():
     print("가짜 엔진으로 서버를 띄웁니다 ... (%s)" % HOST)
     boot()
@@ -83,12 +114,15 @@ def main_():
     t_ok, t_fail = check_themaker.run(HOST)
     print("\n[3] python main.py 로 띄운 상태 (__main__)")
     m_ok, m_fail = check_asmain.run()
+    print("\n[4] 예제 커버리지 (블록·파이썬)")
+    e_ok, e_fail = check_examples()
 
-    ok, fail = a_ok + t_ok + m_ok, a_fail + t_fail + m_fail
+    ok, fail = a_ok + t_ok + m_ok + e_ok, a_fail + t_fail + m_fail + e_fail
     print("\n" + "=" * 46)
     print("  엔드포인트  %2d PASS / %d FAIL" % (a_ok, a_fail))
     print("  themaker   %2d PASS / %d FAIL" % (t_ok, t_fail))
     print("  직접 기동   %2d PASS / %d FAIL" % (m_ok, m_fail))
+    print("  예제        %2d PASS / %d FAIL" % (e_ok, e_fail))
     print("  합계       %2d PASS / %d FAIL" % (ok, fail))
     print("=" * 46)
     return 1 if fail else 0

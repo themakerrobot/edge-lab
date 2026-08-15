@@ -6,6 +6,15 @@
      * @param {Blockly.Block} block 확인할 블록.
      * @returns {boolean} 블록이 고아 상태이면 true를 반환합니다.
      */
+    /* Blockly 11 부터 블록을 끄는 방법이 setEnabled -> setDisabledReason 으로 바뀌었다.
+       (13.1.1 의 setEnabled 는 메뉴·필드용이라 블록에는 아무 일도 하지 않는다.)
+       두 버전 모두에서 돌게 여기 한 곳에서 갈라 준다. */
+    const REASON = 'ORPHANED_BLOCK';
+    function setBlockEnabled(block, on) {
+        if (typeof block.setDisabledReason === 'function') block.setDisabledReason(!on, REASON);
+        else if (typeof block.setEnabled === 'function') block.setEnabled(on);
+    }
+
     function isOrphan(block) {
         // 부모 블록에 연결된 블록의 경우, 부모가 고아인지 재귀적으로 확인합니다.
         const parent = block.getParent();
@@ -76,7 +85,7 @@
 
                     if (isNewFromFlyout) {
                         block.userDisabled = false;
-                        block.setEnabled(true);
+                        setBlockEnabled(block, true);
                         // 새로 생성된 블록이 즉시 고아 블록으로 처리되는 것을 막기 위해 여기서 리스너를 종료합니다.
                         return;
                     }
@@ -93,10 +102,10 @@
 
                 if (isOrphan(block)) {
                     // 고아 블록은 사용자 설정과 관계없이 항상 비활성화합니다.
-                    block.setEnabled(false);
+                    setBlockEnabled(block, false);
                 } else {
                     // 고아 블록이 아닌 경우, 사용자의 선택(`userDisabled`)에 따라 상태를 결정합니다.
-                    block.setEnabled(!block.userDisabled);
+                    setBlockEnabled(block, !block.userDisabled);
                 }
             });
         };

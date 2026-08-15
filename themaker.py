@@ -236,6 +236,24 @@ def vision(kind, image, prompt=None, **params):
     return data                                  # 그 밖에는 서버가 준 그대로
 
 
+def depth_at(image, x, y, place="indoor"):
+    """사진에서 그 자리(x, y)까지의 거리를 미터로 돌려준다.
+
+    >>> img = camera()
+    >>> print(depth_at(img, 320, 240), "m")      # 화면 한가운데까지
+    >>> depth_at(img, 100, 200, "outdoor")       # 바깥 사진이면 outdoor
+
+    카메라 한 대로 어림하는 값이라 자로 잰 것처럼 정확하지는 않다.
+    실내는 indoor, 바깥은 outdoor 로 골라야 한다 — 바꿔 쓰면 크게 틀린다.
+    """
+    url = "/gan/distance?" + urllib.parse.urlencode(
+        {"x": int(x), "y": int(y), "place": place, "lang": LANG})
+    j = _post(url, files={"uploadFile": ("input.jpg", _to_jpg(image), "image/jpeg")})
+    if j.get("result") != "ok":
+        raise TheMakerError("거리 재기 실패: %s" % j.get("data"))
+    return j["data"]["meter"]
+
+
 _KIND_KO = {"image": "사진", "pose": "손모양", "face": "표정",
             "body_up": "상반신", "body": "전신"}
 

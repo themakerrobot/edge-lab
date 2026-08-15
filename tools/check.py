@@ -8,7 +8,29 @@ print("devices:", core.available_devices)
 targets = list(pathlib.Path("models").rglob("*.xml")) + \
           list(pathlib.Path("models").glob("gan/*.onnx"))
 
+# 있는 파일만 열어 보면 "모델이 통째로 빠진" 경우를 놓친다(그때도 fail=0).
+# 서버가 반드시 읽는 것들은 이름을 적어 두고 존재부터 확인한다.
+NEED = [
+    "object/yolo11m_openvino_model/openvino_model.xml",
+    "object/yolo11m-pose_openvino_model/openvino_model.xml",
+    "object/yolo11m-seg_openvino_model/openvino_model.xml",
+    "object/mask-11s-cls_openvino_model/openvino_model.xml",
+    "face/face-detection-retail-0005.xml",
+    "face/age-gender-recognition-retail-0013.xml",
+    "face/emotions-recognition-retail-0003.xml",
+    "face/head-pose-estimation-adas-0001.xml",
+    "gan/u2net.onnx",
+    "gan/single-image-super-resolution-1032.xml",
+    "gan/depth-indoor.xml",       # 깊이·거리 (실내)
+    "gan/depth-outdoor.xml",      # 깊이·거리 (바깥)
+]
+
 fails = 0
+for rel in NEED:
+    if not (pathlib.Path("models") / rel).exists():
+        fails += 1
+        print("FAIL models/" + rel, "| 파일 없음")
+
 for m in targets:
     size = m.stat().st_size
     try:
