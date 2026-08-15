@@ -10,11 +10,17 @@ targets = list(pathlib.Path("models").rglob("*.xml")) + \
 
 # 있는 파일만 열어 보면 "모델이 통째로 빠진" 경우를 놓친다(그때도 fail=0).
 # 서버가 반드시 읽는 것들은 이름을 적어 두고 존재부터 확인한다.
+# YOLO 계열은 폴더째 넘긴다(안의 xml 이름은 ultralytics 가 정한다) — 폴더에
+# xml 이 하나라도 있으면 정상으로 본다. 이름을 박아 두면 내보내기 방식이
+# 바뀔 때마다 헛되이 FAIL 이 난다.
+NEED_DIRS = [
+    "object/yolo11m_openvino_model",
+    "object/yolo11m-pose_openvino_model",
+    "object/yolo11m-seg_openvino_model",
+    "object/mask-11s-cls_openvino_model",
+]
+
 NEED = [
-    "object/yolo11m_openvino_model/openvino_model.xml",
-    "object/yolo11m-pose_openvino_model/openvino_model.xml",
-    "object/yolo11m-seg_openvino_model/openvino_model.xml",
-    "object/mask-11s-cls_openvino_model/openvino_model.xml",
     "face/face-detection-retail-0005.xml",
     "face/age-gender-recognition-retail-0013.xml",
     "face/emotions-recognition-retail-0003.xml",
@@ -26,6 +32,15 @@ NEED = [
 ]
 
 fails = 0
+for rel in NEED_DIRS:
+    d = pathlib.Path("models") / rel
+    if not d.is_dir():
+        fails += 1
+        print("FAIL models/" + rel, "| 폴더 없음")
+    elif not list(d.glob("*.xml")):
+        fails += 1
+        print("FAIL models/" + rel, "| 폴더 안에 .xml 이 없음")
+
 for rel in NEED:
     if not (pathlib.Path("models") / rel).exists():
         fails += 1
