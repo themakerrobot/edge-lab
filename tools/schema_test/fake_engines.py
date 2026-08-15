@@ -166,23 +166,17 @@ class _Gan:
         def predict(self, img):
             return img
 
-    class _Depth:                      # 미터 지도를 흉내낸다 (가운데가 가깝고 가장자리가 멀다)
-        def meters(self, bgr, place="indoor"):
+    class _Depth:                      # 상대 깊이를 흉내낸다 (가운데가 가깝다 = 값이 크다)
+        def raw(self, bgr):
             h, w = bgr.shape[:2]
             yy, xx = np.mgrid[0:h, 0:w]
             d = np.sqrt((xx - w / 2) ** 2 + (yy - h / 2) ** 2)
-            return (0.5 + d / max(w, h) * 3).astype("float32")
+            return (3.0 - d / max(w, h) * 3).astype("float32")
 
         @staticmethod
         def colorize(m):
-            near = 1.0 - (m - m.min()) / (m.max() - m.min() + 1e-8)
+            near = (m - m.min()) / (m.max() - m.min() + 1e-8)
             return cv2.applyColorMap((near * 255).astype("uint8"), cv2.COLORMAP_INFERNO)
-
-        def at(self, bgr, x, y, place="indoor"):
-            m = self.meters(bgr, place)
-            h, w = m.shape[:2]
-            x = int(max(0, min(w - 1, x))); y = int(max(0, min(h - 1, y)))
-            return round(float(m[y, x]), 2)
 
     bgremove = _M()
     sr = _M()

@@ -800,21 +800,6 @@ for i in range(5):
     print(i + 1, "번째:", names)
     time.sleep(3)
 ` },
-      { ko: ["거리 재기", "깊이 지도를 보고, 화면 한가운데까지 몇 미터인지 재요."],
-        en: ["Measure distance", "Show a depth map and measure meters to the center."],
-        code: `from themaker import *
-
-img = camera()
-
-# 가까울수록 밝게 보이는 그림 (실내는 "indoor", 바깥은 "outdoor")
-show(vision("depth", img, place="indoor"))
-
-m = depth_at(img, 320, 240)          # 사진 한가운데 (640x480 기준)
-print("가운데까지", m, "m")
-speak("가운데까지 " + str(m) + "미터")
-
-# 카메라 한 대로 어림하는 값이라 자로 잰 것과는 달라요.
-` },
       { ko: ["자료에서 찾아 답하기",
              "내가 준 글에서만 찾아 답해요. 그냥 물었을 때와 견줘 봐요."],
         en: ["Answer from my own material",
@@ -945,9 +930,8 @@ play_hz(440, 0.3)
 beep("ok")
 speak("전체 점검을 마쳤어요", voice="F1", speed=1.05)
 
-print("=== 9. 깊이와 거리 ===")
-show(vision("depth", img, place="indoor"))       # 가까울수록 밝은 그림
-print("가운데까지:", depth_at(img, 320, 240), "m")   # 어림값이에요
+print("=== 9. 깊이 지도 ===")
+show(vision("depth", img))                       # 가까울수록 밝은 그림
 
 print("=== 9-2. 찾은 것 그리기·오려내기 ===")
 r = vision("object", img)
@@ -1123,12 +1107,6 @@ Relative paths resolve from <code>models\\pycode</code>. cv2 and numpy work as u
         en: { d: "face distance and direction (compare with direction_en)", a: "kind, image",
               r: "list of {distance, direction, direction_en, box}" },
         x: 'r = vision("distance", camera())\nif r:\n    print(r[0]["distance"], "cm", r[0]["direction"])' },
-      { g: "ai", n: 'depth_at(img, x, y)', ins: 'depth_at(img, 320, 240)',
-        ko: { d: "사진에서 그 자리까지 몇 미터인지 어림해요 — 실내는 그대로, 바깥은 \"outdoor\"",
-              a: "사진, 가로, 세로, 곳(indoor/outdoor, 없어도 됨)", r: "거리(미터) 숫자" },
-        en: { d: "estimates meters to that spot (use \"outdoor\" for outside photos)",
-              a: "image, x, y, place (optional)", r: "distance in meters" },
-        x: 'img = camera()\nprint(depth_at(img, 320, 240), "m")' },
       { g: "ai", n: 'vision("look", img)', ins: 'vision("look", img)',
         ko: { d: "사진을 보고 답해요 — prompt 로 물으면 그 질문에, 안 물으면 사진 설명",
               a: "기능 이름, 사진, prompt=질문(없어도 됨)", r: '{"answer": 답}' },
@@ -1433,7 +1411,7 @@ Relative paths resolve from <code>models\\pycode</code>. cv2 and numpy work as u
     const KINDS = ["object", "face", "face_attr", "distance", "hand", "pose", "seg",
                    "look", "ocr", "qr",
                    "bg_remove", "sr", "depth", "mask"];
-    const FUNCS = ["camera", "load", "save", "show", "draw", "vision", "detect", "depth_at", "language", "chat", "db_add", "db_list", "db_find", "db_delete",
+    const FUNCS = ["camera", "load", "save", "show", "draw", "vision", "detect", "language", "chat", "db_add", "db_list", "db_find", "db_delete",
                    "speak", "listen", "wav_to_text", "my_models", "models", "models_folder",
                    "resize", "rotate", "flip", "crop", "crop_xy", "crop_found",
                    "attach", "put_on", "put_on_xy", "put_sticker",

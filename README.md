@@ -231,7 +231,7 @@ USB 로 들고 다니기: `[폴더 열기]` 로 작업 폴더를 열어 통째�
 | 얼굴 검출·나이성별·감정·방향 | OpenVINO 프리트레인 | NPU |
 | 얼굴 거리·방향 / 손 제스처 / 표정 학습 | MediaPipe | CPU |
 | 변환 (배경제거·화질개선) | U2Net / SR-1032 | GPU |
-| 깊이·거리 (실내/실외, 미터) | Depth Anything V2 Metric Small ×2 | GPU |
+| 깊이 지도 | Depth Anything V2 Small | GPU |
 | 글자 인식 | easyocr (ko/en) | CPU |
 | QR 인식 | OpenCV QRCodeDetector | CPU |
 | 나만의 AI 특징 추출 | MobileNetV2 1280d | NPU |
@@ -252,7 +252,7 @@ USB 로 들고 다니기: `[폴더 열기]` 로 작업 폴더를 열어 통째�
 | OpenVINO / open_model_zoo 얼굴 모델 | Apache-2.0 |
 | MediaPipe | Apache-2.0 |
 | U2Net | Apache-2.0 |
-| Depth Anything V2 Metric Small (실내·실외) | Apache-2.0 |
+| Depth Anything V2 Small | Apache-2.0 |
 | easyocr | Apache-2.0 |
 | Whisper (OpenVINO 변환본) | Apache-2.0 |
 | Supertonic 3 (모델 가중치) | OpenRAIL-M (BigScience Open RAIL-M) |

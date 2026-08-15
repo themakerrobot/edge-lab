@@ -54,8 +54,6 @@ def run(host):
          lambda r: isinstance(r, np.ndarray))
     case("vision('depth')", lambda: T.vision("depth", img),
          lambda r: isinstance(r, np.ndarray))
-    case("depth_at() 거리(m)", lambda: T.depth_at(img, 10, 10),
-         lambda r: isinstance(r, float) and r > 0)
     case("vision('seg') 그림+이름", lambda: T.vision("seg", img),
          lambda r: isinstance(r["image"], np.ndarray) and r["object"][0]["name"] == "의자")
 

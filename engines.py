@@ -461,64 +461,50 @@ class SuperRes:
         return cv2.resize(out, (w * 4, h * 4))        # 정확히 4x 크기로 정합
 
 
-class DepthMetric:
-    """Depth Anything V2 Metric Small — 출력이 **미터**다(상대 깊이가 아니다).
+class DepthAnything:
+    """Depth Anything V2 Small — 상대 깊이. 어느 쪽이 더 가까운지를 보여 준다.
 
-    실내(Hypersim)·실외(Virtual KITTI) 모델이 따로 있고 서로 바꿔 쓰면 크게 틀린다.
-    교실이 기본이라 indoor 를 먼저 쓰고, 바깥 사진은 outdoor 를 고르게 한다.
-    둘 다 기동 때 올리지 않는다 — 처음 쓸 때 올려 캐시한다(상주 메모리 절약).
+    값의 단위는 없다. 보여 주는 용도이고 거리를 재는 데는 쓰지 않는다.
+    기동 때 올리지 않는다 — 처음 쓸 때 올려 캐시한다(상주 메모리 절약).
     """
 
     MEAN = np.array([0.485, 0.456, 0.406], dtype=np.float32)
     STD = np.array([0.229, 0.224, 0.225], dtype=np.float32)
     SIDE = 518
-    PLACES = ("indoor", "outdoor")
 
     def __init__(self, device):
         self.device = device
-        self._cache = {}
+        self._compiled = None
         self.lock = threading.Lock()
 
-    def _model(self, place):
-        if place not in self.PLACES:
-            raise ValueError("place 는 indoor 또는 outdoor")
-        if place not in self._cache:
-            self._cache[place] = core.compile_model(
-                core.read_model(MODELS / f"gan/depth-{place}.xml"), self.device)
-        return self._cache[place]
+    def _model(self):
+        if self._compiled is None:
+            self._compiled = core.compile_model(
+                core.read_model(MODELS / "gan/depth-v2s.xml"), self.device)
+        return self._compiled
 
-    def meters(self, bgr, place="indoor"):
-        """원본 크기의 거리 지도(미터). 값이 작을수록 가깝다."""
+    def raw(self, bgr):
+        """원본 크기의 깊이 지도. 값이 **클수록 가깝다**."""
         h, w = bgr.shape[:2]
         rgb = cv2.cvtColor(cv2.resize(bgr, (self.SIDE, self.SIDE)), cv2.COLOR_BGR2RGB).astype(np.float32)
         rgb = ((rgb / 255.0) - self.MEAN) / self.STD
         blob = rgb.transpose(2, 0, 1)[None]
-        compiled = self._model(place)
         with self.lock:
-            out = list(compiled({0: blob}).values())[0]
+            out = list(self._model()({0: blob}).values())[0]
         return cv2.resize(np.squeeze(out).astype(np.float32), (w, h))
 
     @staticmethod
     def colorize(m):
-        """거리 지도를 색지도로. 가까울수록 밝게 보이도록 뒤집어 칠한다."""
-        near = 1.0 - (m - m.min()) / (m.max() - m.min() + 1e-8)
+        """깊이 지도를 색지도로. 값이 클수록(가까울수록) 밝게."""
+        near = (m - m.min()) / (m.max() - m.min() + 1e-8)
         return cv2.applyColorMap((near * 255).astype(np.uint8), cv2.COLORMAP_INFERNO)
-
-    def at(self, bgr, x, y, place="indoor"):
-        """한 점까지의 거리(m). 흔들림을 줄이려 그 자리 5x5 를 중앙값으로 본다."""
-        m = self.meters(bgr, place)
-        h, w = m.shape[:2]
-        x = int(max(0, min(w - 1, x)))
-        y = int(max(0, min(h - 1, y)))
-        patch = m[max(0, y - 2):y + 3, max(0, x - 2):x + 3]
-        return round(float(np.median(patch)), 2)
 
 
 class GanEngine:
     def __init__(self):
         self.bgremove = U2Net(DEV_GAN)
         self.sr = SuperRes(DEV_GAN)
-        self.depth = DepthMetric(DEV_GAN)      # 지연 로딩 — 처음 쓸 때 올라온다
+        self.depth = DepthAnything(DEV_GAN)    # 지연 로딩 — 처음 쓸 때 올라온다
 
 
 # ---------------------------------------------------------------- code (ocr / qr)

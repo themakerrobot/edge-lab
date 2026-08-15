@@ -412,9 +412,8 @@
       ex_sound_d: "멜로디를 연주하고, 같은 음을 주파수로 내 봐요. (소리·과학)",
       ex_echo: "말 따라 하기",
       ex_echo_d: "내가 한 말을 듣고 그대로 따라 말해요. (음성 인식)",
-      ex_dist: "거리 재기", ex_dist_d: "깊이 지도를 보여주고 화면 한가운데까지 몇 미터인지 말해요.",
       ex_basic: "기본 블록 점검", ex_basic_d: "논리·반복·수학·글자·목록 블록을 한 번씩 지나가요. AI 없이 돌아요. (점검)",
-      sh_distSay: "가운데까지 ", sh_basicStart: "기본 블록 점검 시작",
+      sh_basicStart: "기본 블록 점검 시작",
       sh_basicList: "다,가,나", sh_basicBig: "커요", sh_basicSmall: "작아요",
       sh_basicDone: "기본 블록 점검 끝",
       ex_all: "전체 점검 (모든 기능)",
@@ -460,11 +459,8 @@
       m_needUpload: "먼저 무대에서 [사진 올리기]를 해주세요",
       m_tooManyAI: "AI를 너무 많이 불렀어요 (한 번 실행에 %1번까지)",
       m_tooManyLoop: "반복이 너무 많아요 (5000회 초과)",
-      b_depth_map: "%1 의 깊이 지도 %2",
-      b_depth_map_tip: "가까운 곳이 밝게 보이는 그림을 돌려줘요. 실내/바깥을 골라요.",
-      b_depth_at: "%1 의 가로 %2 세로 %3 까지 거리(m) %4",
-      b_depth_at_tip: "사진에서 그 자리까지 몇 미터인지 어림해요. 실내/바깥을 골라야 해요.",
-      o_indoor: "실내", o_outdoor: "바깥",
+      b_depth_map: "%1 의 깊이 지도",
+      b_depth_map_tip: "가까운 곳이 밝게 보이는 그림을 돌려줘요.",
       cat_start: "시작",
       b_flag: "클릭했을 때", b_flag_tip: "여기에 붙인 블록만 실행돼요.",
       m_say: "말하기: ", m_show: "보여주기: ",
@@ -642,9 +638,8 @@
       ex_echo_d: "Listens to you and says it back. (speech to text)",
       ex_voices: "Try different voices",
       ex_voices_d: "Speaks with different voices and speeds. (sound)",
-      ex_dist: "Measure distance", ex_dist_d: "Shows a depth map and says how many meters to the center.",
       ex_basic: "Basic block check", ex_basic_d: "Runs logic, loop, math, text and list blocks once. No AI needed. (check)",
-      sh_distSay: "center is ", sh_basicStart: "basic block check start",
+      sh_basicStart: "basic block check start",
       sh_basicList: "c,a,b", sh_basicBig: "big", sh_basicSmall: "small",
       sh_basicDone: "basic block check done",
       ex_all: "Full check (everything)",
@@ -689,11 +684,8 @@
       m_needUpload: "Use [Upload photo] on the stage first",
       m_tooManyAI: "Too many AI calls (limit is %1 per run)",
       m_tooManyLoop: "Too many loops (over 5000)",
-      b_depth_map: "depth map of %1 %2",
-      b_depth_map_tip: "Returns an image where closer is brighter. Pick indoor or outdoor.",
-      b_depth_at: "distance to x %2 y %3 in %1 (m) %4",
-      b_depth_at_tip: "Estimates how many meters away that spot is. Pick indoor or outdoor.",
-      o_indoor: "indoor", o_outdoor: "outdoor",
+      b_depth_map: "depth map of %1",
+      b_depth_map_tip: "Returns an image where closer is brighter.",
       cat_start: "Start",
       b_flag: "when clicked", b_flag_tip: "Only blocks attached here will run.",
       m_say: "say: ", m_show: "show: ",
@@ -862,9 +854,7 @@
       lists_sort: b => "sorted(" + val(b, "LIST", "[]") + ")",
 
       /* ---- 사진 가져오기 ---- */
-      ai_depth_map: b => "vision('depth', " + img(b, "IMG") + ", place=" + q(field(b, "PLACE")) + ")",
-      ai_depth_at: b => "depth_at(" + img(b, "IMG") + ", " + num(b, "X", 0) + ", " + num(b, "Y", 0)
-                        + ", " + q(field(b, "PLACE")) + ")",
+      ai_depth_map: b => "vision('depth', " + img(b, "IMG") + ")",
       ai_capture: () => "camera()",
       ai_upload: () => "load('사진.jpg')",
 
@@ -1468,11 +1458,6 @@ def texts_of(result):
         args0: [ IMG ] },
       { type: "ai_hand", message0: t("b_hand"), output: "String", colour: C_AI,
         args0: [ IMG ], tooltip: t("b_hand_tip") },
-      { type: "ai_depth_at", message0: t("b_depth_at"), output: "Number", colour: C_AI,
-        args0: [ IMG, { type: "input_value", name: "X", check: "Number" },
-                 { type: "input_value", name: "Y", check: "Number" },
-                 { type: "field_dropdown", name: "PLACE", options: opt(["indoor", "outdoor"]) } ],
-        inputsInline: true, tooltip: t("b_depth_at_tip") },
       { type: "ai_face_dist", message0: t("b_face_dist"), output: "Number", colour: C_AI,
         args0: [ IMG ], tooltip: t("b_face_dist_tip") },
       { type: "ai_ocr", message0: t("b_ocr"), output: "String", colour: C_AI, args0: [ IMG ] },
@@ -1488,12 +1473,10 @@ def texts_of(result):
         args0: [ IMG, { type: "field_dropdown", name: "KIND",
           options: opt(["portrait","sr"]) } ],
         tooltip: t("b_transform_tip") },
-      /* 깊이 지도는 실내/바깥을 골라야 해서 따로 뺀다 — 한 블록에 드롭다운이 둘이면
-         무엇을 고르는 건지 헷갈린다. */
+      /* 깊이 지도는 ai_transform 과 묶지 않고 따로 둔다 — 배경제거·화질개선은
+         사진을 고치는 것이고 이것은 보여 주는 그림이라 성격이 다르다. */
       { type: "ai_depth_map", message0: t("b_depth_map"), output: "String", colour: C_EDIT,
-        args0: [ IMG, { type: "field_dropdown", name: "PLACE",
-          options: opt(["indoor", "outdoor"]) } ],
-        inputsInline: true, tooltip: t("b_depth_map_tip") },
+        args0: [ IMG ], tooltip: t("b_depth_map_tip") },
       // 무대
       { type: "st_say", message0: t("b_say"), previousStatement: null, nextStatement: null,
         colour: C_SOUND, tooltip: t("b_say_tip"),
@@ -1572,8 +1555,7 @@ def texts_of(result):
   G.forBlock["ai_qr"]         = b => [`(await AI.qr(${V(b,"IMG","null")}))`, Order.ATOMIC];
   G.forBlock["ai_ask"]        = b => [`(await AI.ask(${V(b,"IMG","null")}, ${V(b,"Q","''")}))`, Order.ATOMIC];
   G.forBlock["ai_chat"]       = b => [`(await AI.chat(${V(b,"Q","''")}))`, Order.ATOMIC];
-  G.forBlock["ai_depth_map"]  = b => [`(await AI.depthMap(${V(b,"IMG","null")}, '${b.getFieldValue("PLACE")}'))`, Order.ATOMIC];
-  G.forBlock["ai_depth_at"]   = b => [`(await AI.depthAt(${V(b,"IMG","null")}, ${V(b,"X","0")}, ${V(b,"Y","0")}, '${b.getFieldValue("PLACE")}'))`, Order.ATOMIC];
+  G.forBlock["ai_depth_map"]  = b => [`(await AI.depthMap(${V(b,"IMG","null")}))`, Order.ATOMIC];
   G.forBlock["ai_transform"]  = b => [`(await AI.transform(${V(b,"IMG","null")}, '${b.getFieldValue("KIND")}'))`, Order.ATOMIC];
   G.forBlock["st_say"]        = b =>
     `await RT.say(${V(b,"TEXT","''")}, "${b.getFieldValue("V")}", "${b.getFieldValue("S")}");\n`;
@@ -1714,7 +1696,6 @@ def texts_of(result):
         { kind: "label", text: t("lbl_basic") },
         { kind: "block", type: "ai_face" }, { kind: "block", type: "ai_face_count" },
         { kind: "block", type: "ai_face_dist" }, { kind: "block", type: "ai_hand" },
-        { kind: "block", type: "ai_depth_at", inputs: { X: num(320), Y: num(240) } },
         { kind: "block", type: "ai_objects" },
         { kind: "block", type: "ai_ocr" }, { kind: "block", type: "ai_qr" },
         { kind: "label", text: t("lbl_my_model") },
@@ -1976,26 +1957,6 @@ def texts_of(result):
           B("st_boxes"),
         ]) ] } } },
 
-      /* 모든 기능을 한 번씩 지나가는 점검용 예제.
-         기다리는 블록(얼굴/손 기다리기·음성 인식)과 내가 만든 AI 는 뺐다 —
-         멈춰 서거나 학습한 모델이 있어야 해서 "한 번에 쭉" 이 안 된다. */
-      /* 새로 들어온 깊이·거리 기능을 쓰는 예제. 실내 기준으로 보여 준다. */
-      { id: "distance", name: t("ex_dist"), desc: t("ex_dist_d"),
-        state: { blocks: { languageVersion: 0, blocks: [ top([
-          CLEAR(),
-          SET("사진", B("ai_capture")),
-          B("st_show_image", { inputs: { IMG: { block:
-            B("ai_depth_map", { fields: { PLACE: "indoor" },
-                                inputs: { IMG: { block: VG("사진") } } }) } } }),
-          SET("거리", B("ai_depth_at", { fields: { PLACE: "indoor" },
-            inputs: { IMG: { block: VG("사진") },
-                      X: shadowNum(320), Y: shadowNum(240) } })),
-          B("st_say", { fields: { V: "F1", S: "normal" }, inputs: { TEXT: { block:
-            B("text_join", { inputs: { A: shadowTxt(t("sh_distSay")),
-                                       B: { block: VG("거리") } } }) } } }),
-          PR(VG("거리")),
-        ]) ] } } },
-
       /* 기본 블록(논리·반복·수학·글·목록)을 한 번씩 지나가는 점검용.
          AI 를 안 쓰므로 모델이 없어도 돌고, 결과는 전부 로그 칸에 찍힌다. */
       { id: "checkbasic", name: t("ex_basic"), desc: t("ex_basic_d"),
@@ -2046,6 +2007,9 @@ def texts_of(result):
           B("st_say", { fields: { V: "F1", S: "normal" }, inputs: { TEXT: shadowTxt(t("sh_basicDone")) } }),
         ]) ] } } },
 
+      /* 모든 기능을 한 번씩 지나가는 점검용 예제.
+         기다리는 블록(얼굴/손 기다리기·음성 인식)과 내가 만든 AI 는 뺐다 —
+         멈춰 서거나 학습한 모델이 있어야 해서 "한 번에 쭉" 이 안 된다. */
       { id: "checkall", name: t("ex_all"), desc: t("ex_all_d"),
         state: { blocks: { languageVersion: 0, blocks: [ top([
           CLEAR(),
@@ -2083,6 +2047,8 @@ def texts_of(result):
             inputs: { VALUE: { block: B("ai_transform", { fields: { KIND: "portrait" },
               inputs: { IMG: { block: VG("사진") } } }) } } }),
           B("st_show_image", { inputs: { IMG: { block: VG("바뀐사진") } } }),
+          B("st_show_image", { inputs: { IMG: { block:
+            B("ai_depth_map", { inputs: { IMG: { block: VG("사진") } } }) } } }),
 
           /* 6) 사진 편집 — 크기·방향·자르기·붙이기 */
           SET("편집", B("ed_resize", { inputs: { IMG: { block: VG("사진") },
@@ -2558,16 +2524,9 @@ def texts_of(result):
         return j.data.answer;
       } finally { devIdle(); }
     },
-    async depthMap(img, place) {
-      const d = await post("gan/depth", img, { place: place });
+    async depthMap(img) {
+      const d = await post("gan/depth", img, {});
       return "data:image/jpeg;base64," + d;
-    },
-    async depthAt(img, x, y, place) {
-      /* 그 자리까지의 거리(m). 어림값이라 계측기가 아니다 —
-         실내/바깥 모델이 갈리므로 place 를 그대로 넘긴다. */
-      const d = await post("gan/distance", img, { x: Math.round(x), y: Math.round(y), place: place });
-      AI.addLayer(img, [{ box: [d.x - 8, d.y - 8, d.x + 8, d.y + 8], label: d.meter + "m" }], COLORS.face);
-      return d.meter;
     },
     async transform(img, kind) {
       const d = await post("gan/" + kind, img);

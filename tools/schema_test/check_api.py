@@ -59,10 +59,6 @@ CASES = [
     ("배경 제거", "/gan/portrait", None, lambda d: isinstance(d, str) and len(d) > 100),
     ("화질 개선", "/gan/sr", None, lambda d: isinstance(d, str)),
     ("깊이 지도", "/gan/depth", None, lambda d: isinstance(d, str) and len(d) > 100),
-    ("깊이 지도(실외)", "/gan/depth", {"place": "outdoor"},
-     lambda d: isinstance(d, str) and len(d) > 100),
-    ("거리 재기", "/gan/distance", {"x": 10, "y": 10},
-     lambda d: isinstance(d["meter"], float) and d["place"] == "indoor"),
     ("글자 인식", "/code/ocr", None, lambda d: d[0]["text"] == "안녕"),
     ("QR", "/code/barcode", None, lambda d: d[0]["data"].startswith("http")),
 ]

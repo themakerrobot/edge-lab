@@ -27,8 +27,7 @@ NEED = [
     "face/head-pose-estimation-adas-0001.xml",
     "gan/u2net.onnx",
     "gan/single-image-super-resolution-1032.xml",
-    "gan/depth-indoor.xml",       # 깊이·거리 (실내)
-    "gan/depth-outdoor.xml",      # 깊이·거리 (바깥)
+    "gan/depth-v2s.xml",          # 깊이 지도 (상대 깊이 — 보여 주는 용도)
 ]
 
 fails = 0
