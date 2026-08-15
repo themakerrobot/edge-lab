@@ -868,11 +868,14 @@ async def system():
     return {
         "ready": eng is not None,
         "devices": E.core.available_devices,
+        # "vision" 한 칸으로 묶으면 거짓말이 된다 — 사진 바꾸기(U2Net·SR·깊이)는 GPU 인데
+        # 사물 인식(YOLO)은 CPU 라서, 예전엔 GPU 를 보여 주고 실제 결과에는 [CPU] 가 찍혔다.
         "assign": {"vlm": DEVICE_OF.get("look", E.DEV_VLM),
-                   "vision": DEVICE_OF.get("portrait", E.DEV_GAN),
+                   "image": DEVICE_OF.get("portrait", E.DEV_GAN),      # 배경제거·화질·깊이
+                   "object": DEVICE_OF.get("object_search", "CPU"),    # YOLO 계열
                    "face": DEVICE_OF.get("face_analyze", E.DEV_FACE),
                    "code": "CPU"},
-        "assign_requested": {"vlm": E.DEV_VLM, "vision": E.DEV_GAN, "face": E.DEV_FACE},
+        "assign_requested": {"vlm": E.DEV_VLM, "image": E.DEV_GAN, "face": E.DEV_FACE},
         "device_of": DEVICE_OF,          # 서비스명 -> 실행 디바이스 (프론트 HUD용)
         "models": {
             "vlm": "Gemma 3 4B INT4",
