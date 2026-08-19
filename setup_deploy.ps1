@@ -52,10 +52,13 @@ $stamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 Write-Host "  package versions -> $snap" -ForegroundColor DarkGray
 
 Write-Host "=== [3/5] models from HF ===" -ForegroundColor Cyan
-# org/ 는 모델 변환용 원본(.pt) 이라 교실 PC 에는 필요 없다 — 서버는 IR 만 읽는다
-# --exclude 는 한 번에 값 하나만 받는다. 예전처럼 두 개를 이어 쓰면 뒤엣것이
-# "받을 파일 이름"으로 먹혀 org/* 를 파일로 받으려다 죽는다(WinError 123).
-& "venv\Scripts\hf.exe" download leeyunjai/vapi-od --local-dir models --exclude "models.7z" --exclude "org/*"
+# 교실 PC 에 필요 없는 것은 빼고 받는다.
+#   org/  : 모델 변환용 원본(.pt) — 서버는 IR 만 읽는다
+#   yolo/ : 골라 쓰는 사물 찾기 모델 — 쓸 사람이 직접 받아 모델 폴더에 넣는다
+#   *.md  : 저장소 설명 문서
+# --exclude 는 한 번에 값 하나만 받는다. 두 개를 이어 쓰면 뒤엣것이
+# "받을 파일 이름"으로 먹혀 그 이름을 파일로 받으려다 죽는다(WinError 123).
+& "venv\Scripts\hf.exe" download leeyunjai/vapi-od --local-dir models --exclude "org/*" --exclude "yolo/*" --exclude "*.md"
 if ($LASTEXITCODE -ne 0) { throw "model download failed (check token / network)" }
 
 Write-Host "=== [4/5] fonts ===" -ForegroundColor Cyan

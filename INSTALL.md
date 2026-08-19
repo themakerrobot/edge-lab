@@ -163,3 +163,14 @@ python tools\check.py                                 # fail = 0 이어야 함
 변환이 끝나면 결과를 올린다 — `hf upload leeyunjai/vapi-od models .`
 `models/org/mask-11s-cls.pt` 도 함께 올려 두어야 이 저장소만으로 전부 다시 만들 수 있다.
 이후 기기는 `setup_deploy.ps1` 로 내려받기만 하면 된다.
+
+### 저장소 구성
+| 폴더 | 설치본에 | 무엇 |
+|---|---|---|
+| `object/` `face/` `mediapipe/` `gan/` `vlm/` `embed/` `backbone/` `code/` `stt/` `tts/` | 들어감 | 서버가 읽는 IR·모델 |
+| `org/` | 빠짐 | 변환용 원본(.pt) |
+| `yolo/` | 빠짐 | 골라 쓰는 사물 찾기 모델 — 쓸 사람이 직접 받아 `문서\The Maker\models` 에 넣는다 |
+| `*.md` | 빠짐 | 저장소 설명 |
+
+빼는 것은 `setup_deploy.ps1` 의 `--exclude` 로 정한다. 값을 이어 쓰지 말고
+**플래그를 여러 번** 써야 한다 — 이어 쓰면 뒤엣것이 받을 파일 이름으로 먹힌다.
