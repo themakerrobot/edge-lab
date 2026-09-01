@@ -28,6 +28,9 @@ NEED = [
     "gan/u2net.onnx",
     "gan/single-image-super-resolution-1032.xml",
     "gan/depth-v2s.xml",          # 깊이 지도 (상대 깊이 — 보여 주는 용도)
+    "backbone/mobilenetv2_feat.xml",   # 가르치기 — 이게 없으면 학습 자체가 안 된다
+    "mediapipe/face_landmarker.task",  # 얼굴 거리·방향
+    "mediapipe/gesture_recognizer.task",  # 손동작
 ]
 
 fails = 0
