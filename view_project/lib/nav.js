@@ -17,14 +17,16 @@
 (function () {
   "use strict";
 
-  /* 경로 · 아이콘 · 라벨 — 순서가 곧 탭 순서다 */
+  /* 경로 · 라벨 — 순서가 곧 탭 순서다.
+     아이콘은 두지 않는다: 파이보 랩·센스 랩의 탭도 글자만이라, 셋을 나란히
+     열었을 때 같은 제품으로 보이려면 여기도 글자여야 한다. */
   var TABS = [
-    { id: "homeLink",    href: "/",        icon: "\u2302", ko: "홈",     en: "Home" },
-    { id: "blocksLink",  href: "/blocks",  icon: "\u25A0", ko: "블록",   en: "Blocks" },
-    { id: "codeLink",    href: "/code",    icon: "\u276F", ko: "파이썬", en: "Python" },
-    { id: "trainLink",   href: "/train",   icon: "\u25CF", ko: "가르치기", en: "Train" },
-    { id: "talkLink",    href: "/talk",    icon: "\uD83D\uDCAC", ko: "대화", en: "Talk" },
-    { id: "optionsLink", href: "/options", icon: "\u2699", ko: "설정",   en: "Settings" },
+    { id: "homeLink",    href: "/",        ko: "써보기",   en: "Try it" },
+    { id: "blocksLink",  href: "/blocks",  ko: "블록",     en: "Blocks" },
+    { id: "codeLink",    href: "/code",    ko: "파이썬",   en: "Python" },
+    { id: "trainLink",   href: "/train",   ko: "가르치기", en: "Train" },
+    { id: "talkLink",    href: "/talk",    ko: "대화",     en: "Talk" },
+    { id: "optionsLink", href: "/options", ko: "설정",     en: "Settings" },
   ];
 
   function lang() {
@@ -58,8 +60,7 @@
         a.setAttribute("aria-current", "page");
         a.removeAttribute("href");            /* 지금 화면은 눌러도 새로 안 읽는다 */
       }
-      a.innerHTML = '<span class="ic">' + tab.icon + '</span>' +
-                    '<span class="tx">' + tab[L] + '</span>';
+      a.innerHTML = '<span class="tx">' + tab[L] + '</span>';
       frag.appendChild(a);
     });
 

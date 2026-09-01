@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# vapi-od : VLM prompt templates + output parsers
+# edge-lab : VLM prompt templates + output parsers
 # 사진 질문과 사진 없는 대화를 VLM 하나로 처리한다.
 #
 # lang 파라미터 (기본 "ko")

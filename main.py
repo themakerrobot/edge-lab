@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# vapi-od : 단일 FastAPI 서버 (기존 circulus-vapi 5개 서버 통합, 온디바이스)
+# edge-lab : 단일 FastAPI 서버 (기존 circulus-vapi 5개 서버 통합, 온디바이스)
 # 응답 스키마는 기존 서버와 동일: {"type": <service_name>, "result": "ok"|"fail", "data": ...}
 import os
 import sys
@@ -118,7 +118,7 @@ def exec_device(obj, fallback="CPU"):
 def build_device_map():
     import engines as E
     vlm = {"place", "time", "weather", "tag", "look", "chat_ask"}
-    gan = {"portrait", "sr", "depth"}
+    gan = {"portrait", "sr"}
     face = {"face_detect", "face_analyze", "face_emotion", "face_age_gender"}
     # 실측: 각 그룹의 대표 모델에게 직접 물어본다
     dev_face = exec_device(eng.face.detect, E.DEV_FACE) if eng else E.DEV_FACE
@@ -178,12 +178,12 @@ def _load_engines():
 async def lifespan(app: FastAPI):
     import threading
     threading.Thread(target=_load_engines, daemon=True).start()
-    print(f"! vapi-od listening on {HOST}:{PORT}")
+    print(f"! edge-lab listening on {HOST}:{PORT}")
     open_browser()
     yield
 
 
-app = FastAPI(title="vapi-od", docs_url="/docs", lifespan=lifespan)
+app = FastAPI(title="edge-lab", docs_url="/docs", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True,
                    allow_methods=["*"], allow_headers=["*"])
 
@@ -493,14 +493,6 @@ def gan_portrait(path):
 def gan_sr(path):
     from engines import to_b64_jpg
     return to_b64_jpg(eng.gan.sr.predict(read_bgr(path)))
-
-
-@app.post("/gan/depth", tags=["gan"], summary="깊이 지도 (가까울수록 밝게)")
-@service("depth")
-def gan_depth(path):
-    """어느 쪽이 더 가까운지 색으로 보여 준다."""
-    from engines import to_b64_jpg
-    return to_b64_jpg(eng.gan.depth.colorize(eng.gan.depth.raw(read_bgr(path))))
 
 
 # ---------------------------------------------------------------- code
@@ -857,14 +849,11 @@ async def system():
     return {
         "ready": eng is not None,
         "devices": E.core.available_devices,
-        # "vision" 한 칸으로 묶으면 거짓말이 된다 — 사진 바꾸기(U2Net·SR·깊이)는 GPU 인데
-        # 사물 인식(YOLO)은 CPU 라서, 예전엔 GPU 를 보여 주고 실제 결과에는 [CPU] 가 찍혔다.
         "assign": {"vlm": DEVICE_OF.get("look", E.DEV_VLM),
-                   "image": DEVICE_OF.get("portrait", E.DEV_GAN),      # 배경제거·화질·깊이
-                   "object": DEVICE_OF.get("object_search", "CPU"),    # YOLO 계열
+                   "vision": DEVICE_OF.get("portrait", E.DEV_GAN),
                    "face": DEVICE_OF.get("face_analyze", E.DEV_FACE),
                    "code": "CPU"},
-        "assign_requested": {"vlm": E.DEV_VLM, "image": E.DEV_GAN, "face": E.DEV_FACE},
+        "assign_requested": {"vlm": E.DEV_VLM, "vision": E.DEV_GAN, "face": E.DEV_FACE},
         "device_of": DEVICE_OF,          # 서비스명 -> 실행 디바이스 (프론트 HUD용)
         "models": {
             "vlm": "Gemma 3 4B INT4",

@@ -208,10 +208,18 @@
     @media (prefers-reduced-motion: reduce) { .chip.busy .dot { animation: none; } }
 
     /* ===== 문항 공통 ===== */
+    .qnum::after { content: "."; }
 
     /* ===== 문항 1 : 모델 고르기 ===== */
-    /* 문항 1·2 바는 머리표(.panel-head)를 쓴다 — 아래는 그 안 컨트롤 배치만 */
-    .subheader { gap: 8px 16px; }
+    .subheader {
+      flex: 0 0 auto;
+      display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
+      background: var(--box);
+      border: 1.5px solid var(--line);
+      border-radius: var(--r);
+      padding: var(--sp-2, 6px) 16px;
+    }
+    .subheader .q { display: flex; align-items: center; gap: 9px; }
     .subheader .field { display: flex; align-items: center; gap: 8px; flex: 1 1 auto; min-width: 200px; }
     .field-label { font-size: .88rem; color: var(--ink-2); white-space: nowrap; }
     #modelSelect { font-weight: 600; min-width: 160px; }
@@ -220,7 +228,15 @@
     .doc-link::before { content: "※ "; color: var(--pen-red); }
 
     /* ===== 문항 2 헤더줄 : 탭 + 프롬프트 + 실행 ===== */
-    .tab-prompt-row { gap: 8px 14px; }
+    .tab-prompt-row {
+      flex: 0 0 auto;
+      display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;
+      background: var(--box);
+      border: 1.5px solid var(--line);
+      border-radius: var(--r);
+      padding: var(--sp-2, 8px) 16px;
+    }
+    .tab-prompt-row .q { display: flex; align-items: center; gap: 9px; }
     .tabs { display: flex; gap: 2px; }
     .tabButton {
       background: transparent; border: none; border-bottom: 3px solid transparent;
@@ -561,7 +577,7 @@
   </div>
 
   <!-- 문항 1 : 모델 고르기 -->
-  <div class="panel-head subheader">
+  <div class="subheader">
     <div class="q" id="q1">
       <span class="qnum">1</span>
       <span class="qtext" id="txtQ1">모델을 골라요</span>
@@ -578,7 +594,7 @@
   </div>
 
   <!-- 문항 2 : 이미지 넣고 실행 -->
-  <div class="panel-head tab-prompt-row">
+  <div class="tab-prompt-row">
     <div class="q">
       <span class="qnum">2</span>
       <span class="qtext" id="txtQ2">이미지를 넣고 실행해요</span>
@@ -603,7 +619,7 @@
     <!-- 왼쪽: 입력 -->
     <div class="panel">
       <div class="panel-head">
-        <span class="qtext" id="txtInputHead">입력 이미지</span>
+        <span class="qtext" style="font-size:.95rem;" id="txtInputHead">입력 이미지</span>
       </div>
       <div class="panel-body">
         <div id="upload" class="tab-content active">
@@ -650,7 +666,8 @@
     <!-- 오른쪽: 결과 -->
     <div class="panel">
       <div class="panel-head">
-        <span class="q"><span class="qnum">3</span><span class="qtext" id="txtQ3">결과를 확인해요</span></span>
+        <span class="qnum">3</span>
+        <span class="qtext" id="txtQ3">결과를 확인해요</span>
       </div>
       <div class="panel-body">
         <div class="result-frame">
@@ -690,7 +707,7 @@
   <script>
     /****************************************************
      * 기능 로직은 기존과 동일 (스타일/도장/연습장만 변경)
-     * vapi-od: local(same-origin) 모드 추가, gan 변환 4종 재구성, 캡션 제거
+     * edge-lab: local(same-origin) 모드 추가, gan 변환 4종 재구성, 캡션 제거
      ****************************************************/
 
     const HOST = "";  // 온디바이스: 같은 서버(same-origin) 고정
@@ -929,7 +946,6 @@
       /* ----- 사진 바꾸기 ----- */
       "배경 제거": { "g": "image", "api": "gan/portrait", "params": {}, "tooltip": "인물/사물만 남기고 배경을 제거합니다.", "en": "Remove background", "tooltip_en": "Keeps the subject and removes the background." },
       "화질 개선(4배)": { "g": "image", "api": "gan/sr", "params": {}, "tooltip": "이미지 화질을 4배로 개선합니다.", "en": "Upscale (4x)", "tooltip_en": "Improves the image quality four times." },
-      "깊이 지도": { "g": "image", "api": "gan/depth", "tooltip": "가까운 곳과 먼 곳을 색으로 나타냅니다 (밝을수록 가까움).", "en": "Depth map", "tooltip_en": "Shows near and far as colors (brighter is closer)." },
 
       /* ----- 글자 · QR ----- */
       "글자 인식": { "g": "text", "api": "code/ocr", "params": {}, "tooltip": "이미지에서 문자/숫자를 인식합니다.", "en": "Text recognition", "tooltip_en": "Reads letters and numbers in the image." },
@@ -1429,8 +1445,6 @@
             if (!d.length) return `No QR code found.`;
             return d.map(b => `QR code says: <b>${esc(b.data || b.text || '')}</b>`).join('<br>');
           }
-          case 'depth':
-            return `Made a depth map — brighter means closer. Check the picture above!`;
           case 'cartoon': case 'webtoon': case 'portrait': case 'sketch': case 'sr':
             return `Changed the image into a new style! Check the picture above.`;
           case 'object_seg':
@@ -1508,8 +1522,6 @@
         }
 
         /* --- 이미지 변환 계열 --- */
-        case 'depth':
-          return `가까운 곳과 먼 곳을 색으로 나타냈어요! 밝을수록 가까워요.`;
         case 'cartoon': case 'webtoon': case 'portrait': case 'sketch': case 'sr':
           return `이미지를 새로운 스타일로 바꿨어요! 위 그림을 확인해 보세요.`;
         case 'object_seg':
@@ -1548,7 +1560,7 @@
 
       if (
         res.type &&
-        ["cartoon","webtoon","portrait","sketch","sr","depth","object_seg"]
+        ["cartoon","webtoon","portrait","sketch","sr","object_seg"]
           .includes(res.type)
       ) {
         /* 분할은 색칠한 그림 + 찾은 것 목록으로 온다.
@@ -1962,6 +1974,7 @@
   </script>
   <script src="/lib/usage.js" data-page="index"></script>
   <script src="/lib/nav.js"></script>
+  <script src="/lib/tour.js"></script>
   <script src="/lib/sysbar.js"></script>
 </body>
 </html>

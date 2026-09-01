@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# vapi-od : "나만의 AI 만들기" 라우터 (브라우저 학습 결과를 서버 OpenVINO로 추론)
+# edge-lab : "나만의 AI 만들기" 라우터 (브라우저 학습 결과를 서버 OpenVINO로 추론)
 # 기존 파일을 건드리지 않는 독립 모듈 — main.py에 두 줄만 추가해 연결한다:
 #   import train_routes
 #   app.include_router(train_routes.router)

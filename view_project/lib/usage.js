@@ -1,4 +1,4 @@
-/* vapi-od : 사용 통계 수집 (오프라인, 이 PC 안에서만)
+/* edge-lab : 사용 통계 수집 (오프라인, 이 PC 안에서만)
  *
  * 페이지에 이 한 줄만 넣으면 된다:
  *   <script src="/lib/usage.js" data-page="train"></script>

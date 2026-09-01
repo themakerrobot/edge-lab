@@ -153,71 +153,47 @@
    --------------------------------------------------------------------------- */
 .header .h-tools { position: relative; gap: 0; }
 
-/* ① 이동 — 탭 한 줄. lib/nav.js 가 여섯 페이지에 같은 것을 만든다(.nav-tab)
+/* ① 이동 — 밑줄 탭. lib/nav.js 가 여섯 페이지에 같은 줄을 만든다(.nav-tab)
  *
- * 낱개 단추 여섯 개를 늘어놓으면 헤더가 시끄럽다. 그래서 한 덩어리로 묶는다 —
- * 바깥 테두리는 묶음에만 한 번, 사이는 가는 선으로 나눈다. 지금 보고 있는
- * 화면만 색으로 채워 "여기 있다"를 말한다. 탭 줄에서 옮겨 다니는 느낌이 목적. */
+ * 파이보 랩·센스 랩과 같은 모양이다(css/theme-maker.css 의 .navlink).
+ * 셋을 나란히 열었을 때 한 제품으로 보이는 것이 목적이라 값을 그대로 맞췄다:
+ * 테두리 없음 · 아래 3px 만 · 선택된 것만 남색 밑줄과 굵은 글씨.
+ * 전에 쓰던 세그먼트 묶음(양끝 둥근 한 덩어리)은 폐기 — 탭이 여섯이라 폭을
+ * 많이 먹었고, 다른 두 서비스와도 어긋났다.
+ * 아이콘도 뺐다 — 두 랩의 탭은 글자만이다. */
 .header .h-tools > a.nav-tab {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 30px;
-  padding: 0 12px;
-  box-sizing: border-box;
   background: transparent;
-  border: 0;
-  border-left: 1px solid var(--line, #9a8f7d);
+  border: none;
+  border-bottom: 3px solid transparent;
   border-radius: 0;
   color: var(--ink-2, #4a423a);
+  padding: 6px 12px 4px;
   text-decoration: none;
   font-family: inherit;
   font-size: .86rem;
-  font-weight: 600;
-  line-height: 1;
+  font-weight: 400;
+  line-height: 1.2;
   white-space: nowrap;
   cursor: pointer;
-  transition: background .12s, color .12s;
-}
-/* 묶음의 바깥 테두리 — 첫 탭과 마지막 탭이 모서리를 맡는다 */
-.header .h-tools > a.nav-tab:first-of-type {
-  border-left: 0;
-  border-radius: 999px 0 0 999px;
-  padding-left: 15px;
-}
-.header .h-tools > a.nav-tab:last-of-type {
-  border-radius: 0 999px 999px 0;
-  padding-right: 15px;
-}
-/* 아이콘은 글자보다 한 톤 연하게 — 읽는 것은 글자다 */
-.header .h-tools > a.nav-tab .ic {
-  font-size: .92rem;
-  font-weight: 400;
-  line-height: 1;
-  opacity: .55;
+  transition: color .12s, border-color .12s;
 }
 .header .h-tools > a.nav-tab:hover {
-  background: rgba(31, 95, 122, .08);
-  color: var(--cyan-d, #17475c);
+  border-bottom-color: #cfc7b8;
+  color: var(--ink, #2a2620);
 }
-.header .h-tools > a.nav-tab:hover .ic { opacity: .85; }
-
-/* 묶음 전체를 감싸는 선 — 위·아래는 모든 탭, 좌·우는 첫·마지막만 */
-.header .h-tools > a.nav-tab {
-  border-top: 1px solid var(--line, #9a8f7d);
-  border-bottom: 1px solid var(--line, #9a8f7d);
-}
-.header .h-tools > a.nav-tab:first-of-type { border-left: 1px solid var(--line, #9a8f7d); }
-.header .h-tools > a.nav-tab:last-of-type { border-right: 1px solid var(--line, #9a8f7d); }
-
 /* 지금 보고 있는 화면 */
-.header .h-tools > a.nav-tab.on {
-  background: var(--cyan, #1f5f7a);
-  color: #fff;
+.header .h-tools > a.nav-tab.on,
+.header .h-tools > a.nav-tab[aria-current] {
+  border-bottom-color: var(--cyan, #1f5f7a);
+  color: var(--cyan-d, #17475c);
+  font-weight: 700;
   cursor: default;
 }
-.header .h-tools > a.nav-tab.on .ic { opacity: .9; }
-.header .h-tools > a.nav-tab.on + a.nav-tab { border-left-color: transparent; }
+/* 탭 아이콘은 쓰지 않는다 — nav.js 가 넣어도 보이지 않게 해 둔다 */
+.header .h-tools > a.nav-tab .ic { display: none; }
 
 /* ② 도구 — 낱개 알약. 탭 묶음에서 여백으로 떨어뜨리고, 테두리를 한 단계
    연하게 해 이동보다 뒤로 물러나 보이게 한다. */
@@ -250,11 +226,8 @@ html.hc .header .h-tools > button#sysBtn {
   border-width: 2px !important;
   border-color: var(--line-d, #2e281c) !important;
 }
-html.hc .header .h-tools > a.nav-tab {
-  border-color: var(--line-d, #2e281c);
-  color: var(--ink, #1a1712);
-}
-html.hc .header .h-tools > a.nav-tab .ic { opacity: .8; }
+html.hc .header .h-tools > a.nav-tab { color: var(--ink, #1a1712); }
+html.hc .header .h-tools > a.nav-tab.on { border-bottom-width: 4px; }
 
 
 /* ===========================================================================
@@ -296,8 +269,7 @@ html.hc .header .h-tools > a.nav-tab .ic { opacity: .8; }
   align-items: center;
   flex-wrap: wrap;
   gap: 9px;
-  min-height: 2.5rem;              /* 머리표 높이 고정 — 좌·우 점선이 늘 같은 자리에 */
-  padding: 0 16px;
+  padding: var(--sp-1, 4px) 16px;
   border-bottom: 1.5px dashed var(--line, #9a8f7d);
 }
 .panel-body {
@@ -339,8 +311,6 @@ html.hc .header .h-tools > a.nav-tab .ic { opacity: .8; }
   font-variant-numeric: tabular-nums;
   opacity: .75;
 }
-/* 번호 뒤 점은 여기서 한 번만 — 페이지마다 따로 두지 않는다 */
-.qnum::after { content: "."; }
 
 /* 머리표 줄의 글씨 — 문항 상자 밖의 곁글(파일 이름 등)도 같은 크기로 */
 .panel-head { font-size: 1rem; }
@@ -372,6 +342,77 @@ html.hc .header .h-tools > a.nav-tab .ic { opacity: .8; }
   gap: 8px;
   flex-wrap: wrap;
 }
+
+
+/* ===========================================================================
+   튜토리얼(lib/tour.js) — 파이보 말풍선 + 스포트라이트
+   sense-lab 의 방식. 색만 이 서비스 토큰(--cyan/--box)으로 바꿨다.
+   =========================================================================== */
+.tour { position: fixed; inset: 0; z-index: 3000; }
+.tour-spot {
+  position: fixed;
+  border-radius: 10px;
+  pointer-events: none;
+  border: 2px solid var(--cyan, #1f5f7a);
+  box-shadow: 0 0 0 9999px rgba(42, 38, 32, .45);   /* 구멍 뚫린 어두운 막 */
+  transition: all .25s ease;
+}
+.tour-bubble {
+  position: fixed;
+  background: var(--box, #fff);
+  border: 1.5px solid var(--line, #9a8f7d);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(42, 38, 32, .25);
+  padding: 13px 14px 11px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-start;
+  transition: all .25s ease;
+}
+.tour-char { width: 52px; height: auto; flex-shrink: 0; }
+.tour-text {
+  flex: 1; min-width: 0;
+  font-family: "Gowun Dodum", sans-serif;
+  font-size: 13.5px; font-weight: 600;
+  color: var(--ink, #2a2620);
+  line-height: 1.65; white-space: pre-line; padding-top: 2px;
+}
+.tour-foot { width: 100%; display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+.tour-dots { flex: 1; display: flex; gap: 4px; align-items: center; }
+.tour-dots .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--line, #9a8f7d); opacity: .5; }
+.tour-dots .dot.on { background: var(--cyan, #1f5f7a); opacity: 1; }
+.tour-skip {
+  font-family: inherit; font-size: 11.5px; padding: 5px 9px;
+  background: none; border: 1.5px solid var(--line, #9a8f7d);
+  border-radius: 999px; color: var(--ink-2, #4a423a); cursor: pointer;
+}
+.tour-next {
+  font-family: inherit; font-size: 12.5px; font-weight: 600; padding: 5px 14px;
+  background: var(--cyan, #1f5f7a); border: 1.5px solid var(--cyan, #1f5f7a);
+  border-radius: 999px; color: #fff; cursor: pointer;
+}
+.tour-skip:hover { border-color: var(--ink, #2a2620); color: var(--ink, #2a2620); }
+.tour-next:hover { background: var(--cyan-d, #17475c); border-color: var(--cyan-d, #17475c); }
+
+/* 헤더의 ? 버튼 — 이동 탭과 도구 사이. 알약 도구와 같은 키를 준다 */
+.header .h-tools > button#helpTourBtn {
+  margin-left: 14px;
+  width: 30px; height: 30px;
+  padding: 0;
+  background: #fff;
+  border: 1.5px solid var(--line, #9a8f7d);
+  border-radius: 999px;
+  color: var(--ink-2, #4a423a);
+  font-weight: 700;
+  cursor: pointer;
+}
+.header .h-tools > button#helpTourBtn:hover {
+  border-color: var(--cyan, #1f5f7a);
+  color: var(--cyan-d, #17475c);
+}
+/* ? 버튼이 생기면 그 다음의 [한/영] 여백은 ? 가 맡으므로 줄인다 */
+.header .h-tools > button#helpTourBtn + button#langButton { margin-left: 6px; }
 
 
 /* 화면 가장자리는 어느 페이지나 같다 — 헤더가 늘 같은 자리에 앉게 */

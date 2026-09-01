@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""vapi-od 배포 점검: 서버에 실제 요청을 보내 전 서비스가 응답하는지 확인한다.
+"""edge-lab 배포 점검: 서버에 실제 요청을 보내 전 서비스가 응답하는지 확인한다.
    사용법: python smoke_test.py [host]     기본값 http://localhost:57711
    표준 라이브러리 + cv2/numpy 만 사용 (requests 불필요)."""
 import io
@@ -66,7 +66,6 @@ CASES = [
     ("QR 인식",          "/code/barcode",           "qr",    None),
     ("배경 제거",        "/gan/portrait",           "plain", None),
     ("화질 개선",        "/gan/sr",                 "plain", None),
-    ("깊이 지도",         "/gan/depth",     "plain", {}),
     ("VLM 자유 프롬프트",  "/vlm/look",    "plain", {"prompt": "무엇이 보이나요?"}),
     ("VLM 질문",         "/vlm/look", "plain", {"prompt": "무엇이 있어?"}),
     ("얼굴 거리·방향",     "/face/mesh",            "plain", None),
@@ -225,7 +224,7 @@ def wait_ready(limit=300):
 
 
 def main():
-    print(f"\nvapi-od smoke test  ->  {HOST}\n" + "-" * 62)
+    print(f"\nedge-lab smoke test  ->  {HOST}\n" + "-" * 62)
     if not wait_ready():
         return 1
     try:

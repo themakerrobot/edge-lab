@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# vapi-od : Google Fonts 로컬화 (셋업 시 1회, 인터넷 필요)
+# edge-lab : Google Fonts 로컬화 (셋업 시 1회, 인터넷 필요)
 # css2 스타일시트를 받아 모든 woff2 서브셋을 view_project/fonts/ 에 저장하고
 # url()을 로컬 경로(/fonts/...)로 재작성한 fonts.css 를 생성한다.
 import re

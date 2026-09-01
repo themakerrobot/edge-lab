@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# vapi-od : 사용 통계 (오프라인, 이 PC 안에서만)
+# edge-lab : 사용 통계 (오프라인, 이 PC 안에서만)
 # 기존 파일을 건드리지 않는 독립 모듈 — main.py에 두 줄만 추가해 연결한다:
 #   import stats_routes
 #   stats_routes.install(app)

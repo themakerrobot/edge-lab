@@ -4,20 +4,27 @@
 사물·얼굴·손·자세 인식, 그림 변환, 글자 읽기, VLM(그림 보고 말하기)까지 CPU/GPU/NPU에 나눠 실행하며,
 블록 코딩과 나만의 AI 학습(티처블 머신)을 포함한다. 설치가 끝나면 **인터넷 없이 전부 동작**한다.
 
-이 문서는 **설치가 끝난 뒤**를 다룬다. 처음 깔거나 모델을 새로 만들려면 → [INSTALL.md](INSTALL.md)
-
 ## 메뉴
 | 메뉴 | 내용 |
 |---|---|
-| 써보기 (Use) | AI 기능을 눌러 보는 체험 실습 — 묶음별 메뉴, 라이브 모드, 풀이 문장 |
-| 블록 (Blocks) | 블록 코딩 — 기본 블록 + 인식·사진 편집·소리·이벤트, 예제 11종, 파이썬 코드로 보기 |
-| 파이썬 (Python) | 파이썬 코딩 — themaker 라이브러리로 AI 호출, 실행·정지, 도움말 곁칸, 작품 저장 |
+| 써보기 (Use) | AI 12가지를 눌러 보는 체험 실습 — 라이브 모드, 시스템 상태바 |
+| 파이썬 (Python) | 파이썬 코딩 — themaker 라이브러리로 AI 호출, 실행·정지, 작품 저장 |
+| 만들기 (Code) | 블록 코딩 — 인식·사진 편집·소리·이벤트 블록, 예제 6종, 무대 |
 | 가르치기 (Train) | 나만의 AI 학습 — 사진/손모양/표정/상반신/전신 5개 모드, 학습 곡선·특징 지도 |
-| 대화 (Talk) | 글·사진·내 자료(RAG)로 묻고 답하기 — 읽어주기, 마이크 |
-| 설정 (⚙) | 수업 전 점검, 결과물 관리, 학습 결과 도표, 사용 통계, 전체 초기화 |
+| 설정 · 점검 (⚙) | 수업 전 점검, 결과물 관리, 학습 결과 도표, 사용 통계, 전체 초기화 |
+
+## 설치
+변환 완료된 모델을 허깅페이스에서 내려받는다 (private repo — Read 권한 토큰 필요).
+```
+git clone https://github.com/themakerrobot/edge-lab.git
+cd edge-lab
+powershell -ExecutionPolicy Bypass -File setup_deploy.ps1 -Token hf_xxxx
+```
+토큰은 `-Token` 인자 또는 `HF_TOKEN` 환경변수로 전달한다 (스크립트에 토큰을 심지 않는다).
+미리 `hf auth login`을 해둔 기기라면 토큰 없이 실행해도 된다.
 
 ## 실행
-`run.bat` 또는 `themaker.exe` (같은 동작). 아직 안 깔았다면 [INSTALL.md](INSTALL.md) 먼저.
+`run.bat` 또는 `themaker.exe` (같은 동작).
 
 - 서버가 뜨면 **브라우저 창이 자동으로 열리고**, 모델을 올리는 동안 로딩 안내가 표시된다.
 - Chrome/Edge가 있으면 주소창 없는 **앱 창**으로 뜬다 (첫 실행 시 웹캠 권한을 한 번 허용).
@@ -35,19 +42,16 @@
 | `stats_routes.py` | 사용 통계 수집 |
 | `code_routes.py` | 파이썬 IDE API — 실행·정지·출력·작품 저장 |
 | `speech_routes.py` | 음성 인식(STT)·음성 합성(TTS) API |
-| `sysinfo.py` | 장치·RAM·CPU 상태 (상태바·설정 화면용) |
 | `hub.py` | 실행 중인 main 모듈·엔진 찾기 (`import main` 은 금물 — main.py 가 다시 실행된다) |
 | `db_routes.py` | 내가 준 자료에서 찾아 답하기(RAG) — 자료 저장·검색·답변 |
 | `themaker.py` | 학생 코드용 라이브러리 — `vision()`·`camera()`·`speak()` 등 |
 | `view_project/` | 프론트 6페이지 (`index` 써보기 · `blocks` 블록 코딩 · `code` 파이썬 · `train` 가르치기 · `talk` 대화 · `options` 설정) |
 | `paths.py` | 폴더 규칙 — `models/`(AI 모델) / `data/`(작업 파일) 분리·자동 이전 |
 | `run.bat` | 실행 |
-| `INSTALL.md` | 설치 · 모델 변환 · 패키지 버전 관리 (여기 README 에는 없다) |
 | `setup_deploy.ps1` | 설치 — 패키지 + 모델 다운로드 |
 | `requirements.txt` | 패키지 목록 (lock 파일이 있으면 그쪽 우선) |
 | `tools/schema_test/` | 모델 없이 응답 스키마 회귀 시험 — `tools\schema_test\run.bat` (가짜 엔진으로 서버를 띄워 엔드포인트·themaker 를 실제 호출) |
-| `tools/e2e/examples_cover.js` | 예제가 블록·함수를 빠짐없이 지나가는지 — `node tools\e2e\examples_cover.js` (회귀 시험 [4]단계에서도 자동으로 돈다. 기능을 늘리고 예제를 안 고치면 여기서 걸린다) |
-| `tools/` | 개발·점검용 — 모델 변환(`setup.ps1`·`setup.sh`), 번들 생성(`make_bundle.bat`), 점검(`check.py`·`smoke_test.py`·`bundle_check.bat`·`e2e/`), 버전 잠금(`freeze.ps1`)·업그레이드 시험(`upgrade_check.ps1`), 폰트, 런처 소스. 쓰는 법은 [INSTALL.md](INSTALL.md) |
+| `tools/` | 개발·점검용 — 모델 변환(`setup.ps1`·`setup.sh`), 번들 생성(`make_bundle.bat`), 점검(`check.py`·`smoke_test.py`·`bundle_check.bat`), 버전 잠금(`freeze.ps1`)·업그레이드 시험(`upgrade_check.ps1`), 폰트, 런처 소스 |
 
 ## 로그
 기본은 조용히 뜬다 — 교실에서는 요청 한 줄 한 줄이 콘솔을 가득 채우기 때문이다.
@@ -122,6 +126,65 @@
 
 낱말을 더하거나 빼려면 `prompts.py` 의 표만 고치면 된다 — 프롬프트·파서·프론트가
 모두 그 표를 따라간다.
+
+## 패키지 버전
+| 파일 | 내용 |
+|---|---|
+| `requirements.txt` | 동작이 확인된 범위. 추론 런타임(openvino·onnxruntime)은 반드시 고정 |
+| `requirements.lock.txt` | 검증된 PC 에서 뽑은 완전 고정본. 있으면 설치가 이것을 우선 사용 |
+
+배포 기기를 전부 같은 환경으로 맞추려면, 설치·점검이 끝난 PC 에서
+`powershell -File tools\freeze.ps1` 을 돌려 lock 파일을 만들고 커밋한다.
+
+버전을 올려 보고 싶을 때(개발 PC 전용):
+```
+powershell -File tools\upgrade_check.ps1     # 최신으로 올린다 (이전 상태 자동 백업)
+run.bat  →  tools\bundle_check.bat           # 전 기능 확인
+powershell -File tools\freeze.ps1            # 이상 없으면 lock 갱신 후 커밋
+powershell -File tools\upgrade_check.ps1 -Rollback   # 문제가 있으면 되돌리기
+```
+추론 런타임(openvino·onnxruntime)은 사고 이력이 있어 기본으로 제외한다 — 함께 올리려면 `-Runtime`.
+
+## VLM 모델 바꾸기 (개발 PC 전용)
+쓰는 모델은 `engines.py` 의 `VLM_NAME` 하나다(현재 `gemma3-4b-int4`).
+여러 개 두고 시험할 때는 코드를 고치지 말고 `VAPI_VLM=폴더이름` 을 준다.
+
+변환은 **전용 가상환경**에서 한다 — 모델마다 요구하는 `transformers` 버전이 달라
+메인 `venv` 와 섞으면 깨진다. `openvino` 는 **실행 쪽과 같은 버전**으로 맞춘다
+(다르면 모델이 열려도 답을 못 만드는 수가 있다).
+
+```
+python -m venv venv-convert
+venv-convert\Scripts\python -m pip install "transformers>=4.50,<5" "optimum-intel[openvino]" nncf accelerate openvino-tokenizers "openvino==2026.3.*"
+
+venv-convert\Scripts\python -m optimum.commands.optimum_cli export openvino -m google/gemma-3-4b-it --task image-text-to-text --weight-format int4 --trust-remote-code models\vlm\gemma3-4b-int4
+```
+
+`--task image-text-to-text` 를 빼면 안 된다. 자동 추론에 맡기면 모델에 따라
+비전 부분이 어긋나게 나와, 나중에 답을 만들 때 모양 불일치 오류가 난다.
+
+변환이 끝나면 `venv-convert` 는 지워도 된다 — 교실 PC 는 IR 만 읽는다.
+
+허깅페이스에 올려야 다른 PC 도 `setup_deploy.ps1` 만으로 받는다.
+
+```
+venv\Scripts\python -c "from huggingface_hub import HfApi; HfApi().upload_folder(repo_id='leeyunjai/vapi-od', folder_path='models/vlm/gemma3-4b-int4', path_in_repo='vlm/gemma3-4b-int4', delete_patterns='*', ignore_patterns=['.cache/**'], commit_message='VLM: gemma3-4b')"
+```
+
+**예전 VLM 폴더는 허깅페이스 웹에서 지운다.** 안 지우면 설치할 때 둘 다 받아 용량만 먹는다.
+
+### 토크나이저 IR 이 "unsupported opset: extension" 으로 안 열릴 때
+`Cannot create SpecialTokensSplit layer ... from unsupported opset: extension` 는
+**openvino-tokenizers 확장이 그 Core 에 안 붙어 있다**는 뜻이다. 패키지를 깔아도
+확장은 `import openvino_tokenizers` **뒤에 만든 Core** 에만 붙는다(그 import 가
+`Core.__init__` 을 갈아 끼우는 방식이라서). 모듈 맨 위에서 만들어 둔 Core 로 열면
+설치가 돼 있어도 이 오류가 난다. engines.Embed 는 import 뒤에 Core 를 새로 만들고,
+기존 core 에도 확장을 붙여 둔다.
+
+### 모델이 열리는데 답을 못 만들 때
+`Check '...get_shape() == ...' failed` 같은 오류가 나면 **런타임이 그 구조를 모르는 것**이다.
+아주 새로운 구조는 정식 릴리스에 아직 안 들어와 있고, 모델 카드가 nightly 빌드를 권하기도 한다.
+**교실에 배포하는 제품이므로 nightly 는 쓰지 않는다** — 정식 릴리스에 들어올 때까지 기다린다.
 
 ## 폴더
 
@@ -231,14 +294,11 @@ USB 로 들고 다니기: `[폴더 열기]` 로 작업 폴더를 열어 통째�
 | 얼굴 검출·나이성별·감정·방향 | OpenVINO 프리트레인 | NPU |
 | 얼굴 거리·방향 / 손 제스처 / 표정 학습 | MediaPipe | CPU |
 | 변환 (배경제거·화질개선) | U2Net / SR-1032 | GPU |
-| 깊이 지도 | Depth Anything V2 Small | GPU |
 | 글자 인식 | easyocr (ko/en) | CPU |
 | QR 인식 | OpenCV QRCodeDetector | CPU |
 | 나만의 AI 특징 추출 | MobileNetV2 1280d | NPU |
 | 음성 인식 (STT) | Whisper small INT8 (OpenVINO) | GPU/CPU |
 | 음성 합성 (TTS) | Supertonic 3 (ONNX 4단계, 31개 언어, onnxruntime) | CPU |
-
-모델은 전부 HF(`leeyunjai/vapi-od`)에서 받는다. 새로 만들어 올리는 절차는 [INSTALL.md](INSTALL.md).
 
 ## 라이선스
 이 프로젝트는 **AGPL-3.0** 으로 배포한다 (`LICENSE`). YOLO(ultralytics, AGPL-3.0)를 포함하므로
@@ -252,13 +312,11 @@ USB 로 들고 다니기: `[폴더 열기]` 로 작업 폴더를 열어 통째�
 | OpenVINO / open_model_zoo 얼굴 모델 | Apache-2.0 |
 | MediaPipe | Apache-2.0 |
 | U2Net | Apache-2.0 |
-| Depth Anything V2 Small | Apache-2.0 |
 | easyocr | Apache-2.0 |
 | Whisper (OpenVINO 변환본) | Apache-2.0 |
 | Supertonic 3 (모델 가중치) | OpenRAIL-M (BigScience Open RAIL-M) |
 | Supertonic 추론 절차 (speech_routes.py) | 공식 예제(supertone-inc/supertonic) MIT 기반 이식 |
 | Blockly / TensorFlow.js / JSZip | Apache-2.0 / Apache-2.0 / MIT |
-| Font Awesome Free 6 (툴박스 아이콘) | 아이콘 CC BY 4.0 · 폰트 SIL OFL 1.1 · 코드 MIT |
 
 ### TTS 모델(OpenRAIL-M) 재배포 시 지켜야 할 것
 상업 사용·재배포·서비스 호스팅은 허용된다. 다만 모델(또는 그 파생물)을 남에게 넘길 때:
@@ -269,3 +327,20 @@ USB 로 들고 다니기: `[폴더 열기]` 로 작업 폴더를 열어 통째�
 주요 제한(발췌): 미성년자 착취·가해, 허위정보 유포, 동의 없는 인물 사칭(딥페이크),
 기계 생성물임을 밝히지 않은 배포, 의료 조언·판독, 법집행·출입국 자동판정 등.
 이 제한은 AGPL 코드가 아니라 **TTS 모델 가중치에만** 적용된다 (코드와 모델은 별개 저작물).
+
+## 개발용: HF 모델 저장소 다시 만들기
+배포·개발 PC 는 모두 HF 에서 받아 쓴다. 이 절은 **모델을 새로 만들어 HF 에 올릴 때만** 쓴다 (30~50분).
+`models/org/mask-11s-cls.pt` 하나만 있으면 나머지는 전부 원본 저장소에서 받아 오므로,
+HF 저장소가 비어도 다시 만들 수 있다 — 다만 **변환 PC 는 인터넷이 필요하다**.
+VLM(gemma3) 만은 요구 버전이 달라 전용 venv 에서 따로 변환한다 (아래 "VLM 모델 바꾸기").
+```
+git clone https://github.com/themakerrobot/edge-lab.git
+cd edge-lab
+python -m venv venv && venv\Scripts\activate      # linux: source venv/bin/activate
+:: mask-11s-cls.pt 를 models\org\ 에 복사 (표준 YOLO11m 3종은 자동으로 받아온다)
+powershell -ExecutionPolicy Bypass -File tools\setup.ps1   # linux: bash tools/setup.sh
+python tools\check.py                                 # fail = 0 이어야 함
+```
+변환이 끝나면 결과를 올린다 — `hf upload leeyunjai/vapi-od models .`
+`models/org/mask-11s-cls.pt` 도 함께 올려 두어야 이 저장소만으로 전부 다시 만들 수 있다.
+이후 기기는 `setup_deploy.ps1` 로 내려받기만 하면 된다.

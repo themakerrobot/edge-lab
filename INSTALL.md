@@ -16,8 +16,8 @@
 ## 설치
 변환 완료된 모델을 허깅페이스에서 내려받는다 (private repo — Read 권한 토큰 필요).
 ```
-git clone https://github.com/themakerrobot/vapi-od.git
-cd vapi-od
+git clone https://github.com/themakerrobot/edge-lab.git
+cd edge-lab
 powershell -ExecutionPolicy Bypass -File setup_deploy.ps1 -Token hf_xxxx
 ```
 토큰은 `-Token` 인자 또는 `HF_TOKEN` 환경변수로 전달한다 (스크립트에 토큰을 심지 않는다).
@@ -153,8 +153,8 @@ Remove-Item conv.py, depth-v2s.xml, depth-v2s.bin
 HF 저장소가 비어도 다시 만들 수 있다 — 다만 **변환 PC 는 인터넷이 필요하다**.
 VLM(gemma3)·깊이 지도는 요구 버전이 달라 전용 venv 에서 따로 변환한다 (위 두 절).
 ```
-git clone https://github.com/themakerrobot/vapi-od.git
-cd vapi-od
+git clone https://github.com/themakerrobot/edge-lab.git
+cd edge-lab
 python -m venv venv && venv\Scripts\activate      # linux: source venv/bin/activate
 :: mask-11s-cls.pt 를 models\org\ 에 복사 (표준 YOLO11m 3종은 자동으로 받아온다)
 powershell -ExecutionPolicy Bypass -File tools\setup.ps1   # linux: bash tools/setup.sh
@@ -163,3 +163,14 @@ python tools\check.py                                 # fail = 0 이어야 함
 변환이 끝나면 결과를 올린다 — `hf upload leeyunjai/vapi-od models .`
 `models/org/mask-11s-cls.pt` 도 함께 올려 두어야 이 저장소만으로 전부 다시 만들 수 있다.
 이후 기기는 `setup_deploy.ps1` 로 내려받기만 하면 된다.
+
+### 저장소 구성
+| 폴더 | 설치본에 | 무엇 |
+|---|---|---|
+| `object/` `face/` `mediapipe/` `gan/` `vlm/` `embed/` `backbone/` `code/` `stt/` `tts/` | 들어감 | 서버가 읽는 IR·모델 |
+| `org/` | 빠짐 | 변환용 원본(.pt) |
+| `yolo/` | 빠짐 | 골라 쓰는 사물 찾기 모델 — 쓸 사람이 직접 받아 `문서\The Maker\models` 에 넣는다 |
+| `*.md` | 빠짐 | 저장소 설명 |
+
+빼는 것은 `setup_deploy.ps1` 의 `--exclude` 로 정한다. 값을 이어 쓰지 말고
+**플래그를 여러 번** 써야 한다 — 이어 쓰면 뒤엣것이 받을 파일 이름으로 먹힌다.

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# vapi-od : MediaPipe 확장 라우터 (얼굴 메시=거리/방향, 손동작)
+# edge-lab : MediaPipe 확장 라우터 (얼굴 메시=거리/방향, 손동작)
 # 기존 파일을 건드리지 않는 독립 모듈 — main.py에 두 줄만 추가해 연결한다:
 #   import mp_routes
 #   app.include_router(mp_routes.router)

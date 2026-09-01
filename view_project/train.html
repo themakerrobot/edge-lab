@@ -115,6 +115,7 @@
     .panel.right { flex: 1.15 1 0; }
 
     /* ===== 문항 공통 (체험툴과 동일한 시안 섹션 타이틀 + ▼) ===== */
+    .qnum::after { content: "."; }
     .head { display: flex; align-items: center; gap: var(--sp-2, 6px); flex-wrap: wrap; margin-bottom: var(--sp-2, 8px); }
     .head .right { margin-left: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .sect { display: flex; flex-direction: column; }
@@ -483,7 +484,7 @@
   <script>
   "use strict";
   /**********************************************************************
-   * vapi-od — 나만의 AI 만들기 (티처블 머신)
+   * edge-lab — 나만의 AI 만들기 (티처블 머신)
    *   특징 추출 : 서버 OpenVINO (/custom/embed, /custom/embed_zip) — 1280차원
    *   학습      : 브라우저 TF.js (Dense 128 relu -> Dropout .3 -> Dense N softmax)
    *   저장      : /custom/upload  (web-classifier 와 동일한 zip 포맷)
@@ -2052,6 +2053,7 @@
   </script>
   <script src="/lib/usage.js" data-page="train"></script>
   <script src="/lib/nav.js"></script>
+  <script src="/lib/tour.js"></script>
   <script src="/lib/sysbar.js"></script>
 </body>
 </html>

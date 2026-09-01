@@ -1,8 +1,8 @@
 @echo off
 chcp 65001 >nul
 REM ==========================================================================
-REM  vapi-od : build portable bundle (Windows)
-REM  output : dist\vapi-od-<VERSION>.zip   (extract -> run.bat, no python needed)
+REM  edge-lab : build portable bundle (Windows)
+REM  output : dist\edge-lab-<VERSION>.zip   (extract -> run.bat, no python needed)
 REM  usage  : make_bundle.bat [version]    e.g. make_bundle.bat 1.0.0
 REM  needs  : this PC has python + completed models\ + internet
 REM ==========================================================================
@@ -14,7 +14,7 @@ set "TOOLS=%~dp0"
 set VERSION=%1
 if exist "%ROOT%venv\Scripts\python.exe" (set "PY_LOCAL=%ROOT%venv\Scripts\python.exe") else (set "PY_LOCAL=python")
 if "%VERSION%"=="" set VERSION=1.0.0
-set BUILD=build\vapi-od
+set BUILD=build\edge-lab
 set DIST=dist
 
 echo.
@@ -76,12 +76,9 @@ python -m pip list --path %BUILD%\pylib >> %BUILD%\installed-packages.txt 2>nul
 echo.
 echo === [5/8] build launcher exe ===
 if exist "%TOOLS%launcher.py" if exist themaker.ico (
-  REM 런타임 venv 를 더럽히지 않게 exe 빌드용 venv 를 따로 쓴다 — venv 에 깔면
-  REM freeze.ps1 이 pyinstaller 까지 잠가 교실 PC 가 그것을 받게 된다.
-  if not exist "%ROOT%build\venv-exe\Scripts\python.exe" python -m venv "%ROOT%build\venv-exe"
-  "%ROOT%build\venv-exe\Scripts\python.exe" -m pip install --quiet pyinstaller
+  "%PY_LOCAL%" -m pip install --quiet pyinstaller
   if errorlevel 1 (echo [WARN] pyinstaller install failed - skipping exe) else (
-    "%ROOT%build\venv-exe\Scripts\python.exe" -m PyInstaller --onefile --clean --noconfirm ^
+    "%PY_LOCAL%" -m PyInstaller --onefile --clean --noconfirm ^
       --name themaker --icon "%ROOT%themaker.ico" ^
       --distpath "%ROOT%." --workpath "%ROOT%build\exe" --specpath "%ROOT%build\exe" ^
       "%TOOLS%launcher.py"
@@ -129,35 +126,31 @@ REM bundle launcher (ASCII only, CRLF via echo)
   echo set YOLO_OFFLINE=1
   echo set YOLO_CONFIG_DIR=%%~dp0.ultralytics
   echo if not exist "%%~dp0.ultralytics" mkdir "%%~dp0.ultralytics"
-  echo echo Starting vapi-od ... browser opens automatically when ready ^(1-2 min^).
+  echo echo Starting edge-lab ... browser opens automatically when ready ^(1-2 min^).
   echo python\python.exe main.py
   echo pause
 )
-> %BUILD%\VERSION.txt echo vapi-od %VERSION%
+> %BUILD%\VERSION.txt echo edge-lab %VERSION%
 
 echo.
 echo === [7/8] verify bundled python ===
 for %%F in (main.py engines.py prompts.py paths.py hub.py mp_routes.py train_routes.py stats_routes.py code_routes.py speech_routes.py db_routes.py folderpick.py sysinfo.py themaker.py check.py smoke_test.py run.bat bundle_check.bat) do (
   if not exist %BUILD%\%%F (echo [ERROR] missing in bundle: %%F & exit /b 1)
 )
-for %%F in (view_project\index.html view_project\blocks.html view_project\train.html view_project\options.html view_project\code.html view_project\talk.html view_project\lib\ui.css view_project\lib\sysbar.js view_project\lib\split.js view_project\lib\nav.js view_project\lib\fa\css\all.min.css view_project\lib\fa\webfonts\fa-solid-900.woff2 view_project\assets\svg\flag-solid.svg view_project\blockly\blockly_compressed.js view_project\blockly\disable-top-blocks.js view_project\lib\tf.min-3.11.0.js view_project\lib\jszip.min.js view_project\lib\usage.js view_project\lib\cm\codemirror.js view_project\lib\cm\python.js view_project\lib\cm\show-hint.js) do (
+for %%F in (view_project\index.html view_project\blocks.html view_project\train.html view_project\options.html view_project\code.html view_project\talk.html view_project\lib\ui.css view_project\lib\sysbar.js view_project\lib\split.js view_project\lib\tf.min-3.11.0.js view_project\lib\jszip.min.js view_project\lib\usage.js view_project\lib\cm\codemirror.js view_project\lib\cm\python.js view_project\lib\cm\show-hint.js) do (
   if not exist %BUILD%\%%F (echo [ERROR] missing in bundle: %%F & exit /b 1)
 )
 for %%F in (mobilenetv2_feat.xml mobilenetv2_feat.bin mobilenetv2_feat.json) do (
   if not exist %BUILD%\models\backbone\%%F (echo [ERROR] missing in bundle: models\backbone\%%F & exit /b 1)
-)
-REM 깊이·거리(실내/바깥)는 지연 로딩이라 서버가 떠도 안 걸린다 — 번들에 들었는지 여기서 본다
-for %%F in (gan\depth-v2s.xml gan\depth-v2s.bin) do (
-  if not exist %BUILD%\models\%%F (echo [ERROR] missing in bundle: models\%%F & exit /b 1)
 )
 %BUILD%\python\python.exe -c "import openvino,cv2,numpy;print('  import OK  openvino',openvino.__version__.split('-')[0])"
 if errorlevel 1 (echo [ERROR] import failed inside bundle & exit /b 1)
 
 echo.
 echo === [8/8] compress ===
-set ZIP=%DIST%\vapi-od-%VERSION%.zip
+set ZIP=%DIST%\edge-lab-%VERSION%.zip
 if exist %ZIP% del %ZIP%
-tar -a -c -f %ZIP% -C build vapi-od
+tar -a -c -f %ZIP% -C build edge-lab
 if errorlevel 1 (echo [ERROR] compress failed & exit /b 1)
 
 REM cmd set /a is 32-bit; use PowerShell for multi-GB sizes

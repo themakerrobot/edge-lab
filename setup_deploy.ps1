@@ -1,5 +1,5 @@
 ﻿# ==========================================================================
-#  vapi-od : one-shot deploy (clone the repo, then run this)
+#  edge-lab : one-shot deploy (clone the repo, then run this)
 #  Installs packages + downloads converted models from HF + verifies.
 #  usage:
 #    powershell -ExecutionPolicy Bypass -File setup_deploy.ps1
@@ -36,9 +36,9 @@ if (Test-Path "requirements.lock.txt") {
   & $PY -m pip install -r requirements.txt
 }
 if ($LASTEXITCODE -ne 0) { throw "package install failed" }
-# pyinstaller 는 여기서 깔지 않는다 — 런처 exe 를 만들 때만 쓰는데, 여기서 깔면
-# freeze.ps1 이 그것까지 잠가 교실 PC 도 pyinstaller·altgraph·pefile 을 받게 된다.
-# 필요할 때 tools\make_bundle.bat 이 스스로 설치한다.
+# pyinstaller: 배포용 exe 빌드(tools\make_bundle.bat)에만 필요 — 실패해도 무방
+& $PY -m pip install pyinstaller 2>$null | Out-Null
+$global:LASTEXITCODE = 0
 
 # 설치된 패키지 버전을 남긴다 — 나중에 "언제부터 안 되기 시작했는지" 를 찾는 근거가 된다.
 # 자리는 paths.py 의 앱데이터(기본 %LOCALAPPDATA%\TheMaker) — 프로그램 폴더에 data\ 를 만들지 않는다
@@ -53,9 +53,7 @@ Write-Host "  package versions -> $snap" -ForegroundColor DarkGray
 
 Write-Host "=== [3/5] models from HF ===" -ForegroundColor Cyan
 # org/ 는 모델 변환용 원본(.pt) 이라 교실 PC 에는 필요 없다 — 서버는 IR 만 읽는다
-# --exclude 는 한 번에 값 하나만 받는다. 예전처럼 두 개를 이어 쓰면 뒤엣것이
-# "받을 파일 이름"으로 먹혀 org/* 를 파일로 받으려다 죽는다(WinError 123).
-& "venv\Scripts\hf.exe" download leeyunjai/vapi-od --local-dir models --exclude "models.7z" --exclude "org/*"
+& "venv\Scripts\hf.exe" download leeyunjai/vapi-od --local-dir models --exclude "models.7z" "org/*"
 if ($LASTEXITCODE -ne 0) { throw "model download failed (check token / network)" }
 
 Write-Host "=== [4/5] fonts ===" -ForegroundColor Cyan

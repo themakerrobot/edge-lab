@@ -72,8 +72,7 @@
       margin-left: auto; display: flex; flex-direction: row;
       gap: 8px; align-items: center; flex-wrap: wrap;
     }
-    .customIcon { width: 1.2em; margin-right: 6px; text-align: center; font-size: 0.95rem; }
-    #runButton { background: var(--pen-blue); border-color: var(--pen-blue); color: #fff; font-weight: 700; }
+    #runButton { background: var(--pen-blue); border-color: var(--pen-blue); color: #fff; font-weight: 700; padding: 8px 26px; }
     #runButton:hover { background: var(--pen-blue-d); }
     #runButton:disabled { background: #b9b7ac; border-color: #b9b7ac; cursor: wait; }
     #stopButton { border-color: var(--pen-red); color: var(--pen-red); font-weight: 700; }
@@ -164,7 +163,7 @@
           <button id="saveButton">저장</button>
           <button id="loadButton">불러오기</button>
           <input type="file" id="loadFile" accept=".json" style="display:none">
-          <button id="runButton"><i class="fa-solid fa-flag" aria-hidden="true"></i> <span id="runLabel">시작</span></button>
+          <button id="runButton"><span id="runLabel">실행 ▶</span></button>
           <button id="stopButton">정지</button>
         </div>
       </div>
@@ -214,11 +213,9 @@
     </div>
   </div>
 
-  <link rel="stylesheet" href="/lib/fa/css/all.min.css">   <!-- 툴박스 카테고리 아이콘 (오프라인 자체 호스팅) -->
   <script src="/blockly/blockly_compressed.js"></script>
   <script src="/blockly/blocks_compressed.js"></script>
   <script src="/blockly/javascript_compressed.js"></script>
-  <script src="/blockly/disable-top-blocks.js"></script>   <!-- 시작 모자에 안 붙은 덩어리 끄기 -->
   <script src="/blockly/msg/en.js"></script>
   <div id="exModal" style="display:none;position:fixed;inset:0;background:rgba(38,48,60,.45);
        z-index:50;align-items:center;justify-content:center;">
@@ -240,8 +237,8 @@
   <script>
   "use strict";
   /**********************************************************************
-   * vapi-od AI 블록 코딩 — Blockly 워크스페이스 + 결과 칸 + async 실행기
-   * 서버는 기존 vapi-od API 그대로 사용 (백엔드 수정 없음)
+   * edge-lab AI 블록 코딩 — Blockly 워크스페이스 + 결과 칸 + async 실행기
+   * 서버는 기존 edge-lab API 그대로 사용 (백엔드 수정 없음)
    **********************************************************************/
   const G = javascript.javascriptGenerator;
   const Order = javascript.Order;
@@ -254,7 +251,7 @@
     ko: {
       titleTag: "블록 코딩 — The Maker", title: "블록 코딩",
       eyebrow: "블록으로 나만의 프로그램을 · 인터넷 없이 내 컴퓨터에서",
-      back: "The Maker (홈)", save: "저장", load: "불러오기", stop: "정지", run: "시작",
+      back: "The Maker (홈)", save: "저장", load: "불러오기", stop: "정지", run: "실행 ▶",
       running: "실행 중...", langBtn: "EN",
       workHead: "블록을 조립해요", stageHead: "결과를 확인해요",
       upload: "사진 올리기", uploadHint: "「업로드한 사진」 블록에서 사용돼요",
@@ -266,7 +263,6 @@
       cat_lang: "AI 언어", cat_event: "이벤트",
       cat_logic: "논리", cat_loop: "반복", cat_math: "수학", cat_text: "텍스트",
       cat_list: "목록", cat_var: "변수", cat_func: "함수",
-      lbl_img_draw: "— 그리기 —", lbl_ai_edit: "— AI 로 바꾸기 —", lbl_hand_edit: "— 직접 바꾸기 —",
       lbl_img_ask: "— 사진에게 물어보기 —", lbl_basic: "— 기본 인식 —",
       lbl_my_model: "— 내가 만든 · 가져온 모델 —", lbl_draw_box: "— 찾은 자리에 박스 —",
 
@@ -306,7 +302,7 @@
 
       o_face: "얼굴", o_objects: "사물", o_ocr: "글자", o_qr: "QR", o_rps: "가위바위보",
       o_emotion: "감정", o_age: "나이", o_gender: "성별", o_dir: "방향",
-      o_portrait: "배경 제거", o_sr: "화질 개선", o_depth: "깊이 지도",
+      o_portrait: "배경 제거", o_sr: "화질 개선",
       o_hand: "손 모양", o_dist: "얼굴 거리",
 
       /* --- 사진 편집 --- */
@@ -412,10 +408,6 @@
       ex_sound_d: "멜로디를 연주하고, 같은 음을 주파수로 내 봐요. (소리·과학)",
       ex_echo: "말 따라 하기",
       ex_echo_d: "내가 한 말을 듣고 그대로 따라 말해요. (음성 인식)",
-      ex_basic: "기본 블록 점검", ex_basic_d: "논리·반복·수학·글자·목록 블록을 한 번씩 지나가요. AI 없이 돌아요. (점검)",
-      sh_basicStart: "기본 블록 점검 시작",
-      sh_basicList: "다,가,나", sh_basicBig: "커요", sh_basicSmall: "작아요",
-      sh_basicDone: "기본 블록 점검 끝",
       ex_all: "전체 점검 (모든 기능)",
       ex_all_d: "모든 블록을 한 번씩 지나가요. 새 PC 에서 잘 도는지 확인할 때 쓰세요. (점검)",
       sh_allStart: "전체 점검을 시작할게요",
@@ -459,10 +451,6 @@
       m_needUpload: "먼저 무대에서 [사진 올리기]를 해주세요",
       m_tooManyAI: "AI를 너무 많이 불렀어요 (한 번 실행에 %1번까지)",
       m_tooManyLoop: "반복이 너무 많아요 (5000회 초과)",
-      b_depth_map: "%1 의 깊이 지도",
-      b_depth_map_tip: "가까운 곳이 밝게 보이는 그림을 돌려줘요.",
-      cat_start: "시작",
-      b_flag: "클릭했을 때", b_flag_tip: "여기에 붙인 블록만 실행돼요.",
       m_say: "말하기: ", m_show: "보여주기: ",
       m_needDetect: "먼저 인식 블록을 실행하세요.",
       m_noBlocks: "(블록이 없어요)", m_assembleFirst: "블록을 먼저 조립해 주세요.",
@@ -479,7 +467,7 @@
     en: {
       titleTag: "Blocks — The Maker", title: "Blocks",
       eyebrow: "write your own program with blocks · runs on this computer",
-      back: "The Maker (home)", save: "Save", load: "Load", stop: "Stop", run: "Start",
+      back: "The Maker (home)", save: "Save", load: "Load", stop: "Stop", run: "Run ▶",
       running: "Running...", langBtn: "한",
       workHead: "Build your blocks", stageHead: "Check the result",
       upload: "Upload photo", uploadHint: "Used by the “uploaded photo” block",
@@ -491,7 +479,6 @@
       cat_lang: "AI Language", cat_event: "Events",
       cat_logic: "Logic", cat_loop: "Loops", cat_math: "Math", cat_text: "Text",
       cat_list: "Lists", cat_var: "Variables", cat_func: "Functions",
-      lbl_img_draw: "— draw —", lbl_ai_edit: "— change with AI —", lbl_hand_edit: "— change by hand —",
       lbl_img_ask: "— ask about the photo —", lbl_basic: "— basic detection —",
       lbl_my_model: "— my / added models —", lbl_draw_box: "— boxes where found —",
 
@@ -531,7 +518,7 @@
 
       o_face: "faces", o_objects: "objects", o_ocr: "text", o_qr: "QR", o_rps: "rock-paper-scissors",
       o_emotion: "emotion", o_age: "age", o_gender: "gender", o_dir: "direction",
-      o_portrait: "no background", o_sr: "higher quality", o_depth: "depth map",
+      o_portrait: "no background", o_sr: "higher quality",
       o_hand: "hand gesture", o_dist: "face distance",
       /* --- Photo editing --- */
       b_resize: "scale %1 by %2 ×",
@@ -638,10 +625,6 @@
       ex_echo_d: "Listens to you and says it back. (speech to text)",
       ex_voices: "Try different voices",
       ex_voices_d: "Speaks with different voices and speeds. (sound)",
-      ex_basic: "Basic block check", ex_basic_d: "Runs logic, loop, math, text and list blocks once. No AI needed. (check)",
-      sh_basicStart: "basic block check start",
-      sh_basicList: "c,a,b", sh_basicBig: "big", sh_basicSmall: "small",
-      sh_basicDone: "basic block check done",
       ex_all: "Full check (everything)",
       ex_all_d: "Runs every block once. Use it to check a new PC. (check)",
       sh_allStart: "Starting the full check",
@@ -684,10 +667,6 @@
       m_needUpload: "Use [Upload photo] on the stage first",
       m_tooManyAI: "Too many AI calls (limit is %1 per run)",
       m_tooManyLoop: "Too many loops (over 5000)",
-      b_depth_map: "depth map of %1",
-      b_depth_map_tip: "Returns an image where closer is brighter.",
-      cat_start: "Start",
-      b_flag: "when clicked", b_flag_tip: "Only blocks attached here will run.",
       m_say: "say: ", m_show: "show: ",
       m_needDetect: "Run a detection block first.",
       m_noBlocks: "(no blocks yet)", m_assembleFirst: "Build some blocks first.",
@@ -854,7 +833,6 @@
       lists_sort: b => "sorted(" + val(b, "LIST", "[]") + ")",
 
       /* ---- 사진 가져오기 ---- */
-      ai_depth_map: b => "vision('depth', " + img(b, "IMG") + ")",
       ai_capture: () => "camera()",
       ai_upload: () => "load('사진.jpg')",
 
@@ -944,7 +922,7 @@
     /* 인식 종류 -> vision() 기능 이름 */
     const M_MODE  = { face: "face", hand: "hand", dist: "distance", objects: "object",
                       ocr: "ocr", qr: "qr" };
-    const M_TRANS = { portrait: "bg_remove", sr: "sr" };   // 깊이 지도는 ai_depth_map 이 따로 낸다
+    const M_TRANS = { portrait: "bg_remove", sr: "sr" };
     const pick = (map, v, dflt) => map[v] || dflt || v;
     let needRandom = false, needMath = false;
 
@@ -992,8 +970,6 @@
           out.push(p + "r = vision('object', img)");
           out.push(p + "show(img, r)");
         }
-      } else if (T === "flag_event") {
-        return "";                       // 시작 모자는 표시용 — 파이썬 코드로 남기지 않는다
       } else if (T === "st_clear") {
         return "";                       // 파이썬에는 화면 칸이 없다 — 조용히 건너뛴다
       } else if (T === "st_save_stage") {
@@ -1189,31 +1165,8 @@ def texts_of(result):
   }
 
   /* ---------------- 커스텀 블록 정의 ---------------- */
-  /* 색은 hex 로 직접 정한다. 예전에는 숫자 색조(hue)만 줬는데, Blockly 가 거기에
-     기본 채도 0.45·명도 0.65 를 곱해 어둡게 눌러 버려 교실 화면이 칙칙했다.
-     아래 값이 그대로 블록 색이 되고, 툴박스 칩도 같은 값을 쓴다.
-     흰 글씨가 얹히므로 너무 옅게 가지 않는다 — 명도를 더 올리려면 글씨 대비부터 볼 것. */
-  /* 파이보 랩(pibo-lab)·실물 파이보 IDE 의 'modest' 테마와 색을 맞춘다 —
-     세 제품이 한 브랜드로 보이게 하려는 것이고, 아이가 시뮬에서 실물로 넘어갈 때
-     같은 색의 같은 블록을 보게 된다. 값을 바꾸려면 세 곳을 함께 고칠 것. */
-  const B_LOGIC = "#B098CB",   // 논리
-        B_LOOP  = "#85B687",   // 반복
-        B_MATH  = "#2196F3",   // 수학
-        B_TEXT  = "#FFAA08",   // 텍스트
-        B_LIST  = "#4DB6AC",   // 목록
-        B_VAR   = "#EF9A9A",   // 변수
-        B_FUNC  = "#C7BCB8";   // 함수
-  /* 커스텀 묶음도 파이보 쪽 color_type 표에서 가져온다 (device·motion·speech…) */
-  const C_AI    = "#6E92B7",   // AI 인식      (파이보 recognition)
-        C_VLM   = "#8dc3d2",   // AI 언어      (파이보 speech)
-        C_JUDGE = "#a39c7D",   // (예비)       (파이보 vision)
-        C_SOUND = "#7dc37D",   // 소리         (파이보 audio)
-        C_EVENT = "#E5B900";   // 이벤트       (파이보 start)
-  /* 이미지 계열 — 예전엔 세 카테고리가 C_EDIT 하나를 함께 써서 구분이 안 됐다. */
-  const C_IMG   = "#8da2c3",   // 이미지        (파이보 oled)
-        C_EDIT  = "#d3b28d",   // 이미지 바꾸기 (파이보 device)
-        C_DRAW  = "#CC9988",   // 이미지 그리기 (파이보 utils)
-        C_EDITX = "#d38d62";   // 이미지(좌표)  (파이보 motion)
+  const C_AI = 220, C_VLM = 260, C_JUDGE = 40, C_SOUND = 20, C_EVENT = 45,
+        C_EDIT = 175, C_EDITX = 190;
   const IMG = { type: "input_value", name: "IMG", check: "String" };
   const opt = keys => keys.map(k => [t("o_" + k), k]);
   const POS9 = () => opt(["tl", "tc", "tr", "ml", "mc", "mr", "bl", "bc", "br"]);
@@ -1224,17 +1177,10 @@ def texts_of(result):
 
   function defineBlocks() {
     Blockly.defineBlocksWithJsonArray([
-      /* 시작 블록 — 위에 붙일 자리가 없어(previousStatement 없음) 모자로 그려진다.
-         disable-top-blocks 플러그인이 이 모자에 매달리지 않은 덩어리를 꺼 버리므로,
-         여기에 붙은 것만 실행된다. 파이보 랩·실물 파이보 IDE 의 flag_event 와 같은 이름. */
-      { type: "flag_event", message0: "%1 " + t("b_flag"), nextStatement: null,
-        args0: [{ type: "field_image", src: "/assets/svg/flag-solid.svg",
-                  width: 22, height: 22, alt: "flag" }],
-        inputsInline: true, colour: C_EVENT, tooltip: t("b_flag_tip") },
       // 입력
-      { type: "ai_capture", message0: t("b_capture"), output: "String", colour: C_IMG,
+      { type: "ai_capture", message0: t("b_capture"), output: "String", colour: C_EDIT,
         tooltip: t("b_capture_tip") },
-      { type: "ai_upload", message0: t("b_upload"), output: "String", colour: C_IMG,
+      { type: "ai_upload", message0: t("b_upload"), output: "String", colour: C_EDIT,
         tooltip: t("b_upload_tip") },
       // AI 인식
       { type: "ai_detect_draw", message0: t("b_detect_draw"),
@@ -1281,44 +1227,44 @@ def texts_of(result):
         args0: [ IMG, { type: "field_dropdown", name: "F",
           options: () => opt(["gray", "sepia", "invert", "blur"]) } ],
         inputsInline: true, tooltip: t("b_filter_tip") },
-      { type: "ed_text", message0: t("b_text"), output: "String", colour: C_DRAW,
+      { type: "ed_text", message0: t("b_text"), output: "String", colour: C_EDIT,
         args0: [ IMG, { type: "input_value", name: "TXT", check: "String" },
                  { type: "field_dropdown", name: "POS", options: () => POS9() },
                  { type: "input_value", name: "SIZE", check: "Number" },
                  { type: "field_dropdown", name: "COL", options: () => EDCOLORS() } ],
         inputsInline: true, tooltip: t("b_text_tip") },
-      { type: "ed_text_rot", message0: t("b_text_rot"), output: "String", colour: C_DRAW,
+      { type: "ed_text_rot", message0: t("b_text_rot"), output: "String", colour: C_EDIT,
         args0: [ IMG, { type: "input_value", name: "TXT", check: "String" },
                  { type: "field_dropdown", name: "POS", options: () => POS9() },
                  { type: "input_value", name: "DEG", check: "Number" } ],
         inputsInline: true, tooltip: t("b_text_tip") },
-      { type: "ed_rect", message0: t("b_draw_rect"), output: "String", colour: C_DRAW,
+      { type: "ed_rect", message0: t("b_draw_rect"), output: "String", colour: C_EDIT,
         args0: [ IMG, { type: "field_dropdown", name: "FILL",
                    options: () => opt(["fill", "hollow"]) },
                  { type: "field_dropdown", name: "POS", options: () => POS9() },
                  { type: "field_dropdown", name: "COL", options: () => EDCOLORS() } ],
         inputsInline: true, tooltip: t("b_draw_tip") },
-      { type: "ed_circle", message0: t("b_draw_circle"), output: "String", colour: C_DRAW,
+      { type: "ed_circle", message0: t("b_draw_circle"), output: "String", colour: C_EDIT,
         args0: [ IMG, { type: "field_dropdown", name: "FILL",
                    options: () => opt(["fill", "hollow"]) },
                  { type: "field_dropdown", name: "POS", options: () => POS9() },
                  { type: "field_dropdown", name: "COL", options: () => EDCOLORS() } ],
         inputsInline: true, tooltip: t("b_draw_tip") },
-      { type: "ed_line", message0: t("b_draw_line"), output: "String", colour: C_DRAW,
+      { type: "ed_line", message0: t("b_draw_line"), output: "String", colour: C_EDIT,
         args0: [ IMG, { type: "field_dropdown", name: "P1", options: () => POS9() },
                  { type: "field_dropdown", name: "P2", options: () => POS9() },
                  { type: "field_dropdown", name: "COL", options: () => EDCOLORS() } ],
         inputsInline: true, tooltip: t("b_draw_tip") },
-      { type: "ed_size_of", message0: t("b_size_of"), output: "Number", colour: C_DRAW,
+      { type: "ed_size_of", message0: t("b_size_of"), output: "Number", colour: C_EDIT,
         args0: [ IMG, { type: "field_dropdown", name: "WHAT",
           options: () => opt(["width", "height"]) } ],
         inputsInline: true, tooltip: t("b_size_of_tip") },
 
       /* --- 픽셀 / 색 --- */
-      { type: "ed_color_at", message0: t("b_color_at"), output: "String", colour: C_DRAW,
+      { type: "ed_color_at", message0: t("b_color_at"), output: "String", colour: C_EDIT,
         args0: [ IMG, { type: "field_dropdown", name: "POS", options: () => POS9() } ],
         inputsInline: true, tooltip: t("b_color_at_tip") },
-      { type: "ed_main_color", message0: t("b_main_color"), output: "String", colour: C_DRAW,
+      { type: "ed_main_color", message0: t("b_main_color"), output: "String", colour: C_EDIT,
         args0: [ IMG ], inputsInline: true, tooltip: t("b_main_color_tip") },
 
       /* --- 인식 연계 --- */
@@ -1327,7 +1273,7 @@ def texts_of(result):
         args0: [ { type: "field_dropdown", name: "WHICH",
           options: () => opt(["first", "last"]) } ],
         tooltip: t("b_crop_detected_tip") },
-      { type: "ed_sticker", message0: t("b_sticker"), output: "String", colour: C_DRAW,
+      { type: "ed_sticker", message0: t("b_sticker"), output: "String", colour: C_EDIT,
         args0: [ { type: "input_value", name: "A", check: "String" },
                  { type: "input_value", name: "B", check: "String" } ],
         inputsInline: true, tooltip: t("b_sticker_tip") },
@@ -1376,7 +1322,7 @@ def texts_of(result):
         args0: [ { type: "input_value", name: "F", check: "Number" },
                  { type: "input_value", name: "S", check: "Number" } ],
         inputsInline: true, tooltip: t("b_freq_tip") },
-      { type: "st_save_stage", message0: t("b_save_stage"), colour: C_IMG,
+      { type: "st_save_stage", message0: t("b_save_stage"), colour: C_EDIT,
         previousStatement: null, nextStatement: null, args0: [ IMG ],
         tooltip: t("b_save_stage_tip") },
 
@@ -1469,14 +1415,10 @@ def texts_of(result):
       { type: "ai_chat", message0: t("b_chat"), output: "String", colour: C_VLM,
         args0: [ { type: "input_value", name: "Q", check: "String" } ],
         tooltip: t("b_chat_tip") },
-      { type: "ai_transform", message0: t("b_transform"), output: "String", colour: C_EDIT,
+      { type: "ai_transform", message0: t("b_transform"), output: "String", colour: C_VLM,
         args0: [ IMG, { type: "field_dropdown", name: "KIND",
           options: opt(["portrait","sr"]) } ],
         tooltip: t("b_transform_tip") },
-      /* 깊이 지도는 ai_transform 과 묶지 않고 따로 둔다 — 배경제거·화질개선은
-         사진을 고치는 것이고 이것은 보여 주는 그림이라 성격이 다르다. */
-      { type: "ai_depth_map", message0: t("b_depth_map"), output: "String", colour: C_EDIT,
-        args0: [ IMG ], tooltip: t("b_depth_map_tip") },
       // 무대
       { type: "st_say", message0: t("b_say"), previousStatement: null, nextStatement: null,
         colour: C_SOUND, tooltip: t("b_say_tip"),
@@ -1491,11 +1433,11 @@ def texts_of(result):
         args0: [ { type: "field_dropdown", name: "SEC",
                    options: [["2", "2"], ["3", "3"], ["4", "4"], ["5", "5"], ["8", "8"]] } ] },
       { type: "st_show_image", message0: t("b_show_image"), previousStatement: null, nextStatement: null,
-        colour: C_IMG, args0: [ IMG ] },
+        colour: C_EDIT, args0: [ IMG ] },
       { type: "st_boxes", message0: t("b_boxes"), previousStatement: null, nextStatement: null,
         colour: C_AI, tooltip: t("b_boxes_tip") },
       { type: "st_clear", message0: t("b_clear"), previousStatement: null, nextStatement: null,
-        colour: C_IMG },
+        colour: C_EDIT },
       { type: "st_wait", message0: t("b_wait"), previousStatement: null, nextStatement: null,
         colour: C_EVENT, args0: [ { type: "input_value", name: "SEC", check: "Number" } ] },
     ]);
@@ -1504,10 +1446,6 @@ def texts_of(result):
 
   /* ---------------- 코드 생성기 ---------------- */
   const V = (b, n, d) => G.valueToCode(b, n, Order.NONE) || d;
-  /* 표준 "출력하기" — Blockly 기본 생성기는 window.alert 이라 수업 중 창을 계속 닫아야 한다.
-     이미 있는 RT.print(로그 칸에 "▷ ..."로 찍는다)로 돌린다. */
-  G.forBlock["flag_event"]    = () => "";       // 표시용 — 아래 블록은 그대로 이어진다
-  G.forBlock["text_print"]    = b => `RT.print(${V(b,"TEXT","''")});\n`;
   G.forBlock["ai_capture"]    = () => ["(await AI.capture())", Order.ATOMIC];
   G.forBlock["ai_upload"]     = () => ["(AI.uploaded())", Order.ATOMIC];
   G.forBlock["ai_detect_draw"] = b => `await AI.detectDraw(${V(b,"IMG","null")}, '${b.getFieldValue("MODE")}');\n`;
@@ -1555,7 +1493,6 @@ def texts_of(result):
   G.forBlock["ai_qr"]         = b => [`(await AI.qr(${V(b,"IMG","null")}))`, Order.ATOMIC];
   G.forBlock["ai_ask"]        = b => [`(await AI.ask(${V(b,"IMG","null")}, ${V(b,"Q","''")}))`, Order.ATOMIC];
   G.forBlock["ai_chat"]       = b => [`(await AI.chat(${V(b,"Q","''")}))`, Order.ATOMIC];
-  G.forBlock["ai_depth_map"]  = b => [`(await AI.depthMap(${V(b,"IMG","null")}))`, Order.ATOMIC];
   G.forBlock["ai_transform"]  = b => [`(await AI.transform(${V(b,"IMG","null")}, '${b.getFieldValue("KIND")}'))`, Order.ATOMIC];
   G.forBlock["st_say"]        = b =>
     `await RT.say(${V(b,"TEXT","''")}, "${b.getFieldValue("V")}", "${b.getFieldValue("S")}");\n`;
@@ -1588,9 +1525,7 @@ def texts_of(result):
   function buildToolbox() {
     return { kind: "categoryToolbox", contents: [
       /* ---------- 기본 블록 (Blockly 표준 — 이름·순서 그대로) ---------- */
-      { kind: "category", name: t("cat_start"), colour: C_EVENT, cssConfig: { icon: "customIcon fa-solid fa-flag" }, contents: [
-        { kind: "block", type: "flag_event" } ] },
-      { kind: "category", name: t("cat_logic"), colour: B_LOGIC, cssConfig: { icon: "customIcon fa-solid fa-bars-staggered" }, contents: [
+      { kind: "category", name: t("cat_logic"), colour: 210, contents: [
         { kind: "block", type: "controls_if" },
         { kind: "block", type: "logic_compare" },
         { kind: "block", type: "logic_operation" },
@@ -1598,14 +1533,14 @@ def texts_of(result):
         { kind: "block", type: "logic_boolean" },
         { kind: "block", type: "logic_null" },
         { kind: "block", type: "logic_ternary" } ] },
-      { kind: "category", name: t("cat_loop"), colour: B_LOOP, cssConfig: { icon: "customIcon fa-solid fa-arrows-spin" }, contents: [
+      { kind: "category", name: t("cat_loop"), colour: 120, contents: [
         { kind: "block", type: "controls_repeat_ext", inputs: { TIMES: num(10) } },
         { kind: "block", type: "controls_whileUntil" },
         { kind: "block", type: "controls_for",
           inputs: { FROM: num(1), TO: num(10), BY: num(1) } },
         { kind: "block", type: "controls_forEach" },
         { kind: "block", type: "controls_flow_statements" } ] },
-      { kind: "category", name: t("cat_math"), colour: B_MATH, cssConfig: { icon: "customIcon fa-solid fa-square-root-variable" }, contents: [
+      { kind: "category", name: t("cat_math"), colour: 230, contents: [
         { kind: "block", type: "math_number" },
         { kind: "block", type: "math_arithmetic" },
         { kind: "block", type: "math_single" },
@@ -1619,7 +1554,7 @@ def texts_of(result):
           inputs: { LOW: num(1), HIGH: num(100) } },
         { kind: "block", type: "math_random_int", inputs: { FROM: num(1), TO: num(100) } },
         { kind: "block", type: "math_random_float" } ] },
-      { kind: "category", name: t("cat_text"), colour: B_TEXT, cssConfig: { icon: "customIcon fa-solid fa-t" }, contents: [
+      { kind: "category", name: t("cat_text"), colour: 160, contents: [
         { kind: "block", type: "text" },
         { kind: "block", type: "text_join" },
         { kind: "block", type: "text_append" },
@@ -1631,7 +1566,7 @@ def texts_of(result):
         { kind: "block", type: "text_changeCase" },
         { kind: "block", type: "text_trim" },
         { kind: "block", type: "text_print" } ] },
-      { kind: "category", name: t("cat_list"), colour: B_LIST, cssConfig: { icon: "customIcon fa-solid fa-list" }, contents: [
+      { kind: "category", name: t("cat_list"), colour: 260, contents: [
         { kind: "block", type: "lists_create_with" },
         { kind: "block", type: "lists_repeat", inputs: { NUM: num(5) } },
         { kind: "block", type: "lists_length" },
@@ -1642,20 +1577,16 @@ def texts_of(result):
         { kind: "block", type: "lists_getSublist" },
         { kind: "block", type: "lists_split" },
         { kind: "block", type: "lists_sort" } ] },
-      { kind: "category", name: t("cat_var"), custom: "VARIABLE", colour: B_VAR, cssConfig: { icon: "customIcon fa-solid fa-v" } },
-      { kind: "category", name: t("cat_func"), custom: "PROCEDURE", colour: B_FUNC, cssConfig: { icon: "customIcon fa-solid fa-florin-sign" } },
+      { kind: "category", name: t("cat_var"), custom: "VARIABLE", colour: 330 },
+      { kind: "category", name: t("cat_func"), custom: "PROCEDURE", colour: 290 },
       { kind: "sep" },
       /* ---------- 커스텀 (이 프로그램만의 블록) ---------- */
-      { kind: "category", name: t("cat_image"), colour: C_IMG, cssConfig: { icon: "customIcon fa-solid fa-image" }, contents: [
+      { kind: "category", name: t("cat_image"), colour: C_EDIT, contents: [
         { kind: "block", type: "ai_capture" }, { kind: "block", type: "ai_upload" },
         { kind: "block", type: "st_show_image" },
         { kind: "block", type: "st_save_stage" },
         { kind: "block", type: "st_clear" } ] },
-      { kind: "category", name: t("cat_img_edit"), colour: C_EDIT, cssConfig: { icon: "customIcon fa-solid fa-wand-magic-sparkles" }, contents: [
-        { kind: "label", text: t("lbl_ai_edit") },
-        { kind: "block", type: "ai_transform" },
-        { kind: "block", type: "ai_depth_map" },
-        { kind: "label", text: t("lbl_hand_edit") },
+      { kind: "category", name: t("cat_img_edit"), colour: C_EDIT, contents: [
         { kind: "block", type: "ed_resize", inputs: { F: num(2) } },
         { kind: "block", type: "ed_rotate", inputs: { DEG: num(90) } },
         { kind: "block", type: "ed_flip" },
@@ -1665,8 +1596,7 @@ def texts_of(result):
         { kind: "block", type: "ed_overlay" },
         { kind: "block", type: "ed_tone", inputs: { V: num(30) } },
         { kind: "block", type: "ed_filter" } ] },
-      { kind: "category", name: t("cat_img_draw"), colour: C_DRAW, cssConfig: { icon: "customIcon fa-solid fa-paintbrush" }, contents: [
-        { kind: "label", text: t("lbl_img_draw") },
+      { kind: "category", name: t("cat_img_draw"), colour: C_EDIT, contents: [
         { kind: "block", type: "ed_text", inputs: { TXT: txt(t("sh_hello")), SIZE: num(48) } },
         { kind: "block", type: "ed_text_rot", inputs: { TXT: txt(t("sh_hello")), DEG: num(-15) } },
         { kind: "block", type: "ed_rect" },
@@ -1677,7 +1607,7 @@ def texts_of(result):
         { kind: "block", type: "ed_size_of" },
         { kind: "block", type: "ed_color_at" },
         { kind: "block", type: "ed_main_color" } ] },
-      { kind: "category", name: t("cat_edit_xy"), colour: C_EDITX, cssConfig: { icon: "customIcon fa-solid fa-crosshairs" }, contents: [
+      { kind: "category", name: t("cat_edit_xy"), colour: C_EDITX, contents: [
         { kind: "label", text: t("lbl_xy_note") },
         { kind: "block", type: "edx_crop",
           inputs: { X: num(160), Y: num(120), W: num(320), H: num(240) } },
@@ -1692,7 +1622,7 @@ def texts_of(result):
         { kind: "block", type: "edx_overlay",
           inputs: { X: num(20), Y: num(20), W: num(160) } },
         { kind: "block", type: "edx_color", inputs: { X: num(320), Y: num(240) } } ] },
-      { kind: "category", name: t("cat_vision"), colour: C_AI, cssConfig: { icon: "customIcon fa-solid fa-eye" }, contents: [
+      { kind: "category", name: t("cat_vision"), colour: C_AI, contents: [
         { kind: "label", text: t("lbl_basic") },
         { kind: "block", type: "ai_face" }, { kind: "block", type: "ai_face_count" },
         { kind: "block", type: "ai_face_dist" }, { kind: "block", type: "ai_hand" },
@@ -1704,17 +1634,18 @@ def texts_of(result):
         { kind: "label", text: t("lbl_draw_box") },
         { kind: "block", type: "ai_detect_draw" },
         { kind: "block", type: "st_boxes" } ] },
-      { kind: "category", name: t("cat_sound"), colour: C_SOUND, cssConfig: { icon: "customIcon fa-solid fa-volume-high" }, contents: [
+      { kind: "category", name: t("cat_sound"), colour: C_SOUND, contents: [
         { kind: "block", type: "st_say", inputs: { TEXT: txt(t("sh_hello")) } },
         { kind: "block", type: "ai_listen" },
         { kind: "block", type: "st_note", inputs: { B: num(1) } },
         { kind: "block", type: "st_melody", inputs: { M: txt(t("sh_melody")) } },
         { kind: "block", type: "st_beep" },
         { kind: "block", type: "st_freq", inputs: { F: num(440), S: num(1) } } ] },
-      { kind: "category", name: t("cat_lang"), colour: C_VLM, cssConfig: { icon: "customIcon fa-solid fa-comment-dots" }, contents: [
+      { kind: "category", name: t("cat_lang"), colour: C_VLM, contents: [
         { kind: "block", type: "ai_ask", inputs: { Q: txt(t("sh_question")) } },
-        { kind: "block", type: "ai_chat", inputs: { Q: txt(t("sh_chatQ")) } } ] },
-      { kind: "category", name: t("cat_event"), colour: C_EVENT, cssConfig: { icon: "customIcon fa-solid fa-hourglass-half" }, contents: [
+        { kind: "block", type: "ai_chat", inputs: { Q: txt(t("sh_chatQ")) } },
+        { kind: "block", type: "ai_transform" } ] },
+      { kind: "category", name: t("cat_event"), colour: C_EVENT, contents: [
         { kind: "block", type: "st_wait", inputs: { SEC: num(1) } },
         { kind: "block", type: "ev_wait_face" },
         { kind: "block", type: "ev_wait_hand" },
@@ -1722,64 +1653,14 @@ def texts_of(result):
     ] };
   }
 
-  /* 기본 블록(논리·반복·수학·글·목록·변수·함수)은 우리가 만든 것이 아니라
-     Blockly 가 들고 오는 것이라 colour 를 직접 못 준다. 대신 그 블록들이 쓰는
-     블록 스타일 이름에 색을 덮어씌운다. 버전에 따라 defineTheme 이 없을 수 있어
-     실패하면 조용히 기본 테마로 물러선다(색만 예전처럼 보이고 나머지는 정상). */
-  function makeTheme() {
-    try {
-      return Blockly.Theme.defineTheme("modest", {
-        base: Blockly.Themes.Classic,
-        startHats: true,          // 파이보 랩·실물 IDE 와 같게. 우리 블록 55개 중
-                                  // 모자가 되는 것은 없고(전부 위에 붙일 자리가 있음)
-                                  // Blockly 기본 "함수 만들기"만 모자로 그려진다
-        fontStyle: { family: null, weight: "bold", size: 16 },
-        blockStyles: {
-          logic_blocks:     { colourPrimary: B_LOGIC, colourSecondary: "#EDE7F6", colorTertiary: "#B39DDB" },
-          loop_blocks:      { colourPrimary: B_LOOP,  colourSecondary: "#E8F5E9", colorTertiary: "#66BB6A" },
-          math_blocks:      { colourPrimary: B_MATH,  colourSecondary: "#1E88E5", colorTertiary: "#0D47A1" },
-          text_blocks:      { colourPrimary: B_TEXT,  colourSecondary: "#555555", colorTertiary: "#FF8F00" },
-          list_blocks:      { colourPrimary: B_LIST,  colourSecondary: "#B2DFDB", colorTertiary: "#009688" },
-          colour_blocks:    { colourPrimary: "#DFADB2", colourSecondary: "#FFEBEE", colorTertiary: "#EF9A9A" },
-          variable_blocks:  { colourPrimary: B_VAR,   colourSecondary: "#EF9A9A", colorTertiary: "#EF5350" },
-          variable_dynamic_blocks: { colourPrimary: B_VAR, colourSecondary: "#EF9A9A", colorTertiary: "#EF5350" },
-          procedure_blocks: { colourPrimary: B_FUNC,  colourSecondary: "#EFEBE9", colorTertiary: "#BCAAA4" },
-        },
-        componentStyles: {
-          workspaceBackgroundColour: "#fbf7ef",   // 화면과 같은 따뜻한 종이색
-          toolboxBackgroundColour: "#f3efe4",
-          flyoutBackgroundColour: "#efe9db",
-          flyoutOpacity: 0.5,
-          insertionMarkerOpacity: 0.5,
-          scrollbarOpacity: 0.5,
-          selectedGlowColour: "#000000",
-          selectedGlowSize: 0.5,
-          replacementGlowColour: "#000000",
-        },
-      });
-    } catch (e) {
-      console.warn("[blocks] 테마를 못 만들어 기본 색으로 갑니다:", e);
-      return undefined;
-    }
-  }
-
   const WS_OPTS = {
     media: "/blockly/media/",              // 오프라인용 (휴지통·확대축소 아이콘, 효과음)
-    trashcan: true, renderer: "zelos", theme: makeTheme(),
-    /* 시작 배율 0.7 은 파이보 랩과 같은 값 — modest 테마 글꼴이 16px bold 라
-       0.9 로 두면 처음 열었을 때 블록이 화면을 다 먹는다. 최소·최대도 함께 정해
-       휠로 너무 작아지거나 커지지 않게 한다. */
-    zoom: { controls: true, wheel: true, startScale: 0.7,
-            maxScale: 3, minScale: 0.3, scaleSpeed: 1.2, pinch: true },
+    trashcan: true, renderer: "zelos",
+    zoom: { controls: true, wheel: true, startScale: 0.9 },
     grid: { spacing: 24, length: 2, colour: "#e6e3d8", snap: true },
   };
 
   let ws = Blockly.inject("blocklyDiv", Object.assign({ toolbox: buildToolbox() }, WS_OPTS));
-  /* 시작 모자에 매달리지 않은 덩어리는 꺼서(회색) 실행에서 빠지게 한다 */
-  function armDisableOrphans(w) {
-    if (typeof DisableTopBlocks === "function") new DisableTopBlocks(w).init();
-  }
-  armDisableOrphans(ws);
   loadCustomModels();      // 내가 만든 AI 목록 (드롭다운은 열 때마다 최신 목록을 읽음)
   loadModelFiles();        // 가져다 둔 모델 파일 목록
 
@@ -1799,9 +1680,6 @@ def texts_of(result):
       for (let i = arr.length - 1; i > 0; i--) arr[i - 1].next = { block: arr[i] };
       return arr[0];
     };
-    /* 예제의 맨 바깥 줄기에만 [시작] 모자를 얹는다. chain() 은 반복·만약 안쪽
-       줄기에도 쓰이는데, 모자는 문장 입력 안에 못 들어가 거기 얹으면 예제가 깨진다. */
-    const top = arr => chain([B("flag_event")].concat(arr));
     const CLEAR = () => B("st_clear");           // 모든 예제는 무대를 지우고 시작한다
     const VG = n => B("variables_get", { fields: { VAR: { name: n } } });
     const SET = (n, blk) => B("variables_set",
@@ -1809,14 +1687,14 @@ def texts_of(result):
     const PR = blk => B("text_print", { inputs: { TEXT: { block: blk } } });
     return [
       { id: "greet", name: t("ex_greet"), desc: t("ex_greet_d"),
-        state: { blocks: { languageVersion: 0, blocks: [ top([
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
           CLEAR(),
           B("ev_wait_face"),
           B("st_say", { inputs: { TEXT: shadowTxt(t("sh_hello")) } }),
           B("st_beep", { fields: { K: "beepOk" } }),
         ]) ] } } },
       { id: "rps", name: t("ex_rps"), desc: t("ex_rps_d"),
-        state: { blocks: { languageVersion: 0, blocks: [ top([
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
           CLEAR(),
           B("st_say", { inputs: { TEXT: shadowTxt(t("o_rps") + "!") } }),
           B("st_wait", { inputs: { SEC: shadowNum(1) } }),
@@ -1853,7 +1731,7 @@ def texts_of(result):
         ]) ] } } },
       /* 내가 가르친 AI 로 분류하기 — [가르치기]에서 학습한 모델을 쓴다 */
       { id: "mymodel", name: t("ex_mymodel"), desc: t("ex_mymodel_d"),
-        state: { blocks: { languageVersion: 0, blocks: [ top([
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
           CLEAR(),
           B("variables_set", { fields: { VAR: { name: "사진" } },
             inputs: { VALUE: { block: B("ai_capture") } } }),
@@ -1866,7 +1744,7 @@ def texts_of(result):
         ]) ] } } },
       /* 가져다 둔 모델 파일(.pt) 로 찾기 — [설정]의 [모델 폴더 열기]에 넣은 것 */
       { id: "modelfile", name: t("ex_modelfile"), desc: t("ex_modelfile_d"),
-        state: { blocks: { languageVersion: 0, blocks: [ top([
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
           CLEAR(),
           B("variables_set", { fields: { VAR: { name: "사진" } },
             inputs: { VALUE: { block: B("ai_capture") } } }),
@@ -1877,7 +1755,7 @@ def texts_of(result):
           B("st_show_image", { inputs: { IMG: { block: VG("사진") } } }),
         ]) ] } } },
       { id: "selfie", name: t("ex_selfie"), desc: t("ex_selfie_d"),
-        state: { blocks: { languageVersion: 0, blocks: [ top([
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
           CLEAR(),
           B("variables_set", { fields: { VAR: { name: "photo" } },
             inputs: { VALUE: { block: B("ed_text", {
@@ -1892,7 +1770,7 @@ def texts_of(result):
             { fields: { VAR: { name: "photo" } } }) } } }),
         ]) ] } } },
       { id: "color", name: t("ex_color"), desc: t("ex_color_d"),
-        state: { blocks: { languageVersion: 0, blocks: [ top([
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
           CLEAR(),
           B("controls_repeat_ext", { inputs: { TIMES: shadowNum(5),
             DO: { block: chain([
@@ -1909,7 +1787,7 @@ def texts_of(result):
             ]) } } }),
         ]) ] } } },
       { id: "sound", name: t("ex_sound"), desc: t("ex_sound_d"),
-        state: { blocks: { languageVersion: 0, blocks: [ top([
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
           CLEAR(),
           PR(B("text", { fields: { TEXT: t("sh_melody") } })),
           B("st_melody", { fields: { T: "120" }, inputs: { M: shadowTxt(t("sh_melody")) } }),
@@ -1922,7 +1800,7 @@ def texts_of(result):
         ]) ] } } },
       /* 새로 생긴 "듣기" 블록 — 말한 그대로 따라 말한다 */
       { id: "echo", name: t("ex_echo"), desc: t("ex_echo_d"),
-        state: { blocks: { languageVersion: 0, blocks: [ top([
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
           CLEAR(),
           B("st_say", { inputs: { TEXT: shadowTxt(t("sh_askSay")) } }),
           B("variables_set", { fields: { VAR: { name: t("v_word") } },
@@ -1935,7 +1813,7 @@ def texts_of(result):
         ]) ] } } },
       /* 목소리·빠르기 블록 — 같은 말을 다르게 들려준다 */
       { id: "voices", name: t("ex_voices"), desc: t("ex_voices_d"),
-        state: { blocks: { languageVersion: 0, blocks: [ top([
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
           CLEAR(),
           B("st_say", { fields: { V: "F1", S: "normal" },
                         inputs: { TEXT: shadowTxt(t("sh_voiceF")) } }),
@@ -1945,7 +1823,7 @@ def texts_of(result):
                         inputs: { TEXT: shadowTxt(t("sh_voiceFast")) } }),
         ]) ] } } },
       { id: "count", name: t("ex_count"), desc: t("ex_count_d"),
-        state: { blocks: { languageVersion: 0, blocks: [ top([
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
           CLEAR(),
           B("variables_set", { fields: { VAR: { name: "n" } },
             inputs: { VALUE: { block: B("ai_face_count",
@@ -1957,61 +1835,11 @@ def texts_of(result):
           B("st_boxes"),
         ]) ] } } },
 
-      /* 기본 블록(논리·반복·수학·글·목록)을 한 번씩 지나가는 점검용.
-         AI 를 안 쓰므로 모델이 없어도 돌고, 결과는 전부 로그 칸에 찍힌다. */
-      { id: "checkbasic", name: t("ex_basic"), desc: t("ex_basic_d"),
-        state: { blocks: { languageVersion: 0, blocks: [ top([
-          CLEAR(),
-          PR(shadowTxt(t("sh_basicStart")).shadow ? shadowTxt(t("sh_basicStart")).shadow : B("text", { fields: { TEXT: t("sh_basicStart") } })),
-          /* 수학 */
-          SET("수", B("math_random_int", { inputs: { FROM: shadowNum(1), TO: shadowNum(10) } })),
-          PR(B("math_arithmetic", { fields: { OP: "ADD" },
-              inputs: { A: { block: VG("수") }, B: shadowNum(2) } })),
-          PR(B("math_single", { fields: { OP: "ROOT" }, inputs: { NUM: shadowNum(16) } })),
-          PR(B("math_round", { fields: { OP: "ROUND" },
-              inputs: { NUM: { block: B("math_random_float") } } })),
-          PR(B("math_modulo", { inputs: { DIVIDEND: { block: VG("수") }, DIVISOR: shadowNum(3) } })),
-          PR(B("math_constrain", { inputs: { VALUE: { block: VG("수") },
-              LOW: shadowNum(1), HIGH: shadowNum(5) } })),
-          PR(B("math_trig", { fields: { OP: "SIN" }, inputs: { NUM: shadowNum(30) } })),
-          PR(B("math_constant", { fields: { CONSTANT: "PI" } })),
-          PR(B("math_number_property", { fields: { PROPERTY: "EVEN" },
-              inputs: { NUMBER_TO_CHECK: { block: VG("수") } } })),
-          /* 목록 */
-          SET("목록", B("lists_split", { fields: { MODE: "SPLIT" },
-              inputs: { INPUT: shadowTxt(t("sh_basicList")), DELIM: shadowTxt(",") } })),
-          PR(B("lists_length", { inputs: { VALUE: { block: VG("목록") } } })),
-          PR(B("lists_sort", { fields: { TYPE: "TEXT", DIRECTION: "1" },
-              inputs: { LIST: { block: VG("목록") } } })),
-          PR(B("math_on_list", { fields: { OP: "MAX" },
-              inputs: { LIST: { block: B("lists_create_with") } } })),
-          PR(B("lists_repeat", { inputs: { ITEM: shadowTxt("*"), NUM: shadowNum(3) } })),
-          /* 글자 */
-          SET("글", B("text", { fields: { TEXT: t("sh_hello") } })),
-          B("text_append", { fields: { VAR: { name: "글" } }, inputs: { TEXT: shadowTxt("!") } }),
-          PR(B("text_length", { inputs: { VALUE: { block: VG("글") } } })),
-          PR(B("text_trim", { fields: { MODE: "BOTH" }, inputs: { TEXT: shadowTxt("  " + t("sh_hello") + "  ") } })),
-          /* 논리 */
-          PR(B("logic_negate", { inputs: { BOOL: { block: B("logic_boolean", { fields: { BOOL: "FALSE" } }) } } })),
-          PR(B("logic_ternary", {
-              inputs: { IF: { block: B("logic_compare", { fields: { OP: "GT" },
-                              inputs: { A: { block: VG("수") }, B: shadowNum(5) } }) },
-                        THEN: shadowTxt(t("sh_basicBig")), ELSE: shadowTxt(t("sh_basicSmall")) } })),
-          SET("빈값", B("logic_null")),
-          /* 반복 */
-          B("controls_for", { fields: { VAR: { name: "i" } },
-            inputs: { FROM: shadowNum(1), TO: shadowNum(3), BY: shadowNum(1),
-                      DO: { block: PR(VG("i")) } } }),
-          B("controls_repeat_ext", { inputs: { TIMES: shadowNum(5),
-            DO: { block: B("controls_flow_statements", { fields: { FLOW: "BREAK" } }) } } }),
-          B("st_say", { fields: { V: "F1", S: "normal" }, inputs: { TEXT: shadowTxt(t("sh_basicDone")) } }),
-        ]) ] } } },
-
       /* 모든 기능을 한 번씩 지나가는 점검용 예제.
          기다리는 블록(얼굴/손 기다리기·음성 인식)과 내가 만든 AI 는 뺐다 —
          멈춰 서거나 학습한 모델이 있어야 해서 "한 번에 쭉" 이 안 된다. */
       { id: "checkall", name: t("ex_all"), desc: t("ex_all_d"),
-        state: { blocks: { languageVersion: 0, blocks: [ top([
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
           CLEAR(),
           B("st_say", { fields: { V: "F1", S: "normal" },
                         inputs: { TEXT: shadowTxt(t("sh_allStart")) } }),
@@ -2047,8 +1875,6 @@ def texts_of(result):
             inputs: { VALUE: { block: B("ai_transform", { fields: { KIND: "portrait" },
               inputs: { IMG: { block: VG("사진") } } }) } } }),
           B("st_show_image", { inputs: { IMG: { block: VG("바뀐사진") } } }),
-          B("st_show_image", { inputs: { IMG: { block:
-            B("ai_depth_map", { inputs: { IMG: { block: VG("사진") } } }) } } }),
 
           /* 6) 사진 편집 — 크기·방향·자르기·붙이기 */
           SET("편집", B("ed_resize", { inputs: { IMG: { block: VG("사진") },
@@ -2212,8 +2038,7 @@ def texts_of(result):
     document.documentElement.lang = LANG;
     document.title = t("titleTag");
     set("txtTitle", t("title"));
-    const hl = document.getElementById("homeLink");
-    if (hl) { hl.title = t("back"); hl.setAttribute("aria-label", t("back")); }
+    if (window.navRepaint) window.navRepaint();   /* 이동 탭 글자는 lib/nav.js 가 갖고 있다 */
     set("saveButton", t("save"));
     set("txtVarsTitle", t("vars_title"));
     set("newButton", t("btn_new"));
@@ -2242,7 +2067,6 @@ def texts_of(result):
     ws.dispose();
     defineBlocks();
     ws = Blockly.inject("blocklyDiv", Object.assign({ toolbox: buildToolbox() }, WS_OPTS));
-    armDisableOrphans(ws);
     Blockly.serialization.workspaces.load(state, ws);
 
     applyStaticText();
@@ -2311,7 +2135,7 @@ def texts_of(result):
     rd.readAsDataURL(f);
   });
 
-  /* ---------------- AI 헬퍼 (vapi-od 호출) ---------------- */
+  /* ---------------- AI 헬퍼 (edge-lab 호출) ---------------- */
   function dataURLtoBlob(u) {
     const [h, b64] = u.split(","), mime = h.match(/data:(.*?);/)[1];
     const bin = atob(b64), arr = new Uint8Array(bin.length);
@@ -2523,10 +2347,6 @@ def texts_of(result):
         devReport(j.device, j.elapsed_ms || 0);
         return j.data.answer;
       } finally { devIdle(); }
-    },
-    async depthMap(img) {
-      const d = await post("gan/depth", img, {});
-      return "data:image/jpeg;base64," + d;
     },
     async transform(img, kind) {
       const d = await post("gan/" + kind, img);
@@ -3347,6 +3167,7 @@ def texts_of(result):
   </script>
   <script src="/lib/usage.js" data-page="blocks"></script>
   <script src="/lib/nav.js"></script>
+  <script src="/lib/tour.js"></script>
   <script src="/lib/sysbar.js"></script>
   <script src="/lib/split.js"></script>
 </body>

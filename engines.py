@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# vapi-od : on-device inference engines (Intel Meteor Lake / OpenVINO)
+# edge-lab : on-device inference engines (Intel Meteor Lake / OpenVINO)
 # 디바이스 배정: VLM/YOLO/gan=GPU, 얼굴 스위트=NPU(없으면 GPU→CPU), ocr/qr=CPU
 import base64
 import os
@@ -461,50 +461,10 @@ class SuperRes:
         return cv2.resize(out, (w * 4, h * 4))        # 정확히 4x 크기로 정합
 
 
-class DepthAnything:
-    """Depth Anything V2 Small — 상대 깊이. 어느 쪽이 더 가까운지를 보여 준다.
-
-    값의 단위는 없다. 보여 주는 용도이고 거리를 재는 데는 쓰지 않는다.
-    기동 때 올리지 않는다 — 처음 쓸 때 올려 캐시한다(상주 메모리 절약).
-    """
-
-    MEAN = np.array([0.485, 0.456, 0.406], dtype=np.float32)
-    STD = np.array([0.229, 0.224, 0.225], dtype=np.float32)
-    SIDE = 518
-
-    def __init__(self, device):
-        self.device = device
-        self._compiled = None
-        self.lock = threading.Lock()
-
-    def _model(self):
-        if self._compiled is None:
-            self._compiled = core.compile_model(
-                core.read_model(MODELS / "gan/depth-v2s.xml"), self.device)
-        return self._compiled
-
-    def raw(self, bgr):
-        """원본 크기의 깊이 지도. 값이 **클수록 가깝다**."""
-        h, w = bgr.shape[:2]
-        rgb = cv2.cvtColor(cv2.resize(bgr, (self.SIDE, self.SIDE)), cv2.COLOR_BGR2RGB).astype(np.float32)
-        rgb = ((rgb / 255.0) - self.MEAN) / self.STD
-        blob = rgb.transpose(2, 0, 1)[None]
-        with self.lock:
-            out = list(self._model()({0: blob}).values())[0]
-        return cv2.resize(np.squeeze(out).astype(np.float32), (w, h))
-
-    @staticmethod
-    def colorize(m):
-        """깊이 지도를 색지도로. 값이 클수록(가까울수록) 밝게."""
-        near = (m - m.min()) / (m.max() - m.min() + 1e-8)
-        return cv2.applyColorMap((near * 255).astype(np.uint8), cv2.COLORMAP_INFERNO)
-
-
 class GanEngine:
     def __init__(self):
         self.bgremove = U2Net(DEV_GAN)
         self.sr = SuperRes(DEV_GAN)
-        self.depth = DepthAnything(DEV_GAN)    # 지연 로딩 — 처음 쓸 때 올라온다
 
 
 # ---------------------------------------------------------------- code (ocr / qr)
