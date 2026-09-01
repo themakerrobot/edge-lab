@@ -1,4 +1,4 @@
-# The Maker
+# 엣지 랩 (Edge Lab)
 
 **Intel AI PC 기반 온디바이스 AI 체험·코딩·학습 도구.**
 사물·얼굴·손·자세 인식, 그림 변환, 글자 읽기, VLM(그림 보고 말하기)까지 CPU/GPU/NPU에 나눠 실행하며,
@@ -9,7 +9,7 @@
 
 | 탭 | 내용 |
 |---|---|
-| 써보기 (Try it) | AI 16가지를 눌러 보는 체험 — 라이브 모드, 사진 올리기·스케치 |
+| 체험하기 (Try it) | AI 16가지를 눌러 보는 체험 — 라이브 모드, 사진 올리기·스케치 |
 | 블록 (Blocks) | 블록 코딩 — 커스텀 8묶음 + 기본 블록(논리·반복·수학·텍스트·목록·변수·함수), 예제 11종 |
 | 파이썬 (Python) | 파이썬 코딩 — themaker 라이브러리로 AI 호출, 실행·정지, 도움말, 작품 저장 |
 | 가르치기 (Train) | 나만의 AI 학습 — 사진/손모양/표정/상반신/전신 5개 모드, 학습 곡선·특징 지도 |
@@ -50,7 +50,7 @@ powershell -ExecutionPolicy Bypass -File setup_deploy.ps1 -Token hf_xxxx
 | `hub.py` | 실행 중인 main 모듈·엔진 찾기 (`import main` 은 금물 — main.py 가 다시 실행된다) |
 | `db_routes.py` | 내가 준 자료에서 찾아 답하기(RAG) — 자료 저장·검색·답변 |
 | `themaker.py` | 학생 코드용 라이브러리 — `vision()`·`camera()`·`speak()` 등 |
-| `view_project/` | 프론트 6페이지 (`index` 써보기 · `blocks` 블록 코딩 · `code` 파이썬 · `train` 가르치기 · `talk` 대화 · `options` 설정) |
+| `view_project/` | 프론트 6페이지 (`index` 체험하기 · `blocks` 블록 코딩 · `code` 파이썬 · `train` 가르치기 · `talk` 대화 · `options` 설정) |
 | `paths.py` | 폴더 규칙 — `models/`(AI 모델) / `data/`(작업 파일) 분리·자동 이전 |
 | `run.bat` | 실행 |
 | `setup_deploy.ps1` | 설치 — 패키지 + 모델 다운로드 |
@@ -199,7 +199,7 @@ venv\Scripts\python -c "from huggingface_hub import HfApi; HfApi().upload_folder
 | 자리 | 내용 | 기본 위치 |
 |---|---|---|
 | 프로그램 폴더 | 코드 + `models/`(AI 모델) | 설치한 곳 |
-| **작업폴더** | 사람이 만든 것 — 가르친 AI(`user`), 블록 작품(`project`), 파이썬 작품(`pycode`), 자료(`db`), 사용 기록·성적표(`stats`) | 윈도우 `문서\The Maker` |
+| **작업폴더** | 사람이 만든 것 — 가르친 AI(`user`), 블록 작품(`project`), 파이썬 작품(`pycode`), 자료(`db`), 사용 기록·성적표(`stats`) | 윈도우 `문서\Edge Lab` |
 | 앱데이터 | 그 PC 의 것 — 임시 사진(`tmp`), 앱 창 프로필(`.appwin`), `settings.json` | 윈도우 `%LOCALAPPDATA%\TheMaker` |
 
 `stats` 는 작업폴더에 둔다 — 1 PC : 1 학생 구조라 "이 PC 의 통계"가 곧 "이 사람의 기록"이고,
@@ -211,7 +211,7 @@ venv\Scripts\python -c "from huggingface_hub import HfApi; HfApi().upload_folder
 나중에 교사용 서버로 기록을 보낼 때 누구 것인지 가리는 값으로 쓸 자리다.
 
 USB 를 작업폴더로 쓰다가 **뽑았거나 드라이브 문자가 바뀌면**(E: → F:) 그 자리를 못 찾는다.
-이때는 기본 자리(문서\The Maker)로 물러서서 저장이 되게 하고, 설정은 지우지 않는다 —
+이때는 기본 자리(문서\Edge Lab)로 물러서서 저장이 되게 하고, 설정은 지우지 않는다 —
 다시 꽂고 켜면 원래 폴더로 돌아간다. 설정 화면에는 빨간 글씨로 "못 찾은 자리" 를 함께 보여 준다
 (`summary()["unreachable"]`). 이 확인이 없으면 서버는 멀쩡히 뜨는데 저장만 전부 실패한다.
 

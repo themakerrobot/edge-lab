@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>가르치기 — The Maker</title>
+  <title>가르치기 — 엣지 랩</title>
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
@@ -307,8 +307,8 @@
   <!-- 시험지 머리표 -->
   <div class="header">
     <div class="h-subject" style="flex-direction:row;align-items:center;gap:10px;">
-      <img src="/assets/pibo-prof.png" alt="" style="height:30px;flex:0 0 auto;">
-      <span class="title" title="인터넷 없이 내 컴퓨터에서 실행돼요"><span id="txtTitle">가르치기</span> <span class="od" style="font-size:.78rem;color:var(--pen-red);vertical-align:middle;">(On-Device)</span></span>
+      <img src="/assets/pibo-logo.png" alt="" style="height:30px;flex:0 0 auto;">
+      <span class="title" title="인터넷 없이 내 컴퓨터에서 실행돼요"><span id="txtTitle">엣지 랩</span></span>
     </div>
     <div class="h-tools">
       <button id="langButton" title="한국어 / English" style="min-width:46px;">EN</button>
@@ -445,7 +445,7 @@
             </span>
           </div>
           <div class="hint" id="txtQ5Hint" style="margin-bottom:10px;">
-            저장하면 [써보기]·[블록 코딩]·[파이썬]에서 <b>내가 가르친 AI</b>로 골라 쓸 수 있어요.
+            저장하면 [체험하기]·[블록 코딩]·[파이썬]에서 <b>내가 가르친 AI</b>로 골라 쓸 수 있어요.
             사진은 들어 있지 않아서 이어서 학습할 수는 없어요 — 그건 아래 6번이에요.
           </div>
           <div class="saved" id="savedList"></div>
@@ -502,9 +502,9 @@
   try { LANG = localStorage.getItem("vapiLang") || "ko"; } catch (e) {}
   const I18N = {
     ko: {
-      titleTag: "가르치기 — The Maker", title: "가르치기",
+      titleTag: "가르치기 — 엣지 랩", title: "엣지 랩",
       eyebrow: "내가 직접 AI를 학습시켜요 · 인터넷 없이 내 컴퓨터에서",
-      homeLink: "The Maker (홈)", langBtn: "EN",
+      homeLink: "엣지 랩 (홈)", langBtn: "EN",
       modeImage: "사진", modePose: "손모양", modeFace: "표정",
       modeUp: "상반신", modeBody: "전신",
       upHint: "책상에 앉은 채로 해요. 얼굴·어깨·팔 관절 11개만 학습해서 옷 색이나 배경에 흔들리지 않아요.",
@@ -518,7 +518,7 @@
       skippedFace: "얼굴이 안 보여서 %1장은 건너뛰었어요.",
       allSkippedFace: "얼굴을 못 찾아서 한 장도 넣지 못했어요. 얼굴을 화면에 크게 보여 주세요.",
       q7: "하던 것을 그대로 보관해요 — 다음 시간에 이어 하려고",
-      q5hint: "저장하면 [써보기]·[블록 코딩]·[파이썬]에서 <b>내가 가르친 AI</b>로 골라 쓸 수 있어요. [불러오기]를 누르면 여기서 다시 확인해 볼 수도 있어요. 사진은 들어 있지 않아서 이어서 학습할 수는 없어요 — 그건 아래 6번이에요.",
+      q5hint: "저장하면 [체험하기]·[블록 코딩]·[파이썬]에서 <b>내가 가르친 AI</b>로 골라 쓸 수 있어요. [불러오기]를 누르면 여기서 다시 확인해 볼 수도 있어요. 사진은 들어 있지 않아서 이어서 학습할 수는 없어요 — 그건 아래 6번이에요.",
       modelOpen: "불러오기",
       modelLoaded: "저장한 AI 를 불러왔어요 (%1). 사진은 없으니 4번에서 확인만 해 보세요.",
       holdout: "시험지 따로 두기(20%)",
@@ -582,7 +582,7 @@
       logExtract: "특징을 뽑는 중 ... %1/%2",
       sayTop: "이건 <b>%1</b>인 것 같아요! (확신 %2%)",
       sayLow: "음... <b>%1</b>인 것 같은데 확신이 낮아요 (%2%). 사진을 더 모아 보세요.",
-      savedOk: "저장했어요. [써보기]에서 바로 쓸 수 있어요.",
+      savedOk: "저장했어요. [체험하기]에서 바로 쓸 수 있어요.",
       aNoCam: "웹캠을 열 수 없어요. 카메라 권한을 확인해 주세요.",
       camNone: "이 컴퓨터에는 웹캠이 없어요.",
       camDenied: "카메라를 쓸 수 없게 막혀 있어요.",
@@ -595,9 +595,9 @@
       restored: "이전에 만들던 내용을 불러왔어요.",
     },
     en: {
-      titleTag: "Train — The Maker", title: "Train",
+      titleTag: "Train — Edge Lab", title: "Edge Lab",
       eyebrow: "train your very own AI · runs on this computer",
-      homeLink: "The Maker (home)", langBtn: "한",
+      homeLink: "Edge Lab (home)", langBtn: "한",
       modeImage: "Photo", modePose: "Hand", modeFace: "Face",
       modeUp: "Upper body", modeBody: "Full body",
       upHint: "You can stay seated. Only 11 joints (face, shoulders, arms) are learned, so clothes and background matter less.",

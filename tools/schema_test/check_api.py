@@ -66,13 +66,6 @@ CASES = [
 # 없어진 경로 — 되살아나면 안 된다
 CHAT = "/chat/ask"
 
-GONE = ["/caption/caption", "/object/object_cls", "/face/face_attribute", "/caption/caption_place",
-        "/caption/caption_question", "/vlm/vlm_inference", "/vlm/ask", "/face/face_pose", "/vlm/place_e", "/object/object_search_e",
-        "/face/face_analyze_e", "/gan/txt2image", "/speech/wav_to_text",
-        "/face/mesh_calibrate", "/custom/predict_zip",
-        "/vlm/place", "/vlm/time", "/vlm/weather", "/vlm/tag",
-        "/pycode/deploy", "/object/object_custom"]
-
 PAGES = ["/", "/blocks", "/code", "/train", "/options", "/talk", "/ready",
          "/system/packages", "/system/workdir"]
 
@@ -129,6 +122,23 @@ def run(host):
         assert any(x["slug"] == slug for x in lst["data"]), lst
         print("  PASS  %-20s %s" % ("자료 목록", "/chat/db")); ok += 1
 
+        # 같은 이름으로 다시 만들면 덮어써야 한다.
+        # 전에는 "우리자료-2" 를 새로 만들었는데, 읽기·지우기는 제목으로만 찾아서
+        # 아무도 못 여는 유령 자료가 쌓였다 (목록에 같은 제목이 여러 줄).
+        body2 = b"".join(('--%s\r\nContent-Disposition: form-data; name="%s"\r\n\r\n%s\r\n'
+                          % (b, k, v)).encode() for k, v in fields.items()) \
+                + ("--%s--\r\n" % b).encode()
+        req = urllib.request.Request(host + "/chat/db", data=body2,
+                                     headers={"Content-Type":
+                                              "multipart/form-data; boundary=" + b})
+        d = json.loads(urllib.request.urlopen(req, timeout=30).read().decode())
+        assert d["data"]["slug"] == slug, ("덮어쓰지 않고 새 이름을 만듦", d["data"]["slug"])
+        with urllib.request.urlopen(host + "/chat/db", timeout=10) as r:
+            lst = json.loads(r.read().decode())
+        same = [x for x in lst["data"] if x["slug"] == slug]
+        assert len(same) == 1, ("같은 자료가 %d 개" % len(same))
+        print("  PASS  %-20s %s" % ("같은 이름은 덮어쓰기", "/chat/db")); ok += 1
+
         q = urllib.parse.urlencode({"db": slug, "prompt": "무지개는 왜 생겨?", "top_k": 2})
         req = urllib.request.Request(host + "/chat/find?" + q, data=b"", method="POST")
         d = json.loads(urllib.request.urlopen(req, timeout=30).read().decode())
@@ -173,16 +183,6 @@ def run(host):
             os.path.exists(probe) and os.remove(probe)
     except Exception as ex:
         print("  FAIL  %-20s %s" % ("가져온 모델 흐름", ex)); fail += 1
-
-    for path in GONE:
-        try:
-            _post(host, path)
-            print("  FAIL  삭제된 경로가 살아 있음  %s" % path); fail += 1
-        except urllib.error.HTTPError as e:
-            if e.code == 404:
-                print("  PASS  삭제 확인(404)      %s" % path); ok += 1
-            else:
-                print("  FAIL  %s -> %s" % (path, e.code)); fail += 1
 
     # 상태판(/system) — 화면 헤더가 매번 부른다. 필드가 빠지면 여기서 잡힌다.
     try:

@@ -39,22 +39,6 @@
     }
   }
 
-  /* 예전 판이 남긴 저장값 치우기.
-     ①양쪽을 다 고정해 창이 넓으면 오른쪽이 비던 판 ②써보기·가르치기·대화·점검에도
-     손잡이를 달아 폭을 px 로 못박던 판 — 그때 저장된 값이 남아 있으면 고쳐도 증상이
-     이어지므로, 판이 바뀔 때마다 한 번씩 지운다. */
-  try {
-    if (!localStorage.getItem("vapi-split-v4")) {
-      for (var n = localStorage.length - 1; n >= 0; n--) {
-        var k = localStorage.key(n);
-        if (k && k.indexOf("vapi-split-") === 0) localStorage.removeItem(k);
-      }
-      localStorage.removeItem("vapi-split-v2");
-      localStorage.removeItem("vapi-split-v3");
-      localStorage.setItem("vapi-split-v4", "1");
-    }
-  } catch (e) {}
-
   function key(box, i) {
     return "vapi-split-" + (box.getAttribute("data-split-key") || "x") + "-" + i;
   }

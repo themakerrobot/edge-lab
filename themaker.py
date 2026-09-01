@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""themaker — The Maker 파이썬 라이브러리.
+"""themaker — 엣지 랩 파이썬 라이브러리.
 
-서버(The Maker)가 켜져 있으면, 파이썬에서 AI를 함수 한 줄로 쓸 수 있다.
+서버(엣지 랩)가 켜져 있으면, 파이썬에서 AI를 함수 한 줄로 쓸 수 있다.
 
     from themaker import *
 
@@ -10,7 +10,7 @@
     print(r)
     show(img, r)                    # 결과를 그려서 창으로 보기
 
-의존성: opencv-python, numpy (The Maker 설치에 이미 포함).
+의존성: opencv-python, numpy (엣지 랩 설치에 이미 포함).
 서버 호출은 표준 라이브러리(urllib)만 쓴다.
 """
 import json
@@ -97,13 +97,13 @@ def _post(url, data=None, files=None, timeout=120):
         if code == 404:
             raise TheMakerError(
                 "그런 기능이 서버에 없어요: %s\n"
-                "The Maker 를 최신으로 올렸는지 확인해 주세요." % url)
+                "엣지 랩 을 최신으로 올렸는지 확인해 주세요." % url)
         if code == 503:
             raise TheMakerError("AI 를 준비하는 중이에요. 조금만 기다렸다 다시 실행해 주세요.")
         if code:
             raise TheMakerError("서버가 오류를 냈어요 (%s): %s" % (code, url))
         raise TheMakerError(
-            "The Maker 서버에 연결할 수 없어요. run.bat 이 켜져 있는지 확인하세요. (%s)" % ex)
+            "엣지 랩 서버에 연결할 수 없어요. run.bat 이 켜져 있는지 확인하세요. (%s)" % ex)
 
 
 def _get(url, timeout=30):
@@ -113,7 +113,7 @@ def _get(url, timeout=30):
             return json.loads(r.read().decode("utf-8"))
     except urllib.error.URLError as ex:
         raise TheMakerError(
-            "The Maker 서버에 연결할 수 없어요. run.bat 이 켜져 있는지 확인하세요. (%s)" % ex)
+            "엣지 랩 서버에 연결할 수 없어요. run.bat 이 켜져 있는지 확인하세요. (%s)" % ex)
 
 
 def _delete(url, timeout=30):
@@ -124,7 +124,7 @@ def _delete(url, timeout=30):
             return json.loads(r.read().decode("utf-8"))
     except urllib.error.URLError as ex:
         raise TheMakerError(
-            "The Maker 서버에 연결할 수 없어요. run.bat 이 켜져 있는지 확인하세요. (%s)" % ex)
+            "엣지 랩 서버에 연결할 수 없어요. run.bat 이 켜져 있는지 확인하세요. (%s)" % ex)
 
 
 def _b64_to_image(b64):
@@ -311,7 +311,7 @@ def models():
     >>> r = detect(models()[0], camera())
 
     파일은 [설정·점검]의 [모델 폴더 열기]로 열리는 폴더에 넣는다
-    (문서\\The Maker\\models). 넣자마자 이 목록에 나온다.
+    (문서\\Edge Lab\\models). 넣자마자 이 목록에 나온다.
     """
     try:
         j = _get("/object/model_files")
@@ -426,7 +426,7 @@ def draw(image, result):
     return img
 
 
-def show(image, result=None, title="The Maker", wait=True, window=False):
+def show(image, result=None, title="엣지 랩", wait=True, window=False):
     """결과를 보여준다. result 를 주면 박스를 그려서 보여준다.
 
     파이썬 페이지에서 실행하면 화면(결과 칸)에 바로 나온다.
@@ -522,7 +522,7 @@ def speak(text, voice="F1", lang="ko", speed=1.0, wait=True, save_as=None):
             raw = resp.read()
             ctype = resp.headers.get("Content-Type", "")
     except urllib.error.URLError as ex:
-        raise TheMakerError("The Maker 서버에 연결할 수 없어요. (%s)" % ex)
+        raise TheMakerError("엣지 랩 서버에 연결할 수 없어요. (%s)" % ex)
     if "audio" not in ctype:                       # 실패는 JSON 으로 온다
         try:
             msg = json.loads(raw.decode("utf-8")).get("data")

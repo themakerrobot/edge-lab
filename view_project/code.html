@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>파이썬 — The Maker</title>
+  <title>파이썬 — 엣지 랩</title>
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
@@ -220,8 +220,8 @@
 <body data-density="work" data-sys="state">
   <div class="header">
     <div class="h-subject" style="flex-direction:row;align-items:center;gap:10px;">
-      <img src="/assets/pibo-prof.png" alt="" style="height:30px;flex:0 0 auto;">
-      <span class="title" title="인터넷 없이 내 컴퓨터에서 실행돼요"><span id="txtTitle">파이썬</span> <span class="od" style="font-size:.78rem;color:var(--pen-red);vertical-align:middle;">(On-Device)</span></span>
+      <img src="/assets/pibo-logo.png" alt="" style="height:30px;flex:0 0 auto;">
+      <span class="title" title="인터넷 없이 내 컴퓨터에서 실행돼요"><span id="txtTitle">엣지 랩</span></span>
     </div>
     <div class="h-tools">
       <button id="langButton" title="한국어 / English" style="min-width:46px;">EN</button>
@@ -313,9 +313,9 @@
     /* =============================== 한/영 사전 =============================== */
     const DICT = {
       ko: {
-        titleTag: "파이썬 — The Maker", title: "파이썬",
+        titleTag: "파이썬 — 엣지 랩", title: "엣지 랩",
         eyebrow: "파이썬으로 AI를 불러 봐요 · 인터넷 없이 내 컴퓨터에서",
-        homeLink: "The Maker (홈)", langBtn: "EN",
+        homeLink: "엣지 랩 (홈)", langBtn: "EN",
         edHead: "파이썬 코드를 써요", outHead: "결과를 확인해요",
         guide: "도움말", guideOff: "도움말 ✕", example: "예제", save: "저장", load: "불러오기",
         newCode: "새로 만들기",
@@ -342,9 +342,9 @@
         confirmReplace: "지금 코드가 지워져요. 예제를 불러올까요?",
       },
       en: {
-        titleTag: "Python — The Maker", title: "Python",
+        titleTag: "Python — Edge Lab", title: "Edge Lab",
         eyebrow: "call AI from Python · runs on this computer",
-        homeLink: "The Maker (home)", langBtn: "한",
+        homeLink: "Edge Lab (home)", langBtn: "한",
         edHead: "Write Python code", outHead: "Check the result",
         newCode: "New",
         askNew: "Clear what you wrote and start over?",
@@ -829,7 +829,7 @@ print("\\n[2] 우리 자료에서 찾아 답하기")
 print(chat(물음, db="우리자료"))
 
 print("\\n[3] 어디서 가져왔는지 보기")
-for h in db_find(물음, "우리자료", 2):
+for h in db_find("우리자료", 물음, 2):   # 자료 이름이 앞이에요
     print(" ", h["score"], h["text"][:40], "...")
 
 # 자료에 없는 것을 물으면 어떻게 될까요?
@@ -930,7 +930,25 @@ play_hz(440, 0.3)
 beep("ok")
 speak("전체 점검을 마쳤어요", voice="F1", speed=1.05)
 
-print("=== 9. 내가 가르친 AI ===")
+print("=== 9. 찾은 것 표시하고 오려내기 ===")
+보인것 = vision("object", img)
+show(draw(img, 보인것))            # 박스와 이름을 그려서 보기
+if 보인것:
+    show(crop_found(img, 보인것))  # 찾은 것 하나만 오려내기
+
+print("=== 10. 글로 묻고, 내 자료에서 찾기 ===")
+print(chat("무지개는 왜 생겨?"))
+db_add("점검자료", "무지개는 빛이 물방울에 꺾여서 생겨요.")
+print("자료 목록:", [d["title"] for d in db_list()])
+for h in db_find("점검자료", "무지개", 1):
+    print(" 찾은 곳:", h["text"][:20])
+print(chat("무지개는 왜 생겨?", db="점검자료"))
+db_delete("점검자료")
+
+print("=== 11. 스피커 고르기 ===")
+speaker()                          # 쓸 수 있는 스피커 목록만 보여줘요
+
+print("=== 12. 내가 가르친 AI ===")
 mine = my_models()
 print("저장된 모델:", mine)
 # 모델이 있으면 첫 번째 것으로 해 봐요
@@ -979,6 +997,7 @@ print("전체 점검 끝!")
 <tr><td><code>qr</code></td><td>큐알</td><td>QR 읽기</td></tr>
 <tr><td><code>bg_remove</code></td><td>배경제거</td><td>배경 지우기</td></tr>
 <tr><td><code>sr</code></td><td>화질개선</td><td>4배 선명하게</td></tr>
+<tr><td><code>depth</code></td><td>깊이지도</td><td>멀고 가까움을 색으로</td></tr>
 <tr><td><code>mask</code></td><td>마스크</td><td>마스크 착용</td></tr>
 </table>
 <p style="margin:10px 0 6px;"><b>내가 가르친 AI — 종류에 따라 보는 것이 달라요</b></p>
@@ -1018,6 +1037,7 @@ print(vision("look", img, lang="en")["answer"])   # 영어로 받기</pre>
 <tr><td><code>qr</code></td><td>read QR</td></tr>
 <tr><td><code>bg_remove</code></td><td>remove background</td></tr>
 <tr><td><code>sr</code></td><td>upscale 4x</td></tr>
+<tr><td><code>depth</code></td><td>depth map (near = bright)</td></tr>
 <tr><td><code>mask</code></td><td>mask on/off</td></tr>
 </table>
 <p style="margin:10px 0 6px;"><b>Your trained AI — kinds</b></p>
@@ -1099,10 +1119,10 @@ Relative paths resolve from <code>models\\pycode</code>. cv2 and numpy work as u
         ko: { d: "내가 만든 자료에서 찾아 답해요 — 자료에 없으면 없다고 말해요", a: "물어볼 말, db=자료 이름", r: "답 (글자)" },
         en: { d: "answer from your own material only", a: "question, db=title", r: "answer text" },
         x: 'print(chat("제갈량은 누구야?", db="삼국지"))' },
-      { g: "ai", n: 'db_find("...", "이름")', ins: 'db_find("제갈량은 누구야?", "삼국지")',
-        ko: { d: "답은 안 만들고 자료에서 비슷한 곳만 찾아요 — 어디서 가져오는지 보기", a: "물어볼 말, 자료 이름, 개수", r: "목록 [{text 조각, score 닮은 정도}]" },
-        en: { d: "find similar parts without answering", a: "question, title, count", r: "list of {text, score}" },
-        x: 'for h in db_find("제갈량은 누구야?", "삼국지"):\n    print(h["score"], h["text"])' },
+      { g: "ai", n: 'db_find("이름", "...")', ins: 'db_find("삼국지", "제갈량은 누구야?")',
+        ko: { d: "답은 안 만들고 자료에서 비슷한 곳만 찾아요 — 어디서 가져오는지 보기", a: "자료 이름, 물어볼 말, 개수", r: "목록 [{text 조각, score 닮은 정도}]" },
+        en: { d: "find similar parts without answering", a: "title, question, count", r: "list of {text, score}" },
+        x: 'for h in db_find("삼국지", "제갈량은 누구야?"):\n    print(h["score"], h["text"])' },
       { g: "ai", n: 'db_delete("이름")', ins: 'db_delete("삼국지")',
         ko: { d: "자료 지우기", a: "자료 이름", r: "{slug, deleted}" },
         en: { d: "delete a knowledge base", a: "title", r: "{slug, deleted}" },
@@ -1142,6 +1162,15 @@ Relative paths resolve from <code>models\\pycode</code>. cv2 and numpy work as u
         ko: { d: "흐린 사진을 4배 선명하게", a: "기능 이름, 사진", r: "선명해진 사진" },
         en: { d: "upscale 4x", a: "kind, image", r: "the upscaled image" },
         x: 'big = vision("sr", img)\nshow(big)\nsave(big, "big.jpg")' },
+      { g: "ai", n: 'vision("depth", img)', ins: 'vision("depth", img)',
+        ko: { d: "멀고 가까움을 색으로 보기", a: "기능 이름, 사진",
+              r: "깊이를 색칠한 사진 — 가까울수록 밝아요" },
+        en: { d: "see near and far as colors", a: "kind, image", r: "a colored depth image" },
+        x: 'far = vision("depth", camera())\nshow(far)   # 가까울수록 밝아요' },
+      { g: "ai", n: 'vision("mask", img)', ins: 'vision("mask", img)',
+        ko: { d: "마스크를 썼는지 보기", a: "기능 이름, 사진", r: "찾은 얼굴 목록 — name 에 썼는지 여부" },
+        en: { d: "check if a mask is worn", a: "kind, image", r: "a list of faces with name" },
+        x: 'for m in vision("mask", camera()):\n    print(m["name"])' },
 
       { g: "edit", n: "resize(img, 2)", ins: "resize(img, 2)",
         ko: { d: "크기 바꾸기 (1보다 크면 가운데를 잘라 확대)", a: "사진, 배율", r: "바뀐 사진" },
@@ -1388,7 +1417,7 @@ Relative paths resolve from <code>models\\pycode</code>. cv2 and numpy work as u
     /* ---------------- 자동완성 ---------------- */
     const KINDS = ["object", "face", "face_attr", "distance", "hand", "pose", "seg",
                    "look", "ocr", "qr",
-                   "bg_remove", "sr", "mask"];
+                   "bg_remove", "sr", "depth", "mask"];
     const FUNCS = ["camera", "load", "save", "show", "draw", "vision", "detect", "language", "chat", "db_add", "db_list", "db_find", "db_delete",
                    "speak", "listen", "wav_to_text", "my_models", "models", "models_folder",
                    "resize", "rotate", "flip", "crop", "crop_xy", "crop_found",

@@ -24,7 +24,7 @@ import prompts as P
 # 일부러 밖에서 붙여야 할 때만 VAPI_HOST=0.0.0.0 으로 띄운다.
 HOST = os.environ.get("VAPI_HOST", "127.0.0.1")
 PORT = int(os.environ.get("VAPI_PORT", "57711"))
-from paths import TMP_DIR, APPWIN_DIR, DATA_DIR   # noqa: E402  (폴더 규칙은 paths.py 한 곳에)
+from paths import TMP_DIR, APPWIN_DIR, APPDATA_DIR   # noqa: E402  (폴더 규칙은 paths.py 한 곳에)
 IMAGE_DIR = TMP_DIR + os.sep
 
 eng = None
@@ -118,7 +118,7 @@ def exec_device(obj, fallback="CPU"):
 def build_device_map():
     import engines as E
     vlm = {"place", "time", "weather", "tag", "look", "chat_ask"}
-    gan = {"portrait", "sr"}
+    gan = {"portrait", "sr", "depth"}
     face = {"face_detect", "face_analyze", "face_emotion", "face_age_gender"}
     # 실측: 각 그룹의 대표 모델에게 직접 물어본다
     dev_face = exec_device(eng.face.detect, E.DEV_FACE) if eng else E.DEV_FACE
@@ -495,6 +495,19 @@ def gan_sr(path):
     return to_b64_jpg(eng.gan.sr.predict(read_bgr(path)))
 
 
+@app.post("/gan/depth", tags=["gan"], summary="깊이 지도 (Depth Anything V2 Small)")
+@service("depth")
+def gan_depth(path):
+    """멀고 가까움을 색으로 칠해 돌려준다 — 가까울수록 밝다.
+
+    상대 깊이라 사진마다 기준이 다르다. 그래서 색은 그 사진 안에서만 편다.
+    """
+    from engines import to_b64_jpg
+    if eng.gan.depth is None:
+        raise ValueError("깊이 모델이 없어요 — models/gan/depth-v2s.xml 을 넣어 주세요")
+    return to_b64_jpg(eng.gan.depth.colorize(eng.gan.depth.raw(read_bgr(path))))
+
+
 # ---------------------------------------------------------------- code
 @app.post("/code/ocr", tags=["code"], summary="문자 인식")
 @service("ocr")
@@ -580,13 +593,10 @@ async def system_packages():
             pkgs[name] = "?"
 
     # 설치 기록: 설치 스크립트는 앱데이터에, 번들은 압축 안(루트)에 남긴다.
-    # 예전 판은 프로그램 폴더 data/ 에 뒀으므로 세 곳을 차례로 본다.
     import paths as _p
-    snap = os.path.join(DATA_DIR, "installed-packages.txt")
+    snap = os.path.join(APPDATA_DIR, "installed-packages.txt")
     if not os.path.exists(snap):
         snap = os.path.join(_p.ROOT, "installed-packages.txt")
-    if not os.path.exists(snap):
-        snap = os.path.join(_p.ROOT, "data", "installed-packages.txt")
     saved = ""
     if os.path.exists(snap):
         try:

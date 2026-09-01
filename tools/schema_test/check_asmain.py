@@ -15,6 +15,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import urllib.parse
 import urllib.request
@@ -62,8 +63,19 @@ def run():
     with open(tmp, "w", encoding="utf-8") as f:
         f.write(SERVER)
 
-    proc = subprocess.Popen([sys.executable, tmp], cwd=root, text=True,
+    # -u : 자식의 출력을 버퍼에 담아 두지 않고 바로 내보낸다.
+    #      윈도우의 terminate() 는 프로세스를 즉시 죽여서(TerminateProcess) 버퍼가
+    #      비워지지 않는다 — 버퍼링을 두면 로그가 통째로 사라진다.
+    env = dict(os.environ, PYTHONUNBUFFERED="1", PYTHONIOENCODING="utf-8")
+    proc = subprocess.Popen([sys.executable, "-u", tmp], cwd=root, text=True, env=env,
+                            encoding="utf-8", errors="replace",
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+    # 죽인 뒤에 읽으면 늦다(윈도우에서 파이프가 이미 끊긴다) — 도는 동안 모아 둔다.
+    lines = []
+    reader = threading.Thread(target=lambda: [lines.append(x) for x in proc.stdout],
+                              daemon=True)
+    reader.start()
     ok = fail = 0
     try:
         for _ in range(80):
@@ -100,11 +112,22 @@ def run():
         except Exception:
             pass
     finally:
+        # 여기까지 찍힌 것이 "서버가 도는 동안의 로그" 다. 죽이면서 나는 잡음은
+        # 아래 Traceback 검사에서 세면 안 되므로, 죽이기 전에 먼저 잘라 둔다.
+        time.sleep(0.3)                      # 마지막 줄이 도착할 틈을 준다
+        log = "".join(lines)
         proc.terminate()
         try:
-            log = proc.stdout.read() or ""
+            proc.wait(timeout=5)
         except Exception:
-            log = ""
+            proc.kill()
+        reader.join(timeout=2)
+
+    # 로그를 아예 못 읽은 것과 "두 번 실행됨" 은 완전히 다른 문제다.
+    # 둘 다 0 으로 나와서 헷갈린 적이 있어 따로 알려 준다.
+    if not log.strip():
+        print("  FAIL  서버 로그를 읽지 못함 (아래 세 가지를 판정할 수 없음)")
+        return ok, fail + 1
 
     # main.py 가 두 번 실행되면 시작 안내가 두 줄씩 찍힌다
     for label, needle in (("main.py 한 번만 실행", "[stats] usage tracking"),
@@ -116,6 +139,9 @@ def run():
             print("  FAIL  %-16s %d 번 (1 이어야 함)" % (label, n)); fail += 1
     if "Traceback" in log:
         print("  FAIL  서버 로그에 오류 흔적"); fail += 1
+        for ln in log.splitlines():
+            if "Error" in ln or "Traceback" in ln:
+                print("        | " + ln.strip()[:90])
     else:
         print("  PASS  서버 로그 깨끗함"); ok += 1
     return ok, fail

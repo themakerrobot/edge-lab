@@ -66,12 +66,12 @@ def _slugify(text):
     return s[:40] or ("db-" + uuid.uuid4().hex[:6])
 
 
-def _uniq(base):
-    s, k = base, 2
-    while os.path.exists(os.path.join(DB_DIR, s + ".json")):
-        s = "%s-%d" % (base, k)
-        k += 1
-    return s
+# 같은 이름으로 다시 만들면 덮어쓴다.
+#
+# 전에는 _uniq() 로 "우리자료-2" 처럼 새 이름을 붙였는데, 읽기(_load)와
+# 지우기(db_delete)는 _slugify(제목) 으로만 찾는다. 그래서 -2 는 만들어지기만
+# 하고 아무도 못 여는 유령 자료가 됐고, 목록에는 같은 제목이 여러 줄 쌓였다.
+# 예제가 db_add 를 다시 부르는 것만으로 재현된다.
 
 
 def split_text(text):
@@ -127,9 +127,28 @@ def _unb64(s, dim):
     return raw.reshape(-1, dim)
 
 
+def _path_of(slug):
+    """자료 파일 자리를 찾는다.
+
+    제목("우리자료")으로도, 목록이 준 slug 그대로("우리자료-2")로도 찾는다.
+    예전 판이 만들어 둔 "-2" 같은 파일은 _slugify 를 거치면 이름이 달라져서
+    영영 못 열고 못 지웠다 — 그래서 슬러그 원본도 함께 본다.
+    """
+    for name in (_slugify(slug), (slug or "").strip()):
+        if not name:
+            continue
+        p = os.path.join(DB_DIR, name + ".json")
+        # 폴더 밖으로 나가는 이름은 받지 않는다
+        if os.path.dirname(os.path.abspath(p)) != os.path.abspath(DB_DIR):
+            continue
+        if os.path.exists(p):
+            return p
+    return None
+
+
 def _load(slug):
-    p = os.path.join(DB_DIR, _slugify(slug) + ".json")
-    if not os.path.exists(p):
+    p = _path_of(slug)
+    if not p:
         raise ValueError("자료를 찾을 수 없어요: %s" % slug)
     with open(p, encoding="utf-8") as f:
         return json.load(f)
@@ -198,7 +217,7 @@ async def db_create(request: Request, title: str = Form(...), text: str = Form("
         return _fail(str(ex), t0)
 
     os.makedirs(DB_DIR, exist_ok=True)
-    slug = _uniq(_slugify(title))
+    slug = _slugify(title)                # 같은 제목이면 덮어쓴다
     meta = {"slug": slug, "title": title.strip(), "chunks": chunks,
             "dim": len(vecs[0]), "vectors": _b64(vecs),
             "chars": len(body), "count": len(chunks),
@@ -237,11 +256,11 @@ async def db_get(request: Request, slug: str, limit: int = 20):
 
 @router.delete("/chat/db/{slug}", tags=["chat"], summary="자료 지우기")
 async def db_delete(request: Request, slug: str):
-    p = os.path.join(DB_DIR, _slugify(slug) + ".json")
-    if not os.path.exists(p):
+    p = _path_of(slug)
+    if not p:
         return _fail("자료를 찾을 수 없어요: %s" % slug)
     os.remove(p)
-    return _ok({"slug": _slugify(slug), "deleted": True})
+    return _ok({"slug": os.path.splitext(os.path.basename(p))[0], "deleted": True})
 
 
 # ---------------------------------------------------------------- 찾기 / 답하기

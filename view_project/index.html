@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>The Maker</title>
+  <title>엣지 랩</title>
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
@@ -530,7 +530,7 @@
       <div class="boot-brand">
         <img src="/assets/pibo-prof.png" alt="">
         <span>
-          <b id="bootTitle">The Maker</b>
+          <b id="bootTitle">엣지 랩</b>
           <i id="bootSub">인터넷 없이 내 컴퓨터에서 실행돼요</i>
         </span>
       </div>
@@ -567,8 +567,8 @@
   <!-- 시험지 머리표 -->
   <div class="header">
     <div class="h-subject" style="flex-direction:row;align-items:center;gap:10px;">
-      <img src="/assets/pibo-prof.png" alt="" style="height:30px;flex:0 0 auto;">
-      <span class="title" title="인터넷 없이 내 컴퓨터에서 실행돼요"><span id="txtTitle">The Maker</span> <span class="od" style="font-size:.78rem;color:var(--pen-red);vertical-align:middle;">(On-Device)</span></span>
+      <img src="/assets/pibo-logo.png" alt="" style="height:30px;flex:0 0 auto;">
+      <span class="title" title="인터넷 없이 내 컴퓨터에서 실행돼요"><span id="txtTitle">엣지 랩</span></span>
     </div>
     <div class="h-tools">
       <button id="langButton" title="한국어 / English" style="min-width:46px;">EN</button>
@@ -719,8 +719,8 @@
 
     const UI = {
       ko: {
-        titleTag: "The Maker", title: "The Maker",
-        eyebrow: "써보기 · AI 12가지를 눌러 봐요 · 인터넷 없이 내 컴퓨터에서",
+        titleTag: "엣지 랩", title: "엣지 랩",
+        eyebrow: "체험하기 · AI 16가지를 눌러 봐요 · 인터넷 없이 내 컴퓨터에서",
         blocksLink: "블록", trainLink: "가르치기", codeLink: "파이썬", talkLink: "대화", optionsTip: "설정", langBtn: "EN",
         bootSub: "인터넷 없이 내 컴퓨터에서 실행돼요",
         bootSkip: "건너뛰기", bootWait: "준비 중...", bootStart: "시작하기",
@@ -738,7 +738,7 @@
         s3h: "일을 나눠서 해요",
         s3b: "컴퓨터 안에는 계산을 맡는 부품이 여러 개 있어요. 얼굴은 NPU, 그림 바꾸기는 GPU, 나머지는 CPU가 나눠 맡아 더 빠르게 움직여요.",
         s4h: "오늘 할 수 있는 것",
-        s4b: "써보기에서 AI를 눌러 보고, 블록 코딩과 파이썬으로 나만의 프로그램을 짜고, 가르치기에서 내가 직접 AI를 학습시킬 수 있어요.",
+        s4b: "체험하기에서 AI를 눌러 보고, 블록 코딩과 파이썬으로 나만의 프로그램을 짜고, 가르치기에서 내가 직접 AI를 학습시킬 수 있어요.",
         s5h: "곧 시작해요",
         s5b: "준비가 끝나면 아래 [시작하기] 버튼이 켜져요. 먼저 웹캠이 잘 보이는지 확인해 두면 좋아요.",
         customGroup: "내가 가르친 AI", customTip: "내가 직접 학습시킨 모델로 분류합니다.",
@@ -762,8 +762,8 @@
         aCopyFail: "복사에 실패했습니다.",
       },
       en: {
-        titleTag: "The Maker", title: "The Maker",
-        eyebrow: "Use · try 12 AIs · runs on this computer, no internet",
+        titleTag: "Edge Lab", title: "Edge Lab",
+        eyebrow: "Try it · 16 AIs · runs on this computer, no internet",
         blocksLink: "Blocks", trainLink: "Train", codeLink: "Python", talkLink: "Talk", optionsTip: "Settings", langBtn: "한",
         bootSub: "Runs on this computer, no internet needed",
         bootSkip: "Skip", bootWait: "Getting ready...", bootStart: "Start",
@@ -946,6 +946,7 @@
       /* ----- 사진 바꾸기 ----- */
       "배경 제거": { "g": "image", "api": "gan/portrait", "params": {}, "tooltip": "인물/사물만 남기고 배경을 제거합니다.", "en": "Remove background", "tooltip_en": "Keeps the subject and removes the background." },
       "화질 개선(4배)": { "g": "image", "api": "gan/sr", "params": {}, "tooltip": "이미지 화질을 4배로 개선합니다.", "en": "Upscale (4x)", "tooltip_en": "Improves the image quality four times." },
+      "깊이 지도": { "g": "image", "api": "gan/depth", "params": {}, "tooltip": "멀고 가까움을 색으로 칠합니다 — 가까울수록 밝아요.", "en": "Depth map", "tooltip_en": "Colors near and far — brighter is closer." },
 
       /* ----- 글자 · QR ----- */
       "글자 인식": { "g": "text", "api": "code/ocr", "params": {}, "tooltip": "이미지에서 문자/숫자를 인식합니다.", "en": "Text recognition", "tooltip_en": "Reads letters and numbers in the image." },
@@ -1445,6 +1446,8 @@
             if (!d.length) return `No QR code found.`;
             return d.map(b => `QR code says: <b>${esc(b.data || b.text || '')}</b>`).join('<br>');
           }
+          case 'depth':
+            return `Colored how near and far things are. Brighter means closer.`;
           case 'cartoon': case 'webtoon': case 'portrait': case 'sketch': case 'sr':
             return `Changed the image into a new style! Check the picture above.`;
           case 'object_seg':
@@ -1522,6 +1525,8 @@
         }
 
         /* --- 이미지 변환 계열 --- */
+        case 'depth':
+          return `멀고 가까움을 색으로 칠했어요. 밝을수록 가까운 곳이에요.`;
         case 'cartoon': case 'webtoon': case 'portrait': case 'sketch': case 'sr':
           return `이미지를 새로운 스타일로 바꿨어요! 위 그림을 확인해 보세요.`;
         case 'object_seg':
@@ -1560,7 +1565,7 @@
 
       if (
         res.type &&
-        ["cartoon","webtoon","portrait","sketch","sr","object_seg"]
+        ["cartoon","webtoon","portrait","sketch","sr","depth","object_seg"]
           .includes(res.type)
       ) {
         /* 분할은 색칠한 그림 + 찾은 것 목록으로 온다.

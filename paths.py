@@ -12,7 +12,7 @@
       project/     블록 코딩 작품
       pycode/      파이썬 작품 (파이썬을 실행할 때 이 폴더가 작업 위치)
       db/          아이가 올린 자료
-      기본값: 문서\\The Maker  (문서 폴더가 없으면 홈\\The Maker)
+      기본값: 문서\\Edge Lab  (문서 폴더가 없으면 홈\\Edge Lab)
 
   앱데이터 — 프로그램이 혼자 쓰는 것. 사용자가 열어볼 일이 없다.
       stats/  사용 통계·성적표   tmp/  업로드된 사진(자동 정리)
@@ -25,7 +25,6 @@
   3) 앱데이터의 settings.json (설정 화면에서 바꾼 값)
   4) 기본값
 
-예전 설치본(프로그램 폴더 안 data/, 더 예전엔 models/ 안)은 처음 뜰 때 옮겨 준다.
 """
 import json
 import os
@@ -35,7 +34,7 @@ import sys
 ROOT = os.path.dirname(os.path.abspath(__file__))
 MODELS_DIR = os.path.join(ROOT, "models")
 
-WORK_NAME = "The Maker"
+WORK_NAME = "Edge Lab"
 PORTABLE_MARK = os.path.join(ROOT, "portable.txt")
 
 
@@ -174,7 +173,6 @@ WORK_PARTS = ("user", "project", "pycode", "blocks", "db", "stats", "models")
 TMP_DIR = os.path.join(APPDATA_DIR, "tmp")
 APPWIN_DIR = os.path.join(APPDATA_DIR, ".appwin")
 
-DATA_DIR = APPDATA_DIR          # 예전 이름 — 설치 목록 파일이 쓴다
 
 REPORTS_PATH = os.path.join(STATS_DIR, "reports.json")
 USAGE_PATH = os.path.join(STATS_DIR, "usage.json")
@@ -329,52 +327,6 @@ def set_work_dir(path, mode="auto"):
     return new
 
 
-def migrate_old():
-    """예전 위치에 있던 것을 새 자리로. 두 세대를 함께 본다."""
-    old_data = os.path.join(ROOT, "data")
-    pairs = [
-        (os.path.join(MODELS_DIR, "user"), USER_DIR),
-        (os.path.join(MODELS_DIR, "project"), PROJECT_DIR),
-        (os.path.join(MODELS_DIR, "pycode"), PYCODE_DIR),
-        (os.path.join(MODELS_DIR, "stats"), STATS_DIR),
-        (os.path.join(MODELS_DIR, ".appwin"), APPWIN_DIR),
-        (os.path.join(ROOT, "image_temp"), TMP_DIR),
-        # 통계를 앱데이터에 두던 판(2026-08 이전)에서 쓰던 자리 — 작업폴더로 데려온다
-        (os.path.join(APPDATA_DIR, "stats"), STATS_DIR),
-    ]
-    if os.path.normcase(old_data) != os.path.normcase(APPDATA_DIR):
-        pairs += [
-            (os.path.join(old_data, "user"), USER_DIR),
-            (os.path.join(old_data, "project"), PROJECT_DIR),
-            (os.path.join(old_data, "pycode"), PYCODE_DIR),
-            (os.path.join(old_data, "db"), DB_DIR),
-            (os.path.join(old_data, "stats"), STATS_DIR),
-            (os.path.join(old_data, "tmp"), TMP_DIR),
-            (os.path.join(old_data, ".appwin"), APPWIN_DIR),
-        ]
-    moved = []
-    for src, dst in pairs:
-        if not os.path.isdir(src) or os.path.normcase(src) == os.path.normcase(dst):
-            continue
-        try:
-            os.makedirs(os.path.dirname(dst), exist_ok=True)
-            if not os.path.exists(dst):
-                shutil.move(src, dst)
-            else:
-                _merge(src, dst)
-            moved.append(os.path.basename(src))
-        except Exception as ex:
-            print("[paths] 옮기지 못했어요:", src, ex)
-    if moved:
-        print("[paths] 예전 자료를 옮겼어요:", ", ".join(moved))
-    try:
-        if os.path.isdir(old_data) and os.path.normcase(old_data) != os.path.normcase(APPDATA_DIR) \
-           and not os.listdir(old_data):
-            os.rmdir(old_data)
-    except Exception:
-        pass
-
-
 def summary():
     """설정 화면에 보여 줄 지금 상태."""
     return {
@@ -390,4 +342,3 @@ def summary():
 
 
 ensure()
-migrate_old()

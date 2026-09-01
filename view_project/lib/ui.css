@@ -77,12 +77,6 @@
   align-items: baseline;
   gap: 6px;
 }
-.header .title .od {
-  font-size: .78rem !important;
-  color: var(--pen-red, #b4451c);
-  font-family: "Gowun Dodum", sans-serif;
-  font-weight: 400;
-}
 
 /* 오른쪽 : 페이지별 버튼 → [한/영] [시스템] 순서로 끝난다 */
 .header .h-tools {

@@ -461,10 +461,64 @@ class SuperRes:
         return cv2.resize(out, (w * 4, h * 4))        # 정확히 4x 크기로 정합
 
 
+class Depth:
+    """Depth Anything V2 Small — 한 장의 사진에서 멀고 가까움을 읽는다.
+
+    2026-08-15 에 돌던 DepthAnything 구현을 그대로 되살린 것이다.
+    (그 뒤 실내/실외 metric 모델로 갈아탔다가 원복할 때 이 클래스가
+     통째로 빠져서 /gan/depth 가 404 였다.)
+
+    입력 크기는 모델에 묻지 않고 518 로 고정한다 — 이 IR 은 입력이 동적
+    ([1,3,?,?]) 이라 .shape 를 만지면 openvino 가 죽고, 애초에 DINOv2 패치가
+    14 라 14 의 배수여야 한다 (518 = 37*14).
+
+    출력은 상대 깊이(클수록 가깝다)라 사진마다 기준이 다르다.
+    그래서 그 사진 안에서만 0~1 로 펴서 색을 입힌다.
+
+    raw()      실수 깊이맵 (원본 크기)
+    colorize() 색 그림 — 밝을수록 가깝다
+    """
+
+    MEAN = np.array([0.485, 0.456, 0.406], dtype=np.float32)
+    STD = np.array([0.229, 0.224, 0.225], dtype=np.float32)
+    SIDE = 518
+
+    def __init__(self, device):
+        self.compiled = core.compile_model(
+            core.read_model(MODELS / "gan/depth-v2s.xml"), device)
+        self.lock = threading.Lock()
+
+    def raw(self, bgr):
+        h, w = bgr.shape[:2]
+        rgb = cv2.cvtColor(cv2.resize(bgr, (self.SIDE, self.SIDE)),
+                           cv2.COLOR_BGR2RGB).astype(np.float32)
+        rgb = ((rgb / 255.0) - self.MEAN) / self.STD
+        blob = rgb.transpose(2, 0, 1)[None]
+        with self.lock:
+            out = list(self.compiled({0: blob}).values())[0]
+        depth = np.squeeze(out).astype(np.float32)
+        return cv2.resize(depth, (w, h))
+
+    @staticmethod
+    def colorize(m):
+        near = (m - m.min()) / (m.max() - m.min() + 1e-8)      # 클수록 가깝다
+        return cv2.applyColorMap((near * 255).astype("uint8"), cv2.COLORMAP_INFERNO)
+
+    def predict(self, bgr):
+        """예전 이름 — 사진을 넣으면 색칠된 그림이 바로 나온다."""
+        return self.colorize(self.raw(bgr))
+
+
 class GanEngine:
     def __init__(self):
         self.bgremove = U2Net(DEV_GAN)
         self.sr = SuperRes(DEV_GAN)
+        # 깊이 모델이 없어도 나머지는 그대로 떠야 한다 — 옛 판의 안전장치를 유지한다
+        try:
+            self.depth = Depth(DEV_GAN)
+        except Exception as ex:
+            self.depth = None
+            print("[gan] depth 모델 없음 — 나머지는 그대로 씁니다 (%s)" % ex)
 
 
 # ---------------------------------------------------------------- code (ocr / qr)

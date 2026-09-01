@@ -1,6 +1,6 @@
 # 설치 · 모델 만들기
 
-**The Maker 를 쓰는 사람은 이 문서를 볼 일이 없다.** 설치가 끝난 뒤의 사용법은
+**엣지 랩 을 쓰는 사람은 이 문서를 볼 일이 없다.** 설치가 끝난 뒤의 사용법은
 [README.md](README.md) 에 있다. 여기에는 처음 깔 때와 모델을 새로 만들 때 필요한 것만 모았다.
 
 | 하려는 일 | 볼 곳 |
@@ -105,7 +105,7 @@ hf auth login                                    # private repo 이므로 write 
 ```
 
 아래를 `conv.py` 로 저장해 `python conv.py` 로 돌린다. 입력 518 은
-`engines.DepthAnything.SIDE` 와 같아야 한다. 출력이 dict(ModelOutput) 이면 변환기가
+`engines.Depth.SIDE` 와 같아야 한다. 출력이 dict(ModelOutput) 이면 변환기가
 헷갈리므로 깊이 텐서 하나만 내보내게 감싼다.
 
 ```python
@@ -131,7 +131,7 @@ r = np.squeeze(list(ov.Core().compile_model(ov_model, "CPU")(
 print(OUT, r.shape, "값", round(float(r.min()), 3), "~", round(float(r.max()), 3))
 ```
 
-출력은 **값이 클수록 가깝다**. `engines.DepthAnything.colorize()` 가 그 전제로
+출력은 **값이 클수록 가깝다**. `engines.Depth.colorize()` 가 그 전제로
 칠한다. Base/Large/Giant 는 CC-BY-NC 라 쓰지 않는다.
 
 ```
@@ -169,7 +169,7 @@ python tools\check.py                                 # fail = 0 이어야 함
 |---|---|---|
 | `object/` `face/` `mediapipe/` `gan/` `vlm/` `embed/` `backbone/` `code/` `stt/` `tts/` | 들어감 | 서버가 읽는 IR·모델 |
 | `org/` | 빠짐 | 변환용 원본(.pt) |
-| `yolo/` | 빠짐 | 골라 쓰는 사물 찾기 모델 — 쓸 사람이 직접 받아 `문서\The Maker\models` 에 넣는다 |
+| `yolo/` | 빠짐 | 골라 쓰는 사물 찾기 모델 — 쓸 사람이 직접 받아 `문서\Edge Lab\models` 에 넣는다 |
 | `*.md` | 빠짐 | 저장소 설명 |
 
 빼는 것은 `setup_deploy.ps1` 의 `--exclude` 로 정한다. 값을 이어 쓰지 말고

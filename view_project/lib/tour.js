@@ -29,7 +29,7 @@
   // 선택자는 페이지 분석으로 확인한 실제 id 를 쓴다. 없는 요소는 자동으로 건너뛴다.
   var TOURS = {
     "/": [
-      [null, { ko: "안녕! 여기는 써보기예요.\n내 컴퓨터 안의 AI를 눌러서 만나 봐요.",
+      [null, { ko: "안녕! 여기는 체험하기예요.\n내 컴퓨터 안의 AI를 눌러서 만나 봐요.",
                en: "Hi! This is Try-It.\nMeet the AI running on your own computer." }],
       ["#modelSelect", { ko: "무엇을 알아볼지 골라요.\n얼굴·사물·손·글자 같은 것들이 있어요.",
                           en: "Pick what to recognize —\nfaces, objects, hands, text, and more." }],
@@ -81,7 +81,7 @@
                        en: "When you have enough,\npress Train." }],
       ["#testLive", { ko: "잘 배웠는지 웹캠으로\n바로 시험해 봐요.",
                        en: "Test it live with the\nwebcam right away." }],
-      ["#saveBtn", { ko: "만든 AI를 저장하면\n써보기·블록·파이썬에서 쓸 수 있어요.",
+      ["#saveBtn", { ko: "만든 AI를 저장하면\n체험하기·블록·파이썬에서 쓸 수 있어요.",
                       en: "Save your AI to use it in\nTry-It, Blocks, and Python." }],
     ],
     "/talk": [

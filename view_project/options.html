@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>설정 — The Maker</title>
+  <title>설정 — 엣지 랩</title>
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
@@ -167,8 +167,8 @@
 <body data-density="explore">
   <div class="header">
     <div class="h-subject" style="flex-direction:row;align-items:center;gap:10px;">
-      <img src="/assets/pibo-prof.png" alt="" style="height:30px;flex:0 0 auto;">
-      <span class="title" title="인터넷 없이 내 컴퓨터에서 실행돼요"><span id="txtTitle">설정</span> <span class="od" style="font-size:.78rem;color:var(--pen-red);vertical-align:middle;">(On-Device)</span></span>
+      <img src="/assets/pibo-logo.png" alt="" style="height:30px;flex:0 0 auto;">
+      <span class="title" title="인터넷 없이 내 컴퓨터에서 실행돼요"><span id="txtTitle">엣지 랩</span></span>
     </div>
     <div class="h-tools">
       <button id="langButton" title="한국어 / English" style="min-width:46px;">EN</button>
@@ -332,9 +332,9 @@
   try { LANG = localStorage.getItem("vapiLang") || "ko"; } catch (e) {}
   const I18N = {
     ko: {
-      titleTag: "설정 — The Maker", title: "설정",
+      titleTag: "설정 — 엣지 랩", title: "엣지 랩",
       eyebrow: "인공지능 · 컴퓨터 비전 · 이 PC의 준비 상태와 결과물",
-      homeLink: "The Maker (홈)", langBtn: "EN",
+      homeLink: "엣지 랩 (홈)", langBtn: "EN",
       q1: "수업 전 점검", q2: "결과물", q3: "학습 결과 도표",
       q1hint: "수업 시작 5분 전에 한 번 눌러 주세요. 모델·디바이스·저장 폴더·웹캠을 한꺼번에 확인합니다.",
       run: "점검 실행", running: "점검 중...", camBtn: "웹캠 확인", camOff: "웹캠 끄기",
@@ -350,14 +350,14 @@
       colCount: "횟수", colAvg: "평균", colFail: "실패",
       confirmStat: "사용 통계를 지웁니다. 계속할까요?",
       evName: {
-        lab_run: "써보기 실행", block_run: "블록 프로그램 실행",
+        lab_run: "체험하기 실행", block_run: "블록 프로그램 실행",
         block_done: "블록 정상 종료", block_error: "블록 오류", block_stopped: "블록 정지",
         train_run: "학습 실행", model_saved: "모델 저장", project_saved: "작품 저장",
         samples_collected: "모은 사진",
         edit_used: "사진 편집 사용",
         example_loaded: "예제 불러오기",
       },
-      pgName: { index: "써보기", blocks: "블록 코딩", train: "가르치기",
+      pgName: { index: "체험하기", blocks: "블록 코딩", train: "가르치기",
                 code: "파이썬", options: "설정", etc: "기타" },
       notRun: "아직 점검하지 않았어요.", none: "아직 없어요.",
       sndTitle: "소리", sndTest: "소리 시험", sndOpen: "윈도우 소리 설정 열기",
@@ -405,9 +405,9 @@
       err: "오류: ",
     },
     en: {
-      titleTag: "Settings — The Maker", title: "Settings",
+      titleTag: "Settings — Edge Lab", title: "Edge Lab",
       eyebrow: "AI · computer vision · readiness and results on this PC",
-      homeLink: "The Maker (home)", langBtn: "한",
+      homeLink: "Edge Lab (home)", langBtn: "한",
       q1: "Pre-class check", q2: "Saved results", q3: "Training report",
       q1hint: "Run this 5 minutes before class. It checks models, devices, storage and the webcam at once.",
       run: "Run check", running: "Checking...", camBtn: "Check webcam", camOff: "Webcam off",

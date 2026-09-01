@@ -75,17 +75,17 @@ python -m pip list --path %BUILD%\pylib >> %BUILD%\installed-packages.txt 2>nul
 
 echo.
 echo === [5/8] build launcher exe ===
-if exist "%TOOLS%launcher.py" if exist themaker.ico (
+if exist "%TOOLS%launcher.py" if exist edge-lab.ico (
   "%PY_LOCAL%" -m pip install --quiet pyinstaller
   if errorlevel 1 (echo [WARN] pyinstaller install failed - skipping exe) else (
     "%PY_LOCAL%" -m PyInstaller --onefile --clean --noconfirm ^
-      --name themaker --icon "%ROOT%themaker.ico" ^
+      --name edge-lab --icon "%ROOT%edge-lab.ico" ^
       --distpath "%ROOT%." --workpath "%ROOT%build\exe" --specpath "%ROOT%build\exe" ^
       "%TOOLS%launcher.py"
     if errorlevel 1 (echo [WARN] exe build failed - continuing without exe)
   )
 ) else (
-  echo   tools\launcher.py / themaker.ico not found - skipping exe
+  echo   tools\launcher.py / edge-lab.ico not found - skipping exe
 )
 
 echo.
@@ -98,14 +98,14 @@ rem 점검 도구는 tools\ 에 있고, 배포본에서는 루트에 두어 바�
 for %%F in (check.py smoke_test.py bundle_check.bat) do (
   copy /y "%TOOLS%%%F" %BUILD%\ >nul
 )
-if exist themaker.exe copy /y themaker.exe %BUILD%\ >nul
-REM themaker.ico 는 빌드 때 exe 에 심는 용도라 배포본에는 넣지 않는다 -
+if exist edge-lab.exe copy /y edge-lab.exe %BUILD%\ >nul
+REM edge-lab.ico 는 빌드 때 exe 에 심는 용도라 배포본에는 넣지 않는다 -
 REM 확장자 숨김 상태에서 themaker(ico)와 themaker(exe)가 똑같이 보여 헷갈린다
 xcopy /e /i /q /y view_project %BUILD%\view_project >nul
 echo   copying models\ (several GB, takes a few minutes) ...
 xcopy /e /i /q /y models %BUILD%\models >nul
 if errorlevel 1 (echo [ERROR] models copy failed & exit /b 1)
-REM 작업 파일은 프로그램 폴더 밖에 생긴다 (paths.py: 작업폴더=문서\The Maker,
+REM 작업 파일은 프로그램 폴더 밖에 생긴다 (paths.py: 작업폴더=문서\Edge Lab,
 REM 앱데이터=%%LOCALAPPDATA%%\TheMaker). 번들에 data\ 를 만들지 않는다 -
 REM USB 휴대용으로 쓸 때만 압축 푼 곳에 portable.txt 를 만들면 옆에 data\ 가 생긴다.
 if exist %BUILD%\models\user rmdir /s /q %BUILD%\models\user

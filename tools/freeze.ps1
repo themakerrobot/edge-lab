@@ -18,7 +18,7 @@ $stamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 $pyver = & $PY -c "import sys; print(sys.version.split()[0])"
 
 $header = @(
-  "# The Maker - 검증된 패키지 버전 (setup_deploy.ps1 이 이 파일을 우선 사용한다)",
+  "# 엣지 랩 - 검증된 패키지 버전 (setup_deploy.ps1 이 이 파일을 우선 사용한다)",
   "# frozen at $stamp",
   "# python $pyver",
   "#",

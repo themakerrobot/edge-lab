@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title id="txtTitleTag">블록 코딩 — The Maker</title>
+  <title id="txtTitleTag">블록 코딩 — 엣지 랩</title>
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
@@ -67,7 +67,6 @@
     .h-title { display: flex; flex-direction: column; }
     .h-title .eyebrow { font-size: 0.82rem; letter-spacing: .14em; color: var(--ink-2); }
     .h-title .title { font-family: "Gowun Batang", serif; font-size: 1.15rem; font-weight: 700; }
-    .h-title .title .od { font-size: 0.82rem; color: var(--pen-red); }
     .h-tools {
       margin-left: auto; display: flex; flex-direction: row;
       gap: 8px; align-items: center; flex-wrap: wrap;
@@ -143,8 +142,8 @@
 <body data-density="work">
   <div class="header">
     <div class="h-subject" style="flex-direction:row;align-items:center;gap:10px;">
-      <img src="/assets/pibo-prof.png" alt="" style="height:30px;flex:0 0 auto;">
-      <span class="title" title="인터넷 없이 내 컴퓨터에서 실행돼요"><span id="txtTitle">블록</span> <span class="od" style="font-size:.78rem;color:var(--pen-red);vertical-align:middle;">(On-Device)</span></span>
+      <img src="/assets/pibo-logo.png" alt="" style="height:30px;flex:0 0 auto;">
+      <span class="title" title="인터넷 없이 내 컴퓨터에서 실행돼요"><span id="txtTitle">엣지 랩</span></span>
     </div>
     <div class="h-tools">
       <button id="langButton" title="한국어 / English" style="min-width:46px;">EN</button>
@@ -249,9 +248,9 @@
 
   const I18N = {
     ko: {
-      titleTag: "블록 코딩 — The Maker", title: "블록 코딩",
+      titleTag: "블록 코딩 — 엣지 랩", title: "엣지 랩",
       eyebrow: "블록으로 나만의 프로그램을 · 인터넷 없이 내 컴퓨터에서",
-      back: "The Maker (홈)", save: "저장", load: "불러오기", stop: "정지", run: "실행 ▶",
+      back: "엣지 랩 (홈)", save: "저장", load: "불러오기", stop: "정지", run: "실행 ▶",
       running: "실행 중...", langBtn: "EN",
       workHead: "블록을 조립해요", stageHead: "결과를 확인해요",
       upload: "사진 올리기", uploadHint: "「업로드한 사진」 블록에서 사용돼요",
@@ -400,6 +399,8 @@
       ex_mymodel_d: "[가르치기]에서 학습한 AI 로 분류하고 말해 줘요. (나만의 AI)",
       ex_modelfile: "모델 파일로 찾기",
       ex_modelfile_d: "모델 폴더에 넣은 .pt 파일로 찾아 박스를 그려요. (가져온 모델)",
+      ex_basics: "기본 블록 익히기 (AI 없이)",
+      ex_basics_d: "목록·반복·수학·글자·참거짓 블록만으로 만들어요. AI 는 쓰지 않아요.",
       ex_selfie: "흑백 셀카 만들기",
       ex_selfie_d: "사진을 찍고 흑백으로 바꿔 글자를 써서 저장해요. (사진 편집)",
       ex_color: "가운데 색 말하기",
@@ -465,9 +466,9 @@
       tts: "ko-KR",
     },
     en: {
-      titleTag: "Blocks — The Maker", title: "Blocks",
+      titleTag: "Blocks — Edge Lab", title: "Edge Lab",
       eyebrow: "write your own program with blocks · runs on this computer",
-      back: "The Maker (home)", save: "Save", load: "Load", stop: "Stop", run: "Run ▶",
+      back: "Edge Lab (home)", save: "Save", load: "Load", stop: "Stop", run: "Run ▶",
       running: "Running...", langBtn: "한",
       workHead: "Build your blocks", stageHead: "Check the result",
       upload: "Upload photo", uploadHint: "Used by the “uploaded photo” block",
@@ -615,6 +616,8 @@
       ex_mymodel_d: "Classify with an AI trained in [Train] and say the answer. (your own AI)",
       ex_modelfile: "Find with a model file",
       ex_modelfile_d: "Use a .pt file from the models folder and draw boxes. (added model)",
+      ex_basics: "Core blocks practice (no AI)",
+      ex_basics_d: "Lists, loops, math, text and booleans only — no AI here.",
       ex_selfie: "Black-and-white selfie",
       ex_selfie_d: "Take a photo, make it B&W, add text, save. (editing)",
       ex_color: "Say the center color",
@@ -1753,6 +1756,78 @@ def texts_of(result):
               { inputs: { IMG: { block: VG("사진") } } }) } } }),
           PR(B("variables_get", { fields: { VAR: { name: "찾은것" } } })),
           B("st_show_image", { inputs: { IMG: { block: VG("사진") } } }),
+        ]) ] } } },
+      /* 기본 블록 익히기 — AI 를 쓰지 않고 논리·반복·수학·텍스트·목록만 쓴다.
+         복구해 둔 기본 블록이 예제에 하나도 안 나오던 것을 메우는 예제다.
+         아이가 "AI 말고 코딩 자체"를 연습하는 자리이기도 하다. */
+      { id: "basics", name: t("ex_basics"), desc: t("ex_basics_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
+          CLEAR(),
+
+          /* 1) 목록 만들고 살펴보기 */
+          SET("숫자들", B("lists_create_with", { extraState: { itemCount: 3 },
+            inputs: { ADD0: shadowNum(7), ADD1: shadowNum(2), ADD2: shadowNum(9) } })),
+          PR(B("lists_length", { inputs: { VALUE: { block: VG("숫자들") } } })),
+          PR(B("math_on_list", { fields: { OP: "SUM" },
+            inputs: { LIST: { block: VG("숫자들") } } })),
+          PR(B("lists_sort", { fields: { TYPE: "NUMERIC", DIRECTION: "1" },
+            inputs: { LIST: { block: VG("숫자들") } } })),
+          SET("별들", B("lists_repeat",
+            { inputs: { ITEM: shadowTxt("★"), NUM: shadowNum(3) } })),
+          PR(B("lists_split", { fields: { MODE: "JOIN" },
+            inputs: { INPUT: { block: VG("별들") }, DELIM: shadowTxt("-") } })),
+
+          /* 2) 1부터 10까지 세면서 — 짝수면 두 배로, 7을 넘으면 그만 */
+          B("controls_for", { fields: { VAR: "i" },
+            inputs: {
+              FROM: shadowNum(1), TO: shadowNum(10), BY: shadowNum(1),
+              DO: { block: chain([
+                B("controls_if", { inputs: {
+                  IF0: { block: B("math_number_property",
+                    { fields: { PROPERTY: "EVEN" },
+                      inputs: { NUMBER_TO_CHECK: { block: VG("i") } } }) },
+                  DO0: { block: PR(B("math_arithmetic", { fields: { OP: "MULTIPLY" },
+                    inputs: { A: { block: VG("i") }, B: shadowNum(2) } })) },
+                } }),
+                B("controls_if", { inputs: {
+                  IF0: { block: B("logic_compare", { fields: { OP: "GT" },
+                    inputs: { A: { block: VG("i") }, B: shadowNum(7) } }) },
+                  DO0: { block: B("controls_flow_statements",
+                    { fields: { FLOW: "BREAK" } }) },
+                } }),
+              ]) },
+            } }),
+
+          /* 3) 수학 */
+          SET("값", B("math_random_int",
+            { inputs: { FROM: shadowNum(1), TO: shadowNum(100) } })),
+          PR(B("math_single", { fields: { OP: "ROOT" },
+            inputs: { NUM: { block: VG("값") } } })),
+          PR(B("math_round", { fields: { OP: "ROUND" },
+            inputs: { NUM: { block: B("math_trig", { fields: { OP: "SIN" },
+              inputs: { NUM: shadowNum(30) } }) } } })),
+          PR(B("math_modulo", { inputs: {
+            DIVIDEND: { block: VG("값") }, DIVISOR: shadowNum(7) } })),
+          PR(B("math_constrain", { inputs: { VALUE: { block: VG("값") },
+            LOW: shadowNum(10), HIGH: shadowNum(20) } })),
+          PR(B("math_constant", { fields: { CONSTANT: "PI" } })),
+          PR(B("math_random_float")),
+
+          /* 4) 글자 다루기 */
+          SET("말", B("text", { fields: { TEXT: "  Hello Pibo  " } })),
+          B("text_append", { fields: { VAR: "말" },
+            inputs: { TEXT: shadowTxt("!") } }),
+          PR(B("text_trim", { fields: { MODE: "BOTH" },
+            inputs: { TEXT: { block: VG("말") } } })),
+          PR(B("text_length", { inputs: { VALUE: { block: VG("말") } } })),
+
+          /* 5) 참·거짓 */
+          PR(B("logic_negate", { inputs: { BOOL: { block: B("logic_boolean",
+            { fields: { BOOL: "FALSE" } }) } } })),
+          PR(B("logic_ternary", { inputs: {
+            IF: { block: B("logic_boolean", { fields: { BOOL: "TRUE" } }) },
+            THEN: shadowTxt("맞아요"),
+            ELSE: { block: B("logic_null") } } })),
         ]) ] } } },
       { id: "selfie", name: t("ex_selfie"), desc: t("ex_selfie_d"),
         state: { blocks: { languageVersion: 0, blocks: [ chain([

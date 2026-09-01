@@ -160,3 +160,6 @@ Write-Host ""
 Write-Host "HF 에 올리려면:" -ForegroundColor Green
 Write-Host "  hf upload leeyunjai/edge-lab models ."
 Write-Host "  (models\org\mask-11s-cls.pt 도 함께 올려 두면 이 저장소만으로 전부 다시 만들 수 있다)" -ForegroundColor DarkGray
+Write-Host ""
+Write-Host "주의: 깊이 모델(gan\depth-v2s.xml)은 이 스크립트가 만들지 않는다." -ForegroundColor Yellow
+Write-Host "      optimum-intel 이 depth_anything 을 몰라 따로 변환해야 한다 — INSTALL.md 참고." -ForegroundColor DarkGray
