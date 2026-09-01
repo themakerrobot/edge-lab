@@ -133,5 +133,5 @@ PY
 echo ""
 echo "DONE. offline run:  export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 YOLO_OFFLINE=1"
 echo ""
-echo "HF 에 올리려면:  hf upload leeyunjai/vapi-od models ."
+echo "HF 에 올리려면:  hf upload leeyunjai/edge-lab models ."
 echo "  (models/org/mask-11s-cls.pt 도 함께 올려 두면 이 저장소만으로 전부 다시 만들 수 있다)"

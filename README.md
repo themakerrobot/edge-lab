@@ -5,13 +5,18 @@
 블록 코딩과 나만의 AI 학습(티처블 머신)을 포함한다. 설치가 끝나면 **인터넷 없이 전부 동작**한다.
 
 ## 메뉴
-| 메뉴 | 내용 |
+화면 위쪽 탭으로 옮겨 다닌다. 어느 화면에서나 같은 탭 줄이 서고, 지금 보는 탭에 밑줄이 그어진다.
+
+| 탭 | 내용 |
 |---|---|
-| 써보기 (Use) | AI 12가지를 눌러 보는 체험 실습 — 라이브 모드, 시스템 상태바 |
-| 파이썬 (Python) | 파이썬 코딩 — themaker 라이브러리로 AI 호출, 실행·정지, 작품 저장 |
-| 만들기 (Code) | 블록 코딩 — 인식·사진 편집·소리·이벤트 블록, 예제 6종, 무대 |
+| 써보기 (Try it) | AI 16가지를 눌러 보는 체험 — 라이브 모드, 사진 올리기·스케치 |
+| 블록 (Blocks) | 블록 코딩 — 커스텀 8묶음 + 기본 블록(논리·반복·수학·텍스트·목록·변수·함수), 예제 11종 |
+| 파이썬 (Python) | 파이썬 코딩 — themaker 라이브러리로 AI 호출, 실행·정지, 도움말, 작품 저장 |
 | 가르치기 (Train) | 나만의 AI 학습 — 사진/손모양/표정/상반신/전신 5개 모드, 학습 곡선·특징 지도 |
-| 설정 · 점검 (⚙) | 수업 전 점검, 결과물 관리, 학습 결과 도표, 사용 통계, 전체 초기화 |
+| 대화 (Talk) | AI와 이야기 — 음성 입력·읽어주기, 내 자료를 넣어 답하게 하기(RAG) |
+| 설정 (Settings) | 수업 전 점검, 결과물 관리, 학습 결과 도표, 사용 통계, 전체 초기화 |
+
+첫 방문에는 파이보가 말풍선으로 화면을 한 바퀴 안내한다. 헤더의 **?** 로 언제든 다시 볼 수 있다.
 
 ## 설치
 변환 완료된 모델을 허깅페이스에서 내려받는다 (private repo — Read 권한 토큰 필요).
@@ -168,7 +173,7 @@ venv-convert\Scripts\python -m optimum.commands.optimum_cli export openvino -m g
 허깅페이스에 올려야 다른 PC 도 `setup_deploy.ps1` 만으로 받는다.
 
 ```
-venv\Scripts\python -c "from huggingface_hub import HfApi; HfApi().upload_folder(repo_id='leeyunjai/vapi-od', folder_path='models/vlm/gemma3-4b-int4', path_in_repo='vlm/gemma3-4b-int4', delete_patterns='*', ignore_patterns=['.cache/**'], commit_message='VLM: gemma3-4b')"
+venv\Scripts\python -c "from huggingface_hub import HfApi; HfApi().upload_folder(repo_id='leeyunjai/edge-lab', folder_path='models/vlm/gemma3-4b-int4', path_in_repo='vlm/gemma3-4b-int4', delete_patterns='*', ignore_patterns=['.cache/**'], commit_message='VLM: gemma3-4b')"
 ```
 
 **예전 VLM 폴더는 허깅페이스 웹에서 지운다.** 안 지우면 설치할 때 둘 다 받아 용량만 먹는다.
@@ -341,6 +346,6 @@ python -m venv venv && venv\Scripts\activate      # linux: source venv/bin/activ
 powershell -ExecutionPolicy Bypass -File tools\setup.ps1   # linux: bash tools/setup.sh
 python tools\check.py                                 # fail = 0 이어야 함
 ```
-변환이 끝나면 결과를 올린다 — `hf upload leeyunjai/vapi-od models .`
+변환이 끝나면 결과를 올린다 — `hf upload leeyunjai/edge-lab models .`
 `models/org/mask-11s-cls.pt` 도 함께 올려 두어야 이 저장소만으로 전부 다시 만들 수 있다.
 이후 기기는 `setup_deploy.ps1` 로 내려받기만 하면 된다.

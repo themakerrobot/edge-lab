@@ -71,7 +71,7 @@ venv-convert\Scripts\python -m optimum.commands.optimum_cli export openvino -m g
 허깅페이스에 올려야 다른 PC 도 `setup_deploy.ps1` 만으로 받는다.
 
 ```
-venv\Scripts\python -c "from huggingface_hub import HfApi; HfApi().upload_folder(repo_id='leeyunjai/vapi-od', folder_path='models/vlm/gemma3-4b-int4', path_in_repo='vlm/gemma3-4b-int4', delete_patterns='*', ignore_patterns=['.cache/**'], commit_message='VLM: gemma3-4b')"
+venv\Scripts\python -c "from huggingface_hub import HfApi; HfApi().upload_folder(repo_id='leeyunjai/edge-lab', folder_path='models/vlm/gemma3-4b-int4', path_in_repo='vlm/gemma3-4b-int4', delete_patterns='*', ignore_patterns=['.cache/**'], commit_message='VLM: gemma3-4b')"
 ```
 
 **예전 VLM 폴더는 허깅페이스 웹에서 지운다.** 안 지우면 설치할 때 둘 다 받아 용량만 먹는다.
@@ -135,8 +135,8 @@ print(OUT, r.shape, "값", round(float(r.min()), 3), "~", round(float(r.max()), 
 칠한다. Base/Large/Giant 는 CC-BY-NC 라 쓰지 않는다.
 
 ```
-hf upload leeyunjai/vapi-od depth-v2s.xml gan/depth-v2s.xml
-hf upload leeyunjai/vapi-od depth-v2s.bin gan/depth-v2s.bin
+hf upload leeyunjai/edge-lab depth-v2s.xml gan/depth-v2s.xml
+hf upload leeyunjai/edge-lab depth-v2s.bin gan/depth-v2s.bin
 ```
 
 끝나면 정리한다(PowerShell).
@@ -160,7 +160,7 @@ python -m venv venv && venv\Scripts\activate      # linux: source venv/bin/activ
 powershell -ExecutionPolicy Bypass -File tools\setup.ps1   # linux: bash tools/setup.sh
 python tools\check.py                                 # fail = 0 이어야 함
 ```
-변환이 끝나면 결과를 올린다 — `hf upload leeyunjai/vapi-od models .`
+변환이 끝나면 결과를 올린다 — `hf upload leeyunjai/edge-lab models .`
 `models/org/mask-11s-cls.pt` 도 함께 올려 두어야 이 저장소만으로 전부 다시 만들 수 있다.
 이후 기기는 `setup_deploy.ps1` 로 내려받기만 하면 된다.
 
