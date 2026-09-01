@@ -15,14 +15,17 @@
 ---
 
 ## 설치
-변환 완료된 모델을 허깅페이스에서 내려받는다 (private repo — Read 권한 토큰 필요).
+변환 완료된 모델을 허깅페이스에서 내려받는다. 저장소가 public 이므로 **토큰 없이** 된다.
 ```
 git clone https://github.com/themakerrobot/edge-lab.git
 cd edge-lab
-powershell -ExecutionPolicy Bypass -File setup_deploy.ps1 -Token hf_xxxx
+powershell -ExecutionPolicy Bypass -File setup_deploy.ps1
 ```
-토큰은 `-Token` 인자 또는 `HF_TOKEN` 환경변수로 전달한다 (스크립트에 토큰을 심지 않는다).
-미리 `hf auth login`을 해둔 기기라면 토큰 없이 실행해도 된다.
+한 줄로 venv 만들기 → 패키지 설치 → 모델 내려받기 → 글꼴 → 점검까지 끝난다.
+
+저장소를 private 으로 돌리면 Read 권한 토큰이 필요하다 — `-Token hf_xxxx` 인자나
+`HF_TOKEN` 환경변수로 준다(스크립트에 토큰을 심지 않는다). 미리 `hf auth login` 을
+해 둔 기기라면 그대로 된다.
 
 끝나면 `run.bat` 으로 실행한다 — 이후 사용법은 README.
 

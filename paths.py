@@ -17,7 +17,7 @@
   앱데이터 — 프로그램이 혼자 쓰는 것. 사용자가 열어볼 일이 없다.
       stats/  사용 통계·성적표   tmp/  업로드된 사진(자동 정리)
       .appwin/  앱 창 프로필     settings.json  작업폴더 위치
-      기본값: 윈도우 %LOCALAPPDATA%\\TheMaker / 리눅스 ~/.local/share/themaker
+      기본값: 윈도우 %LOCALAPPDATA%\\EdgeLab / 리눅스 ~/.local/share/edgelab
 
 정하는 순서 (앞이 이김)
   1) 환경변수 VAPI_WORK / VAPI_APPDATA
@@ -62,11 +62,11 @@ def _documents():
 def _default_appdata():
     if sys.platform.startswith("win"):
         base = os.environ.get("LOCALAPPDATA") or os.path.join(_home(), "AppData", "Local")
-        return os.path.join(base, "TheMaker")
+        return os.path.join(base, "EdgeLab")
     if sys.platform == "darwin":
-        return os.path.join(_home(), "Library", "Application Support", "TheMaker")
+        return os.path.join(_home(), "Library", "Application Support", "EdgeLab")
     base = os.environ.get("XDG_DATA_HOME") or os.path.join(_home(), ".local", "share")
-    return os.path.join(base, "themaker")
+    return os.path.join(base, "edgelab")
 
 
 def _portable():

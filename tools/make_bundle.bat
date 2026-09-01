@@ -106,7 +106,7 @@ echo   copying models\ (several GB, takes a few minutes) ...
 xcopy /e /i /q /y models %BUILD%\models >nul
 if errorlevel 1 (echo [ERROR] models copy failed & exit /b 1)
 REM 작업 파일은 프로그램 폴더 밖에 생긴다 (paths.py: 작업폴더=문서\Edge Lab,
-REM 앱데이터=%%LOCALAPPDATA%%\TheMaker). 번들에 data\ 를 만들지 않는다 -
+REM 앱데이터=%%LOCALAPPDATA%%\EdgeLab). 번들에 data\ 를 만들지 않는다 -
 REM USB 휴대용으로 쓸 때만 압축 푼 곳에 portable.txt 를 만들면 옆에 data\ 가 생긴다.
 if exist %BUILD%\models\user rmdir /s /q %BUILD%\models\user
 if exist %BUILD%\models\project rmdir /s /q %BUILD%\models\project

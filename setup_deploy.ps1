@@ -11,10 +11,9 @@ param([string]$Token = "")
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
 
+# 모델 저장소는 public 이라 토큰 없이 받아진다.
+# private 으로 돌렸을 때만 -Token 이나 HF_TOKEN 이 필요하다.
 if ($Token) { $env:HF_TOKEN = $Token }
-if (-not $env:HF_TOKEN) {
-  Write-Host "[WARN] no HF token given (arg/env) - download will fail if repo is private" -ForegroundColor Yellow
-}
 
 Write-Host "=== [1/5] venv ===" -ForegroundColor Cyan
 if (-not (Test-Path "venv\Scripts\python.exe")) { python -m venv venv }
@@ -41,8 +40,8 @@ if ($LASTEXITCODE -ne 0) { throw "package install failed" }
 $global:LASTEXITCODE = 0
 
 # 설치된 패키지 버전을 남긴다 — 나중에 "언제부터 안 되기 시작했는지" 를 찾는 근거가 된다.
-# 자리는 paths.py 의 앱데이터(기본 %LOCALAPPDATA%\TheMaker) — 프로그램 폴더에 data\ 를 만들지 않는다
-$appdata = & $PY -c "import paths; print(paths.DATA_DIR)"
+# 자리는 paths.py 의 앱데이터 — 프로그램 폴더에 data\ 를 만들지 않는다
+$appdata = & $PY -c "import paths; print(paths.APPDATA_DIR)"
 New-Item -ItemType Directory -Force -Path $appdata | Out-Null
 $snap = Join-Path $appdata "installed-packages.txt"
 $stamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
