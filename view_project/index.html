@@ -1448,7 +1448,7 @@
           }
           case 'depth':
             return `Colored how near and far things are. Brighter means closer.`;
-          case 'cartoon': case 'webtoon': case 'portrait': case 'sketch': case 'sr':
+          case 'portrait': case 'sr':
             return `Changed the image into a new style! Check the picture above.`;
           case 'object_seg':
             {
@@ -1527,7 +1527,7 @@
         /* --- 이미지 변환 계열 --- */
         case 'depth':
           return `멀고 가까움을 색으로 칠했어요. 밝을수록 가까운 곳이에요.`;
-        case 'cartoon': case 'webtoon': case 'portrait': case 'sketch': case 'sr':
+        case 'portrait': case 'sr':
           return `이미지를 새로운 스타일로 바꿨어요! 위 그림을 확인해 보세요.`;
         case 'object_seg':
           {
@@ -1565,7 +1565,7 @@
 
       if (
         res.type &&
-        ["cartoon","webtoon","portrait","sketch","sr","depth","object_seg"]
+        ["portrait","sr","depth","object_seg"]
           .includes(res.type)
       ) {
         /* 분할은 색칠한 그림 + 찾은 것 목록으로 온다.

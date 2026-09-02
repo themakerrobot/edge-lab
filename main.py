@@ -117,7 +117,7 @@ def exec_device(obj, fallback="CPU"):
 
 def build_device_map():
     import engines as E
-    vlm = {"place", "time", "weather", "tag", "look", "chat_ask"}
+    vlm = {"look", "chat_ask"}
     gan = {"portrait", "sr", "depth"}
     face = {"face_detect", "face_analyze", "face_emotion", "face_age_gender"}
     # 실측: 각 그룹의 대표 모델에게 직접 물어본다
