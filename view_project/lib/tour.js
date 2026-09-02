@@ -257,11 +257,27 @@
     else tools.appendChild(b);
   }
 
+  /* 첫 화면에는 모델을 올리는 동안 부팅 덮개(#boot)가 떠 있다.
+     그게 떠 있을 때 시작하면 짚을 요소가 아직 없고 로딩 화면까지 가린다.
+     덮개가 사라진(=.done) 뒤에 시작한다. 덮개가 없는 화면은 바로 시작. */
+  function bootGone() {
+    var b = document.getElementById("boot");
+    return !b || b.classList.contains("done") || b.offsetParent === null;
+  }
+
+  function startWhenReady() {
+    if (bootGone()) { setTimeout(start, 700); return; }
+    var mo = new MutationObserver(function () {
+      if (bootGone()) { mo.disconnect(); setTimeout(start, 700); }
+    });
+    mo.observe(document.getElementById("boot"), { attributes: true, attributeFilter: ["class", "style"] });
+  }
+
   function boot() {
     addButton();
     var seen = false;
     try { seen = localStorage.getItem(SEEN_KEY) === "1"; } catch (e) {}
-    if (!seen) setTimeout(start, 700);
+    if (!seen) startWhenReady();
   }
 
   if (document.readyState === "loading") {

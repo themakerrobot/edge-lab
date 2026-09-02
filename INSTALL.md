@@ -27,7 +27,8 @@ powershell -ExecutionPolicy Bypass -File setup_deploy.ps1
 `HF_TOKEN` 환경변수로 준다(스크립트에 토큰을 심지 않는다). 미리 `hf auth login` 을
 해 둔 기기라면 그대로 된다.
 
-끝나면 `run.bat` 으로 실행한다 — 이후 사용법은 README.
+끝나면 `.\run.bat` 으로 실행한다 (PowerShell 은 `.\` 이 필요하다. cmd 나 더블클릭은 그냥 된다).
+이후 사용법은 README.
 
 ## 패키지 버전
 | 파일 | 내용 |

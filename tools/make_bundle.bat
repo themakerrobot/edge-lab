@@ -157,5 +157,5 @@ REM cmd set /a is 32-bit; use PowerShell for multi-GB sizes
 for /f %%S in ('powershell -NoProfile -Command "[math]::Round((Get-Item ''%ZIP%'').Length/1MB)"') do set SIZEMB=%%S
 echo.
 echo DONE: %ZIP%  (%SIZEMB% MB)
-echo   target PC: extract -^> run.bat      check: bundle_check.bat
+echo   target PC: extract -^> run.bat (double-click)   check: bundle_check.bat
 endlocal
