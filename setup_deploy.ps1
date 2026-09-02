@@ -1,4 +1,4 @@
-# ==========================================================================
+﻿# ==========================================================================
 #  edge-lab : one-shot deploy (clone the repo, then run this)
 #  Installs packages + downloads converted models from HF + verifies.
 #  usage:
