@@ -51,17 +51,14 @@ $stamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 Write-Host "  package versions -> $snap" -ForegroundColor DarkGray
 
 Write-Host "=== [3/5] models from HF ===" -ForegroundColor Cyan
-# org/ 는 모델 변환용 원본(.pt) 이라 교실 PC 에는 필요 없다 — 서버는 IR 만 읽는다.
+# 빼는 것: org/ 는 변환용 원본(.pt), yolo/ 는 골라 쓰는 모델, *.md 는 저장소 설명.
+# 교실 PC 는 서버가 읽는 IR 만 있으면 된다.
 #
-# --exclude 는 값을 하나만 받는다. 여러 개를 뺄 때는 반드시 플래그를 여러 번 쓴다 —
-# `--exclude "a" "b"` 처럼 이어 쓰면 뒤엣것이 "받을 파일 이름"(FILENAMES)으로 먹혀서
-#   Ignoring `--exclude` since filenames have been explicitly set
-# 경고와 함께 org/* 를 진짜 파일처럼 받으려다 죽는다.
-& "venv\Scripts\hf.exe" download leeyunjai/edge-lab --local-dir models `
-    --exclude "models.7z" `
-    --exclude "org/*" `
-    --exclude "yolo/*" `
-    --exclude "*.md"
+# hf.exe 대신 파이썬 API 를 쓴다.
+# CLI 로 `--exclude` 를 여러 번 넘기면 PowerShell 을 거치며 플래그가 사라지고
+# 패턴이 "받을 파일 이름"으로 먹힌다 — 실제로 README.md 한 개만 받고 끝났다.
+# 파이썬 목록으로 넘기면 인자 파싱을 아예 거치지 않아 그럴 일이 없다.
+& $PY -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='leeyunjai/edge-lab', local_dir='models', ignore_patterns=['models.7z','org/*','yolo/*','*.md'])"
 if ($LASTEXITCODE -ne 0) { throw "model download failed (check token / network)" }
 
 Write-Host "=== [4/5] fonts ===" -ForegroundColor Cyan
