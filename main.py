@@ -201,7 +201,7 @@ ALLOW_WHILE_LOADING = ("/ready", "/system", "/lib", "/assets", "/fonts", "/block
 async def _loading_guard(request: Request, call_next):
     path = request.url.path
     if (not READY["ready"] and request.method != "OPTIONS"
-            and path not in ("/", "/blocks", "/train", "/options", "/code", "/talk")
+            and path not in ("/", "/try", "/blocks", "/train", "/options", "/code", "/talk")
             and not path.startswith(ALLOW_WHILE_LOADING)):
         return JSONResponse(status_code=503, content={
             "type": "loading", "result": "fail",
