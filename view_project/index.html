@@ -16,67 +16,8 @@
   <!-- 모델 목록·아이콘은 아래 인라인 스크립트가 바로 쓰므로 head 에서 먼저 싣는다 -->
   <script src="/lib/icons.js"></script>
   <script src="/lib/apps.js"></script>
+  <script src="/lib/boot.js"></script>
   <style>
-    /* ---------------- 부팅(로딩) 화면 ---------------- */
-    #boot {
-      position: fixed; inset: 0; z-index: 100; display: flex;
-      align-items: center; justify-content: center; padding: 20px;
-      background: #fbf7ef;
-      background-image: radial-gradient(rgba(31, 95, 122,.07) 1px, transparent 1px);
-      background-size: 22px 22px;
-    }
-    #boot.done { display: none; }
-    .boot-card {
-      width: min(880px, 100%); background: #fff; border: 2px solid #4a3f2e;
-      border-radius: 4px; box-shadow: 0 2px 0 rgba(44,74,124,.2);
-      padding: 28px 32px 24px; display: flex; flex-direction: column; gap: 20px;
-    }
-    .boot-brand { display: flex; align-items: center; gap: 12px; }
-    .boot-brand img { height: 62px; }
-    .boot-brand b { display: block; font-family: "Gowun Batang", serif;
-                    font-size: 1.7rem; line-height: 1.2; }
-    .boot-brand i { font-style: normal; font-size: 1.02rem; color: #4a423a; }
-    .boot-slide { display: flex; align-items: center; gap: 26px; min-height: 200px; }
-    .boot-art { flex: 0 0 200px; height: 180px; }
-    .boot-art svg { width: 100%; height: 100%; }
-    .boot-text h2 { font-family: "Gowun Dodum", sans-serif; font-size: 1.5rem;
-                    color: #17475c; margin-bottom: 10px; }
-    .boot-text p { font-size: 1.18rem; color: #2a2620; line-height: 1.7; }
-    .boot-slide.fade { opacity: 0; }
-    .boot-slide { transition: opacity .35s; }
-    .boot-dots { display: flex; gap: 8px; justify-content: center; }
-    .boot-dots span { width: 10px; height: 10px; border-radius: 50%; background: #9a8f7d; }
-    .boot-dots span.on { background: #1f5f7a; }
-    .boot-progress { display: flex; flex-direction: column; gap: 5px; }
-    .boot-bar { height: 18px; background: #e6eef6; border-radius: 9px; overflow: hidden; }
-    .boot-bar > i { display: block; height: 100%; width: 0;
-                    background: linear-gradient(90deg, #1f5f7a, #1f5f7a);
-                    transition: width .4s; }
-    .boot-status { display: flex; align-items: baseline; gap: 10px;
-                   font-family: "Menlo","Consolas",monospace;
-                   font-size: 1rem; color: #4a423a; }
-    .boot-status #bootNow { flex: 1 1 auto; min-width: 0;
-                            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    /* 진행 수치는 오른쪽에 모아 둔다 — 숫자 폭을 고정해 갱신될 때 흔들리지 않게 */
-    .boot-meter { flex: 0 0 auto; display: flex; align-items: baseline; gap: 7px;
-                  font-variant-numeric: tabular-nums; }
-    .boot-meter .sep { color: #9a8f7d; }
-    .boot-meter #bootTime { color: #6b6255; }
-    .boot-actions { display: flex; gap: 8px; }
-    .boot-actions button {
-      font-family: inherit; font-size: 1.08rem; font-weight: 600; cursor: pointer;
-      border: 1.5px solid #4a3f2e; border-radius: 6px; padding: 11px 22px;
-      background: #1f5f7a; color: #fff; margin-left: auto;
-    }
-    .boot-actions button:disabled { background: #c4b9a5; border-color: #c4b9a5; cursor: default; }
-    .boot-actions button.ghost { background: #fff; color: #4a423a;
-                                 border-color: #9a8f7d; margin-left: 0; }
-    @media (max-width: 639px) {
-      .boot-slide { flex-direction: column; text-align: center; }
-      .boot-art { flex: 0 0 auto; height: 150px; }
-      .boot-text h2 { font-size: 1.3rem; }
-      .boot-text p { font-size: 1.05rem; }
-    }
 
 
 
@@ -165,38 +106,20 @@
     .qnum::after { content: "."; }
 
     /* ===== 조작 줄 — 왼쪽 패널 머리표 =====
-       모델 고르기(전 문항 1)와 실행하기(전 문항 2)가 여기 한 줄로 들어왔다.
-       전에는 화면 폭을 가로지르는 막대 두 개였는데, 둘 다 왼쪽 "입력" 패널을
-       조작하는 것이라 그 패널에 붙는 게 맞다. 세로 크롬이 그만큼 줄어든다.
-
-       누르는 것은 전부 40px 이다(ui.css 의 .panel-head 규칙). 좁아지면
-       줄바꿈해서 두 줄이 되지, 단추가 작아지지 않는다 — 쓰는 사람이 아이다. */
-    .run-head { gap: 9px var(--tap-gap, 8px); }
-    #modelSelect { font-weight: 700; min-width: 190px; max-width: 260px; }
-
-    /* 고른 모델이 무엇을 하는지 — 머리표 바로 아래 한 줄 */
-    .guide-line {
-      flex: 0 0 auto;
-      display: flex; align-items: baseline; gap: 10px;
-      padding: 5px 16px 0;
+       모델·입력 방법·라이브·실행이 한 줄. 프롬프트(물어보는 모델만)는 제 줄.
+       내용보다 위에 있는 줄은 전부 내용을 밀어내므로, 여기가 전부다. */
+    .run-head { gap: 6px; }
+    #modelSelect {
+      font-weight: 700; font-size: 13px; min-width: 150px; max-width: 220px;
+      min-height: var(--tap-sm, 32px); padding: 0 6px;
     }
-    .guide-line #guide {
-      flex: 1 1 auto; min-width: 0;
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    }
-    .guide-line:has(#guide:empty) { display: none; }
-    .doc-link { flex: 0 0 auto; font-size: var(--fs-side, 13px); white-space: nowrap; }
-    .doc-link::before { content: "※ "; color: var(--pen-red); }
-
-    /* 입력 방법 — 이미지 · 웹캠 · 스케치북.
-       밑줄 탭이었는데 실높이가 30px 이라 아이가 자주 빗나갔다. 40px 로 올리고
-       고른 것은 색 + 바탕 + 굵기로 알린다(색 하나로는 색약 아이가 못 가른다). */
-    .tabs { display: flex; gap: 4px; flex: 0 0 auto; }
+    .run-head .q[hidden] { display: none; }
+    .tabs { display: flex; gap: 3px; flex: 0 0 auto; }
     .tabButton {
       background: #fff; border: 1.5px solid var(--line);
       border-radius: var(--r); color: var(--ink-2);
-      font-size: var(--fs-body, 14px); font-weight: 600;
-      min-height: var(--tap-sm, 40px); padding: 0 13px; cursor: pointer;
+      font-size: 13px; font-weight: 600;
+      min-height: var(--tap-sm, 32px); padding: 0 10px; cursor: pointer;
       white-space: nowrap;
     }
     .tabButton:hover { color: var(--ink); border-color: var(--cyan); }
@@ -204,29 +127,23 @@
       color: #fff; font-weight: 700;
       background: var(--pen-blue); border-color: var(--pen-blue);
     }
-
-    #modelSelect { font-weight: 700; min-width: 190px; max-width: 260px; }
-
-    #promptInput { flex: 1 1 200px; width: auto; min-width: 150px; }
+    #promptInput { flex: 1 1 100%; width: 100%; min-height: var(--tap-sm, 32px); font-size: 13.5px; }
     #promptInput[hidden] { display: none; }
-
     #mainRunButton {
       background: var(--pen-blue); border: 1.5px solid var(--pen-blue); color: #fff;
-      font-weight: 700; font-size: 15px; min-height: var(--tap-sm, 40px);
-      padding: 0 26px; cursor: pointer;
+      font-weight: 700; font-size: 13.5px; min-height: var(--tap-sm, 32px);
+      padding: 0 18px; cursor: pointer;
       border-radius: var(--r); white-space: nowrap;
     }
     #mainRunButton:hover { background: var(--pen-blue-d); border-color: var(--pen-blue-d); }
     #mainRunButton:disabled { background: #b9b7ac; border-color: #b9b7ac; cursor: wait; }
-
-    /* 라이브 토글 */
     .live-toggle {
-      display: inline-flex; align-items: center; gap: 7px;
-      font-size: var(--fs-body, 14px); color: var(--ink-2); white-space: nowrap;
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 13px; color: var(--ink-2); white-space: nowrap;
       border: 1.5px solid var(--line); border-radius: var(--r);
-      min-height: var(--tap-sm, 40px); padding: 0 13px; cursor: pointer; background: #fff;
+      min-height: var(--tap-sm, 32px); padding: 0 9px; cursor: pointer; background: #fff;
     }
-    .live-toggle input { width: 18px; height: 18px; cursor: pointer; }
+    .live-toggle input { width: 15px; height: 15px; cursor: pointer; }
     .live-toggle.on { border-color: var(--pen-red); color: var(--pen-red); font-weight: 700; }
     .live-toggle.off { opacity: .45; cursor: not-allowed; }
 
@@ -473,62 +390,11 @@
       .tab-content.active { display: block; }
       .upload-container, .webcam-container, .sketch-container, .result-frame { min-height: 260px; }
     }
-    @media (max-width: 639px) {
-      /* 조작 줄이 두 줄로 접힐 때 실행 단추가 끝까지 늘어나 눈에 띄게 */
-      .run-head .right { width: 100%; }
-      #mainRunButton { flex: 1 1 auto; }
-    }
   </style>
   <link rel="stylesheet" href="/lib/ui.css">
   <link rel="stylesheet" href="/lib/shell.css">
 </head>
 <body data-density="explore">
-  <!-- 부팅 화면 : 모델을 올리는 동안 무엇이 일어나는지 보여준다 -->
-  <!-- 로딩 화면은 처음부터 덮어 둔다. 이미 준비가 끝난 세션이면 아래 스크립트가 바로 걷는다.
-       (나중에 표시하면 그 사이 체험 화면이 잠깐 보였다가 가려진다) -->
-  <script>
-    /* 같은 세션에서 이미 로딩이 끝났다면(페이지 이동) 처음부터 숨겨 깜빡임을 없앤다 */
-    document.write(sessionStorage.getItem("vapi-ready") === "1"
-      ? '<style>#boot{display:none}</style>' : "");
-  </script>
-  <div id="boot">
-    <div class="boot-card">
-      <div class="boot-brand">
-        <img src="/assets/pibo-prof.png" alt="">
-        <span>
-          <b id="bootTitle">edge-lab</b>
-          <i id="bootSub">인터넷 없이 내 컴퓨터에서 실행돼요</i>
-        </span>
-      </div>
-
-      <div class="boot-slide">
-        <div class="boot-art" id="bootArt"></div>
-        <div class="boot-text">
-          <h2 id="bootHead"></h2>
-          <p id="bootBody"></p>
-        </div>
-      </div>
-
-      <div class="boot-dots" id="bootDots"></div>
-
-      <div class="boot-progress">
-        <div class="boot-bar"><i id="bootBar"></i></div>
-        <div class="boot-status">
-          <span id="bootNow">준비하는 중...</span>
-          <span class="boot-meter">
-            <span id="bootCount">0 / 0</span>
-            <span class="sep">·</span>
-            <span id="bootTime">0초</span>
-          </span>
-        </div>
-      </div>
-
-      <div class="boot-actions">
-        <button id="bootSkip" class="ghost">건너뛰기</button>
-        <button id="bootStart" disabled>준비 중...</button>
-      </div>
-    </div>
-  </div>
 
   <!-- 시험지 머리표 -->
   <div class="titlebar">
@@ -555,10 +421,9 @@
     <!-- 왼쪽: 입력 -->
     <div class="panel">
       <div class="panel-head run-head">
-        <span class="q">
-          <span class="qnum">1</span>
-          <span class="qtext" id="txtQ1">골라서 실행해요</span>
-        </span>
+        <!-- 문항 제목은 두지 않는다 — 드롭다운(고른 AI)이 곧 제목이고,
+             글자 한 덩어리가 더 있으면 1366px 에서 줄이 접힌다. -->
+        <span class="q" hidden><span class="qnum">1</span><span class="qtext" id="txtQ1">골라서 실행해요</span></span>
         <!-- 지금 고른 AI. 홈의 아이콘으로 들어오면 그게 골라져 있고,
              여기서 바로 다른 것으로 바꿀 수도 있다(홈에 갔다 오지 않아도). -->
         <select id="modelSelect" aria-label="모델"></select>
@@ -574,16 +439,23 @@
           </label>
           <button id="mainRunButton" title="스페이스바로도 실행할 수 있어요"><span id="runLabel">실행</span></button>
         </span>
+        <!-- 프롬프트는 물어보는 모델에서만 보인다. 나머지 열다섯은 값이 "-" 인 채
+             서버로도 안 가는 칸이었다. 보일 때는 제 줄을 통째로 쓴다 —
+             오른쪽 구석에 어정쩡하게 두 줄로 접히던 것. -->
+        <input type="text" id="promptInput" value="-" aria-label="프롬프트"
+               placeholder="사진에 대해 물어볼 말" />
       </div>
       <!-- 고른 모델이 무엇을 하는지 — 전에는 [가이드] 라는 읽기 전용 입력칸이었다.
            입력칸처럼 생겼는데 못 쓰는 칸이라 아이가 눌러 보고 헤맸다. 글로 바꾼다. -->
-      <p class="guide-line"><span class="hint" id="guide"></span>
-         <a id="apiDocLink" class="doc-link" href="#" target="_blank">API Docs</a></p>
+      <!-- 고른 모델 설명은 드롭다운의 title(툴팁)로만. 한 줄을 통째로 쓰던 안내 줄은
+           걷어냈다 — 내용보다 위에 있는 줄은 전부 내용을 밀어낸다. -->
+      <span id="guide" hidden></span>
+      <a id="apiDocLink" href="#" target="_blank" hidden>API Docs</a>
       <div class="panel-body">
         <div id="upload" class="tab-content active">
           <div class="upload-container" id="uploadPlaceholder">
             <div id="uploadText">
-              <img src="/assets/pibo-hello.png" alt="" style="height:110px;display:block;margin:0 auto 10px;">
+              <img src="/assets/pibo-hello.png" alt="" style="height:80px;display:block;margin:0 auto 8px;">
               <span id="txtUploadMain">이 칸에 이미지를 붙여 보세요</span>
               <div class="hint" id="txtUploadHint">끌어놓기 또는 클릭해서 업로드</div>
             </div>
@@ -683,25 +555,11 @@
         titleTag: "edge-lab — 체험하기", title: "edge-lab",
         eyebrow: "체험하기 · AI 16가지를 눌러 봐요 · 인터넷 없이 내 컴퓨터에서",
         blocksLink: "블록", trainLink: "가르치기", codeLink: "파이썬", talkLink: "대화", optionsTip: "설정", langBtn: "EN",
-        bootSub: "인터넷 없이 내 컴퓨터에서 실행돼요",
-        bootSkip: "건너뛰기", bootWait: "준비 중...", bootStart: "시작하기",
-        bootDone: "준비 끝!", bootError: "문제가 생겼어요: ",
-        bootSec: "초", bootMin: "분 ",
         cam_denied: "카메라를 쓸 수 없어요.<br>주소창 왼쪽(또는 창 위쪽)의 자물쇠·카메라 아이콘을 눌러 <b>허용</b>으로 바꿔 주세요.",
         cam_busy: "다른 프로그램이 카메라를 쓰고 있어요.<br>화상회의·카메라 앱을 닫고 다시 눌러 보세요.",
         cam_none: "카메라를 찾지 못했어요.<br>웹캠이 꽂혀 있는지, 노트북이라면 카메라 덮개가 열려 있는지 확인해 주세요.",
         cam_fail: "카메라를 켜지 못했어요.",
         cam_retry: "다시 시도",
-        s1h: "인터넷 없이 동작해요",
-        s1b: "이 프로그램은 인터넷에 연결하지 않아요. 웹캠으로 찍은 사진은 이 컴퓨터 밖으로 나가지 않고, 여기 안에서만 처리돼요.",
-        s2h: "AI를 내 컴퓨터에 올리는 중이에요",
-        s2b: "사물 찾기, 얼굴 분석, 손 인식, 글자 읽기, 그림 바꾸기까지 여러 개의 AI를 지금 메모리에 올리고 있어요. 아래 막대가 그 진행 상황이에요.",
-        s3h: "일을 나눠서 해요",
-        s3b: "컴퓨터 안에는 계산을 맡는 부품이 여러 개 있어요. 얼굴은 NPU, 그림 바꾸기는 GPU, 나머지는 CPU가 나눠 맡아 더 빠르게 움직여요.",
-        s4h: "오늘 할 수 있는 것",
-        s4b: "체험하기에서 AI를 눌러 보고, 블록 코딩과 파이썬으로 나만의 프로그램을 짜고, 가르치기에서 내가 직접 AI를 학습시킬 수 있어요.",
-        s5h: "곧 시작해요",
-        s5b: "준비가 끝나면 아래 [시작하기] 버튼이 켜져요. 먼저 웹캠이 잘 보이는지 확인해 두면 좋아요.",
         customGroup: "내가 가르친 AI", customTip: "내가 직접 학습시킨 모델로 분류합니다.",
         q1: "골라서 실행해요", q3: "결과를 확인해요",
         tabUpload: "이미지", tabWebcam: "웹캠", tabSketch: "스케치북",
@@ -724,25 +582,11 @@
         titleTag: "edge-lab — Try it", title: "edge-lab",
         eyebrow: "Try it · 16 AIs · runs on this computer, no internet",
         blocksLink: "Blocks", trainLink: "Train", codeLink: "Python", talkLink: "Talk", optionsTip: "Settings", langBtn: "한",
-        bootSub: "Runs on this computer, no internet needed",
-        bootSkip: "Skip", bootWait: "Getting ready...", bootStart: "Start",
-        bootDone: "Ready!", bootError: "Something went wrong: ",
-        bootSec: "s", bootMin: "m ",
         cam_denied: "Camera is blocked.<br>Click the lock or camera icon near the address bar and choose <b>Allow</b>.",
         cam_busy: "Another app is using the camera.<br>Close video-call or camera apps, then try again.",
         cam_none: "No camera found.<br>Check that a webcam is connected and the privacy cover is open.",
         cam_fail: "Could not start the camera.",
         cam_retry: "Try again",
-        s1h: "It works without the internet",
-        s1b: "This program never connects to the internet. Photos from your webcam stay on this computer and are processed right here.",
-        s2h: "Loading the AI models",
-        s2b: "Object detection, face analysis, hand tracking, text reading and image transforms are being loaded into memory. The bar below shows the progress.",
-        s3h: "The work is shared out",
-        s3b: "Your computer has several chips for computing. Faces go to the NPU, image transforms to the GPU, and the rest to the CPU — so everything runs faster.",
-        s4h: "What you can do today",
-        s4b: "Try the AIs in Use, write your own program in Blocks or Python, and train your very own AI in Train.",
-        s5h: "Almost there",
-        s5b: "The [Start] button turns on when everything is ready. It is a good moment to check that your webcam works.",
         customGroup: "My own AI", customTip: "Classifies with a model you trained yourself.",
         q1: "Pick one and run", q3: "Check the result",
         tabUpload: "Image", tabWebcam: "Webcam", tabSketch: "Sketchbook",
@@ -763,109 +607,6 @@
       },
     };
     const T = k => UI[LANG][k] !== undefined ? UI[LANG][k] : UI.ko[k];
-
-    /* ================= 부팅 화면 =================
-       모델을 올리는 동안 이 툴이 무엇을 하는지 짧게 안내한다.
-       그림은 전부 인라인 SVG — 파일을 더 받지 않는다. */
-    const ART = {
-      offline: '<svg viewBox="0 0 120 105"><rect x="14" y="18" width="92" height="60" rx="5" fill="#fff" stroke="#4a3f2e" stroke-width="3"/><rect x="24" y="28" width="72" height="40" rx="3" fill="#eaf6fb"/><path d="M44 88h32l4 9H40z" fill="#9a8f7d"/><circle cx="60" cy="48" r="13" fill="none" stroke="#1f5f7a" stroke-width="3"/><path d="M60 41v9M60 55h.01" stroke="#17475c" stroke-width="3" stroke-linecap="round"/><path d="M96 14 22 90" stroke="#b4451c" stroke-width="5" stroke-linecap="round"/></svg>',
-      models: '<svg viewBox="0 0 120 105"><g fill="none" stroke="#4a3f2e" stroke-width="3"><rect x="10" y="14" width="30" height="24" rx="4"/><rect x="45" y="14" width="30" height="24" rx="4"/><rect x="80" y="14" width="30" height="24" rx="4"/><rect x="10" y="44" width="30" height="24" rx="4"/><rect x="45" y="44" width="30" height="24" rx="4"/><rect x="80" y="44" width="30" height="24" rx="4"/></g><rect x="10" y="44" width="30" height="24" rx="4" fill="#1f5f7a" opacity=".35"/><rect x="45" y="14" width="30" height="24" rx="4" fill="#1f5f7a" opacity=".35"/><rect x="80" y="44" width="30" height="24" rx="4" fill="#1f5f7a" opacity=".35"/><path d="M22 84h76" stroke="#9a8f7d" stroke-width="8" stroke-linecap="round"/><path d="M22 84h44" stroke="#1f5f7a" stroke-width="8" stroke-linecap="round"/></svg>',
-      chips: '<svg viewBox="0 0 120 105"><rect x="26" y="26" width="68" height="56" rx="6" fill="#fff" stroke="#4a3f2e" stroke-width="3"/><rect x="38" y="38" width="44" height="32" rx="3" fill="#eaf6fb" stroke="#17475c" stroke-width="2"/><g stroke="#4a3f2e" stroke-width="3" stroke-linecap="round"><path d="M40 26v-9M60 26v-9M80 26v-9M40 82v9M60 82v9M80 82v9M26 42h-9M26 60h-9M94 42h9M94 60h9"/></g><text x="60" y="59" font-size="13" font-family="monospace" fill="#17475c" text-anchor="middle">NPU</text></svg>',
-      menus: '<svg viewBox="0 0 120 105"><rect x="8" y="24" width="32" height="56" rx="5" fill="#fff" stroke="#4a3f2e" stroke-width="3"/><rect x="44" y="24" width="32" height="56" rx="5" fill="#fff" stroke="#4a3f2e" stroke-width="3"/><rect x="80" y="24" width="32" height="56" rx="5" fill="#fff" stroke="#4a3f2e" stroke-width="3"/><circle cx="24" cy="44" r="7" fill="#1f5f7a"/><path d="M15 66h18M15 72h12" stroke="#9a8f7d" stroke-width="3" stroke-linecap="round"/><rect x="52" y="38" width="16" height="9" rx="2" fill="#2fa35c"/><rect x="52" y="50" width="16" height="9" rx="2" fill="#d97b2b"/><path d="M51 66h18M51 72h12" stroke="#9a8f7d" stroke-width="3" stroke-linecap="round"/><path d="M88 52l6 6 12-14" stroke="#1f5f7a" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M87 66h18M87 72h12" stroke="#9a8f7d" stroke-width="3" stroke-linecap="round"/></svg>',
-      go: '<svg viewBox="0 0 120 105"><circle cx="60" cy="52" r="34" fill="#eaf6fb" stroke="#1f5f7a" stroke-width="3"/><path d="M46 52l10 11 20-24" stroke="#1f5f7a" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    };
-    const SLIDES = [
-      { art: "offline", key: "s1" }, { art: "models", key: "s2" },
-      { art: "chips", key: "s3" },   { art: "menus", key: "s4" },
-      { art: "go", key: "s5" },
-    ];
-
-    (function boot() {
-      const box = document.getElementById("boot");
-      if (!box) return;
-      let idx = 0, ready = false, timer = null, shown = false;
-
-      function paint() {
-        const sl = SLIDES[idx];
-        document.getElementById("bootArt").innerHTML = ART[sl.art];
-        document.getElementById("bootHead").textContent = T(sl.key + "h");
-        document.getElementById("bootBody").textContent = T(sl.key + "b");
-        document.getElementById("bootDots").innerHTML =
-          SLIDES.map((_, i) => '<span class="' + (i === idx ? "on" : "") + '"></span>').join("");
-      }
-      function next() {
-        const slide = document.querySelector(".boot-slide");
-        slide.classList.add("fade");
-        setTimeout(() => {
-          idx = (idx + 1) % SLIDES.length;
-          paint();
-          slide.classList.remove("fade");
-        }, 350);
-      }
-      function finish() {
-        box.classList.add("done");
-        if (timer) clearInterval(timer);
-      }
-
-      /* 로딩이 끝난 뒤 다시 들어온 경우에는 안내를 띄우지 않는다.
-         (블록 코딩 → 체험 실습 처럼 페이지를 오갈 때마다 나오면 방해가 된다) */
-      function show() {
-        if (shown) return;
-        shown = true;
-        box.classList.remove("done");
-        document.getElementById("bootTitle").textContent = T("title");
-        document.getElementById("bootSub").textContent = T("bootSub");
-        document.getElementById("bootSkip").textContent = T("bootSkip");
-        document.getElementById("bootStart").textContent = T("bootWait");
-        paint();
-        timer = setInterval(next, 8000);
-        document.getElementById("bootSkip").addEventListener("click", finish);
-        document.getElementById("bootStart").addEventListener("click", () => {
-          if (ready) finish();
-        });
-      }
-
-      const bootT0 = Date.now();
-      function elapsed() {
-        const s = Math.floor((Date.now() - bootT0) / 1000);   // 내림 — 59.5 가 "60초" 로 보이지 않게
-        return s < 60 ? s + T("bootSec")
-                      : Math.floor(s / 60) + T("bootMin") + (s % 60) + T("bootSec");
-      }
-
-      async function poll() {
-        try {
-          const r = await (await fetch("/ready")).json();
-          if (r.ready) sessionStorage.setItem("vapi-ready", "1");
-          if (r.ready && !shown) { finish(); return; }   // 이미 준비 끝 → 바로 실습 화면
-          show();
-          const pct = r.total ? Math.round(r.loaded / r.total * 100) : 0;
-          document.getElementById("bootBar").style.width = pct + "%";
-          document.getElementById("bootCount").textContent = r.loaded + " / " + r.total;
-          document.getElementById("bootTime").textContent = elapsed();
-          if (r.error) {
-            document.getElementById("bootNow").textContent = T("bootError") + r.error;
-            return;                                   // 더 묻지 않는다
-          }
-          document.getElementById("bootNow").textContent = r.ready
-            ? T("bootDone")
-            : (LANG === "en" ? (r.current_en || "") : (r.current_ko || "")) + " ...";
-          if (r.ready) {
-            ready = true;
-            /* 얼마나 걸렸는지 남겨 둔다 — 느린 PC 를 가늠하는 데 쓴다 */
-            document.getElementById("bootNow").textContent = T("bootDone");
-            document.getElementById("bootTime").textContent = elapsed();   // 총 걸린 시간
-            const b = document.getElementById("bootStart");
-            b.disabled = false;
-            b.textContent = T("bootStart");
-            return;                                   /* 자동 전환하지 않는다 */
-          }
-        } catch (e) {
-          show();                                     // 서버가 아직 못 뜬 상태 → 안내를 띄운다
-        }
-        setTimeout(poll, 700);
-      }
-      poll();
-    })();
 
     /* 묶음 순서 = 화면에 보이는 순서. 얼굴 → 몸·손 → 사물 → 개별 인식 →
        말로 답하는 AI → 사진 바꾸기 → 글자·QR (빠른 것부터, 느린 VLM 은 뒤로) */
@@ -949,6 +690,9 @@
 
 
     apiDocLink.href = '/docs';
+    /* 선생님용 링크 — 타이틀바 도구로. 조작 줄에서는 자리만 먹는다 */
+    apiDocLink.hidden = false;
+    document.querySelector('.titlebar .h-tools').prepend(apiDocLink);
 
     /* ----- 언어 적용 (정적 텍스트) ----- */
     (function applyStatic() {
@@ -987,6 +731,7 @@
          runInference 쪽(값이 "-" 면 안 보냄)은 손댈 것이 없다. */
       document.getElementById('promptInput').hidden = (prompt === "-");
       guide.textContent = mTip(selected);
+      modelSelect.title = mTip(selected);
     });
 
     /* 묶음(optgroup)으로 나눠 넣는다 — 스물몇 개를 한 줄로 늘어놓으면 못 찾는다 */

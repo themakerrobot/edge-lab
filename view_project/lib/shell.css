@@ -36,11 +36,11 @@ body {
 /* ═══════════════════ 타이틀바 ═══════════════════ */
 .titlebar {
   flex: 0 0 auto;
-  height: 40px;
+  height: 34px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 0 10px 0 12px;
+  gap: 10px;
+  padding: 0 8px 0 10px;
   background: var(--box, #fff);
   border-bottom: 1.5px solid var(--line-d, #4a3f2e);
   /* 줄바꿈하지 않는다 — 여기서 늘어나면 세로를 되찾은 뜻이 없어진다.
@@ -54,7 +54,7 @@ body {
   align-items: center;
   gap: 8px;
   flex: 0 0 auto;
-  height: var(--tap-sm, 40px);      /* 홈으로 가는 두 번째 길 — 레일의 [홈] 과 같은 크기로 */
+  height: 34px;
   padding-right: 2px;
   text-decoration: none;
   color: var(--cyan-d, #17475c);
@@ -65,18 +65,18 @@ body {
   border-radius: 4px;
 }
 .tb-brand:hover { text-decoration: none; }
-.tb-brand img { height: 24px; width: auto; flex: 0 0 auto; }
+.tb-brand img { height: 20px; width: auto; flex: 0 0 auto; }
 /* 브랜드는 한국어 화면에서도 로마자다 — 서버도 FastAPI(title="edge-lab") 이고
    콘솔도 "edge-lab listening on" 이라, 화면만 한글이라 어긋나 있었다. */
 .tb-brand b {
   font-family: "Menlo", "Consolas", ui-monospace, monospace;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: -.01em;
 }
 .tb-sep {
   flex: 0 0 auto;
-  width: 1px; height: 18px;
+  width: 1px; height: 14px;
   background: var(--line, #9a8f7d);
   opacity: .7;
 }
@@ -86,7 +86,7 @@ body {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: var(--fs-body, 14px);
+  font-size: 12.5px;
   color: var(--ink-2, #4a423a);
 }
 
@@ -110,15 +110,15 @@ body {
 .titlebar .h-tools > button,
 .titlebar .h-tools > a {
   position: relative;
-  height: 28px;
-  padding: 0 13px;
+  height: 24px;
+  padding: 0 10px;
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   font-family: inherit;
-  font-size: var(--fs-side, 13px);
+  font-size: 12px;
   font-weight: 400;
   line-height: 1;
   white-space: nowrap;
@@ -134,7 +134,7 @@ body {
 .titlebar .h-tools > a::after {
   content: "";
   position: absolute;
-  inset: -6px 0;
+  inset: -8px 0;
 }
 .titlebar .h-tools > button:hover,
 .titlebar .h-tools > a:hover {
@@ -150,19 +150,19 @@ body {
 /* 동그란 것(?) 은 28 × 28 이라 위아래만 넓히면 모자란다.
    좌우 여백을 6px 씩 두고 사방으로 넓혀 40 × 40 을 만든다. */
 .titlebar .h-tools > button.round {
-  width: 28px;
+  width: 24px;
   padding: 0;
   font-weight: 700;
-  font-size: 15px;
+  font-size: 13px;
   margin-inline: 6px;
 }
-.titlebar .h-tools > button.round::after { inset: -6px; }
+.titlebar .h-tools > button.round::after { inset: -8px; }
 /* 수치를 보여주는 것(AI 상태)은 고정폭 숫자로 — 갱신될 때 흔들리지 않게 */
 .titlebar .h-tools > button.mono {
   font-family: "Menlo", "Consolas", ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
-  font-size: 12px;
-  min-width: 52px;
+  font-size: 11px;
+  min-width: 46px;
 }
 
 html.hc .titlebar .h-tools > button,
@@ -186,8 +186,8 @@ html.hc .titlebar .h-tools > a {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: var(--sp-2, 8px);
-  padding: var(--edge, 7px);
+  gap: var(--sp-2, 6px);
+  padding: 4px;
   overflow: hidden;
 }
 
@@ -201,7 +201,7 @@ html.hc .titlebar .h-tools > a {
   color: var(--ink, #2a2620);
   font-weight: 700;
 }
-.titlebar .h-tools > a.close .x { font-size: 19px; line-height: 1; }
+.titlebar .h-tools > a.close .x { font-size: 16px; line-height: 1; }
 .titlebar .h-tools > a.close:hover {
   background: var(--ink, #2a2620);
   border-color: var(--ink, #2a2620);

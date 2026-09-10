@@ -272,7 +272,9 @@
      덮개가 사라진(=.done) 뒤에 시작한다. 덮개가 없는 화면은 바로 시작. */
   function bootGone() {
     var b = document.getElementById("boot");
-    return !b || b.classList.contains("done") || b.offsetParent === null;
+    /* offsetParent 로 재면 안 된다 — #boot 는 position:fixed 라 떠 있어도 늘 null 이다.
+       그래서 덮개가 떠 있는데도 "사라졌다" 고 보고 말풍선이 그 위에 떴다. */
+    return !b || b.classList.contains("done") || getComputedStyle(b).display === "none";
   }
 
   function startWhenReady() {
