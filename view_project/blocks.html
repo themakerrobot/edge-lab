@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title id="txtTitleTag">블록 코딩 — 엣지 랩</title>
+  <title id="txtTitleTag">edge-lab — 블록</title>
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
@@ -12,35 +12,9 @@
     try { if (localStorage.getItem("vapi-hc") === "1")
             document.documentElement.classList.add("hc"); } catch (e) {}
   </script>
+  <link rel="stylesheet" href="/lib/tokens.css">
   <style>
-    :root {
-      --paper: #fbf7ef; --rule: transparent; --box: #fff;
-      --ink: #2a2620; --ink-2: #4a423a;
-      --cyan: #1f5f7a; --cyan-d: #17475c;
-      --pen-blue: #1f5f7a; --pen-blue-d: #12455c; --pen-red: #b4451c;
-      --line: #9a8f7d; --line-d: #4a3f2e; --r: 6px;
-    }
 
-    /* ===== 밝은 곳 모드 (설정에서 켠다) =====
-       색 토큰만 덮어써서 대비를 끌어올린다. 배치는 그대로다. */
-    html.hc {
-      --paper:    #fffdf8;
-      --box:      #ffffff;
-      --ink:      #1a1712;
-      --ink-2:    #332d26;
-      --cyan:     #114558;
-      --cyan-d:   #0c3444;
-      --pen-blue: #123f52;
-      --pen-blue-d:#0a2c3a;
-      --pen-red:  #8f3312;
-      --line:     #7a6f5d;
-      --line-d:   #2e281c;
-    }
-    html.hc body { background-image: none; }          /* 배경 무늬 제거 */
-    html.hc .sysbar { background: #fffdf6; }
-    html.hc select, html.hc input, html.hc button,
-    html.hc .panel, html.hc .q, html.hc .card { border-width: 2px; }
-    html.hc .panel-head { border-width: 3px; }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; }
@@ -59,24 +33,10 @@
 
     /* 디바이스 HUD */
 
-    .header {
-      flex: 0 0 auto; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-      background: var(--box); border: 2px solid var(--line-d); border-radius: 3px;
-      box-shadow: 0 1px 0 rgba(44,74,124,.18); padding: 5px 12px;
-    }
-    .h-title { display: flex; flex-direction: column; }
-    .h-title .eyebrow { font-size: 0.82rem; letter-spacing: .14em; color: var(--ink-2); }
-    .h-title .title { font-family: "Gowun Batang", serif; font-size: 1.15rem; font-weight: 700; }
-    .h-tools {
-      margin-left: auto; display: flex; flex-direction: row;
-      gap: 8px; align-items: center; flex-wrap: wrap;
-    }
-    #runButton { background: var(--pen-blue); border-color: var(--pen-blue); color: #fff; font-weight: 700; padding: 8px 26px; }
+    #runButton { background: var(--pen-blue); border-color: var(--pen-blue); color: #fff; font-weight: 700; padding: 0 22px; }
     #runButton:hover { background: var(--pen-blue-d); }
     #runButton:disabled { background: #b9b7ac; border-color: #b9b7ac; cursor: wait; }
     #stopButton { border-color: var(--pen-red); color: var(--pen-red); font-weight: 700; }
-    a.back { font-size: .88rem; color: var(--pen-blue-d); text-decoration: none; margin-right: 4px; }
-    a.back:hover { text-decoration: underline; }
 
     .work {
       flex: 1.25 1 0; min-width: 0; display: flex; flex-direction: column;
@@ -106,6 +66,9 @@
       position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain;
     }
     .stage img.shot { display: none; background: #191a1f; }
+    /* 라이브 영상은 무대에 안 보인다 — 찍은 사진만 놓는다. display:none 은 안 된다:
+       그러면 프레임이 안 와서 「사진 찍기」 가 검은 사진을 찍는다. */
+    .stage video { visibility: hidden; }
     #bigText {
       position: absolute; left: 0; right: 0; bottom: 10%; text-align: center;
       font-family: "Gowun Batang", serif; font-size: 2rem; font-weight: 700; color: #fff;
@@ -131,24 +94,33 @@
       margin-top: 6px; background: #fdfcf8; border: 1.5px solid var(--line); border-radius: var(--r);
       padding: 10px; font-size: 0.82rem; max-height: 180px; overflow: auto; white-space: pre-wrap;
     }
-    @media (max-width: 900px) {
-      body { overflow: auto; height: auto; min-height: 100dvh; }
-      .main { flex-direction: column; }
+    /* 좁은 화면 — 기준은 lib/tokens.css 주석의 네 개뿐이다(md 1023 / sm 639).
+       전에는 페이지마다 560/860/900/960/980/1200 이 섞여 있어, 같은 창 폭에서
+       화면을 옮기면 어떤 것은 접히고 어떤 것은 눌려서 잘렸다.
+       body 스크롤과 .main-container 세로 적층은 lib/shell.css 가 한 번에 하므로
+       여기는 이 화면에만 필요한 것만 남긴다. */
+    @media (max-width: 1023px) {
+      .work, .stage-panel { min-width: 0; }
       #blocklyDiv { height: 60vh; }
     }
   </style>
   <link rel="stylesheet" href="/lib/ui.css">
+  <link rel="stylesheet" href="/lib/shell.css">
 </head>
 <body data-density="work">
-  <div class="header">
-    <div class="h-subject" style="flex-direction:row;align-items:center;gap:10px;">
-      <img src="/assets/pibo-logo.png" alt="" style="height:30px;flex:0 0 auto;">
-      <span class="title" title="인터넷 없이 내 컴퓨터에서 실행돼요"><span id="txtTitle">엣지 랩</span></span>
-    </div>
+  <div class="titlebar">
+    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요">
+      <img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b>
+    </a>
+    <span class="tb-sep"></span>
+    <span class="tb-app" id="txtTitle"></span>
     <div class="h-tools">
-      <button id="langButton" title="한국어 / English" style="min-width:46px;">EN</button>
+      <button id="langButton" title="한국어 / English">EN</button>
     </div>
   </div>
+
+  <div class="shell-body">
+    <div class="workbench">
 
   <div class="main-container" data-split="h" data-split-key="blocks">
     <div class="work" data-min="340">
@@ -212,6 +184,9 @@
     </div>
   </div>
 
+    </div>
+  </div>
+
   <script src="/blockly/blockly_compressed.js"></script>
   <script src="/blockly/blocks_compressed.js"></script>
   <script src="/blockly/javascript_compressed.js"></script>
@@ -248,9 +223,9 @@
 
   const I18N = {
     ko: {
-      titleTag: "블록 코딩 — 엣지 랩", title: "엣지 랩",
+      titleTag: "edge-lab — 블록", title: "edge-lab",
       eyebrow: "블록으로 나만의 프로그램을 · 인터넷 없이 내 컴퓨터에서",
-      back: "엣지 랩 (홈)", save: "저장", load: "불러오기", stop: "정지", run: "실행 ▶",
+      back: "홈", save: "저장", load: "불러오기", stop: "정지", run: "실행 ▶",
       running: "실행 중...", langBtn: "EN",
       workHead: "블록을 조립해요", stageHead: "결과를 확인해요",
       upload: "사진 올리기", uploadHint: "「업로드한 사진」 블록에서 사용돼요",
@@ -466,9 +441,9 @@
       tts: "ko-KR",
     },
     en: {
-      titleTag: "Blocks — Edge Lab", title: "Edge Lab",
+      titleTag: "edge-lab — Blocks", title: "edge-lab",
       eyebrow: "write your own program with blocks · runs on this computer",
-      back: "Edge Lab (home)", save: "Save", load: "Load", stop: "Stop", run: "Run ▶",
+      back: "Home", save: "Save", load: "Load", stop: "Stop", run: "Run ▶",
       running: "Running...", langBtn: "한",
       workHead: "Build your blocks", stageHead: "Check the result",
       upload: "Upload photo", uploadHint: "Used by the “uploaded photo” block",
@@ -2112,8 +2087,7 @@ def texts_of(result):
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
     document.documentElement.lang = LANG;
     document.title = t("titleTag");
-    set("txtTitle", t("title"));
-    if (window.navRepaint) window.navRepaint();   /* 이동 탭 글자는 lib/nav.js 가 갖고 있다 */
+    if (window.navRepaint) window.navRepaint();   /* 레일 글자는 lib/shell.js 가 갖고 있다 */
     set("saveButton", t("save"));
     set("txtVarsTitle", t("vars_title"));
     set("newButton", t("btn_new"));
@@ -2174,10 +2148,27 @@ def texts_of(result):
     if (vars) { vars.style.display = "none"; }
   });
 
-  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-    navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } })
-      .then(s => { cam.srcObject = s; })
-      .catch(() => log(t("m_noCam")));
+  /* 카메라는 「사진 찍기」 블록이 돌 때만 켠다 — 파이썬 화면과 같은 방식이다.
+     전에는 화면을 열자마자 웹캠이 무대에 계속 흘렀다. 코딩 도구인데 카메라가
+     늘 켜져 있으면 무엇을 찍은 건지 무대만 봐서는 알 수 없고, 카메라 불도 계속
+     켜져 있다. 찍은 사진을 무대에 놓고, 실행이 끝나면 카메라를 끈다. */
+  async function ensureCam() {
+    if (cam.srcObject && cam.videoWidth) return;
+    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) throw t("m_noCam");
+    if (!cam.srcObject) {
+      try {
+        cam.srcObject = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+      } catch (e) { throw t("m_noCam"); }
+    }
+    /* 첫 프레임이 올 때까지 — 안 기다리면 검은 사진이 찍힌다 */
+    for (let i = 0; i < 40 && !cam.videoWidth; i++) await sleep(50);
+    if (!cam.videoWidth) throw t("m_camNotReady");
+  }
+  function stopCam() {
+    const s = cam.srcObject;
+    if (!s) return;
+    try { s.getTracks().forEach(tr => tr.stop()); } catch (e) {}
+    cam.srcObject = null;
   }
   function log(msg) {
     logBox.textContent += (logBox.textContent ? "\n" : "") + msg;
@@ -2333,13 +2324,15 @@ def texts_of(result):
       AI._boxImg = img;
     },
     async capture() {
-      if (!cam.videoWidth) throw t("m_camNotReady");
+      await ensureCam();
       const c = document.createElement("canvas");
       c.width = 640; c.height = 480;
       c.getContext("2d").drawImage(cam, 0, 0, 640, 480);
-      // 사진 찍기는 값을 만드는 블록이다. 무대 표시는 바꾸지 않는다.
-      // (여기서 라이브뷰로 되돌리면 변환 결과 ↔ 웹캠이 번갈아 보여 깜빡인다)
-      return c.toDataURL("image/jpeg", 0.85);
+      const url = c.toDataURL("image/jpeg", 0.85);
+      // 찍은 사진을 무대에 놓는다 — 무엇을 찍었는지 보여야 한다(파이썬의 show 와 같이).
+      // 라이브 영상은 무대에 안 보이므로 예전의 "번갈아 깜빡임" 은 생기지 않는다.
+      await swapShot(url);
+      return url;
     },
     uploaded() {
       if (!uploadedURL) throw t("m_needUpload");
@@ -3143,6 +3136,7 @@ def texts_of(result):
     } finally {
       ws.highlightBlock(null);
       runButton.disabled = false; runLabel.textContent = t("run");
+      stopCam();                                // 실행이 끝나면 카메라 불도 꺼진다
     }
   });
   document.getElementById("stopButton").addEventListener("click", () => {
@@ -3241,7 +3235,8 @@ def texts_of(result):
 
   </script>
   <script src="/lib/usage.js" data-page="blocks"></script>
-  <script src="/lib/nav.js"></script>
+  <script src="/lib/icons.js"></script>
+  <script src="/lib/shell.js"></script>
   <script src="/lib/tour.js"></script>
   <script src="/lib/sysbar.js"></script>
   <script src="/lib/split.js"></script>

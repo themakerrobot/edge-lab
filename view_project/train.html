@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>가르치기 — 엣지 랩</title>
+  <title>edge-lab — 가르치기</title>
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
@@ -12,42 +12,9 @@
     try { if (localStorage.getItem("vapi-hc") === "1")
             document.documentElement.classList.add("hc"); } catch (e) {}
   </script>
+  <link rel="stylesheet" href="/lib/tokens.css">
   <style>
-    /* ===== 디자인 토큰 : 체험툴/블록툴과 동일 ===== */
-    :root {
-      --paper:    #fbf7ef;
-      --box:      #ffffff;
-      --ink:      #2a2620;
-      --ink-2:    #4a423a;
-      --cyan:     #1f5f7a;
-      --cyan-d:   #17475c;
-      --pen-blue: #1f5f7a;
-      --pen-blue-d:#12455c;
-      --pen-red:  #b4451c;
-      --line:     #9a8f7d;
-      --line-d:   #4a3f2e;
-      --r: 6px;
-    }
 
-    /* ===== 밝은 곳 모드 (설정에서 켠다) =====
-       색 토큰만 덮어써서 대비를 끌어올린다. 배치는 그대로다. */
-    html.hc {
-      --paper:    #fffdf8;
-      --box:      #ffffff;
-      --ink:      #1a1712;
-      --ink-2:    #332d26;
-      --cyan:     #114558;
-      --cyan-d:   #0c3444;
-      --pen-blue: #123f52;
-      --pen-blue-d:#0a2c3a;
-      --pen-red:  #8f3312;
-      --line:     #7a6f5d;
-      --line-d:   #2e281c;
-    }
-    html.hc body { background-image: none; }          /* 배경 무늬 제거 */
-    html.hc select, html.hc input, html.hc button,
-    html.hc .panel, html.hc .q, html.hc .card { border-width: 2px; }
-    html.hc .panel-head { border-width: 3px; }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -70,20 +37,6 @@
     select:focus, input:focus { border-color: var(--pen-blue); }
 
     /* ===== 시험지 머리표 (index.html 과 동일) ===== */
-    .header {
-      flex: 0 0 auto;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: stretch;
-      background: var(--box);
-      border: 2px solid var(--line-d);
-      border-radius: 3px;
-      box-shadow: 0 1px 0 rgba(44,74,124,.18);
-    }
-    .header > div {
-      display: flex; flex-direction: column; justify-content: center;
-      padding: 5px 12px;
-    }
     .h-subject .eyebrow {
       font-size: 0.82rem; letter-spacing: .14em; color: var(--ink-2);
     }
@@ -91,7 +44,6 @@
       font-family: "Gowun Batang", serif;
       font-size: 1.15rem; font-weight: 700; letter-spacing: .02em; line-height: 1.2;
     }
-    .h-tools { flex-direction: row !important; align-items: center; gap: 8px; margin-left: auto; }
 
     /* ===== 시스템 상태바 (온디바이스 콘솔) — index.html 과 동일 ===== */
     .chip {
@@ -285,35 +237,42 @@
     .lab ul { margin: 6px 0 0 18px; font-size: .88rem; color: var(--ink-2); }
     .lab li { margin: 2px 0; }
     .lab .trophy { margin-top: var(--sp-1, 4px); font-weight: 700; color: var(--pen-red); }
-    .modeSw { display: inline-flex; border: 1.5px solid var(--line); border-radius: 999px; overflow: hidden; }
+    .modeSw { display: inline-flex; border: 1.5px solid var(--line); border-radius: 999px; overflow: hidden;
+              height: 32px; box-sizing: border-box; }
     .modeSw button {
       border: none; border-radius: 0; padding: 5px 12px; font-size: .85rem;
       background: #fff; color: var(--ink-2); cursor: pointer;
-    }
+     min-height: 0; height: 100%; padding-top: 0; padding-bottom: 0; box-sizing: border-box; }
     .modeSw button.on { background: var(--cyan); color: #fff; font-weight: 700; }
 
-    @media (max-width: 860px) {
-      body { height: auto; min-height: 100dvh; overflow: auto; }
-      .main-container { flex-direction: column; }
-      .panel { overflow: visible; }
-      .panel-body { overflow: visible; }
+    /* 좁은 화면 — 기준은 lib/tokens.css 주석의 네 개뿐이다(md 1023 / sm 639).
+       전에는 페이지마다 560/860/900/960/980/1200 이 섞여 있어, 같은 창 폭에서
+       화면을 옮기면 어떤 것은 접히고 어떤 것은 눌려서 잘렸다.
+       body 스크롤과 .main-container 세로 적층은 lib/shell.css 가 한 번에 하므로
+       여기는 이 화면에만 필요한 것만 남긴다. */
+    @media (max-width: 1023px) {
+      .panel, .panel-body { overflow: visible; }
       .cambox { flex: 1 1 100%; }
-      .h-tools { margin-left: 0; }
     }
   </style>
   <link rel="stylesheet" href="/lib/ui.css">
+  <link rel="stylesheet" href="/lib/shell.css">
 </head>
 <body data-density="explore" data-sys="fps">
   <!-- 시험지 머리표 -->
-  <div class="header">
-    <div class="h-subject" style="flex-direction:row;align-items:center;gap:10px;">
-      <img src="/assets/pibo-logo.png" alt="" style="height:30px;flex:0 0 auto;">
-      <span class="title" title="인터넷 없이 내 컴퓨터에서 실행돼요"><span id="txtTitle">엣지 랩</span></span>
-    </div>
+  <div class="titlebar">
+    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요">
+      <img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b>
+    </a>
+    <span class="tb-sep"></span>
+    <span class="tb-app" id="txtTitle"></span>
     <div class="h-tools">
-      <button id="langButton" title="한국어 / English" style="min-width:46px;">EN</button>
+      <button id="langButton" title="한국어 / English">EN</button>
     </div>
   </div>
+
+  <div class="shell-body">
+    <div class="workbench">
 
   <div class="main-container">
 
@@ -380,7 +339,7 @@
               <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                 <label class="hint" for="shotGap" id="txtShotGap">촬영 간격(ms)</label>
                 <input type="number" id="shotGap" value="150" min="60" max="1000" step="10" style="width:88px;">
-                <button class="btn" id="camToggle"><span id="txtCamToggle">웹캠 끄기</span></button>
+                <button class="btn" id="camToggle"><span id="txtCamToggle">웹캠 켜기</span></button>
               </div>
               <div class="hint" id="txtQ2Upload">
                 사진 파일이나 압축파일(zip)로도 넣을 수 있어요. 클래스 카드의 버튼을 눌러 주세요.
@@ -479,6 +438,9 @@
   <input type="file" id="fileZip" accept=".zip" style="display:none;">
   <input type="file" id="fileProject" accept=".zip" style="display:none;">
 
+    </div>
+  </div>
+
   <script src="/lib/tf.min-3.11.0.js"></script>
   <script src="/lib/jszip.min.js"></script>
   <script>
@@ -502,9 +464,9 @@
   try { LANG = localStorage.getItem("vapiLang") || "ko"; } catch (e) {}
   const I18N = {
     ko: {
-      titleTag: "가르치기 — 엣지 랩", title: "엣지 랩",
+      titleTag: "edge-lab — 가르치기", title: "edge-lab",
       eyebrow: "내가 직접 AI를 학습시켜요 · 인터넷 없이 내 컴퓨터에서",
-      homeLink: "엣지 랩 (홈)", langBtn: "EN",
+      langBtn: "EN",
       modeImage: "사진", modePose: "손모양", modeFace: "표정",
       modeUp: "상반신", modeBody: "전신",
       upHint: "책상에 앉은 채로 해요. 얼굴·어깨·팔 관절 11개만 학습해서 옷 색이나 배경에 흔들리지 않아요.",
@@ -595,9 +557,9 @@
       restored: "이전에 만들던 내용을 불러왔어요.",
     },
     en: {
-      titleTag: "Train — Edge Lab", title: "Edge Lab",
+      titleTag: "edge-lab — Train", title: "edge-lab",
       eyebrow: "train your very own AI · runs on this computer",
-      homeLink: "Edge Lab (home)", langBtn: "한",
+      langBtn: "한",
       modeImage: "Photo", modePose: "Hand", modeFace: "Face",
       modeUp: "Upper body", modeBody: "Full body",
       upHint: "You can stay seated. Only 11 joints (face, shoulders, arms) are learned, so clothes and background matter less.",
@@ -1013,7 +975,8 @@
     $("txtCamToggle").textContent = t("camOn");
   }
   $("camToggle").addEventListener("click", () => stream ? camOff() : camOn());
-  camOn();
+  /* 열자마자 켜지 않는다 — 소스도 안 돌렸는데 카메라가 흐를 일은 없다(블록·파이썬과 같이).
+     [웹캠 켜기] 를 눌러야 켜진다. */
 
   function frameBlob() {
     if (!cam.videoWidth) return null;
@@ -2009,9 +1972,6 @@
     const set = (id, v) => { const el = $(id); if (el) el.textContent = v; };
     const html = (id, v) => { const el = $(id); if (el) el.innerHTML = v; };
     document.title = t("titleTag");
-    set("txtTitle", t("title"));
-    const hl = $("homeLink");
-    if (hl) { hl.title = t("homeLink"); hl.setAttribute("aria-label", t("homeLink")); }
     set("txtModeImage", t("modeImage")); set("txtModePose", t("modePose"));
     set("txtModeFace", t("modeFace"));
     set("txtModeUp", t("modeUp")); set("txtModeBody", t("modeBody"));
@@ -2028,7 +1988,7 @@
     set("txtAddClass", t("addClass")); set("txtReset", t("reset"));
     set("txtTargetClass", t("targetClass"));
     set("txtHoldShot", t("holdShot")); set("txtOneShot", t("oneShot"));
-    set("txtShotGap", t("shotGap")); set("txtCamToggle", t("camOff"));
+    set("txtShotGap", t("shotGap")); set("txtCamToggle", t(stream ? "camOff" : "camOn"));
     set("txtEpochs", t("epochs")); set("txtTrain", t("train"));
     set("txtTestOnce", t("testOnce")); set("txtTestLive", t("testLive"));
     set("txtSave", t("save")); set("txtDownload", t("download"));
@@ -2052,7 +2012,8 @@
   }
   </script>
   <script src="/lib/usage.js" data-page="train"></script>
-  <script src="/lib/nav.js"></script>
+  <script src="/lib/icons.js"></script>
+  <script src="/lib/shell.js"></script>
   <script src="/lib/tour.js"></script>
   <script src="/lib/sysbar.js"></script>
 </body>

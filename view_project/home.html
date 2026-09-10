@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>edge-lab</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+  <link href="/fonts/fonts.css" rel="stylesheet">
+  <script>
+    /* 밝은 곳 모드: 화면이 그려지기 전에 적용해야 깜빡이지 않는다 */
+    try { if (localStorage.getItem("vapi-hc") === "1")
+            document.documentElement.classList.add("hc"); } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="/lib/tokens.css">
+  <script src="/lib/boot.js"></script>
+  <style>
+    /* 런처 — 앱을 골라 여는 첫 화면.
+     *
+     * 전에는 "/" 가 곧 체험하기였고, AI 16종은 그 안 <select> 드롭다운에
+     * optgroup 여섯 묶음으로 숨어 있었다. index.html 주석에도 "스물몇 개를
+     * 한 줄로 늘어놓으면 못 찾는다" 고 적혀 있었는데, 드롭다운은 그 답이
+     * 아니었다 — 아이는 열어 보기 전에는 무엇이 있는지 모른다.
+     *
+     * 타일 치수는 lib/tokens.css 의 --tap / --fs-name 을 따른다.
+     * 이름은 줄이지 않는다 — "얼굴 나이/성별 분…" 이 되면 무엇인지 모른다.
+     */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      overflow: hidden;
+      color: var(--ink);
+      background-color: var(--paper);
+      font-family: "Gowun Dodum", "Apple SD Gothic Neo", system-ui, sans-serif;
+      font-size: var(--fs-body);
+      line-height: 1.5;
+    }
+    a { color: var(--pen-blue-d); text-decoration: none; }
+
+    /* 런처 판 — .workbench 안을 통째로 쓴다 */
+    /* 아이콘 여섯이 전부라 위에 몰아 두면 아래 3분의 2 가 빈다.
+       세로 가운데에 앉힌다 — 휴대폰 홈처럼 "화면 한 장" 으로 읽히게. */
+    .launch {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 22px 28px 32px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 40px;
+    }
+    .launch > * { width: 100%; max-width: 1360px; }
+
+    .lgroup > h2 {  /* 지금은 안 쓴다 — 묶음이 하나뿐이라 머리표가 없다 */
+      margin: 0 0 14px;
+      font-family: "Gowun Batang", serif;
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--cyan-d);
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+    .lgroup > h2 em {
+      font-style: normal;
+      font-family: "Menlo", "Consolas", ui-monospace, monospace;
+      font-size: 11.5px;
+      color: var(--ink-2);
+      opacity: .8;
+      letter-spacing: .06em;
+      font-variant-numeric: tabular-nums;
+    }
+    .lgroup > h2::after {
+      content: "";
+      flex: 1 1 auto;
+      height: 1px;
+      background: var(--line);
+      opacity: .45;
+    }
+
+    /* 휴대폰 홈처럼 — 아이콘 + 이름뿐이다. 카드 테두리·설명글은 없다.
+       아이콘은 72px, 칸은 최소 120px, 사이 14px. 붙여 놓으면 옆 앱이 열린다. */
+    /* 앱은 여섯으로 정해져 있다 — 열 수를 못박아 둔다. auto-fill 로 두면 폭에 따라
+       5+1 로 갈라져 하나가 홀로 남는다. 넓으면 한 줄 여섯, 태블릿은 두 줄 셋. */
+    .grid {
+      display: grid;
+      gap: 32px 20px;
+      grid-template-columns: repeat(6, 1fr);
+    }
+    .app {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 11px;
+      padding: 10px 4px 12px;
+      border-radius: 12px;
+      color: var(--ink);
+      text-align: center;
+      cursor: pointer;
+      transition: background .12s, transform .12s;
+    }
+    .app:hover { background: var(--hover-bg); transform: translateY(-2px); text-decoration: none; }
+    .app:focus-visible { outline: 3px solid var(--pen-red); outline-offset: 2px; }
+    .app .ic {
+      /* 브라우저 125% 배율에서 보이던 크기 — 84 → 105px */
+      width: 105px; height: 105px;
+      display: grid; place-items: center;
+      border-radius: 22px;
+      background: var(--box);
+      border: 1.5px solid var(--line);
+      box-shadow: 0 2px 0 rgba(44, 74, 124, .14);
+      color: var(--cyan-d);
+    }
+    .app:hover .ic { border-color: var(--cyan); box-shadow: 0 4px 0 rgba(31, 95, 122, .22); }
+    .app .ic svg { width: 55px; height: 55px; }
+    /* 앱 여섯은 색을 채워 AI 와 구분한다 — 모양이 다르면 아이가 "종류가 다르다" 를 안다 */
+    .app.tool .ic { background: var(--cyan); border-color: var(--cyan); color: #fff; }
+    .app.tool:hover .ic { background: var(--cyan-d); }
+    .app b {
+      font-size: 21px;
+      font-weight: 700;
+      line-height: 1.3;
+      word-break: keep-all;
+    }
+    .app i {
+      display: block;
+      font-style: normal;
+      font-size: var(--fs-side);
+      color: var(--ink-2);
+      line-height: 1.35;
+      margin-top: -4px;
+      word-break: keep-all;
+    }
+    html.hc .app .ic { border-width: 2px; }
+
+    /* 처음 여는 안내 — 파이보가 한 줄 */
+    .hello {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 0 2px;
+    }
+    .hello img { height: 52px; flex: 0 0 auto; }
+    .hello .say b {
+      display: block;
+      font-family: "Gowun Batang", serif;
+      font-size: 19px;
+      line-height: 1.3;
+      color: var(--ink);
+    }
+    .hello .say i {
+      display: block;
+      font-style: normal;
+      font-size: var(--fs-body);
+      color: var(--ink-2);
+      margin-top: 3px;
+    }
+
+    /* 아직 가르친 AI 가 없을 때 */
+    @media (max-width: 1023px) {
+      .launch { overflow-y: visible; }
+      .grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 639px) {
+      .launch { padding: 14px 14px 24px; gap: 20px; }
+      .grid { grid-template-columns: repeat(2, 1fr); gap: 18px 10px; }
+      .app .ic { width: 84px; height: 84px; }
+      .app .ic svg { width: 44px; height: 44px; }
+      .app b { font-size: 16px; }
+      .hello img { height: 48px; }
+      .hello .say b { font-size: 18px; }
+    }
+    @media (prefers-reduced-motion: reduce) { .tile { transition: none; } }
+  </style>
+  <link rel="stylesheet" href="/lib/ui.css">
+  <link rel="stylesheet" href="/lib/shell.css">
+</head>
+<body data-density="explore">
+
+  <div class="titlebar">
+    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요">
+      <img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b>
+    </a>
+    <span class="tb-sep"></span>
+    <span class="tb-app" id="txtTitle"></span>
+    <div class="h-tools">
+      <!-- 선생님용 — 서버 API 문서. 체험하기에 있던 것을 여기로 옮겼다 -->
+      <a id="apiDocLink" href="/docs" target="_blank" title="API 문서 (선생님용)">API Docs</a>
+      <button id="langButton" title="한국어 / English">EN</button>
+    </div>
+  </div>
+
+  <div class="shell-body">
+    <div class="workbench">
+      <div class="launch">
+
+        <div class="hello">
+          <img src="/assets/pibo-hello.png" alt="">
+          <span class="say">
+            <b id="txtHello">무엇을 해 볼까요?</b>
+            <i id="txtHelloSub">인터넷 없이 내 컴퓨터 안에서 도는 AI예요.</i>
+          </span>
+        </div>
+
+        <!-- 앱 여섯. AI 16종은 여기 없다 — 그건 체험하기 "안"의 선택이지 앱이 아니다.
+             한때 홈에 AI 아이콘을 펼쳐 봤는데, 체험하기 앱과 같은 것이 두 번 나왔다. -->
+        <div class="grid" id="appGrid"></div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="/lib/icons.js"></script>
+  <script src="/lib/apps.js"></script>
+  <script src="/lib/shell.js"></script>
+  <script>
+    (function () {
+      "use strict";
+
+      var A = window.EL_APPS;
+      var LANG = A.lang();
+      document.documentElement.lang = LANG;
+
+      var T = {
+        ko: {
+          hello: "무엇을 해 볼까요?",
+          helloSub: "아이콘을 누르면 열려요. 인터넷 없이 내 컴퓨터 안에서 돌아요.",
+          langBtn: "EN"
+        },
+        en: {
+          hello: "What shall we try?",
+          helloSub: "Tap an icon to open it. Everything runs on this computer, with no internet.",
+          langBtn: "한"
+        }
+      }[LANG];
+
+      var $ = function (id) { return document.getElementById(id); };
+      $("txtHello").textContent = T.hello;
+      $("txtHelloSub").textContent = T.helloSub;
+      $("langButton").textContent = T.langBtn;
+      document.title = "edge-lab";
+
+      var icon = function (n) { return (window.elIcon ? window.elIcon(n) : ""); };
+
+      /* 아이콘 하나 — 링크다. 가운데 클릭·키보드가 그냥 되게 <button> 이 아니라 <a>.
+         kind: "ai" (AI 하나) · "tool" (만들기·설정) · "mine" (내가 가르친 AI) */
+      function app(href, ic, name, sub, kind, title) {
+        var a = document.createElement("a");
+        a.className = "app " + kind;
+        a.href = href;
+        if (title) a.title = title;
+        a.innerHTML = '<span class="ic">' + icon(ic) + "</span><b></b><i></i>";
+        a.querySelector("b").textContent = name;
+        a.querySelector("i").textContent = sub || "";
+        return a;
+      }
+
+      /* ── 앱 여섯 — 체험하기 · 블록 · 파이썬 · 가르치기 · 대화 · 설정 ── */
+      var appGrid = $("appGrid");
+      A.APPS.forEach(function (x) {
+        appGrid.appendChild(app(x.href, x.ic, LANG === "en" ? x.en : x.ko,
+                                LANG === "en" ? x.en_d : x.ko_d, "tool"));
+      });
+
+      /* ── 한/영 ── */
+      $("langButton").addEventListener("click", function () {
+        try { localStorage.setItem("vapiLang", LANG === "ko" ? "en" : "ko"); } catch (e) {}
+        location.reload();
+      });
+    })();
+  </script>
+  <script src="/lib/sysbar.js"></script>
+  <script src="/lib/tour.js"></script>
+  <script src="/lib/usage.js" data-page="home"></script>
+</body>
+</html>
