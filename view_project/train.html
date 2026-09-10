@@ -237,11 +237,12 @@
     .lab ul { margin: 6px 0 0 18px; font-size: .88rem; color: var(--ink-2); }
     .lab li { margin: 2px 0; }
     .lab .trophy { margin-top: var(--sp-1, 4px); font-weight: 700; color: var(--pen-red); }
-    .modeSw { display: inline-flex; border: 1.5px solid var(--line); border-radius: 999px; overflow: hidden; }
+    .modeSw { display: inline-flex; border: 1.5px solid var(--line); border-radius: 999px; overflow: hidden;
+              height: 32px; box-sizing: border-box; }
     .modeSw button {
       border: none; border-radius: 0; padding: 5px 12px; font-size: .85rem;
       background: #fff; color: var(--ink-2); cursor: pointer;
-     min-height: 32px; height: 32px; padding-top: 0; padding-bottom: 0; box-sizing: border-box; }
+     min-height: 0; height: 100%; padding-top: 0; padding-bottom: 0; box-sizing: border-box; }
     .modeSw button.on { background: var(--cyan); color: #fff; font-weight: 700; }
 
     /* 좁은 화면 — 기준은 lib/tokens.css 주석의 네 개뿐이다(md 1023 / sm 639).
