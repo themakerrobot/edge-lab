@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>대화 — 엣지 랩</title>
+  <title>edge-lab — 대화</title>
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
@@ -12,18 +12,8 @@
     try { if (localStorage.getItem("vapi-hc") === "1")
             document.documentElement.classList.add("hc"); } catch (e) {}
   </script>
+  <link rel="stylesheet" href="/lib/tokens.css">
   <style>
-    :root {
-      --paper:#fbf7ef; --box:#fff; --ink:#2a2620; --ink-2:#4a423a;
-      --cyan:#1f5f7a; --cyan-d:#17475c; --pen-blue:#1f5f7a; --pen-blue-d:#12455c;
-      --pen-red:#b4451c; --line:#9a8f7d; --line-d:#4a3f2e; --r:6px;
-    }
-    html.hc {
-      --paper:#fffdf8; --box:#ffffff; --ink:#1a1712; --ink-2:#332d26;
-      --cyan:#114558; --cyan-d:#0c3444; --pen-blue:#123f52; --pen-blue-d:#0a2c3a;
-      --pen-red:#8f3312; --line:#7a6f5d; --line-d:#2e281c;
-    }
-    html.hc .panel, html.hc button, html.hc select, html.hc input, html.hc textarea
       { border-width:2px; }
 
     * { margin:0; padding:0; box-sizing:border-box; }
@@ -45,19 +35,10 @@
     button.sm { padding:4px 9px; font-size:.82rem; }
     button.danger { color:var(--pen-red); }
 
-    .header { display:flex; align-items:center; gap:12px; flex:0 0 auto; }
-    .header > div { display:flex; align-items:center; padding:5px 12px; }
-    .header .title { font-weight:700; font-size:1.15rem; }
-    .header .eyebrow { font-size:.8rem; color:var(--ink-2); }
-    .h-tools { margin-left:auto; display:flex; gap:8px; align-items:center; }
-    .h-tools a {
-      display:inline-flex; align-items:center; gap:6px; background:#fff;
-      border:1.5px solid var(--line-d); color:var(--ink); font-weight:600;
-      padding:8px 13px; border-radius:var(--r); font-size:.92rem;
-    }
 
-    .side { flex:0 0 300px; }
-    .talk { flex:1 1 auto; min-width:0; }
+    /* .panel 과 특정도가 같으면 나중에 실리는 ui.css 가 이긴다 — 한 단계 올린다 */
+    .panel.side { flex:0 0 320px; }
+    .panel.talk { flex:1 1 auto; min-width:0; }
     .body > * { flex:0 0 auto; }
 
     /* ----- 말풍선 ----- */
@@ -109,25 +90,33 @@
                    display:flex; flex-direction:column; gap:10px; }
     .modal textarea { width:100%; height:230px; resize:vertical; }
 
-    @media (max-width:960px) {
-      body { height:auto; min-height:100dvh; overflow:auto; }
-      .main { flex-direction:column; }
+    /* 좁은 화면 — 기준은 lib/tokens.css 주석의 네 개뿐이다(md 1023 / sm 639).
+       전에는 페이지마다 560/860/900/960/980/1200 이 섞여 있어, 같은 창 폭에서
+       화면을 옮기면 어떤 것은 접히고 어떤 것은 눌려서 잘렸다.
+       body 스크롤과 .main-container 세로 적층은 lib/shell.css 가 한 번에 하므로
+       여기는 이 화면에만 필요한 것만 남긴다. */
+    @media (max-width: 1023px) {
       .side { flex:0 0 auto; }
       .talk .body { min-height:50vh; }
     }
   </style>
   <link rel="stylesheet" href="/lib/ui.css">
+  <link rel="stylesheet" href="/lib/shell.css">
 </head>
 <body data-density="explore">
-  <div class="header">
-    <div class="h-subject" style="flex-direction:row;align-items:center;gap:10px;">
-      <img src="/assets/pibo-logo.png" alt="" style="height:30px;flex:0 0 auto;">
-      <span class="title" title="인터넷 없이 내 컴퓨터에서 실행돼요"><span id="txtTitle">엣지 랩</span></span>
-    </div>
+  <div class="titlebar">
+    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요">
+      <img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b>
+    </a>
+    <span class="tb-sep"></span>
+    <span class="tb-app" id="txtTitle"></span>
     <div class="h-tools">
-      <button id="langButton" title="한국어 / English" style="min-width:46px;">EN</button>
+      <button id="langButton" title="한국어 / English">EN</button>
     </div>
   </div>
+
+  <div class="shell-body">
+    <div class="workbench">
 
   <div class="main-container">
     <!-- 왼쪽: 대화 -->
@@ -259,6 +248,9 @@
     </div>
   </div>
 
+    </div>
+  </div>
+
 <script>
   const $ = id => document.getElementById(id);
   let LANG = "ko";
@@ -267,7 +259,7 @@
 
   const I18N = {
     ko: {
-      titleTag:"대화 — 엣지 랩", title:"엣지 랩",
+      titleTag:"edge-lab — 대화", title:"edge-lab",
       eyebrow:"AI와 이야기해요 · 인터넷 없이 내 컴퓨터에서",
       home:"홈", langBtn:"EN", q1:"이야기해요", q2:"사진 · 자료",
       send:"보내기", newTalk:"새 대화",
@@ -310,7 +302,7 @@
       ttsWait:"소리 만드는 중...", ttsFail:"소리를 내지 못했어요 (설정에서 소리 시험)",
     },
     en: {
-      titleTag:"Talk — Edge Lab", title:"Edge Lab",
+      titleTag:"edge-lab — Talk", title:"edge-lab",
       eyebrow:"Talk with the AI · runs on your computer, no internet",
       home:"Home", langBtn:"한", q1:"Let's talk", q2:"Photo · Material",
       send:"Send", newTalk:"New talk",
@@ -828,7 +820,6 @@
   (function applyStatic() {
     const set = (id, v) => { const el = $(id); if (el) el.textContent = v; };
     document.title = T("titleTag");
-    set("txtTitle", T("title"));
     set("langButton", T("langBtn"));
     set("txtQ1", T("q1")); set("txtQ2", T("q2"));
     set("txtSend", T("send")); set("txtNew", T("newTalk"));
@@ -861,7 +852,8 @@
   $("q").focus();
 </script>
 <script src="/lib/usage.js" data-page="talk"></script>
-  <script src="/lib/nav.js"></script>
+  <script src="/lib/icons.js"></script>
+  <script src="/lib/shell.js"></script>
   <script src="/lib/tour.js"></script>
   <script src="/lib/sysbar.js"></script>
 </body>

@@ -7,7 +7,7 @@
 //  · 강조는 스포트라이트(구멍 뚫린 어두운 막) 방식 — 대상 요소는 건드리지 않는다
 //
 // sense-lab 과 다른 점(이 환경에 맞춘 것):
-//  · 페이지 판별: <header data-tab> 이 없으므로 URL 경로로 잡는다(nav.js 와 같은 규칙).
+//  · 페이지 판별: <header data-tab> 이 없으므로 URL 경로로 잡는다(shell.js 와 같은 규칙).
 //  · 문구: 공용 GL_T 가 없으므로 한·영을 이 파일이 직접 들고, vapiLang 으로 고른다.
 //  · 색·패널: --acc/--panel 대신 --cyan/--box.
 //  · ? 버튼: 이동 탭과 도구([한/영]) 사이에 놓는다.
@@ -29,6 +29,18 @@
   // 선택자는 페이지 분석으로 확인한 실제 id 를 쓴다. 없는 요소는 자동으로 건너뛴다.
   var TOURS = {
     "/": [
+      [null, { ko: "안녕! 여기가 홈이에요.\n하고 싶은 것을 눌러서 열면 돼요.",
+               en: "Hi! This is Home.\nPress whatever you want to open." }],
+      ["#appGrid", { ko: "앱이 여섯 개 있어요.\n체험·블록·파이썬·가르치기·대화·설정.",
+                      en: "Six apps: Try-It, Blocks, Python,\nTrain, Talk, and Settings." }],
+      ["#aiGroups", { ko: "AI 열여섯 가지예요.\n하나를 누르면 바로 그 AI로 열려요.",
+                       en: "Sixteen kinds of AI. Press one and\nit opens ready to use." }],
+      ["#customGroup", { ko: "[가르치기]에서 내가 만든 AI도\n여기에 나란히 놓여요.",
+                          en: "The AI you build in Train\nshows up here too." }],
+      [".rail", { ko: "왼쪽 줄로 어디서든\n다른 화면으로 옮겨 다녀요.",
+                   en: "Use the rail on the left to move\nbetween screens from anywhere." }],
+    ],
+    "/try": [
       [null, { ko: "안녕! 여기는 체험하기예요.\n내 컴퓨터 안의 AI를 눌러서 만나 봐요.",
                en: "Hi! This is Try-It.\nMeet the AI running on your own computer." }],
       ["#modelSelect", { ko: "무엇을 알아볼지 골라요.\n얼굴·사물·손·글자 같은 것들이 있어요.",
@@ -43,8 +55,8 @@
                             en: "Press to ask the AI." }],
       [".panel:last-child", { ko: "결과가 여기 나와요.\n마음에 들면 저장할 수도 있어요.",
                                en: "Results show here.\nYou can save the ones you like." }],
-      [".nav-tab#blocksLink", { ko: "위 탭으로 블록·파이썬·가르치기로\n옮겨 다닐 수 있어요.",
-                                 en: "Use the tabs above to move to\nBlocks, Python, and Train." }],
+      ["#blocksLink", { ko: "왼쪽 줄로 블록·파이썬·가르치기로\n옮겨 다닐 수 있어요.",
+                         en: "Use the rail on the left to move to\nBlocks, Python, and Train." }],
     ],
     "/blocks": [
       [null, { ko: "여기는 블록이에요.\n블록을 끼워 맞춰 AI를 움직여요.",
@@ -241,11 +253,11 @@
   }
   window.tourStart = start;
 
-  // 헤더 ? 버튼 (다시 보기) — 이동 탭과 도구([한/영]) 사이
+  // 타이틀바 ? 단추 (다시 보기) — [한/영] 앞
   function addButton() {
-    var tools = document.querySelector(".header .h-tools");
+    var tools = document.querySelector(".titlebar .h-tools");
     if (!tools || document.getElementById("helpTourBtn")) return;
-    var b = el("button", "tour-help");
+    var b = el("button", "tour-help round");
     b.id = "helpTourBtn";
     b.type = "button";
     b.title = T("help");

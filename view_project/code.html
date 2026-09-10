@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>파이썬 — 엣지 랩</title>
+  <title>edge-lab — 파이썬</title>
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
@@ -14,42 +14,9 @@
     try { if (localStorage.getItem("vapi-hc") === "1")
             document.documentElement.classList.add("hc"); } catch (e) {}
   </script>
+  <link rel="stylesheet" href="/lib/tokens.css">
   <style>
-    /* ===== 디자인 토큰 : 다른 페이지와 동일 ===== */
-    :root {
-      --paper:    #fbf7ef;
-      --box:      #ffffff;
-      --ink:      #2a2620;
-      --ink-2:    #4a423a;
-      --cyan:     #1f5f7a;
-      --cyan-d:   #17475c;
-      --pen-blue: #1f5f7a;
-      --pen-blue-d:#12455c;
-      --pen-red:  #b4451c;
-      --line:     #9a8f7d;
-      --line-d:   #4a3f2e;
-      --r: 6px;
-    }
 
-    /* ===== 밝은 곳 모드 (설정에서 켠다) =====
-       색 토큰만 덮어써서 대비를 끌어올린다. 배치는 그대로다. */
-    html.hc {
-      --paper:    #fffdf8;
-      --box:      #ffffff;
-      --ink:      #1a1712;
-      --ink-2:    #332d26;
-      --cyan:     #114558;
-      --cyan-d:   #0c3444;
-      --pen-blue: #123f52;
-      --pen-blue-d:#0a2c3a;
-      --pen-red:  #8f3312;
-      --line:     #7a6f5d;
-      --line-d:   #2e281c;
-    }
-    html.hc body { background-image: none; }          /* 배경 무늬 제거 */
-    html.hc select, html.hc input, html.hc button,
-    html.hc .panel, html.hc .q, html.hc .card { border-width: 2px; }
-    html.hc .panel-head { border-width: 3px; }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -70,15 +37,8 @@
     button:disabled { opacity: .45; cursor: not-allowed; }
 
     /* ===== 머리표 ===== */
-    .header {
-      flex: 0 0 auto; display: flex; flex-wrap: wrap; align-items: stretch;
-      background: var(--box); border: 2px solid var(--line-d); border-radius: 3px;
-      box-shadow: 0 1px 0 rgba(44,74,124,.18);
-    }
-    .header > div { display: flex; flex-direction: column; justify-content: center; padding: 5px 12px; }
     .eyebrow { font-size: 0.82rem; color: var(--ink-2); letter-spacing: .04em; }
     .title { font-family: "Gowun Dodum", sans-serif; font-weight: 700; font-size: 1.15rem; color: var(--ink); }
-    .h-tools { flex-direction: row !important; align-items: center !important; gap: 8px; margin-left: auto; }
 
     /* ===== 시스템 상태바 ===== */
     .chip {
@@ -94,8 +54,10 @@
     .meter .k { color: #6b6255; } .meter .v { color: var(--ink); font-weight: 700; }
 
     /* ===== 본문 2단 ===== */
-    .ed-panel { flex: 3 1 0; }
-    .out-panel { flex: 2 1 0; min-width: 320px; }
+    /* .panel 과 특정도가 같으면 나중에 실리는 ui.css 가 이겨서 비율이 죽는다.
+       .panel.X 로 한 단계 올려 둔다 — 전에는 이 때문에 편집기가 찌그러져 있었다. */
+    .panel.ed-panel { flex: 3 1 0; }
+    .panel.out-panel { flex: 2 1 0; }
     .ph-tools { margin: var(--sp-1, 4px) 12px var(--sp-1, 4px) auto; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
     
     #guideButton.on {
@@ -116,18 +78,16 @@
     .cm-s-default .cm-comment { color: #7c7264; }
 
     /* 좁은 화면: 세로로 쌓고, 도움말은 편집기 아래로 */
-    @media (max-width: 1200px) {
-      .out-panel { min-width: 260px; }
-      .help-panel { flex: 0 0 250px; min-width: 220px; }
-    }
-    @media (max-width: 980px) {
-      body { height: auto; overflow: auto; }
-      .main { flex-direction: column; }
+    /* 좁은 화면 — 기준은 lib/tokens.css 주석의 네 개뿐이다(md 1023 / sm 639).
+       전에는 페이지마다 560/860/900/960/980/1200 이 섞여 있어, 같은 창 폭에서
+       화면을 옮기면 어떤 것은 접히고 어떤 것은 눌려서 잘렸다.
+       body 스크롤과 .main-container 세로 적층은 lib/shell.css 가 한 번에 하므로
+       여기는 이 화면에만 필요한 것만 남긴다. */
+    @media (max-width: 1023px) {
       .ed-panel { min-height: 46vh; }
-      .out-panel, .help-panel { min-width: 0; }
+      .out-panel, .help-panel { min-width: 0; flex: 0 0 auto; }
       .out-panel { min-height: 30vh; }
       .help-panel.open { max-height: 45vh; }
-      .ph-tools { margin-left: 12px; }
     }
 
     /* ===== 도움말 패널 (열어 둔 채로 코딩한다) ===== */
@@ -216,17 +176,22 @@
     .modal .close { float: right; }
   </style>
   <link rel="stylesheet" href="/lib/ui.css">
+  <link rel="stylesheet" href="/lib/shell.css">
 </head>
 <body data-density="work" data-sys="state">
-  <div class="header">
-    <div class="h-subject" style="flex-direction:row;align-items:center;gap:10px;">
-      <img src="/assets/pibo-logo.png" alt="" style="height:30px;flex:0 0 auto;">
-      <span class="title" title="인터넷 없이 내 컴퓨터에서 실행돼요"><span id="txtTitle">엣지 랩</span></span>
-    </div>
+  <div class="titlebar">
+    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요">
+      <img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b>
+    </a>
+    <span class="tb-sep"></span>
+    <span class="tb-app" id="txtTitle"></span>
     <div class="h-tools">
-      <button id="langButton" title="한국어 / English" style="min-width:46px;">EN</button>
+      <button id="langButton" title="한국어 / English">EN</button>
     </div>
   </div>
+
+  <div class="shell-body">
+    <div class="workbench">
 
   <div class="main-container" data-split="h" data-split-key="code">
     <!-- 편집기 -->
@@ -304,6 +269,9 @@
     </div>
   </div>
 
+    </div>
+  </div>
+
   <script src="/lib/cm/codemirror.js"></script>
   <script src="/lib/cm/python.js"></script>
   <script src="/lib/cm/matchbrackets.js"></script>
@@ -313,9 +281,9 @@
     /* =============================== 한/영 사전 =============================== */
     const DICT = {
       ko: {
-        titleTag: "파이썬 — 엣지 랩", title: "엣지 랩",
+        titleTag: "edge-lab — 파이썬", title: "edge-lab",
         eyebrow: "파이썬으로 AI를 불러 봐요 · 인터넷 없이 내 컴퓨터에서",
-        homeLink: "엣지 랩 (홈)", langBtn: "EN",
+        langBtn: "EN",
         edHead: "파이썬 코드를 써요", outHead: "결과를 확인해요",
         guide: "도움말", guideOff: "도움말 ✕", example: "예제", save: "저장", load: "불러오기",
         newCode: "새로 만들기",
@@ -342,9 +310,9 @@
         confirmReplace: "지금 코드가 지워져요. 예제를 불러올까요?",
       },
       en: {
-        titleTag: "Python — Edge Lab", title: "Edge Lab",
+        titleTag: "edge-lab — Python", title: "edge-lab",
         eyebrow: "call AI from Python · runs on this computer",
-        homeLink: "Edge Lab (home)", langBtn: "한",
+        langBtn: "한",
         edHead: "Write Python code", outHead: "Check the result",
         newCode: "New",
         askNew: "Clear what you wrote and start over?",
@@ -1523,7 +1491,6 @@ Relative paths resolve from <code>models\\pycode</code>. cv2 and numpy work as u
     function applyLang() {
       document.title = t("titleTag");
       const set = (id, k) => { const el = document.getElementById(id); if (el) el.textContent = t(k); };
-      set("txtTitle", "title");
       set("txtEdHead", "edHead"); set("txtOutHead", "outHead");
       const helpOpen = document.getElementById("helpPanel").classList.contains("open");
       document.getElementById("guideButton").textContent = t(helpOpen ? "guideOff" : "guide");
@@ -1545,7 +1512,7 @@ Relative paths resolve from <code>models\\pycode</code>. cv2 and numpy work as u
       }
       set("txtRunState", "runStateK"); set("langButton", "langBtn");
       document.getElementById("runLabel").textContent = SID ? t("running") : t("run");
-      if (window.navRepaint) window.navRepaint();   /* 이동 탭 글자는 lib/nav.js 가 갖고 있다 */
+      if (window.navRepaint) window.navRepaint();   /* 레일 글자는 lib/shell.js 가 갖고 있다 */
       const st2 = document.getElementById("runState");
       if (st2) st2.textContent = t(SID ? "stRun" : "stReady");
     }
@@ -1557,7 +1524,8 @@ Relative paths resolve from <code>models\\pycode</code>. cv2 and numpy work as u
     applyLang();
   </script>
   <script src="/lib/usage.js" data-page="code"></script>
-  <script src="/lib/nav.js"></script>
+  <script src="/lib/icons.js"></script>
+  <script src="/lib/shell.js"></script>
   <script src="/lib/tour.js"></script>
   <script src="/lib/sysbar.js"></script>
   <script src="/lib/split.js"></script>
