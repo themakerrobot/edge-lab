@@ -26,15 +26,19 @@ async function open(path, wait) {
 const only = e => e.filter(x => !/blockly|Not implemented|getContext|createObjectURL|SVG|canvas/i.test(x));
 
 (async () => {
-  console.log('페이지        헤더단추 파일패널 오버레이 실제오류');
-  for (const p of ['/', '/blocks', '/code', '/train', '/talk', '/options']) {
+  console.log('페이지        닫기 도구 파일패널 오버레이 실제오류');
+  for (const p of ['/', '/try', '/blocks', '/code', '/train', '/talk', '/options']) {
     try {
       const { doc, errs, dom } = await open(p);
-      const btns = doc.querySelectorAll('.header .h-tools > a, .header .h-tools > button').length;
+      /* 홈이 아닌 화면에는 [× 닫기] 가 하나 있어야 한다(lib/shell.js).
+         도구(한/영·AI·?)는 따로 센다 — 전에는 헤더 하나에 섞여 있어서 한 숫자로
+         셌고, 셸로 바꾸면 그 숫자가 조용히 0 이 되어 시험이 통과한 척했다. */
+      const rail = doc.querySelectorAll('#closeApp').length;
+      const btns = doc.querySelectorAll('.titlebar .h-tools > a, .titlebar .h-tools > button').length;
       const fp = doc.getElementById('filePanel') ? 'O' : '-';
       const ov = doc.getElementById('sysPanel') || doc.getElementById('chipCPU') ? 'O' : '✗';
       const real = only(errs);
-      console.log(p.padEnd(13), String(btns).padEnd(8), fp.padEnd(8), ov.padEnd(9),
+      console.log(p.padEnd(13), String(rail).padEnd(4), String(btns).padEnd(4), fp.padEnd(8), ov.padEnd(9),
         real.length ? real[0].slice(0, 55) : '없음');
       dom.window.close();
     } catch (e) { console.log(p.padEnd(13), '열기 실패:', String(e.message).slice(0, 50)); }

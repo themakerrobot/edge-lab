@@ -201,7 +201,7 @@ ALLOW_WHILE_LOADING = ("/ready", "/system", "/lib", "/assets", "/fonts", "/block
 async def _loading_guard(request: Request, call_next):
     path = request.url.path
     if (not READY["ready"] and request.method != "OPTIONS"
-            and path not in ("/", "/blocks", "/train", "/options", "/code", "/talk")
+            and path not in ("/", "/try", "/blocks", "/train", "/options", "/code", "/talk")
             and not path.startswith(ALLOW_WHILE_LOADING)):
         return JSONResponse(status_code=503, content={
             "type": "loading", "result": "fail",
@@ -533,8 +533,17 @@ def code_barcode(path):
 
 
 # ---------------------------------------------------------------- view
+# "/" 는 런처다 — 큰 아이콘으로 앱과 AI 를 늘어놓고 골라 여는 첫 화면.
+# 전에는 "/" 가 곧 체험하기였고 AI 16종이 그 안 드롭다운에 숨어 있었다.
+# 체험하기는 "/try" 로 옮겼다. 런처 타일은 "/try?m=<모델키>" 로 들어간다.
 @app.get("/", response_class=HTMLResponse)
-async def index():
+async def home():
+    with open("view_project/home.html", encoding="utf-8") as f:
+        return f.read()
+
+
+@app.get("/try", response_class=HTMLResponse)
+async def try_page():
     with open("view_project/index.html", encoding="utf-8") as f:
         return f.read()
 

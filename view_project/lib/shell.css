@@ -1,0 +1,245 @@
+/* 셸 — 타이틀바 + 작업 공간. 일곱 페이지가 이 파일 하나를 쓴다.
+ *
+ * 휴대폰 홈 화면 방식이다.
+ *   홈(/)      아이콘만 깔려 있다. 하나를 누르면 그 앱이 열린다.
+ *   앱 화면    타이틀바(40px) 아래를 통째로 쓴다. 오른쪽 위 [× 닫기] 로 홈에 간다.
+ * 항상 떠 있는 이동 줄은 없다 — 예전 헤더의 가로 탭 여섯 개는 1280px 안팎에서
+ * 줄바꿈해 헤더를 50 → 92px 로 키웠고, 그 다음에 두었던 세로 레일은 홈과 하는
+ * 일이 같아서 폭 76px 만 먹었다. 이동은 홈 하나가 맡는다.
+ *
+ *     ┌───────────────────────────────────────────────┐
+ *     │ edge-lab │ 파이썬        [?] [한/영] [AI] [×닫기] │  titlebar 40px
+ *     ├───────────────────────────────────────────────┤
+ *     │                                               │
+ *     │              workbench — 나머지 전부           │
+ *     │                                               │
+ *     └───────────────────────────────────────────────┘
+ *
+ * 되찾은 공간은 여백이 아니라 아이 손가락에 쓴다
+ * ----------------------------------------------
+ * 쓰는 사람은 초등학생이고 교실 노트북 트랙패드로 조작한다. 타이틀바를 34px 이
+ * 아니라 40px 로 잡은 것은 그 안에 들어갈 단추가 40px 이어야 해서다.
+ * 치수 토큰은 lib/tokens.css 의 --tap / --tap-sm / --fs-* 에 있다.
+ *
+ * 쓰는 법 — 페이지 <head> 에서 ui.css **뒤에**:
+ *     <link rel="stylesheet" href="/lib/shell.css">
+ * 마크업은 lib/shell.js 주석에 있다.
+ */
+
+/* 셸이 가장자리 여백을 갖는다 — body 는 0. 페이지 CSS 가 적어 둔 body 패딩과
+   ui.css 의 @media screen 규칙을 여기서 되돌린다(이 파일이 뒤에 실린다). */
+body {
+  padding: 0;
+  gap: 0;
+}
+
+/* ═══════════════════ 타이틀바 ═══════════════════ */
+.titlebar {
+  flex: 0 0 auto;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px 0 10px;
+  background: var(--box, #fff);
+  border-bottom: 1.5px solid var(--line-d, #4a3f2e);
+  /* 줄바꿈하지 않는다 — 여기서 늘어나면 세로를 되찾은 뜻이 없어진다.
+     좁아지면 아래 @media 가 앱 이름부터 지운다. */
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.tb-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  height: 34px;
+  padding-right: 2px;
+  text-decoration: none;
+  color: var(--cyan-d, #17475c);
+}
+.tb-brand:focus-visible {
+  outline: 2.5px solid var(--pen-red, #b4451c);
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+.tb-brand:hover { text-decoration: none; }
+.tb-brand img { height: 20px; width: auto; flex: 0 0 auto; }
+/* 브랜드는 한국어 화면에서도 로마자다 — 서버도 FastAPI(title="edge-lab") 이고
+   콘솔도 "edge-lab listening on" 이라, 화면만 한글이라 어긋나 있었다. */
+.tb-brand b {
+  font-family: "Menlo", "Consolas", ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+}
+.tb-sep {
+  flex: 0 0 auto;
+  width: 1px; height: 14px;
+  background: var(--line, #9a8f7d);
+  opacity: .7;
+}
+/* 지금 보고 있는 앱 이름 — lib/shell.js 가 넣는다 */
+.tb-app {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12.5px;
+  color: var(--ink-2, #4a423a);
+}
+
+/* ── 타이틀바 오른쪽 도구 ──────────────────────────────────
+   [한/영] [AI] [?] 처럼 화면을 옮기지 않고 이 화면의 상태만 바꾸는 것들.
+   이동은 전부 레일이 맡으므로 여기에는 이동이 없다 — 전에는 탭과 도구가
+   같은 줄에 섞여 있어 [EN] 을 누르면 영어 화면으로 "넘어간다"고 읽혔다.
+
+   **보이는 알약은 28px, 누르는 영역은 40px 이다.**
+   ::after 로 위아래 6px 씩 투명하게 넓힌다 — 생김새는 그대로 두고 표적만
+   키우는 방법이라, 페이지 스크립트가 이 단추의 textContent 를 그냥 갈아도
+   (여섯 페이지가 다 그렇게 한다) 아무것도 깨지지 않는다. */
+.titlebar .h-tools {
+  margin-left: auto;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--tap-gap, 8px);
+}
+.titlebar .h-tools > button,
+.titlebar .h-tools > a {
+  position: relative;
+  height: 24px;
+  padding: 0 10px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1;
+  white-space: nowrap;
+  border: 1.5px solid var(--line, #9a8f7d);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink-2, #4a423a);
+  text-decoration: none;
+}
+/* 누르는 영역만 40px 로 — 위아래로만 넓힌다. 좌우로도 넓히면 8px 간격에서
+   옆 단추의 영역과 맞닿아, 사이를 눌렀을 때 엉뚱한 것이 눌린다. */
+.titlebar .h-tools > button::after,
+.titlebar .h-tools > a::after {
+  content: "";
+  position: absolute;
+  inset: -8px 0;
+}
+.titlebar .h-tools > button:hover,
+.titlebar .h-tools > a:hover {
+  border-color: var(--cyan, #1f5f7a);
+  color: var(--cyan-d, #17475c);
+  text-decoration: none;
+}
+.titlebar .h-tools > button:focus-visible,
+.titlebar .h-tools > a:focus-visible {
+  outline: 2.5px solid var(--pen-red, #b4451c);
+  outline-offset: 2px;
+}
+/* 동그란 것(?) 은 28 × 28 이라 위아래만 넓히면 모자란다.
+   좌우 여백을 6px 씩 두고 사방으로 넓혀 40 × 40 을 만든다. */
+.titlebar .h-tools > button.round {
+  width: 24px;
+  padding: 0;
+  font-weight: 700;
+  font-size: 13px;
+  margin-inline: 6px;
+}
+.titlebar .h-tools > button.round::after { inset: -8px; }
+/* 수치를 보여주는 것(AI 상태)은 고정폭 숫자로 — 갱신될 때 흔들리지 않게 */
+.titlebar .h-tools > button.mono {
+  font-family: "Menlo", "Consolas", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  min-width: 46px;
+}
+
+html.hc .titlebar .h-tools > button,
+html.hc .titlebar .h-tools > a {
+  border-width: 2px;
+  border-color: var(--line-d, #2e281c);
+}
+
+
+/* ═══════════════════ 작업 공간 ═══════════════════ */
+.shell-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+}
+/* 페이지 내용이 그대로 들어온다. 가장자리 여백은 여기가 갖는다. */
+.workbench {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2, 6px);
+  padding: 4px;
+  overflow: hidden;
+}
+
+/* [× 닫기] — lib/shell.js 가 홈이 아닌 화면의 도구 끝에 붙인다.
+   창의 닫기 단추 자리. 글자를 같이 둔다 — × 만으로는 저학년이 못 읽는다. */
+.titlebar .h-tools > a.close {
+  gap: 6px;
+  padding-left: 10px;
+  margin-left: 4px;
+  border-color: var(--line-d, #4a3f2e);
+  color: var(--ink, #2a2620);
+  font-weight: 700;
+}
+.titlebar .h-tools > a.close .x { font-size: 16px; line-height: 1; }
+.titlebar .h-tools > a.close:hover {
+  background: var(--ink, #2a2620);
+  border-color: var(--ink, #2a2620);
+  color: #fff;
+}
+
+
+/* ═══════════════════ 반응형 ═══════════════════
+   기준은 네 개뿐이다 (lib/tokens.css 주석 참고).
+   전에는 페이지마다 560/860/900/960/980/1200 이 섞여 있어서, 같은 창 폭에서
+   페이지를 옮기면 어떤 화면은 접히고 어떤 화면은 눌려서 잘렸다.
+
+   좁아질 때 **글씨와 표적은 줄이지 않는다.** 여백만 줄인다 —
+   노트북에서 촘촘해지는 것과 아이가 못 누르는 것은 다른 문제다. */
+
+/* md 이하 — 태블릿. 패널을 세로로 쌓고 문서처럼 스크롤한다.
+   전에는 blocks 만 이렇게 했고 나머지 다섯은 overflow:hidden 인 채 눌렸다. */
+@media (max-width: 1023px) {
+  body { height: auto; min-height: 100dvh; overflow: auto; }
+  .titlebar { position: sticky; top: 0; z-index: 40; }
+  .shell-body { min-height: 0; }
+  .workbench { overflow: visible; max-width: 100%; }
+  .workbench > .main-container { flex-direction: column; }
+  .workbench > .main-container > .panel,
+  .workbench > .main-container > .work,
+  .workbench > .main-container > .stage-panel { flex: 0 0 auto; min-width: 0; }
+}
+
+/* sm 이하 — 폰. 타이틀바에서 앱 이름을 지우고 닫기 글자를 줄인다. */
+@media (max-width: 639px) {
+  .titlebar { padding-left: 10px; gap: 8px; }
+  .tb-app, .tb-sep { display: none; }
+  .titlebar .h-tools > a.close .tx { display: none; }
+  .titlebar .h-tools > a.close { width: 34px; padding: 0; justify-content: center; }
+}
+
+@media print {
+  .titlebar { display: none !important; }
+  .shell-body { display: block; }
+  .workbench { display: block; padding: 0; overflow: visible; }
+}

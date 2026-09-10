@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>엣지 랩</title>
+  <title>edge-lab — 체험하기</title>
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
@@ -12,104 +12,14 @@
     try { if (localStorage.getItem("vapi-hc") === "1")
             document.documentElement.classList.add("hc"); } catch (e) {}
   </script>
+  <link rel="stylesheet" href="/lib/tokens.css">
+  <!-- 모델 목록·아이콘은 아래 인라인 스크립트가 바로 쓰므로 head 에서 먼저 싣는다 -->
+  <script src="/lib/icons.js"></script>
+  <script src="/lib/apps.js"></script>
+  <script src="/lib/boot.js"></script>
   <style>
-    /* ---------------- 부팅(로딩) 화면 ---------------- */
-    #boot {
-      position: fixed; inset: 0; z-index: 100; display: flex;
-      align-items: center; justify-content: center; padding: 20px;
-      background: #fbf7ef;
-      background-image: radial-gradient(rgba(31, 95, 122,.07) 1px, transparent 1px);
-      background-size: 22px 22px;
-    }
-    #boot.done { display: none; }
-    .boot-card {
-      width: min(880px, 100%); background: #fff; border: 2px solid #4a3f2e;
-      border-radius: 4px; box-shadow: 0 2px 0 rgba(44,74,124,.2);
-      padding: 28px 32px 24px; display: flex; flex-direction: column; gap: 20px;
-    }
-    .boot-brand { display: flex; align-items: center; gap: 12px; }
-    .boot-brand img { height: 62px; }
-    .boot-brand b { display: block; font-family: "Gowun Batang", serif;
-                    font-size: 1.7rem; line-height: 1.2; }
-    .boot-brand i { font-style: normal; font-size: 1.02rem; color: #4a423a; }
-    .boot-slide { display: flex; align-items: center; gap: 26px; min-height: 200px; }
-    .boot-art { flex: 0 0 200px; height: 180px; }
-    .boot-art svg { width: 100%; height: 100%; }
-    .boot-text h2 { font-family: "Gowun Dodum", sans-serif; font-size: 1.5rem;
-                    color: #17475c; margin-bottom: 10px; }
-    .boot-text p { font-size: 1.18rem; color: #2a2620; line-height: 1.7; }
-    .boot-slide.fade { opacity: 0; }
-    .boot-slide { transition: opacity .35s; }
-    .boot-dots { display: flex; gap: 8px; justify-content: center; }
-    .boot-dots span { width: 10px; height: 10px; border-radius: 50%; background: #9a8f7d; }
-    .boot-dots span.on { background: #1f5f7a; }
-    .boot-progress { display: flex; flex-direction: column; gap: 5px; }
-    .boot-bar { height: 18px; background: #e6eef6; border-radius: 9px; overflow: hidden; }
-    .boot-bar > i { display: block; height: 100%; width: 0;
-                    background: linear-gradient(90deg, #1f5f7a, #1f5f7a);
-                    transition: width .4s; }
-    .boot-status { display: flex; align-items: baseline; gap: 10px;
-                   font-family: "Menlo","Consolas",monospace;
-                   font-size: 1rem; color: #4a423a; }
-    .boot-status #bootNow { flex: 1 1 auto; min-width: 0;
-                            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    /* 진행 수치는 오른쪽에 모아 둔다 — 숫자 폭을 고정해 갱신될 때 흔들리지 않게 */
-    .boot-meter { flex: 0 0 auto; display: flex; align-items: baseline; gap: 7px;
-                  font-variant-numeric: tabular-nums; }
-    .boot-meter .sep { color: #9a8f7d; }
-    .boot-meter #bootTime { color: #6b6255; }
-    .boot-actions { display: flex; gap: 8px; }
-    .boot-actions button {
-      font-family: inherit; font-size: 1.08rem; font-weight: 600; cursor: pointer;
-      border: 1.5px solid #4a3f2e; border-radius: 6px; padding: 11px 22px;
-      background: #1f5f7a; color: #fff; margin-left: auto;
-    }
-    .boot-actions button:disabled { background: #c4b9a5; border-color: #c4b9a5; cursor: default; }
-    .boot-actions button.ghost { background: #fff; color: #4a423a;
-                                 border-color: #9a8f7d; margin-left: 0; }
-    @media (max-width: 560px) {
-      .boot-slide { flex-direction: column; text-align: center; }
-      .boot-art { flex: 0 0 auto; height: 150px; }
-      .boot-text h2 { font-size: 1.3rem; }
-      .boot-text p { font-size: 1.05rem; }
-    }
 
-    /* ===== 디자인 토큰 : "학습지" (줄노트 + 시험지 머리표 + 빨간펜) ===== */
-    :root {
-      --paper:    #fbf7ef;                 /* 흰 활동지 */
-      --rule:     transparent;
-      --box:      #ffffff;
-      --ink:      #2a2620;
-      --ink-2:    #4a423a;
-      --cyan:     #1f5f7a;                 /* 활동지 섹션 타이틀 */
-      --cyan-d:   #17475c;
-      --pen-blue: #1f5f7a;
-      --pen-blue-d:#12455c;
-      --pen-red:  #b4451c;
-      --line:     #9a8f7d;
-      --line-d:   #4a3f2e;                 /* 활동지 표 네이비 괘선 */
-      --r: 6px;
-    }
 
-    /* ===== 밝은 곳 모드 (설정에서 켠다) =====
-       색 토큰만 덮어써서 대비를 끌어올린다. 배치는 그대로다. */
-    html.hc {
-      --paper:    #fffdf8;
-      --box:      #ffffff;
-      --ink:      #1a1712;
-      --ink-2:    #332d26;
-      --cyan:     #114558;
-      --cyan-d:   #0c3444;
-      --pen-blue: #123f52;
-      --pen-blue-d:#0a2c3a;
-      --pen-red:  #8f3312;
-      --line:     #7a6f5d;
-      --line-d:   #2e281c;
-    }
-    html.hc body { background-image: none; }          /* 배경 무늬 제거 */
-    html.hc select, html.hc input, html.hc button,
-    html.hc .panel, html.hc .q, html.hc .card { border-width: 2px; }
-    html.hc .panel-head { border-width: 3px; }
 
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -149,20 +59,6 @@
     input[readonly] { background: #fbfaf5; color: var(--ink-2); }
 
     /* ===== 시험지 머리표 ===== */
-    .header {
-      flex: 0 0 auto;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: stretch;
-      background: var(--box);
-      border: 2px solid var(--line-d);
-      border-radius: 3px;
-      box-shadow: 0 1px 0 rgba(44,74,124,.18);
-    }
-    .header > div {
-      display: flex; flex-direction: column; justify-content: center;
-      padding: 5px 12px;
-    }
     .h-subject .eyebrow {
       font-size: 0.82rem; letter-spacing: .14em; color: var(--ink-2);
     }
@@ -183,7 +79,6 @@
     }
     .h-env { gap: 4px; }
     .h-env .k { font-size: 0.82rem; color: var(--ink-2); }
-    .h-tools { flex-direction: row !important; align-items: center; gap: 8px; margin-left: auto; }
 
 
     /* ===== 시스템 상태바 (온디바이스 콘솔) ===== */   /* lib/sysbar.js 가 오버레이로 옮겨 담는다 */
@@ -210,61 +105,43 @@
     /* ===== 문항 공통 ===== */
     .qnum::after { content: "."; }
 
-    /* ===== 문항 1 : 모델 고르기 ===== */
-    .subheader {
-      flex: 0 0 auto;
-      display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
-      background: var(--box);
-      border: 1.5px solid var(--line);
-      border-radius: var(--r);
-      padding: var(--sp-2, 6px) 16px;
+    /* ===== 조작 줄 — 왼쪽 패널 머리표 =====
+       모델·입력 방법·라이브·실행이 한 줄. 프롬프트(물어보는 모델만)는 제 줄.
+       내용보다 위에 있는 줄은 전부 내용을 밀어내므로, 여기가 전부다. */
+    .run-head { gap: 6px; }
+    #modelSelect {
+      font-weight: 700; font-size: 13px; min-width: 150px; max-width: 220px;
+      min-height: var(--tap-sm, 32px); padding: 0 6px;
     }
-    .subheader .q { display: flex; align-items: center; gap: 9px; }
-    .subheader .field { display: flex; align-items: center; gap: 8px; flex: 1 1 auto; min-width: 200px; }
-    .field-label { font-size: .88rem; color: var(--ink-2); white-space: nowrap; }
-    #modelSelect { font-weight: 600; min-width: 160px; }
-    #guide { flex: 1 1 240px; width: auto; }
-    .doc-link { margin-left: auto; font-size: .88rem; white-space: nowrap; }
-    .doc-link::before { content: "※ "; color: var(--pen-red); }
-
-    /* ===== 문항 2 헤더줄 : 탭 + 프롬프트 + 실행 ===== */
-    .tab-prompt-row {
-      flex: 0 0 auto;
-      display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;
-      background: var(--box);
-      border: 1.5px solid var(--line);
-      border-radius: var(--r);
-      padding: var(--sp-2, 8px) 16px;
-    }
-    .tab-prompt-row .q { display: flex; align-items: center; gap: 9px; }
-    .tabs { display: flex; gap: 2px; }
+    .run-head .q[hidden] { display: none; }
+    .tabs { display: flex; gap: 3px; flex: 0 0 auto; }
     .tabButton {
-      background: transparent; border: none; border-bottom: 3px solid transparent;
-      border-radius: 0; color: var(--ink-2); font-size: .95rem;
-      padding: 6px 12px 4px; cursor: pointer;
+      background: #fff; border: 1.5px solid var(--line);
+      border-radius: var(--r); color: var(--ink-2);
+      font-size: 13px; font-weight: 600;
+      min-height: var(--tap-sm, 32px); padding: 0 10px; cursor: pointer;
+      white-space: nowrap;
     }
-    .tabButton:hover { color: var(--ink); }
+    .tabButton:hover { color: var(--ink); border-color: var(--cyan); }
     .tabButton.active {
-      color: var(--pen-blue-d); font-weight: 700;
-      border-bottom-color: var(--pen-blue);
+      color: #fff; font-weight: 700;
+      background: var(--pen-blue); border-color: var(--pen-blue);
     }
-    .promptWrapper { margin-left: auto; display: flex; align-items: center; gap: 8px; flex: 1 1 300px; }
-    #promptInput { flex: 1 1 auto; width: auto; min-width: 110px; }
-
+    #promptInput { flex: 1 1 100%; width: 100%; min-height: var(--tap-sm, 32px); font-size: 13.5px; }
+    #promptInput[hidden] { display: none; }
     #mainRunButton {
       background: var(--pen-blue); border: 1.5px solid var(--pen-blue); color: #fff;
-      font-weight: 700; font-size: .98rem; padding: 8px 26px; cursor: pointer;
+      font-weight: 700; font-size: 13.5px; min-height: var(--tap-sm, 32px);
+      padding: 0 18px; cursor: pointer;
       border-radius: var(--r); white-space: nowrap;
     }
     #mainRunButton:hover { background: var(--pen-blue-d); border-color: var(--pen-blue-d); }
     #mainRunButton:disabled { background: #b9b7ac; border-color: #b9b7ac; cursor: wait; }
-
-    /* 라이브 토글 */
     .live-toggle {
-      display: inline-flex; align-items: center; gap: 6px;
-      font-size: .88rem; color: var(--ink-2); white-space: nowrap;
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 13px; color: var(--ink-2); white-space: nowrap;
       border: 1.5px solid var(--line); border-radius: var(--r);
-      padding: 6px 11px; cursor: pointer; background: #fff;
+      min-height: var(--tap-sm, 32px); padding: 0 9px; cursor: pointer; background: #fff;
     }
     .live-toggle input { width: 15px; height: 15px; cursor: pointer; }
     .live-toggle.on { border-color: var(--pen-red); color: var(--pen-red); font-weight: 700; }
@@ -341,7 +218,7 @@
     #webcamCanvas { display: none; background: #fff; }
     /* 캡처 전(1장뿐)에는 넓게 사용 */
     .webcam-container:has(#webcamCanvas[style*="none"]) #webcamVideo { max-width: 100%; }
-    @media (max-width: 1200px) {
+    @media (max-width: 1023px) {
       #webcamVideo, #webcamCanvas { max-width: 100%; }
     }
 
@@ -502,130 +379,82 @@
     }
 
     /* ===== 반응형 ===== */
-    @media (max-width: 860px) {
-      body { overflow: auto; height: auto; min-height: 100dvh; }
-      .main-container { flex-direction: column; min-height: 0; }
+    /* 좁은 화면 — 기준은 lib/tokens.css 주석의 네 개뿐이다(md 1023 / sm 639).
+       전에는 페이지마다 560/860/900/960/980/1200 이 섞여 있어, 같은 창 폭에서
+       화면을 옮기면 어떤 것은 접히고 어떤 것은 눌려서 잘렸다.
+       body 스크롤과 .main-container 세로 적층은 lib/shell.css 가 한 번에 하므로
+       여기는 이 화면에만 필요한 것만 남긴다. */
+    @media (max-width: 1023px) {
+      .main-container { min-height: 0; }
       .panel-body { overflow: visible; display: block; }
       .tab-content.active { display: block; }
       .upload-container, .webcam-container, .sketch-container, .result-frame { min-height: 260px; }
-      .header { flex-direction: column; }
-      .h-tools { margin-left: 0; }
-      .promptWrapper { margin-left: 0; flex-basis: 100%; }
-      .doc-link { margin-left: 0; }
     }
   </style>
   <link rel="stylesheet" href="/lib/ui.css">
+  <link rel="stylesheet" href="/lib/shell.css">
 </head>
 <body data-density="explore">
-  <!-- 부팅 화면 : 모델을 올리는 동안 무엇이 일어나는지 보여준다 -->
-  <!-- 로딩 화면은 처음부터 덮어 둔다. 이미 준비가 끝난 세션이면 아래 스크립트가 바로 걷는다.
-       (나중에 표시하면 그 사이 체험 화면이 잠깐 보였다가 가려진다) -->
-  <script>
-    /* 같은 세션에서 이미 로딩이 끝났다면(페이지 이동) 처음부터 숨겨 깜빡임을 없앤다 */
-    document.write(sessionStorage.getItem("vapi-ready") === "1"
-      ? '<style>#boot{display:none}</style>' : "");
-  </script>
-  <div id="boot">
-    <div class="boot-card">
-      <div class="boot-brand">
-        <img src="/assets/pibo-prof.png" alt="">
-        <span>
-          <b id="bootTitle">엣지 랩</b>
-          <i id="bootSub">인터넷 없이 내 컴퓨터에서 실행돼요</i>
-        </span>
-      </div>
-
-      <div class="boot-slide">
-        <div class="boot-art" id="bootArt"></div>
-        <div class="boot-text">
-          <h2 id="bootHead"></h2>
-          <p id="bootBody"></p>
-        </div>
-      </div>
-
-      <div class="boot-dots" id="bootDots"></div>
-
-      <div class="boot-progress">
-        <div class="boot-bar"><i id="bootBar"></i></div>
-        <div class="boot-status">
-          <span id="bootNow">준비하는 중...</span>
-          <span class="boot-meter">
-            <span id="bootCount">0 / 0</span>
-            <span class="sep">·</span>
-            <span id="bootTime">0초</span>
-          </span>
-        </div>
-      </div>
-
-      <div class="boot-actions">
-        <button id="bootSkip" class="ghost">건너뛰기</button>
-        <button id="bootStart" disabled>준비 중...</button>
-      </div>
-    </div>
-  </div>
 
   <!-- 시험지 머리표 -->
-  <div class="header">
-    <div class="h-subject" style="flex-direction:row;align-items:center;gap:10px;">
-      <img src="/assets/pibo-logo.png" alt="" style="height:30px;flex:0 0 auto;">
-      <span class="title" title="인터넷 없이 내 컴퓨터에서 실행돼요"><span id="txtTitle">엣지 랩</span></span>
-    </div>
+  <div class="titlebar">
+    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요">
+      <img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b>
+    </a>
+    <span class="tb-sep"></span>
+    <span class="tb-app" id="txtTitle"></span>
     <div class="h-tools">
-      <button id="langButton" title="한국어 / English" style="min-width:46px;">EN</button>
-
+      <button id="langButton" title="한국어 / English">EN</button>
     </div>
   </div>
 
-  <!-- 문항 1 : 모델 고르기 -->
-  <div class="subheader">
-    <div class="q" id="q1">
-      <span class="qnum">1</span>
-      <span class="qtext" id="txtQ1">모델을 골라요</span>
-    </div>
-    <div class="field" id="modelField">
-      <label class="field-label" for="modelSelect" id="txtModelLabel">모델</label>
-      <select id="modelSelect"></select>
-    </div>
-    <div class="field">
-      <label class="field-label" for="guide" id="txtGuideLabel">가이드</label>
-      <input type="text" id="guide" readonly />
-    </div>
-    <a id="apiDocLink" class="doc-link" href="#" target="_blank">API Docs</a>
-  </div>
+  <div class="shell-body">
+    <div class="workbench">
 
-  <!-- 문항 2 : 이미지 넣고 실행 -->
-  <div class="tab-prompt-row">
-    <div class="q">
-      <span class="qnum">2</span>
-      <span class="qtext" id="txtQ2">이미지를 넣고 실행해요</span>
-    </div>
-    <div class="tabs">
-      <button class="tabButton active" data-tab="upload" id="txtTabUpload">이미지</button>
-      <button class="tabButton" data-tab="webcam" id="txtTabWebcam">웹캠</button>
-      <button class="tabButton" data-tab="sketch" id="txtTabSketch">스케치북</button>
-    </div>
-    <div class="promptWrapper">
-      <label class="field-label" for="promptInput" id="txtPromptLabel">프롬프트</label>
-      <input type="text" id="promptInput" value="-" />
-      <label class="live-toggle" id="liveToggle" title="웹캠에서 계속 인식합니다 (빠른 모델만)">
-        <input type="checkbox" id="liveCheck"> <span id="txtLive">라이브</span>
-      </label>
-      <button id="mainRunButton" title="스페이스바로도 실행할 수 있어요"><span id="runLabel">실행</span></button>
-    </div>
-  </div>
+  <!-- 문항 1·2 는 왼쪽 패널 머리표로 들어갔다 (아래).
+       전에는 이 자리에 가로 막대 두 개가 따로 서 있어서, 헤더까지 합쳐
+       내용 이전에 183px 을 먹었다. 고를 것(모델)과 실행할 것(탭·프롬프트·실행)은
+       모두 왼쪽 "입력" 패널에 딸린 조작이라 그 패널 머리표에 모은다. -->
 
   <!-- 답안 영역 -->
   <div class="main-container">
     <!-- 왼쪽: 입력 -->
     <div class="panel">
-      <div class="panel-head">
-        <span class="qtext" style="font-size:.95rem;" id="txtInputHead">입력 이미지</span>
+      <div class="panel-head run-head">
+        <!-- 문항 제목은 두지 않는다 — 드롭다운(고른 AI)이 곧 제목이고,
+             글자 한 덩어리가 더 있으면 1366px 에서 줄이 접힌다. -->
+        <span class="q" hidden><span class="qnum">1</span><span class="qtext" id="txtQ1">골라서 실행해요</span></span>
+        <!-- 지금 고른 AI. 홈의 아이콘으로 들어오면 그게 골라져 있고,
+             여기서 바로 다른 것으로 바꿀 수도 있다(홈에 갔다 오지 않아도). -->
+        <select id="modelSelect" aria-label="모델"></select>
+        <span class="tabs">
+          <button class="tabButton active" data-tab="upload" id="txtTabUpload">이미지</button>
+          <button class="tabButton" data-tab="webcam" id="txtTabWebcam">웹캠</button>
+          <button class="tabButton" data-tab="sketch" id="txtTabSketch">스케치북</button>
+        </span>
+        <span class="right">
+          <label class="live-toggle" id="liveToggle" title="웹캠에서 계속 인식합니다 (빠른 모델만)">
+            <input type="checkbox" id="liveCheck"> <span id="txtLive">라이브</span>
+          </label>
+          <button id="mainRunButton" title="스페이스바로도 실행할 수 있어요"><span id="runLabel">실행</span></button>
+        </span>
+        <!-- 프롬프트는 물어보는 모델에서만 보인다. 나머지 열다섯은 값이 "-" 인 채
+             서버로도 안 가는 칸이었다. 보일 때는 제 줄을 통째로 쓴다 —
+             오른쪽 구석에 어정쩡하게 두 줄로 접히던 것. -->
+        <input type="text" id="promptInput" value="-" aria-label="프롬프트"
+               placeholder="사진에 대해 물어볼 말" />
       </div>
+      <!-- 고른 모델이 무엇을 하는지 — 전에는 [가이드] 라는 읽기 전용 입력칸이었다.
+           입력칸처럼 생겼는데 못 쓰는 칸이라 아이가 눌러 보고 헤맸다. 글로 바꾼다. -->
+      <!-- 고른 모델 설명은 드롭다운의 title(툴팁)로만. 한 줄을 통째로 쓰던 안내 줄은
+           걷어냈다 — 내용보다 위에 있는 줄은 전부 내용을 밀어낸다.
+           API Docs 링크는 홈으로 옮겼다 — 체험하기에서 할 일이 아니다. -->
+      <span id="guide" hidden></span>
       <div class="panel-body">
         <div id="upload" class="tab-content active">
           <div class="upload-container" id="uploadPlaceholder">
             <div id="uploadText">
-              <img src="/assets/pibo-hello.png" alt="" style="height:110px;display:block;margin:0 auto 10px;">
+              <img src="/assets/pibo-hello.png" alt="" style="height:80px;display:block;margin:0 auto 8px;">
               <span id="txtUploadMain">이 칸에 이미지를 붙여 보세요</span>
               <div class="hint" id="txtUploadHint">끌어놓기 또는 클릭해서 업로드</div>
             </div>
@@ -666,11 +495,11 @@
     <!-- 오른쪽: 결과 -->
     <div class="panel">
       <div class="panel-head">
-        <span class="qnum">3</span>
+        <span class="qnum">2</span>
         <span class="qtext" id="txtQ3">결과를 확인해요</span>
       </div>
       <div class="panel-body">
-        <div class="result-frame">
+        <div class="result-frame grow">
           <canvas id="resultCanvas"></canvas>
           <div id="stampMark">확인!</div>
         </div>
@@ -704,6 +533,9 @@
     </div>
   </div>
 
+    </div>
+  </div>
+
   <script>
     /****************************************************
      * 기능 로직은 기존과 동일 (스타일/도장/연습장만 변경)
@@ -719,34 +551,18 @@
 
     const UI = {
       ko: {
-        titleTag: "엣지 랩", title: "엣지 랩",
+        titleTag: "edge-lab — 체험하기", title: "edge-lab",
         eyebrow: "체험하기 · AI 16가지를 눌러 봐요 · 인터넷 없이 내 컴퓨터에서",
         blocksLink: "블록", trainLink: "가르치기", codeLink: "파이썬", talkLink: "대화", optionsTip: "설정", langBtn: "EN",
-        bootSub: "인터넷 없이 내 컴퓨터에서 실행돼요",
-        bootSkip: "건너뛰기", bootWait: "준비 중...", bootStart: "시작하기",
-        bootDone: "준비 끝!", bootError: "문제가 생겼어요: ",
-        bootSec: "초", bootMin: "분 ",
         cam_denied: "카메라를 쓸 수 없어요.<br>주소창 왼쪽(또는 창 위쪽)의 자물쇠·카메라 아이콘을 눌러 <b>허용</b>으로 바꿔 주세요.",
         cam_busy: "다른 프로그램이 카메라를 쓰고 있어요.<br>화상회의·카메라 앱을 닫고 다시 눌러 보세요.",
         cam_none: "카메라를 찾지 못했어요.<br>웹캠이 꽂혀 있는지, 노트북이라면 카메라 덮개가 열려 있는지 확인해 주세요.",
         cam_fail: "카메라를 켜지 못했어요.",
         cam_retry: "다시 시도",
-        s1h: "인터넷 없이 동작해요",
-        s1b: "이 프로그램은 인터넷에 연결하지 않아요. 웹캠으로 찍은 사진은 이 컴퓨터 밖으로 나가지 않고, 여기 안에서만 처리돼요.",
-        s2h: "AI를 내 컴퓨터에 올리는 중이에요",
-        s2b: "사물 찾기, 얼굴 분석, 손 인식, 글자 읽기, 그림 바꾸기까지 여러 개의 AI를 지금 메모리에 올리고 있어요. 아래 막대가 그 진행 상황이에요.",
-        s3h: "일을 나눠서 해요",
-        s3b: "컴퓨터 안에는 계산을 맡는 부품이 여러 개 있어요. 얼굴은 NPU, 그림 바꾸기는 GPU, 나머지는 CPU가 나눠 맡아 더 빠르게 움직여요.",
-        s4h: "오늘 할 수 있는 것",
-        s4b: "체험하기에서 AI를 눌러 보고, 블록 코딩과 파이썬으로 나만의 프로그램을 짜고, 가르치기에서 내가 직접 AI를 학습시킬 수 있어요.",
-        s5h: "곧 시작해요",
-        s5b: "준비가 끝나면 아래 [시작하기] 버튼이 켜져요. 먼저 웹캠이 잘 보이는지 확인해 두면 좋아요.",
         customGroup: "내가 가르친 AI", customTip: "내가 직접 학습시킨 모델로 분류합니다.",
-        q1: "모델을 골라요", q2: "이미지를 넣고 실행해요", q3: "결과를 확인해요",
-        modelLabel: "모델", guideLabel: "가이드", promptLabel: "프롬프트",
+        q1: "골라서 실행해요", q3: "결과를 확인해요",
         tabUpload: "이미지", tabWebcam: "웹캠", tabSketch: "스케치북",
         live: "라이브", run: "실행", running: "실행 중...", liveRun: "라이브 중",
-        inputHead: "입력 이미지",
         uploadMain: "이 칸에 이미지를 붙여 보세요", uploadHint: "끌어놓기 또는 클릭해서 업로드",
         capture: "캡쳐", penColor: "색상", penWidth: "굵기", clearSketch: "초기화",
         stamp: "확인!", stampDone: "참 잘했어요", easyLabel: "파이보의 풀이",
@@ -762,34 +578,18 @@
         aCopyFail: "복사에 실패했습니다.",
       },
       en: {
-        titleTag: "Edge Lab", title: "Edge Lab",
+        titleTag: "edge-lab — Try it", title: "edge-lab",
         eyebrow: "Try it · 16 AIs · runs on this computer, no internet",
         blocksLink: "Blocks", trainLink: "Train", codeLink: "Python", talkLink: "Talk", optionsTip: "Settings", langBtn: "한",
-        bootSub: "Runs on this computer, no internet needed",
-        bootSkip: "Skip", bootWait: "Getting ready...", bootStart: "Start",
-        bootDone: "Ready!", bootError: "Something went wrong: ",
-        bootSec: "s", bootMin: "m ",
         cam_denied: "Camera is blocked.<br>Click the lock or camera icon near the address bar and choose <b>Allow</b>.",
         cam_busy: "Another app is using the camera.<br>Close video-call or camera apps, then try again.",
         cam_none: "No camera found.<br>Check that a webcam is connected and the privacy cover is open.",
         cam_fail: "Could not start the camera.",
         cam_retry: "Try again",
-        s1h: "It works without the internet",
-        s1b: "This program never connects to the internet. Photos from your webcam stay on this computer and are processed right here.",
-        s2h: "Loading the AI models",
-        s2b: "Object detection, face analysis, hand tracking, text reading and image transforms are being loaded into memory. The bar below shows the progress.",
-        s3h: "The work is shared out",
-        s3b: "Your computer has several chips for computing. Faces go to the NPU, image transforms to the GPU, and the rest to the CPU — so everything runs faster.",
-        s4h: "What you can do today",
-        s4b: "Try the AIs in Use, write your own program in Blocks or Python, and train your very own AI in Train.",
-        s5h: "Almost there",
-        s5b: "The [Start] button turns on when everything is ready. It is a good moment to check that your webcam works.",
         customGroup: "My own AI", customTip: "Classifies with a model you trained yourself.",
-        q1: "Pick a model", q2: "Add an image and run", q3: "Check the result",
-        modelLabel: "Model", guideLabel: "Guide", promptLabel: "Prompt",
+        q1: "Pick one and run", q3: "Check the result",
         tabUpload: "Image", tabWebcam: "Webcam", tabSketch: "Sketchbook",
         live: "Live", run: "Run", running: "Running...", liveRun: "Live",
-        inputHead: "Input image",
         uploadMain: "Drop an image here", uploadHint: "Drag & drop, or click to upload",
         capture: "Capture", penColor: "Color", penWidth: "Width", clearSketch: "Clear",
         stamp: "Done!", stampDone: "Great job!", easyLabel: "Pibo says",
@@ -807,160 +607,14 @@
     };
     const T = k => UI[LANG][k] !== undefined ? UI[LANG][k] : UI.ko[k];
 
-    /* ================= 부팅 화면 =================
-       모델을 올리는 동안 이 툴이 무엇을 하는지 짧게 안내한다.
-       그림은 전부 인라인 SVG — 파일을 더 받지 않는다. */
-    const ART = {
-      offline: '<svg viewBox="0 0 120 105"><rect x="14" y="18" width="92" height="60" rx="5" fill="#fff" stroke="#4a3f2e" stroke-width="3"/><rect x="24" y="28" width="72" height="40" rx="3" fill="#eaf6fb"/><path d="M44 88h32l4 9H40z" fill="#9a8f7d"/><circle cx="60" cy="48" r="13" fill="none" stroke="#1f5f7a" stroke-width="3"/><path d="M60 41v9M60 55h.01" stroke="#17475c" stroke-width="3" stroke-linecap="round"/><path d="M96 14 22 90" stroke="#b4451c" stroke-width="5" stroke-linecap="round"/></svg>',
-      models: '<svg viewBox="0 0 120 105"><g fill="none" stroke="#4a3f2e" stroke-width="3"><rect x="10" y="14" width="30" height="24" rx="4"/><rect x="45" y="14" width="30" height="24" rx="4"/><rect x="80" y="14" width="30" height="24" rx="4"/><rect x="10" y="44" width="30" height="24" rx="4"/><rect x="45" y="44" width="30" height="24" rx="4"/><rect x="80" y="44" width="30" height="24" rx="4"/></g><rect x="10" y="44" width="30" height="24" rx="4" fill="#1f5f7a" opacity=".35"/><rect x="45" y="14" width="30" height="24" rx="4" fill="#1f5f7a" opacity=".35"/><rect x="80" y="44" width="30" height="24" rx="4" fill="#1f5f7a" opacity=".35"/><path d="M22 84h76" stroke="#9a8f7d" stroke-width="8" stroke-linecap="round"/><path d="M22 84h44" stroke="#1f5f7a" stroke-width="8" stroke-linecap="round"/></svg>',
-      chips: '<svg viewBox="0 0 120 105"><rect x="26" y="26" width="68" height="56" rx="6" fill="#fff" stroke="#4a3f2e" stroke-width="3"/><rect x="38" y="38" width="44" height="32" rx="3" fill="#eaf6fb" stroke="#17475c" stroke-width="2"/><g stroke="#4a3f2e" stroke-width="3" stroke-linecap="round"><path d="M40 26v-9M60 26v-9M80 26v-9M40 82v9M60 82v9M80 82v9M26 42h-9M26 60h-9M94 42h9M94 60h9"/></g><text x="60" y="59" font-size="13" font-family="monospace" fill="#17475c" text-anchor="middle">NPU</text></svg>',
-      menus: '<svg viewBox="0 0 120 105"><rect x="8" y="24" width="32" height="56" rx="5" fill="#fff" stroke="#4a3f2e" stroke-width="3"/><rect x="44" y="24" width="32" height="56" rx="5" fill="#fff" stroke="#4a3f2e" stroke-width="3"/><rect x="80" y="24" width="32" height="56" rx="5" fill="#fff" stroke="#4a3f2e" stroke-width="3"/><circle cx="24" cy="44" r="7" fill="#1f5f7a"/><path d="M15 66h18M15 72h12" stroke="#9a8f7d" stroke-width="3" stroke-linecap="round"/><rect x="52" y="38" width="16" height="9" rx="2" fill="#2fa35c"/><rect x="52" y="50" width="16" height="9" rx="2" fill="#d97b2b"/><path d="M51 66h18M51 72h12" stroke="#9a8f7d" stroke-width="3" stroke-linecap="round"/><path d="M88 52l6 6 12-14" stroke="#1f5f7a" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M87 66h18M87 72h12" stroke="#9a8f7d" stroke-width="3" stroke-linecap="round"/></svg>',
-      go: '<svg viewBox="0 0 120 105"><circle cx="60" cy="52" r="34" fill="#eaf6fb" stroke="#1f5f7a" stroke-width="3"/><path d="M46 52l10 11 20-24" stroke="#1f5f7a" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    };
-    const SLIDES = [
-      { art: "offline", key: "s1" }, { art: "models", key: "s2" },
-      { art: "chips", key: "s3" },   { art: "menus", key: "s4" },
-      { art: "go", key: "s5" },
-    ];
-
-    (function boot() {
-      const box = document.getElementById("boot");
-      if (!box) return;
-      let idx = 0, ready = false, timer = null, shown = false;
-
-      function paint() {
-        const sl = SLIDES[idx];
-        document.getElementById("bootArt").innerHTML = ART[sl.art];
-        document.getElementById("bootHead").textContent = T(sl.key + "h");
-        document.getElementById("bootBody").textContent = T(sl.key + "b");
-        document.getElementById("bootDots").innerHTML =
-          SLIDES.map((_, i) => '<span class="' + (i === idx ? "on" : "") + '"></span>').join("");
-      }
-      function next() {
-        const slide = document.querySelector(".boot-slide");
-        slide.classList.add("fade");
-        setTimeout(() => {
-          idx = (idx + 1) % SLIDES.length;
-          paint();
-          slide.classList.remove("fade");
-        }, 350);
-      }
-      function finish() {
-        box.classList.add("done");
-        if (timer) clearInterval(timer);
-      }
-
-      /* 로딩이 끝난 뒤 다시 들어온 경우에는 안내를 띄우지 않는다.
-         (블록 코딩 → 체험 실습 처럼 페이지를 오갈 때마다 나오면 방해가 된다) */
-      function show() {
-        if (shown) return;
-        shown = true;
-        box.classList.remove("done");
-        document.getElementById("bootTitle").textContent = T("title");
-        document.getElementById("bootSub").textContent = T("bootSub");
-        document.getElementById("bootSkip").textContent = T("bootSkip");
-        document.getElementById("bootStart").textContent = T("bootWait");
-        paint();
-        timer = setInterval(next, 8000);
-        document.getElementById("bootSkip").addEventListener("click", finish);
-        document.getElementById("bootStart").addEventListener("click", () => {
-          if (ready) finish();
-        });
-      }
-
-      const bootT0 = Date.now();
-      function elapsed() {
-        const s = Math.floor((Date.now() - bootT0) / 1000);   // 내림 — 59.5 가 "60초" 로 보이지 않게
-        return s < 60 ? s + T("bootSec")
-                      : Math.floor(s / 60) + T("bootMin") + (s % 60) + T("bootSec");
-      }
-
-      async function poll() {
-        try {
-          const r = await (await fetch("/ready")).json();
-          if (r.ready) sessionStorage.setItem("vapi-ready", "1");
-          if (r.ready && !shown) { finish(); return; }   // 이미 준비 끝 → 바로 실습 화면
-          show();
-          const pct = r.total ? Math.round(r.loaded / r.total * 100) : 0;
-          document.getElementById("bootBar").style.width = pct + "%";
-          document.getElementById("bootCount").textContent = r.loaded + " / " + r.total;
-          document.getElementById("bootTime").textContent = elapsed();
-          if (r.error) {
-            document.getElementById("bootNow").textContent = T("bootError") + r.error;
-            return;                                   // 더 묻지 않는다
-          }
-          document.getElementById("bootNow").textContent = r.ready
-            ? T("bootDone")
-            : (LANG === "en" ? (r.current_en || "") : (r.current_ko || "")) + " ...";
-          if (r.ready) {
-            ready = true;
-            /* 얼마나 걸렸는지 남겨 둔다 — 느린 PC 를 가늠하는 데 쓴다 */
-            document.getElementById("bootNow").textContent = T("bootDone");
-            document.getElementById("bootTime").textContent = elapsed();   // 총 걸린 시간
-            const b = document.getElementById("bootStart");
-            b.disabled = false;
-            b.textContent = T("bootStart");
-            return;                                   /* 자동 전환하지 않는다 */
-          }
-        } catch (e) {
-          show();                                     // 서버가 아직 못 뜬 상태 → 안내를 띄운다
-        }
-        setTimeout(poll, 700);
-      }
-      poll();
-    })();
-
     /* 묶음 순서 = 화면에 보이는 순서. 얼굴 → 몸·손 → 사물 → 개별 인식 →
        말로 답하는 AI → 사진 바꾸기 → 글자·QR (빠른 것부터, 느린 VLM 은 뒤로) */
-    const GROUPS = [
-      ["face",    "얼굴",           "Face"],
-      ["body",    "몸 · 손",        "Body & hands"],
-      ["object",  "사물",           "Objects"],
-      ["vlm",     "말로 답하는 AI",  "AI that answers in words"],
-      ["image",   "사진 바꾸기",     "Change the photo"],
-      ["text",    "글자 · QR",      "Text & QR"],
-    ];
-
-    const SERVICE_LIST = {
-      /* ----- 얼굴 ----- */
-      "얼굴 인식": { "g": "face", "api": "face/face_detect", "params": {}, "tooltip": "얼굴을 인식합니다.", "en": "Face detection", "tooltip_en": "Finds faces in the image." },
-      "얼굴 분석": { "g": "face", "api": "face/face_analyze", "params": {}, "tooltip": "얼굴의 나이/성별/감정/방향을 한 번에 분석합니다.", "en": "Face analysis", "tooltip_en": "Estimates age, gender, emotion and gaze direction." },
-      "얼굴 감정 분석": { "g": "face", "api": "face/face_emotion", "params": {}, "tooltip": "얼굴의 감정을 분석합니다.", "en": "Face emotion", "tooltip_en": "Reads the emotion on each face." },
-      "얼굴 나이/성별 분석": { "g": "face", "api": "face/face_age_gender", "params": {}, "tooltip": "얼굴의 나이/성별을 분석합니다.", "en": "Face age / gender", "tooltip_en": "Estimates each face's age and gender." },
-      "얼굴 거리·방향": { "g": "face", "api": "face/mesh", "params": {}, "tooltip": "카메라와의 거리(cm)와 얼굴이 보는 방향을 함께 알려줍니다.", "en": "Face distance / direction", "tooltip_en": "Tells how far the face is (cm) and which way it is looking." },
-      "마스크 인식": { "g": "face", "api": "face/mask_detect", "params": {}, "tooltip": "얼굴의 마스크 착용 여부를 인식합니다.", "en": "Mask detection", "tooltip_en": "Checks whether each face is wearing a mask." },
-
-      /* ----- 몸 · 손 ----- */
-      "사람 포즈 인식": { "g": "body", "api": "object/object_pose", "params": {}, "tooltip": "인체의 17개 주요 포인트를 인식합니다.", "en": "Human pose", "tooltip_en": "Finds 17 key points of the human body." },
-      "손동작 인식": { "g": "body", "api": "object/hand", "params": {}, "tooltip": "손 모양(엄지척, 브이, 주먹 등)과 손가락 21개 포인트를 인식합니다.", "en": "Hand gesture", "tooltip_en": "Recognizes hand gestures (thumbs-up, victory, fist...) and 21 finger points." },
-
-      /* ----- 사물 ----- */
-      "사물 인식": { "g": "object", "api": "object/object_search", "params": {}, "tooltip": "80가지 사물의 이름/위치를 인식합니다. 사람도 함께 찾아요.", "en": "Object detection", "tooltip_en": "Finds 80 kinds of objects (people too) and where they are." },
-      "사물 분할": { "g": "object", "api": "object/object_seg", "params": {}, "tooltip": "80가지 사물의 영역을 색으로 칠해 표시합니다.", "en": "Object segmentation", "tooltip_en": "Colors in the exact area of each object." },
-
-      /* ----- 개별 인식 (하나만 따로 훈련한 AI) ----- */
-
-      /* ----- 말로 답하는 AI (VLM — 몇 초 걸려요) ----- */
-      "이미지 질문·설명": { "g": "vlm", "api": "vlm/look", "params": {}, "tooltip": "사진에 대해 물어봐요. 프롬프트를 비우면 사진을 설명해 줍니다.", "en": "Ask about the image", "tooltip_en": "Ask about the photo. Leave the prompt empty to get a description." },
-
-      /* ----- 사진 바꾸기 ----- */
-      "배경 제거": { "g": "image", "api": "gan/portrait", "params": {}, "tooltip": "인물/사물만 남기고 배경을 제거합니다.", "en": "Remove background", "tooltip_en": "Keeps the subject and removes the background." },
-      "화질 개선(4배)": { "g": "image", "api": "gan/sr", "params": {}, "tooltip": "이미지 화질을 4배로 개선합니다.", "en": "Upscale (4x)", "tooltip_en": "Improves the image quality four times." },
-      "깊이 지도": { "g": "image", "api": "gan/depth", "params": {}, "tooltip": "멀고 가까움을 색으로 칠합니다 — 가까울수록 밝아요.", "en": "Depth map", "tooltip_en": "Colors near and far — brighter is closer." },
-
-      /* ----- 글자 · QR ----- */
-      "글자 인식": { "g": "text", "api": "code/ocr", "params": {}, "tooltip": "이미지에서 문자/숫자를 인식합니다.", "en": "Text recognition", "tooltip_en": "Reads letters and numbers in the image." },
-      "QR코드 인식": { "g": "text", "api": "code/barcode", "params": {}, "tooltip": "이미지에서 바코드를 인식합니다.", "en": "QR code", "tooltip_en": "Reads QR codes in the image." }
-    };
-
-    const mName = key => {
-      const sv = SERVICE_LIST[key]; if (!sv) return key;
-      return LANG === "en" ? (sv.en || key) : (sv.ko || key);
-    };
-    const mTip  = key => {
-      const sv = SERVICE_LIST[key]; if (!sv) return "";
-      return LANG === "en" ? (sv.tooltip_en || sv.tooltip) : sv.tooltip;
-    };
+    /* 모델 목록은 lib/apps.js 가 갖는다 — 런처(/)와 이 화면이 같은 표를 본다.
+       전에는 이 자리에 SERVICE_LIST 가 통째로 있어서, 런처를 만들면 두 벌이 됐다. */
+    const GROUPS = EL_APPS.GROUPS;
+    const SERVICE_LIST = EL_APPS.SERVICE_LIST;
+    const mName = key => EL_APPS.name(key, LANG);
+    const mTip  = key => EL_APPS.tip(key, LANG);
 
     const MAX_WIDTH = 1600;
     const MAX_HEIGHT = 1600;
@@ -968,7 +622,6 @@
       [0,1],[0,2],[1,3],[2,4],[5,6],[5,7],[5,11],[6,8],[6,12],
       [7,9],[8,10],[11,12],[11,13],[12,14],[13,15],[14,16]
     ];
-    const apiDocLink = document.getElementById('apiDocLink');
 
     /* ----- 시스템 상태바 ----- */
     let runCount = 0;
@@ -1034,22 +687,17 @@
     }
 
 
-    apiDocLink.href = '/docs';
 
     /* ----- 언어 적용 (정적 텍스트) ----- */
     (function applyStatic() {
       const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
       document.title = T("titleTag");
-      set("txtTitle", T("title"));
-      if (window.navRepaint) window.navRepaint();   /* 이동 탭 글자는 lib/nav.js 가 갖고 있다 */
+      if (window.navRepaint) window.navRepaint();   /* 레일 글자는 lib/shell.js 가 갖고 있다 */
       set("langButton", T("langBtn"));
-      set("txtQ1", T("q1")); set("txtQ2", T("q2")); set("txtQ3", T("q3"));
-      set("txtModelLabel", T("modelLabel")); set("txtGuideLabel", T("guideLabel"));
-      set("txtPromptLabel", T("promptLabel"));
+      set("txtQ1", T("q1")); set("txtQ3", T("q3"));
       set("txtTabUpload", T("tabUpload")); set("txtTabWebcam", T("tabWebcam"));
       set("txtTabSketch", T("tabSketch"));
       set("txtLive", T("live")); set("runLabel", T("run"));
-      set("txtInputHead", T("inputHead"));
       set("txtUploadMain", T("uploadMain")); set("txtUploadHint", T("uploadHint"));
       set("captureWebcam", T("capture"));
       set("txtPenColor", T("penColor")); set("txtPenWidth", T("penWidth"));
@@ -1073,7 +721,11 @@
         prompt = T("promptQ");            // 비우면 서버가 알아서 설명해 준다
       }
       document.getElementById('promptInput').value = prompt;
-      guide.value = mTip(selected);
+      /* 물어보는 모델일 때만 프롬프트 칸을 보여 준다 — 값은 그대로 두므로
+         runInference 쪽(값이 "-" 면 안 보냄)은 손댈 것이 없다. */
+      document.getElementById('promptInput').hidden = (prompt === "-");
+      guide.textContent = mTip(selected);
+      modelSelect.title = mTip(selected);
     });
 
     /* 묶음(optgroup)으로 나눠 넣는다 — 스물몇 개를 한 줄로 늘어놓으면 못 찾는다 */
@@ -1090,9 +742,16 @@
       });
       modelSelect.appendChild(group);
     });
-    modelSelect.value = "얼굴 인식";
-    guide.value = mTip(modelSelect.value);
-    modelSelect.dispatchEvent(new Event('change')); // 프롬프트 기본값 반영
+    /* 홈의 AI 아이콘을 눌러 들어오면 그 AI 로 바로 시작한다 (/try?m=...).
+       없거나 모르는 값이면 조용히 기본값으로 — 옛 북마크로 들어올 수 있다. */
+    (function pickFromUrl() {
+      let want = "";
+      try { want = new URLSearchParams(location.search).get("m") || ""; } catch (e) {}
+      modelSelect.value = (want && SERVICE_LIST[want]) ? want : "얼굴 인식";
+      if (!modelSelect.value) modelSelect.value = "얼굴 인식";
+      guide.textContent = mTip(modelSelect.value);
+      modelSelect.dispatchEvent(new Event('change')); // 프롬프트 기본값 반영
+    })();
 
     /* ----- 내가 만든 AI (train.html 에서 학습한 모델) ----- */
     async function loadCustomModels() {
@@ -1978,7 +1637,7 @@
     });
   </script>
   <script src="/lib/usage.js" data-page="index"></script>
-  <script src="/lib/nav.js"></script>
+  <script src="/lib/shell.js"></script>
   <script src="/lib/tour.js"></script>
   <script src="/lib/sysbar.js"></script>
 </body>

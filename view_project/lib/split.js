@@ -100,9 +100,20 @@
        모두 고정해 버리면 창이 그보다 넓을 때 남는 폭이 빈칸으로 남는다(창을 키우거나
        다른 화면 크기에서 열면 오른쪽이 텅 빈다). 앞쪽만 폭을 정하고, 마지막 하나가
        남는 자리를 다 먹게 둔다 — 이게 편집기들이 쓰는 방식이다. */
+    /* 아직 아무것도 안 끌어 봤으면 손대지 않는다.
+       전에는 마지막 칸에 무조건 flexBasis:"auto" 를 박았는데, auto 는 "내용 폭"이라
+       그 칸 안에 긴 한 줄(파이썬 화면의 단축키 안내 줄)이 있으면 그 폭을 우선 차지했다.
+       그래서 처음 연 파이썬 화면에서 편집기가 188px 로 찌그러져 있었다 — 끌기도 전에.
+       저장된 크기가 하나도 없으면 페이지 CSS 의 비율(.ed-panel 3 : .out-panel 2)이
+       그대로 살아야 한다. */
+    var anySaved = list.some(function (p, i) {
+      try { return !!localStorage.getItem(key(box, i)); } catch (e) { return false; }
+    });
     list.forEach(function (p, i) {
       var last = (i === list.length - 1);
-      if (narrow) { p.style.flexBasis = ""; p.style.flexGrow = ""; p.style.flexShrink = ""; return; }
+      if (narrow || !anySaved) {
+        p.style.flexBasis = ""; p.style.flexGrow = ""; p.style.flexShrink = ""; return;
+      }
       if (last) { p.style.flexBasis = "auto"; p.style.flexGrow = "1";
                   p.style.flexShrink = "1"; return; }
       var saved = null;

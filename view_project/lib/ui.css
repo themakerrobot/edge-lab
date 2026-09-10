@@ -1,17 +1,16 @@
-/* 화면 공통 규격 — 여섯 페이지가 이 파일 하나를 쓴다.
+/* 화면 공통 규격 — 일곱 페이지가 이 파일 하나를 쓴다.
  *
- * 세 가지를 여기서만 정한다:
- *   1) 헤더 모양 — 페이지를 옮겨도 완전히 같다(글꼴·크기·버튼·테두리)
- *   2) 간격 체계 — 숫자를 흩뿌리지 않고 변수로만
- *   3) 밀도 두 갈래 — 작업용(블록·파이썬)과 체험용(써보기·가르치기·대화·점검)
+ * 여기서 정하는 것은 둘뿐이다:
+ *   1) 간격 체계 — 숫자를 흩뿌리지 않고 변수로만
+ *   2) 패널 뼈대 — .main-container / .panel / .panel-head / .panel-body / .q
  *
- * 밀도는 <body data-density="work"> 로 페이지가 스스로 밝힌다.
- *   work    : 코드 편집기처럼 화면을 꽉 쓴다. 테두리 여백 거의 0.
- *   explore : 학습지 분위기를 지킨다. 숨 쉴 여백을 남긴다.
- * 밝히지 않으면 explore. 헤더는 두 갈래에서 똑같다 — 같은 서비스이므로
- * 페이지를 옮겨도 위쪽은 그대로이고 아래 작업 공간의 밀도만 달라진다.
+ * 색은 lib/tokens.css, 셸(타이틀바·레일)은 lib/shell.css 가 갖는다.
  *
  * 간격 변수는 clamp 로 화면 높이에 따라 줄어든다(노트북에서 더 촘촘).
+ * **글씨와 단추 크기는 따라 줄지 않는다** — 쓰는 사람이 초등학생이라
+ * 여백이 좁아지는 것과 표적이 작아지는 것은 다른 문제다.
+ * 하한은 lib/tokens.css 의 --tap-sm / --fs-* 에 있다.
+ *
  * 페이지에서는 var(--sp-2, 8px) 처럼 대비값을 함께 쓴다 — 이 파일이 안 실려도
  * 여백이 0 이 되어 화면이 무너지지 않게.
  */
@@ -32,196 +31,14 @@
    줄여서, 같은 서비스인데 헤더 아래 간격·패널 여백이 페이지마다 달랐다.
    화면을 넘겨도 "배경은 그대로고 내용만 바뀐다" 가 기준이므로 가르지 않는다. */
 
-/* 헤더 공통 규격 — 여섯 페이지가 이 파일 하나를 쓴다.
+/* 헤더는 여기 없다 — lib/shell.css 로 옮겼다.
  *
- * 페이지를 옮겨도 헤더가 그대로여야 한다(높이·글꼴·글씨 크기·테두리·버튼).
- * 전에는 페이지마다 .header 를 따로 두어 글꼴이 다르거나(파이썬은 Gowun Dodum),
- * 테두리가 없거나(대화), 정렬이 달라(블록) 넘어갈 때마다 헤더가 튀었다.
- *
- * 각 페이지 <style> 뒤에 <link> 로 넣어 순서로 이기게 하고, 인라인 style 속성으로
- * 박아 둔 값(버튼 크기·글씨)만 !important 로 덮는다.
+ * 가로 탭줄(.nav-tab)과 .header 는 폐기했다. 탭 여섯 개가 헤더 오른쪽에
+ * 늘어서 있어서 1280px 안팎이면 줄바꿈으로 헤더가 50px → 92px 이 됐고,
+ * 가로로 늘어놓는 줄은 폭이 줄면 반드시 세로를 먹는다.
+ * 지금은 세로 레일이 이동을 맡고(.rail), 타이틀바(.titlebar)에는 이 화면의
+ * 상태를 바꾸는 도구만 남는다. 생김새는 전부 lib/shell.css 가 정한다.
  */
-
-.header {
-  flex: 0 0 auto;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0;
-  background: var(--box, #fff);
-  border: 2px solid var(--line-d, #4a3f2e);
-  border-radius: 3px;
-  box-shadow: 0 1px 0 rgba(44, 74, 124, .18);
-  padding: 0;
-}
-.header > div {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  padding: 6px 12px;
-}
-
-/* 왼쪽 : 로고 + 제목 */
-.header .h-subject,
-.header .h-title { gap: 10px; }
-.header .h-subject img,
-.header .h-title img { height: 30px; flex: 0 0 auto; }
-.header .title {
-  font-family: "Gowun Batang", serif !important;
-  font-size: 1.15rem !important;
-  font-weight: 700;
-  letter-spacing: .02em;
-  line-height: 1.2;
-  color: var(--ink, #2a2620);
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-}
-
-/* 오른쪽 : 페이지별 버튼 → [한/영] [시스템] 순서로 끝난다 */
-.header .h-tools {
-  margin-left: auto;
-  display: flex;
-  flex-direction: row !important;
-  align-items: center !important;
-  gap: 8px;
-  padding: 6px 12px;
-}
-.header .h-tools > a:not(.nav-tab),
-.header .h-tools > button {
-  height: 34px !important;
-  box-sizing: border-box;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-family: inherit;
-  font-size: .88rem !important;
-  line-height: 1;
-}
-/* 헤더 단추의 생김새는 여기서 "완결적으로" 정한다 — 글꼴·크기·굵기·테두리·높이까지.
-   일부만 정하면 나머지를 페이지 CSS 가 채우는데 그 값이 페이지마다 달라서 또 어긋난다.
-   실제로 그랬다: 굵기가 써보기·대화만 600 이고 나머지는 지정 없음(400),
-   글씨 크기도 1.08rem / .95rem 으로 갈렸으며, 상태 단추만 고정폭 글꼴 700 이었다.
-   페이지마다 두면 어긋난다 — 대화 화면은 한/영 단추에 규칙이 없어 브라우저 기본
-   테두리가 나왔고, 써보기는 #4a3f2e 를 직접 적어 다른 페이지(--line)보다 진했다. */
-.header .h-tools > a:not(.nav-tab),
-.header .h-tools > button {
-  background: #fff;
-  border: 1.5px solid var(--line-d, #4a3f2e);
-  color: var(--ink, #2a2620);
-  border-radius: var(--r, 3px);
-  font-family: inherit !important;
-  font-size: .88rem !important;
-  font-weight: 600 !important;
-  letter-spacing: 0 !important;
-  line-height: 1 !important;
-  height: 34px !important;
-  box-sizing: border-box;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-/* 아이콘 글자(⌂ ⚙)는 크게, 그러나 굵기는 주지 않는다.
-   이 글리프들은 획이 이미 두꺼워서 600 을 걸면 혼자 뭉개져 보인다
-   (글자 단추 EN·AI 는 600 이 맞다 — 획이 얇아 그래야 같은 무게로 읽힌다). */
-
-/* 글자 단추(한/영, 지금 도는 장치)는 글씨가 들어갈 만큼만 */
-.header .h-tools > button#langButton,
-.header .h-tools > button#sysBtn {
-  min-width: 46px;
-  padding: 0 10px !important;
-}
-
-
-/* ---------------------------------------------------------------------------
-   헤더 오른쪽은 성격이 다른 두 무리가 섞여 있다.
-
-     ① 이동  — [블록][파이썬][가르치기][대화][⚙] / 서브페이지의 [⌂]
-                : 누르면 다른 화면으로 간다.
-     ② 도구  — [한/영][AI]
-                : 화면은 그대로 두고 이 화면의 상태를 바꾸거나 보여준다.
-
-   전에는 둘이 똑같이 생겨서, 처음 보는 사람은 [EN] 을 누르면 영어 화면으로
-   "넘어간다" 고 읽었다. 그래서 모양으로 가른다 — 이동은 한 덩어리로 묶은
-   탭 줄, 도구는 낱개 알약. 그 사이는 여백으로 끊는다.
-   --------------------------------------------------------------------------- */
-.header .h-tools { position: relative; gap: 0; }
-
-/* ① 이동 — 밑줄 탭. lib/nav.js 가 여섯 페이지에 같은 줄을 만든다(.nav-tab)
- *
- * 파이보 랩·센스 랩과 같은 모양이다(css/theme-maker.css 의 .navlink).
- * 셋을 나란히 열었을 때 한 제품으로 보이는 것이 목적이라 값을 그대로 맞췄다:
- * 테두리 없음 · 아래 3px 만 · 선택된 것만 남색 밑줄과 굵은 글씨.
- * 전에 쓰던 세그먼트 묶음(양끝 둥근 한 덩어리)은 폐기 — 탭이 여섯이라 폭을
- * 많이 먹었고, 다른 두 서비스와도 어긋났다.
- * 아이콘도 뺐다 — 두 랩의 탭은 글자만이다. */
-.header .h-tools > a.nav-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: transparent;
-  border: none;
-  border-bottom: 3px solid transparent;
-  border-radius: 0;
-  color: var(--ink-2, #4a423a);
-  padding: 6px 12px 4px;
-  text-decoration: none;
-  font-family: inherit;
-  font-size: .86rem;
-  font-weight: 400;
-  line-height: 1.2;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: color .12s, border-color .12s;
-}
-.header .h-tools > a.nav-tab:hover {
-  border-bottom-color: #cfc7b8;
-  color: var(--ink, #2a2620);
-}
-/* 지금 보고 있는 화면 */
-.header .h-tools > a.nav-tab.on,
-.header .h-tools > a.nav-tab[aria-current] {
-  border-bottom-color: var(--cyan, #1f5f7a);
-  color: var(--cyan-d, #17475c);
-  font-weight: 700;
-  cursor: default;
-}
-/* 탭 아이콘은 쓰지 않는다 — nav.js 가 넣어도 보이지 않게 해 둔다 */
-.header .h-tools > a.nav-tab .ic { display: none; }
-
-/* ② 도구 — 낱개 알약. 탭 묶음에서 여백으로 떨어뜨리고, 테두리를 한 단계
-   연하게 해 이동보다 뒤로 물러나 보이게 한다. */
-.header .h-tools > button#langButton { margin-left: 14px; }
-.header .h-tools > button#sysBtn { margin-left: 6px; }
-.header .h-tools > button#langButton,
-.header .h-tools > button#sysBtn {
-  height: 30px !important;
-  background: #fff !important;
-  border: 1.5px solid var(--line, #9a8f7d) !important;
-  border-radius: 999px !important;
-  color: var(--ink-2, #4a423a) !important;
-  font-size: .82rem !important;
-}
-.header .h-tools > button#langButton:hover,
-.header .h-tools > button#sysBtn:hover {
-  border-color: var(--cyan, #1f5f7a) !important;
-  color: var(--cyan-d, #17475c) !important;
-}
-
-/* AI 단추가 도는 동안 켜지는 모양(sysbar.js 의 .open)은 알약을 유지한다 */
-.header .h-tools > button#sysBtn.open {
-  border-radius: 999px !important;
-}
-
-/* 밝은 곳 모드에서는 테두리를 한 단계 굵고 진하게 — 위 !important 가
-   페이지의 html.hc 규칙을 덮으므로 여기서 다시 챙긴다. */
-html.hc .header .h-tools > button#langButton,
-html.hc .header .h-tools > button#sysBtn {
-  border-width: 2px !important;
-  border-color: var(--line-d, #2e281c) !important;
-}
-html.hc .header .h-tools > a.nav-tab { color: var(--ink, #1a1712); }
-html.hc .header .h-tools > a.nav-tab.on { border-bottom-width: 4px; }
 
 
 /* ===========================================================================
@@ -262,21 +79,30 @@ html.hc .header .h-tools > a.nav-tab.on { border-bottom-width: 4px; }
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 9px;
-  padding: var(--sp-1, 4px) 16px;
+  gap: 6px;
+  padding: 3px 8px;
+  /* 높이를 못박는다 — 단추가 있는 칸(32px)과 글자만 있는 칸이 나란히 서면
+     점선 밑줄이 좌우로 어긋났다(블록·대화). 단추 32 + 위아래 3 = 38. */
+  min-height: 39px;
+  box-sizing: border-box;
   border-bottom: 1.5px dashed var(--line, #9a8f7d);
 }
 .panel-body {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding: var(--sp-3, 12px);
+  padding: var(--sp-2, 8px);
   display: flex;
   flex-direction: column;
   gap: var(--sp-2, 8px);
 }
 /* 세로 flex 가 자식을 눌러 줄이지 않게 — 넘치면 스크롤이 생기는 게 맞다 */
 .panel-body > * { flex: 0 0 auto; }
+/* 다만 그 칸의 "주인공"(결과 그림·작업 캔버스)은 남는 자리를 다 먹어야 한다.
+   위 한 줄이 특정도 동률로 페이지의 flex:1 1 auto 를 덮어써서, 1920px 화면에서
+   결과 그림이 위쪽 200px 만 쓰고 아래 700px 이 비어 있었다.
+   자랄 것에는 페이지가 class="grow" 를 붙인다 — 명시적으로. */
+.panel-body > .grow { flex: 1 1 auto; min-height: 0; }
 
 /* 문항 제목 — "번호 + 제목" 글자만. 상자(파란 네모)는 걷어냈다.
    여섯 페이지가 같은 줄을 갖는데 상자까지 두르니 화면마다 두께·여백이
@@ -295,7 +121,7 @@ html.hc .header .h-tools > a.nav-tab.on { border-bottom-width: 4px; }
 .qtext {
   font-family: "Gowun Dodum", sans-serif;
   font-weight: 700;
-  font-size: 1.02rem;
+  font-size: var(--fs-head, 14px);
   line-height: 1.3;
   color: var(--cyan-d, #17475c);
 }
@@ -307,17 +133,28 @@ html.hc .header .h-tools > a.nav-tab.on { border-bottom-width: 4px; }
 }
 
 /* 머리표 줄의 글씨 — 문항 상자 밖의 곁글(파일 이름 등)도 같은 크기로 */
-.panel-head { font-size: 1rem; }
-/* 머리표 버튼은 어느 페이지나 같은 크기 (전에는 13.1 / 13.4 / 14.4 / 15.2px 네 가지였다) */
+.panel-head { font-size: var(--fs-body, 14px); }
+/* 머리표 버튼은 어느 페이지나 같은 크기 (전에는 13.1 / 13.4 / 14.4 / 15.2px 네 가지였다).
+   실높이가 30px 이라 아이가 자주 빗나갔다 — 40px 로 올리고 사이도 8px 로 벌린다. */
 .panel-head button,
-.panel-head .btn {
+.panel-head .btn,
+.panel-head select,
+.panel-head input[type="text"] {
   font-family: inherit;
-  font-size: .86rem;
+  font-size: var(--fs-body, 14px);
   font-weight: 600;
-  padding: 6px 12px;
+  min-height: var(--tap-sm, 32px);
+  padding: 0 11px;
+  box-sizing: border-box;
+  font-size: 13px;
 }
-/* 안내 글씨도 한 값으로 (전에는 .82 / .86rem 로 갈렸다) */
-.hint { font-size: .84rem; color: var(--ink-2, #4a423a); }
+.panel-head button:focus-visible,
+.panel-head .btn:focus-visible {
+  outline: 2.5px solid var(--pen-red, #b4451c);
+  outline-offset: 2px;
+}
+/* 안내 글씨도 한 값으로 (전에는 .82 / .86rem 로 갈려 13px 대였다) */
+.hint { font-size: var(--fs-body, 14px); color: var(--ink-2, #4a423a); }
 
 /* 감춘 칸은 감춘 채로 — .panel 의 display:flex 가 페이지의 display:none 을
    덮어서 파이썬 도움말 패널이 늘 열려 보이던 사고가 있었다. 같은 특정도라
@@ -331,9 +168,12 @@ html.hc .header .h-tools > a.nav-tab.on { border-bottom-width: 4px; }
 .panel-head > .stage-tools,
 .panel-head > .ph-tools {
   margin-left: auto;
+  /* 페이지 CSS 가 위아래 여백을 주면(블록의 .work-tools) 그 칸만 높아져 옆 칸과 어긋난다 */
+  margin-block: 0;
+  margin-right: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--tap-gap, 8px);
   flex-wrap: wrap;
 }
 
@@ -389,30 +229,13 @@ html.hc .header .h-tools > a.nav-tab.on { border-bottom-width: 4px; }
 .tour-skip:hover { border-color: var(--ink, #2a2620); color: var(--ink, #2a2620); }
 .tour-next:hover { background: var(--cyan-d, #17475c); border-color: var(--cyan-d, #17475c); }
 
-/* 헤더의 ? 버튼 — 이동 탭과 도구 사이. 알약 도구와 같은 키를 준다 */
-.header .h-tools > button#helpTourBtn {
-  margin-left: 14px;
-  width: 30px; height: 30px;
-  padding: 0;
-  background: #fff;
-  border: 1.5px solid var(--line, #9a8f7d);
-  border-radius: 999px;
-  color: var(--ink-2, #4a423a);
-  font-weight: 700;
-  cursor: pointer;
-}
-.header .h-tools > button#helpTourBtn:hover {
-  border-color: var(--cyan, #1f5f7a);
-  color: var(--cyan-d, #17475c);
-}
-/* ? 버튼이 생기면 그 다음의 [한/영] 여백은 ? 가 맡으므로 줄인다 */
-.header .h-tools > button#helpTourBtn + button#langButton { margin-left: 6px; }
+/* 튜토리얼 ? 단추의 생김새는 lib/shell.css 의 .titlebar .h-tools 규칙이 맡는다
+   (tour.js 가 class="round" 를 붙여 준다). 여기서 또 정하지 않는다 —
+   전에 두 곳에서 정하는 바람에 이 단추만 다른 페이지와 크기가 어긋났다. */
 
 
-/* 화면 가장자리는 어느 페이지나 같다 — 헤더가 늘 같은 자리에 앉게 */
-@media screen {
-  body { padding: var(--edge); }
-}
+/* 화면 가장자리 여백은 셸의 .workbench 가 갖는다 (lib/shell.css).
+   body 에 두면 타이틀바·레일이 화면 끝에 못 붙어 셸이 떠 보인다. */
 
 /* 간격 값은 위 :root 변수뿐이다. 각 페이지 CSS 가 그 변수를 참조하므로
  * 여기서 body/main 여백을 또 정하지 않는다 — 두 곳에서 정하면 다시 어긋난다.
