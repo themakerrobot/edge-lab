@@ -426,7 +426,7 @@ def draw(image, result):
     return img
 
 
-def show(image, result=None, title="엣지 랩", wait=True, window=False):
+def show(image, result=None, title=None, wait=True, window=False):
     """결과를 보여준다. result 를 주면 박스를 그려서 보여준다.
 
     파이썬 페이지에서 실행하면 화면(결과 칸)에 바로 나온다.
@@ -435,16 +435,19 @@ def show(image, result=None, title="엣지 랩", wait=True, window=False):
     """
     img = draw(image, result) if result is not None else image
     sid = os.environ.get("THEMAKER_SID", "")
+    # 제목을 안 주면 화면에는 아무 글자도 안 붙는다. 전에는 기본값 "엣지 랩" 이
+    # 그림 아래 곁글로 찍혀서 "저게 뭐냐" 소리를 들었다. 창으로 띄울 때만 창 제목이 필요하다.
+    caption = "" if title is None else str(title)
     if sid and not window:
         try:
             _post("/pycode/frame?sid=" + urllib.parse.quote(sid)
-                  + "&caption=" + urllib.parse.quote(str(title)),
+                  + "&caption=" + urllib.parse.quote(caption),
                   files={"uploadFile": ("f.jpg", _to_jpg(img), "image/jpeg")},
                   timeout=20)
             return img
         except Exception:
             pass                      # 화면으로 못 보내면 창으로 대신 띄운다
-    cv2.imshow(title, _flatten(img))
+    cv2.imshow(caption or "edge-lab", _flatten(img))
     if wait:
         cv2.waitKey(0)
         cv2.destroyAllWindows()
