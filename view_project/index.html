@@ -447,9 +447,9 @@
       <!-- 고른 모델이 무엇을 하는지 — 전에는 [가이드] 라는 읽기 전용 입력칸이었다.
            입력칸처럼 생겼는데 못 쓰는 칸이라 아이가 눌러 보고 헤맸다. 글로 바꾼다. -->
       <!-- 고른 모델 설명은 드롭다운의 title(툴팁)로만. 한 줄을 통째로 쓰던 안내 줄은
-           걷어냈다 — 내용보다 위에 있는 줄은 전부 내용을 밀어낸다. -->
+           걷어냈다 — 내용보다 위에 있는 줄은 전부 내용을 밀어낸다.
+           API Docs 링크는 홈으로 옮겼다 — 체험하기에서 할 일이 아니다. -->
       <span id="guide" hidden></span>
-      <a id="apiDocLink" href="#" target="_blank" hidden>API Docs</a>
       <div class="panel-body">
         <div id="upload" class="tab-content active">
           <div class="upload-container" id="uploadPlaceholder">
@@ -622,7 +622,6 @@
       [0,1],[0,2],[1,3],[2,4],[5,6],[5,7],[5,11],[6,8],[6,12],
       [7,9],[8,10],[11,12],[11,13],[12,14],[13,15],[14,16]
     ];
-    const apiDocLink = document.getElementById('apiDocLink');
 
     /* ----- 시스템 상태바 ----- */
     let runCount = 0;
@@ -688,10 +687,6 @@
     }
 
 
-    apiDocLink.href = '/docs';
-    /* 선생님용 링크 — 타이틀바 도구로. 조작 줄에서는 자리만 먹는다 */
-    apiDocLink.hidden = false;
-    document.querySelector('.titlebar .h-tools').prepend(apiDocLink);
 
     /* ----- 언어 적용 (정적 텍스트) ----- */
     (function applyStatic() {
