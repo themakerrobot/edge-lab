@@ -81,6 +81,10 @@
   flex-wrap: wrap;
   gap: 6px;
   padding: 3px 8px;
+  /* 높이를 못박는다 — 단추가 있는 칸(32px)과 글자만 있는 칸이 나란히 서면
+     점선 밑줄이 좌우로 어긋났다(블록·대화). 단추 32 + 위아래 3 = 38. */
+  min-height: 39px;
+  box-sizing: border-box;
   border-bottom: 1.5px dashed var(--line, #9a8f7d);
 }
 .panel-body {
@@ -164,6 +168,9 @@
 .panel-head > .stage-tools,
 .panel-head > .ph-tools {
   margin-left: auto;
+  /* 페이지 CSS 가 위아래 여백을 주면(블록의 .work-tools) 그 칸만 높아져 옆 칸과 어긋난다 */
+  margin-block: 0;
+  margin-right: 0;
   display: flex;
   align-items: center;
   gap: var(--tap-gap, 8px);
