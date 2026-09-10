@@ -177,6 +177,11 @@
   </style>
   <link rel="stylesheet" href="/lib/ui.css">
   <link rel="stylesheet" href="/lib/shell.css">
+  <style>
+    /* CodeMirror 가 대신 그리고 원본 textarea 는 숨는데, 폭 1000px 은 그대로 남아
+       좁은 화면에서 화면을 밀어낸다. 어차피 안 보이는 것이라 폭을 묶어 둔다. */
+    #editor { max-width: 100%; width: 100%; }
+  </style>
 </head>
 <body data-density="work" data-sys="state">
   <div class="titlebar">

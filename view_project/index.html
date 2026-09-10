@@ -13,7 +13,8 @@
             document.documentElement.classList.add("hc"); } catch (e) {}
   </script>
   <link rel="stylesheet" href="/lib/tokens.css">
-  <!-- 모델 목록은 아래 인라인 스크립트가 바로 쓰므로 head 에서 먼저 싣는다 -->
+  <!-- 모델 목록·아이콘은 아래 인라인 스크립트가 바로 쓰므로 head 에서 먼저 싣는다 -->
+  <script src="/lib/icons.js"></script>
   <script src="/lib/apps.js"></script>
   <style>
     /* ---------------- 부팅(로딩) 화면 ---------------- */
@@ -204,7 +205,10 @@
       background: var(--pen-blue); border-color: var(--pen-blue);
     }
 
-    #promptInput { flex: 1 1 160px; width: auto; min-width: 120px; }
+    #modelSelect { font-weight: 700; min-width: 190px; max-width: 260px; }
+
+    #promptInput { flex: 1 1 200px; width: auto; min-width: 150px; }
+    #promptInput[hidden] { display: none; }
 
     #mainRunButton {
       background: var(--pen-blue); border: 1.5px solid var(--pen-blue); color: #fff;
@@ -555,6 +559,8 @@
           <span class="qnum">1</span>
           <span class="qtext" id="txtQ1">골라서 실행해요</span>
         </span>
+        <!-- 지금 고른 AI. 홈의 아이콘으로 들어오면 그게 골라져 있고,
+             여기서 바로 다른 것으로 바꿀 수도 있다(홈에 갔다 오지 않아도). -->
         <select id="modelSelect" aria-label="모델"></select>
         <span class="tabs">
           <button class="tabButton active" data-tab="upload" id="txtTabUpload">이미지</button>
@@ -622,7 +628,7 @@
         <span class="qtext" id="txtQ3">결과를 확인해요</span>
       </div>
       <div class="panel-body">
-        <div class="result-frame">
+        <div class="result-frame grow">
           <canvas id="resultCanvas"></canvas>
           <div id="stampMark">확인!</div>
         </div>
@@ -977,6 +983,9 @@
         prompt = T("promptQ");            // 비우면 서버가 알아서 설명해 준다
       }
       document.getElementById('promptInput').value = prompt;
+      /* 물어보는 모델일 때만 프롬프트 칸을 보여 준다 — 값은 그대로 두므로
+         runInference 쪽(값이 "-" 면 안 보냄)은 손댈 것이 없다. */
+      document.getElementById('promptInput').hidden = (prompt === "-");
       guide.textContent = mTip(selected);
     });
 
@@ -994,17 +1003,16 @@
       });
       modelSelect.appendChild(group);
     });
-    /* 런처에서 타일을 눌러 들어오면 그 모델이 골라진 채로 시작한다 (/try?m=...).
-       없거나 모르는 값이면 조용히 기본값으로 — 아이가 주소를 고칠 일은 없지만
-       옛 북마크로 들어올 수는 있다. */
+    /* 홈의 AI 아이콘을 눌러 들어오면 그 AI 로 바로 시작한다 (/try?m=...).
+       없거나 모르는 값이면 조용히 기본값으로 — 옛 북마크로 들어올 수 있다. */
     (function pickFromUrl() {
       let want = "";
       try { want = new URLSearchParams(location.search).get("m") || ""; } catch (e) {}
       modelSelect.value = (want && SERVICE_LIST[want]) ? want : "얼굴 인식";
       if (!modelSelect.value) modelSelect.value = "얼굴 인식";
+      guide.textContent = mTip(modelSelect.value);
+      modelSelect.dispatchEvent(new Event('change')); // 프롬프트 기본값 반영
     })();
-    guide.textContent = mTip(modelSelect.value);
-    modelSelect.dispatchEvent(new Event('change')); // 프롬프트 기본값 반영
 
     /* ----- 내가 만든 AI (train.html 에서 학습한 모델) ----- */
     async function loadCustomModels() {
@@ -1890,7 +1898,6 @@
     });
   </script>
   <script src="/lib/usage.js" data-page="index"></script>
-  <script src="/lib/icons.js"></script>
   <script src="/lib/shell.js"></script>
   <script src="/lib/tour.js"></script>
   <script src="/lib/sysbar.js"></script>

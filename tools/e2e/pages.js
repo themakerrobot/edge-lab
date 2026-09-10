@@ -26,14 +26,14 @@ async function open(path, wait) {
 const only = e => e.filter(x => !/blockly|Not implemented|getContext|createObjectURL|SVG|canvas/i.test(x));
 
 (async () => {
-  console.log('페이지        레일 도구 파일패널 오버레이 실제오류');
+  console.log('페이지        닫기 도구 파일패널 오버레이 실제오류');
   for (const p of ['/', '/try', '/blocks', '/code', '/train', '/talk', '/options']) {
     try {
       const { doc, errs, dom } = await open(p);
-      /* 이동은 레일(lib/shell.js), 도구는 타이틀바(한/영·AI·?). 둘을 따로 센다 —
-         전에는 헤더 하나에 섞여 있어서 한 숫자로 셌고, 셸로 바꾸면 그 숫자가
-         조용히 0 이 되어 시험이 통과한 척했다. */
-      const rail = doc.querySelectorAll('.rail a').length;
+      /* 홈이 아닌 화면에는 [× 닫기] 가 하나 있어야 한다(lib/shell.js).
+         도구(한/영·AI·?)는 따로 센다 — 전에는 헤더 하나에 섞여 있어서 한 숫자로
+         셌고, 셸로 바꾸면 그 숫자가 조용히 0 이 되어 시험이 통과한 척했다. */
+      const rail = doc.querySelectorAll('#closeApp').length;
       const btns = doc.querySelectorAll('.titlebar .h-tools > a, .titlebar .h-tools > button').length;
       const fp = doc.getElementById('filePanel') ? 'O' : '-';
       const ov = doc.getElementById('sysPanel') || doc.getElementById('chipCPU') ? 'O' : '✗';

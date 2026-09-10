@@ -1,32 +1,24 @@
-/* 셸 — 타이틀바 + 세로 레일 + 작업 공간. 일곱 페이지가 이 파일 하나를 쓴다.
+/* 셸 — 타이틀바 + 작업 공간. 일곱 페이지가 이 파일 하나를 쓴다.
  *
- * 왜 바꿨나
- * ---------
- * 전에는 화면 위에 가로 막대가 겹겹이 쌓였다. 체험하기 기준으로
- * 헤더 50 + 문항1 바 45 + 문항2 바 53 + 여백 35 = 183px 이 내용 이전에 사라졌고
- * (1366×768 노트북에서 세로의 24%), 헤더 안의 탭 여섯 개는 1280px 안팎에서
- * 줄바꿈해 헤더를 50px 에서 92px 로 키웠다.
- * 가로 탭줄은 폭이 줄면 반드시 세로를 먹는 구조다 — 그래서 눕혔다.
+ * 휴대폰 홈 화면 방식이다.
+ *   홈(/)      아이콘만 깔려 있다. 하나를 누르면 그 앱이 열린다.
+ *   앱 화면    타이틀바(40px) 아래를 통째로 쓴다. 오른쪽 위 [× 닫기] 로 홈에 간다.
+ * 항상 떠 있는 이동 줄은 없다 — 예전 헤더의 가로 탭 여섯 개는 1280px 안팎에서
+ * 줄바꿈해 헤더를 50 → 92px 로 키웠고, 그 다음에 두었던 세로 레일은 홈과 하는
+ * 일이 같아서 폭 76px 만 먹었다. 이동은 홈 하나가 맡는다.
  *
- *     ┌──────────────────────────────────────────────┐
- *     │ edge-lab │ 파이썬        [?] [한/영] [AI]     │  titlebar 40px
- *     ├──────┬───────────────────────────────────────┤
- *     │ ⌂ 홈 │                                       │
- *     │ ◉ 체험│          workbench                    │
- *     │ ▦ 블록│                                       │
- *     └──────┴───────────────────────────────────────┘
- *       rail 76px
- *
- * 크롬 183px → 61px. 768px 화면에서 내용 높이가 585 → 707px 이 된다.
+ *     ┌───────────────────────────────────────────────┐
+ *     │ edge-lab │ 파이썬        [?] [한/영] [AI] [×닫기] │  titlebar 40px
+ *     ├───────────────────────────────────────────────┤
+ *     │                                               │
+ *     │              workbench — 나머지 전부           │
+ *     │                                               │
+ *     └───────────────────────────────────────────────┘
  *
  * 되찾은 공간은 여백이 아니라 아이 손가락에 쓴다
  * ----------------------------------------------
- * 쓰는 사람은 초등학생이고 교실 노트북 트랙패드로 조작한다. VS Code 의 *배치*는
- * 가져왔지만 *치수*는 가져오지 않았다 — VS Code 레일은 48px 에 아이콘 16px 이다.
- * 여기 레일 칸은 68 × 56px 이고 아이콘 26px 아래에 **글자가 늘 붙어 있다**
- * (툴팁은 마우스를 올려야 나와 저학년에게 대안이 못 된다).
- * 타이틀바를 34px 이 아니라 40px 로 잡은 것도 같은 이유다 — 그 안에 들어갈
- * 단추가 40px 이어야 해서지, 더 줄일 수 없어서가 아니다.
+ * 쓰는 사람은 초등학생이고 교실 노트북 트랙패드로 조작한다. 타이틀바를 34px 이
+ * 아니라 40px 로 잡은 것은 그 안에 들어갈 단추가 40px 이어야 해서다.
  * 치수 토큰은 lib/tokens.css 의 --tap / --tap-sm / --fs-* 에 있다.
  *
  * 쓰는 법 — 페이지 <head> 에서 ui.css **뒤에**:
@@ -180,86 +172,40 @@ html.hc .titlebar .h-tools > a {
 }
 
 
-/* ═══════════════════ 레일 + 작업 공간 ═══════════════════ */
+/* ═══════════════════ 작업 공간 ═══════════════════ */
 .shell-body {
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
 }
-
-.rail {
-  flex: 0 0 76px;
-  width: 76px;
-  background: var(--box, #fff);
-  border-right: 1.5px solid var(--line-d, #4a3f2e);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 6px 0;
-  gap: 4px;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-.rail .spacer { flex: 1 1 auto; min-height: 4px; }
-
-/* 칸 하나 68 × 56 — 48px 최소 표적을 넘긴다. 아이콘 아래 글자는 늘 보인다. */
-.rail a {
-  width: 68px;
-  min-height: 56px;
-  flex: 0 0 auto;
-  padding: 6px 2px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  cursor: pointer;
-  text-decoration: none;
-  border-left: 4px solid transparent;
-  color: var(--ink-2, #4a423a);
-  font-family: inherit;
-  transition: color .12s, background .12s, border-color .12s;
-}
-.rail a:hover {
-  color: var(--ink, #2a2620);
-  background: var(--hover-bg, #f4efe4);
-  text-decoration: none;
-}
-.rail a:focus-visible {
-  outline: 2.5px solid var(--pen-red, #b4451c);
-  outline-offset: -3px;
-}
-.rail a svg { width: 26px; height: 26px; flex: 0 0 auto; }
-.rail a .tx {
-  font-size: 12px;
-  line-height: 1.2;
-  letter-spacing: -.02em;
-  text-align: center;
-  word-break: keep-all;
-}
-/* 지금 보고 있는 화면 — 색만으로 알리지 않는다. 왼쪽 띠 + 바탕 + 굵은 글씨.
-   색약 아이와 밝은 교실 화면에서 색 하나로는 구분이 안 된다. */
-.rail a.on,
-.rail a[aria-current] {
-  color: var(--cyan-d, #17475c);
-  border-left-color: var(--cyan, #1f5f7a);
-  background: var(--cyan-bg, #eef4f7);
-  font-weight: 700;
-  cursor: default;
-}
-html.hc .rail a.on,
-html.hc .rail a[aria-current] { border-left-width: 6px; }
-
-/* 작업 공간 — 페이지 내용이 그대로 들어온다. 가장자리 여백은 여기가 갖는다. */
+/* 페이지 내용이 그대로 들어온다. 가장자리 여백은 여기가 갖는다. */
 .workbench {
   flex: 1 1 auto;
   min-width: 0;
   min-height: 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: var(--sp-2, 8px);
   padding: var(--edge, 7px);
   overflow: hidden;
+}
+
+/* [× 닫기] — lib/shell.js 가 홈이 아닌 화면의 도구 끝에 붙인다.
+   창의 닫기 단추 자리. 글자를 같이 둔다 — × 만으로는 저학년이 못 읽는다. */
+.titlebar .h-tools > a.close {
+  gap: 6px;
+  padding-left: 10px;
+  margin-left: 4px;
+  border-color: var(--line-d, #4a3f2e);
+  color: var(--ink, #2a2620);
+  font-weight: 700;
+}
+.titlebar .h-tools > a.close .x { font-size: 19px; line-height: 1; }
+.titlebar .h-tools > a.close:hover {
+  background: var(--ink, #2a2620);
+  border-color: var(--ink, #2a2620);
+  color: #fff;
 }
 
 
@@ -275,71 +221,25 @@ html.hc .rail a[aria-current] { border-left-width: 6px; }
    전에는 blocks 만 이렇게 했고 나머지 다섯은 overflow:hidden 인 채 눌렸다. */
 @media (max-width: 1023px) {
   body { height: auto; min-height: 100dvh; overflow: auto; }
-  .shell-body { min-height: 0; align-items: flex-start; }
-  /* 문서가 길어지면 레일도 같이 길어져서, 아래로 내려가면 이동 단추가 화면 밖으로
-     사라진다. 붙여 둔다 — 어디까지 내려가도 다른 화면으로 갈 수 있어야 한다. */
-  .rail {
-    position: sticky;
-    top: 40px;
-    height: calc(100dvh - 40px);
-    align-self: flex-start;
-  }
-  .workbench { overflow: visible; }
+  .titlebar { position: sticky; top: 0; z-index: 40; }
+  .shell-body { min-height: 0; }
+  .workbench { overflow: visible; max-width: 100%; }
   .workbench > .main-container { flex-direction: column; }
   .workbench > .main-container > .panel,
   .workbench > .main-container > .work,
   .workbench > .main-container > .stage-panel { flex: 0 0 auto; min-width: 0; }
 }
 
-/* sm 이하 — 폰. 레일이 화면 아래 가로 바로 내려간다.
-   표적 크기는 그대로 56px 이다. */
+/* sm 이하 — 폰. 타이틀바에서 앱 이름을 지우고 닫기 글자를 줄인다. */
 @media (max-width: 639px) {
-  .shell-body { flex-direction: column-reverse; }
-  .rail {
-    flex: 0 0 auto;
-    width: 100%;
-    height: 58px;
-    position: sticky;
-    bottom: 0;
-    z-index: 40;
-    flex-direction: row;
-    justify-content: space-around;
-    border-right: none;
-    border-top: 1.5px solid var(--line-d, #4a3f2e);
-    padding: 0 2px;
-    gap: 0;
-  }
-  .rail a {
-    width: auto;
-    flex: 1 1 0;
-    min-width: 0;
-    min-height: 56px;
-    padding: 4px 0;
-    gap: 2px;
-    border-left: none;
-    border-top: 4px solid transparent;
-  }
-  .rail a svg { width: 22px; height: 22px; }
-  .rail a .tx { font-size: 11px; }
-  .rail a.on,
-  .rail a[aria-current] { border-left-color: transparent; border-top-color: var(--cyan, #1f5f7a); }
-  .rail .spacer { display: none; }
-  .titlebar { padding-left: 10px; }
+  .titlebar { padding-left: 10px; gap: 8px; }
   .tb-app, .tb-sep { display: none; }
-}
-
-/* 화면이 낮을 때(교실 노트북을 세로로 쓰거나 창을 줄였을 때) 레일이 잘리지 않게 */
-@media (max-height: 560px) and (min-width: 640px) {
-  .rail a { min-height: 48px; padding: 3px 2px; }
-  .rail a svg { width: 22px; height: 22px; }
+  .titlebar .h-tools > a.close .tx { display: none; }
+  .titlebar .h-tools > a.close { width: 34px; padding: 0; justify-content: center; }
 }
 
 @media print {
-  .titlebar, .rail { display: none !important; }
+  .titlebar { display: none !important; }
   .shell-body { display: block; }
   .workbench { display: block; padding: 0; overflow: visible; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .rail a { transition: none; }
 }
