@@ -339,7 +339,7 @@
               <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                 <label class="hint" for="shotGap" id="txtShotGap">촬영 간격(ms)</label>
                 <input type="number" id="shotGap" value="150" min="60" max="1000" step="10" style="width:88px;">
-                <button class="btn" id="camToggle"><span id="txtCamToggle">웹캠 끄기</span></button>
+                <button class="btn" id="camToggle"><span id="txtCamToggle">웹캠 켜기</span></button>
               </div>
               <div class="hint" id="txtQ2Upload">
                 사진 파일이나 압축파일(zip)로도 넣을 수 있어요. 클래스 카드의 버튼을 눌러 주세요.
@@ -975,7 +975,8 @@
     $("txtCamToggle").textContent = t("camOn");
   }
   $("camToggle").addEventListener("click", () => stream ? camOff() : camOn());
-  camOn();
+  /* 열자마자 켜지 않는다 — 소스도 안 돌렸는데 카메라가 흐를 일은 없다(블록·파이썬과 같이).
+     [웹캠 켜기] 를 눌러야 켜진다. */
 
   function frameBlob() {
     if (!cam.videoWidth) return null;
@@ -1987,7 +1988,7 @@
     set("txtAddClass", t("addClass")); set("txtReset", t("reset"));
     set("txtTargetClass", t("targetClass"));
     set("txtHoldShot", t("holdShot")); set("txtOneShot", t("oneShot"));
-    set("txtShotGap", t("shotGap")); set("txtCamToggle", t("camOff"));
+    set("txtShotGap", t("shotGap")); set("txtCamToggle", t(stream ? "camOff" : "camOn"));
     set("txtEpochs", t("epochs")); set("txtTrain", t("train"));
     set("txtTestOnce", t("testOnce")); set("txtTestLive", t("testLive"));
     set("txtSave", t("save")); set("txtDownload", t("download"));
