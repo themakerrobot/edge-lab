@@ -6,7 +6,7 @@
  *
  * 쓰는 법 — 페이지 <head> 나 </body> 앞에 한 줄:
  *     <script src="/lib/sysbar.js"></script>
- * 헤더의 .h-tools 안(맨 앞)에 버튼이 자동으로 붙고, 패널은 우상단에 뜬다.
+ * 타이틀바의 .h-tools 안에 버튼이 자동으로 붙고, 패널은 우상단에 뜬다.
  *
  * 넣는 정보는 "어느 PC 에서나 되는 것"만 — 장치 칩(CPU/GPU/NPU), 마지막 실행,
  * CPU 사용률, 메모리. GPU·NPU 사용률은 넣지 않는다(성능 카운터가 드라이버마다
@@ -20,7 +20,7 @@
   "use strict";
 
   var CSS = [
-    "#sysPanel{position:fixed;top:56px;right:14px;z-index:80;display:none;",
+    "#sysPanel{position:fixed;top:48px;right:14px;z-index:80;display:none;",
     "  flex-wrap:wrap;align-items:center;gap:7px 14px;max-width:360px;",
     "  background:rgba(255,253,246,.9);backdrop-filter:blur(3px);",
     "  border:1.5px solid var(--line-d,#4a3f2e);border-radius:3px;padding:10px 14px;",
@@ -32,14 +32,11 @@
     "#sysPanel .k{color:#6b6255;}",
     "#sysPanel .v{color:var(--ink,#2a2620);font-variant-numeric:tabular-nums;}",
     "#sysPanel .sysrow{flex:1 0 100%;display:flex;gap:12px;}",
-    "#sysBtn{display:inline-flex;align-items:center;justify-content:center;",
-    "  background:#fff;color:var(--ink-2,#4a423a);",
-    "  min-width:46px;height:34px;padding:0 10px;cursor:pointer;}",
-    /* 테두리·모서리(알약)는 lib/ui.css 가 도구 무리로 묶어 정한다 —
-       여기서 또 정하면 한/영 단추와 어긋난다. */
-    /* 글꼴·크기·굵기는 lib/ui.css 가 헤더 단추 전부에 한 번에 정한다.
-       여기서 또 정하면 이 단추만 달라 보인다(전에 고정폭 700 이라 혼자 굵었다). */
-    "#sysBtn.idle{color:var(--ink-2,#4a423a);opacity:.75;}",
+    /* 알약 생김새(크기·테두리·글꼴·40px 클릭 영역)는 lib/shell.css 의
+       .titlebar .h-tools > button > b 가 정한다. 여기서 또 정하면 이 단추만
+       한/영 단추와 어긋난다 — 전에 그래서 혼자 고정폭 700 으로 굵었다.
+       여기 남기는 것은 "지금 돌고 있나" 를 알리는 상태색뿐이다. */
+    "#sysBtn.idle{opacity:.75;}",
     "#sysBtn.open{background:var(--ink,#2a2620);color:#fff;border-color:var(--ink,#2a2620);}",
     "#sysBtn.busy{border-color:var(--pen-red,#b4451c);color:var(--pen-red,#b4451c);",
     "  animation:sysblink 1s infinite;}",
@@ -114,7 +111,7 @@
        뜻 없는 그림보다 낫고, 이 앱의 핵심(이 컴퓨터가 AI 를 돌린다)이 헤더에 늘
        보인다. 돌고 있으면 그 장치 이름이 뜨고, 쉬고 있으면 마지막에 쓴 장치를
        흐리게 남긴다. 누르면 자세한 판이 열린다. */
-    var btn = el("button", { id: "sysBtn", type: "button",
+    var btn = el("button", { id: "sysBtn", type: "button", "class": "mono",
                              title: "이 컴퓨터 상태 — CPU · GPU · NPU · 메모리",
                              "aria-label": "시스템 상태" });
     btn.textContent = "AI";

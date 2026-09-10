@@ -1,0 +1,345 @@
+/* 셸 — 타이틀바 + 세로 레일 + 작업 공간. 일곱 페이지가 이 파일 하나를 쓴다.
+ *
+ * 왜 바꿨나
+ * ---------
+ * 전에는 화면 위에 가로 막대가 겹겹이 쌓였다. 체험하기 기준으로
+ * 헤더 50 + 문항1 바 45 + 문항2 바 53 + 여백 35 = 183px 이 내용 이전에 사라졌고
+ * (1366×768 노트북에서 세로의 24%), 헤더 안의 탭 여섯 개는 1280px 안팎에서
+ * 줄바꿈해 헤더를 50px 에서 92px 로 키웠다.
+ * 가로 탭줄은 폭이 줄면 반드시 세로를 먹는 구조다 — 그래서 눕혔다.
+ *
+ *     ┌──────────────────────────────────────────────┐
+ *     │ edge-lab │ 파이썬        [?] [한/영] [AI]     │  titlebar 40px
+ *     ├──────┬───────────────────────────────────────┤
+ *     │ ⌂ 홈 │                                       │
+ *     │ ◉ 체험│          workbench                    │
+ *     │ ▦ 블록│                                       │
+ *     └──────┴───────────────────────────────────────┘
+ *       rail 76px
+ *
+ * 크롬 183px → 61px. 768px 화면에서 내용 높이가 585 → 707px 이 된다.
+ *
+ * 되찾은 공간은 여백이 아니라 아이 손가락에 쓴다
+ * ----------------------------------------------
+ * 쓰는 사람은 초등학생이고 교실 노트북 트랙패드로 조작한다. VS Code 의 *배치*는
+ * 가져왔지만 *치수*는 가져오지 않았다 — VS Code 레일은 48px 에 아이콘 16px 이다.
+ * 여기 레일 칸은 68 × 56px 이고 아이콘 26px 아래에 **글자가 늘 붙어 있다**
+ * (툴팁은 마우스를 올려야 나와 저학년에게 대안이 못 된다).
+ * 타이틀바를 34px 이 아니라 40px 로 잡은 것도 같은 이유다 — 그 안에 들어갈
+ * 단추가 40px 이어야 해서지, 더 줄일 수 없어서가 아니다.
+ * 치수 토큰은 lib/tokens.css 의 --tap / --tap-sm / --fs-* 에 있다.
+ *
+ * 쓰는 법 — 페이지 <head> 에서 ui.css **뒤에**:
+ *     <link rel="stylesheet" href="/lib/shell.css">
+ * 마크업은 lib/shell.js 주석에 있다.
+ */
+
+/* 셸이 가장자리 여백을 갖는다 — body 는 0. 페이지 CSS 가 적어 둔 body 패딩과
+   ui.css 의 @media screen 규칙을 여기서 되돌린다(이 파일이 뒤에 실린다). */
+body {
+  padding: 0;
+  gap: 0;
+}
+
+/* ═══════════════════ 타이틀바 ═══════════════════ */
+.titlebar {
+  flex: 0 0 auto;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 10px 0 12px;
+  background: var(--box, #fff);
+  border-bottom: 1.5px solid var(--line-d, #4a3f2e);
+  /* 줄바꿈하지 않는다 — 여기서 늘어나면 세로를 되찾은 뜻이 없어진다.
+     좁아지면 아래 @media 가 앱 이름부터 지운다. */
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.tb-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  height: var(--tap-sm, 40px);      /* 홈으로 가는 두 번째 길 — 레일의 [홈] 과 같은 크기로 */
+  padding-right: 2px;
+  text-decoration: none;
+  color: var(--cyan-d, #17475c);
+}
+.tb-brand:focus-visible {
+  outline: 2.5px solid var(--pen-red, #b4451c);
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+.tb-brand:hover { text-decoration: none; }
+.tb-brand img { height: 24px; width: auto; flex: 0 0 auto; }
+/* 브랜드는 한국어 화면에서도 로마자다 — 서버도 FastAPI(title="edge-lab") 이고
+   콘솔도 "edge-lab listening on" 이라, 화면만 한글이라 어긋나 있었다. */
+.tb-brand b {
+  font-family: "Menlo", "Consolas", ui-monospace, monospace;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+}
+.tb-sep {
+  flex: 0 0 auto;
+  width: 1px; height: 18px;
+  background: var(--line, #9a8f7d);
+  opacity: .7;
+}
+/* 지금 보고 있는 앱 이름 — lib/shell.js 가 넣는다 */
+.tb-app {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--fs-body, 14px);
+  color: var(--ink-2, #4a423a);
+}
+
+/* ── 타이틀바 오른쪽 도구 ──────────────────────────────────
+   [한/영] [AI] [?] 처럼 화면을 옮기지 않고 이 화면의 상태만 바꾸는 것들.
+   이동은 전부 레일이 맡으므로 여기에는 이동이 없다 — 전에는 탭과 도구가
+   같은 줄에 섞여 있어 [EN] 을 누르면 영어 화면으로 "넘어간다"고 읽혔다.
+
+   **보이는 알약은 28px, 누르는 영역은 40px 이다.**
+   ::after 로 위아래 6px 씩 투명하게 넓힌다 — 생김새는 그대로 두고 표적만
+   키우는 방법이라, 페이지 스크립트가 이 단추의 textContent 를 그냥 갈아도
+   (여섯 페이지가 다 그렇게 한다) 아무것도 깨지지 않는다. */
+.titlebar .h-tools {
+  margin-left: auto;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--tap-gap, 8px);
+}
+.titlebar .h-tools > button,
+.titlebar .h-tools > a {
+  position: relative;
+  height: 28px;
+  padding: 0 13px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--fs-side, 13px);
+  font-weight: 400;
+  line-height: 1;
+  white-space: nowrap;
+  border: 1.5px solid var(--line, #9a8f7d);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink-2, #4a423a);
+  text-decoration: none;
+}
+/* 누르는 영역만 40px 로 — 위아래로만 넓힌다. 좌우로도 넓히면 8px 간격에서
+   옆 단추의 영역과 맞닿아, 사이를 눌렀을 때 엉뚱한 것이 눌린다. */
+.titlebar .h-tools > button::after,
+.titlebar .h-tools > a::after {
+  content: "";
+  position: absolute;
+  inset: -6px 0;
+}
+.titlebar .h-tools > button:hover,
+.titlebar .h-tools > a:hover {
+  border-color: var(--cyan, #1f5f7a);
+  color: var(--cyan-d, #17475c);
+  text-decoration: none;
+}
+.titlebar .h-tools > button:focus-visible,
+.titlebar .h-tools > a:focus-visible {
+  outline: 2.5px solid var(--pen-red, #b4451c);
+  outline-offset: 2px;
+}
+/* 동그란 것(?) 은 28 × 28 이라 위아래만 넓히면 모자란다.
+   좌우 여백을 6px 씩 두고 사방으로 넓혀 40 × 40 을 만든다. */
+.titlebar .h-tools > button.round {
+  width: 28px;
+  padding: 0;
+  font-weight: 700;
+  font-size: 15px;
+  margin-inline: 6px;
+}
+.titlebar .h-tools > button.round::after { inset: -6px; }
+/* 수치를 보여주는 것(AI 상태)은 고정폭 숫자로 — 갱신될 때 흔들리지 않게 */
+.titlebar .h-tools > button.mono {
+  font-family: "Menlo", "Consolas", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  min-width: 52px;
+}
+
+html.hc .titlebar .h-tools > button,
+html.hc .titlebar .h-tools > a {
+  border-width: 2px;
+  border-color: var(--line-d, #2e281c);
+}
+
+
+/* ═══════════════════ 레일 + 작업 공간 ═══════════════════ */
+.shell-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+}
+
+.rail {
+  flex: 0 0 76px;
+  width: 76px;
+  background: var(--box, #fff);
+  border-right: 1.5px solid var(--line-d, #4a3f2e);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 0;
+  gap: 4px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.rail .spacer { flex: 1 1 auto; min-height: 4px; }
+
+/* 칸 하나 68 × 56 — 48px 최소 표적을 넘긴다. 아이콘 아래 글자는 늘 보인다. */
+.rail a {
+  width: 68px;
+  min-height: 56px;
+  flex: 0 0 auto;
+  padding: 6px 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+  text-decoration: none;
+  border-left: 4px solid transparent;
+  color: var(--ink-2, #4a423a);
+  font-family: inherit;
+  transition: color .12s, background .12s, border-color .12s;
+}
+.rail a:hover {
+  color: var(--ink, #2a2620);
+  background: var(--hover-bg, #f4efe4);
+  text-decoration: none;
+}
+.rail a:focus-visible {
+  outline: 2.5px solid var(--pen-red, #b4451c);
+  outline-offset: -3px;
+}
+.rail a svg { width: 26px; height: 26px; flex: 0 0 auto; }
+.rail a .tx {
+  font-size: 12px;
+  line-height: 1.2;
+  letter-spacing: -.02em;
+  text-align: center;
+  word-break: keep-all;
+}
+/* 지금 보고 있는 화면 — 색만으로 알리지 않는다. 왼쪽 띠 + 바탕 + 굵은 글씨.
+   색약 아이와 밝은 교실 화면에서 색 하나로는 구분이 안 된다. */
+.rail a.on,
+.rail a[aria-current] {
+  color: var(--cyan-d, #17475c);
+  border-left-color: var(--cyan, #1f5f7a);
+  background: var(--cyan-bg, #eef4f7);
+  font-weight: 700;
+  cursor: default;
+}
+html.hc .rail a.on,
+html.hc .rail a[aria-current] { border-left-width: 6px; }
+
+/* 작업 공간 — 페이지 내용이 그대로 들어온다. 가장자리 여백은 여기가 갖는다. */
+.workbench {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2, 8px);
+  padding: var(--edge, 7px);
+  overflow: hidden;
+}
+
+
+/* ═══════════════════ 반응형 ═══════════════════
+   기준은 네 개뿐이다 (lib/tokens.css 주석 참고).
+   전에는 페이지마다 560/860/900/960/980/1200 이 섞여 있어서, 같은 창 폭에서
+   페이지를 옮기면 어떤 화면은 접히고 어떤 화면은 눌려서 잘렸다.
+
+   좁아질 때 **글씨와 표적은 줄이지 않는다.** 여백만 줄인다 —
+   노트북에서 촘촘해지는 것과 아이가 못 누르는 것은 다른 문제다. */
+
+/* md 이하 — 태블릿. 패널을 세로로 쌓고 문서처럼 스크롤한다.
+   전에는 blocks 만 이렇게 했고 나머지 다섯은 overflow:hidden 인 채 눌렸다. */
+@media (max-width: 1023px) {
+  body { height: auto; min-height: 100dvh; overflow: auto; }
+  .shell-body { min-height: 0; align-items: flex-start; }
+  /* 문서가 길어지면 레일도 같이 길어져서, 아래로 내려가면 이동 단추가 화면 밖으로
+     사라진다. 붙여 둔다 — 어디까지 내려가도 다른 화면으로 갈 수 있어야 한다. */
+  .rail {
+    position: sticky;
+    top: 40px;
+    height: calc(100dvh - 40px);
+    align-self: flex-start;
+  }
+  .workbench { overflow: visible; }
+  .workbench > .main-container { flex-direction: column; }
+  .workbench > .main-container > .panel,
+  .workbench > .main-container > .work,
+  .workbench > .main-container > .stage-panel { flex: 0 0 auto; min-width: 0; }
+}
+
+/* sm 이하 — 폰. 레일이 화면 아래 가로 바로 내려간다.
+   표적 크기는 그대로 56px 이다. */
+@media (max-width: 639px) {
+  .shell-body { flex-direction: column-reverse; }
+  .rail {
+    flex: 0 0 auto;
+    width: 100%;
+    height: 58px;
+    position: sticky;
+    bottom: 0;
+    z-index: 40;
+    flex-direction: row;
+    justify-content: space-around;
+    border-right: none;
+    border-top: 1.5px solid var(--line-d, #4a3f2e);
+    padding: 0 2px;
+    gap: 0;
+  }
+  .rail a {
+    width: auto;
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 56px;
+    padding: 4px 0;
+    gap: 2px;
+    border-left: none;
+    border-top: 4px solid transparent;
+  }
+  .rail a svg { width: 22px; height: 22px; }
+  .rail a .tx { font-size: 11px; }
+  .rail a.on,
+  .rail a[aria-current] { border-left-color: transparent; border-top-color: var(--cyan, #1f5f7a); }
+  .rail .spacer { display: none; }
+  .titlebar { padding-left: 10px; }
+  .tb-app, .tb-sep { display: none; }
+}
+
+/* 화면이 낮을 때(교실 노트북을 세로로 쓰거나 창을 줄였을 때) 레일이 잘리지 않게 */
+@media (max-height: 560px) and (min-width: 640px) {
+  .rail a { min-height: 48px; padding: 3px 2px; }
+  .rail a svg { width: 22px; height: 22px; }
+}
+
+@media print {
+  .titlebar, .rail { display: none !important; }
+  .shell-body { display: block; }
+  .workbench { display: block; padding: 0; overflow: visible; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rail a { transition: none; }
+}
