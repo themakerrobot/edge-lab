@@ -13,6 +13,7 @@
             document.documentElement.classList.add("hc"); } catch (e) {}
   </script>
   <link rel="stylesheet" href="/lib/tokens.css">
+  <script src="/lib/boot.js"></script>
   <style>
     /* 런처 — 앱을 골라 여는 첫 화면.
      *
@@ -104,7 +105,7 @@
     .app:hover { background: var(--hover-bg); transform: translateY(-2px); text-decoration: none; }
     .app:focus-visible { outline: 3px solid var(--pen-red); outline-offset: 2px; }
     .app .ic {
-      width: 96px; height: 96px;
+      width: 84px; height: 84px;
       display: grid; place-items: center;
       border-radius: 18px;
       background: var(--box);
@@ -113,7 +114,7 @@
       color: var(--cyan-d);
     }
     .app:hover .ic { border-color: var(--cyan); box-shadow: 0 4px 0 rgba(31, 95, 122, .22); }
-    .app .ic svg { width: 50px; height: 50px; }
+    .app .ic svg { width: 44px; height: 44px; }
     /* 앱 여섯은 색을 채워 AI 와 구분한다 — 모양이 다르면 아이가 "종류가 다르다" 를 안다 */
     .app.tool .ic { background: var(--cyan); border-color: var(--cyan); color: #fff; }
     .app.tool:hover .ic { background: var(--cyan-d); }
@@ -141,11 +142,11 @@
       gap: 14px;
       padding: 0 2px;
     }
-    .hello img { height: 62px; flex: 0 0 auto; }
+    .hello img { height: 52px; flex: 0 0 auto; }
     .hello .say b {
       display: block;
       font-family: "Gowun Batang", serif;
-      font-size: 21px;
+      font-size: 19px;
       line-height: 1.3;
       color: var(--ink);
     }
