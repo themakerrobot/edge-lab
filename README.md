@@ -298,8 +298,7 @@ to point at it; your name, work and records all carry over.
 
 ## Install · Run
 
-What each part of every screen does is spelled out with pictures in the **[User guide](docs/MANUAL.md)**
-(Korean).
+What each part of every screen does is spelled out with pictures in the **[User guide](docs/MANUAL.md#edge-lab-user-guide)**.
 
 For installation see [INSTALL.md](INSTALL.md). Once installed:
 
