@@ -1,5 +1,7 @@
 # edge-lab
 
+**한국어** · [English](#edge-lab-english)
+
 **인터넷 없이, 내 컴퓨터 안에서 도는 AI 학습 도구.**
 
 사진을 찍어 AI에게 물어보고, 블록과 파이썬으로 AI를 부르는 프로그램을 만들고,
@@ -169,3 +171,188 @@ AI를 메모리에 올리는 동안 진행 막대가 보이고, 그 사이 파�
 받는 쪽에 알리고, ③ 모델 파일을 고쳤다면 고쳤다는 표시를 남깁니다.
 주요 제한(발췌): 미성년자 착취·가해, 허위정보 유포, 동의 없는 인물 사칭, 기계 생성물임을 밝히지 않은 배포,
 의료 조언·판독, 법집행·출입국 자동판정 등. 이 제한은 **TTS 모델 가중치에만** 적용됩니다.
+
+---
+---
+
+<a name="edge-lab-english"></a>
+
+# edge-lab (English)
+
+[한국어](#edge-lab) · **English**
+
+**An AI learning tool that runs inside your own computer — no internet.**
+
+Take a photo and ask the AI about it, build programs that call AI with blocks and Python,
+and train an AI of your own. Once installed, **everything keeps working with the internet unplugged**,
+and the photos you take and the things you make never leave this PC.
+
+Work is split across the CPU, GPU and NPU of an Intel AI PC. No cloud, no account, no bills.
+
+![Home](docs/img/home.png)
+
+---
+
+## What you can do
+
+Press an icon on the Home screen to open it, and **× Close** at the top right to come back. There are six.
+
+### Try it — 16 kinds of AI, one press away
+
+Take a webcam shot, upload a photo, or draw on the sketchpad and feed it to the AI.
+Turn on **Live** to keep recognizing straight from the webcam.
+
+| Group | What it does |
+|---|---|
+| Face | Find faces · age/gender · emotion · distance and direction · wearing a mask |
+| Body & hands | Human pose (17 joints) · hand gestures (21 finger points) |
+| Objects | Find 80 kinds of objects · color in each object's area |
+| AI that answers in words | Look at a photo and answer your question |
+| Change the photo | Remove background · 4× upscale · depth map (near and far as color) |
+| Text & QR | Read text (KO/EN) · read QR codes |
+
+![Try it](docs/img/try.png)
+
+### Blocks — snap blocks together to run the AI
+
+Image · AI recognition · sound · AI language · event blocks snap together with basics like
+logic, loops and variables. Load an **Example** and run it right away; save your work and reopen it later.
+See **what your blocks look like as Python** side by side, and carry it straight over to the Python screen.
+
+![Blocks](docs/img/blocks.png)
+
+### Python — one line is enough
+
+Call the AI through the `themaker` library. 16 examples, built-in help and autocomplete come with it.
+
+```python
+from themaker import *
+
+photo = camera()                      # one shot from the webcam
+print(vision("object", photo))        # what can you see
+show(vision("depth", photo))          # near and far as color
+speak("Hello")                        # say it out loud
+```
+
+![Python](docs/img/code.png)
+
+### Train — teach an AI yourself
+
+Make the classes to tell apart (rock, paper, scissors, say), collect example photos with the webcam,
+train, and test it immediately. Instead of photos it can also learn from
+**hand shape · facial expression · upper body · full body**.
+
+It shows how well it learned with accuracy and a learning curve, and shows you the ones it got wrong.
+Save your AI and **use it from Try it, Blocks and Python.**
+
+![Train](docs/img/train.png)
+
+### Talk — ask by voice or text
+
+Speak into the mic or type. Turn on **Read aloud** and it answers with a voice; pick the voice and the tone.
+
+**Add your own notes and it answers from inside them.** Paste in class material, ask a question,
+and it also shows you where the answer came from.
+
+![Talk](docs/img/talk.png)
+
+### Settings — check before class
+
+Confirm **camera · sound · microphone** all at once. The mic test records 3 seconds and plays it straight back,
+so mic and speaker are both verified together. If the screen is hard to read in a bright classroom,
+switch to **High contrast**.
+
+---
+
+## The first time you open it
+
+A progress bar runs while the AI models load into memory, and Pibo gives a short tour of what this tool does.
+The first launch takes 1-2 minutes; after that it is quick.
+
+Each screen gives a speech-bubble walkthrough the first time you open it. Press **?** at the top right to see it again.
+Press **한** to switch the screen to Korean.
+
+**You do not need a webcam.** If there is no camera, or another program is using it, the screens still work —
+just upload a photo instead. The camera turns on only at the moment a photo is taken.
+
+---
+
+## Where your work goes
+
+`Documents\Edge Lab` — separate from the program folder, so it survives an upgrade.
+
+| Folder | What's in it |
+|---|---|
+| `user` | AI you trained |
+| `blocks` | Block projects |
+| `pycode` | Python projects |
+| `db` | Notes added in Talk |
+| `stats` | Usage records · training results |
+
+**[Open folder]** in Settings opens it in Explorer.
+
+**Carry it on a USB stick** — copy the whole folder, then on another PC use **[Change]** in Settings
+to point at it; your name, work and records all carry over.
+
+---
+
+## Install · Run
+
+What each part of every screen does is spelled out with pictures in the **[User guide](docs/MANUAL.md)**
+(Korean).
+
+For installation see [INSTALL.md](INSTALL.md). Once installed:
+
+```
+.\run.bat
+```
+
+Double-clicking `run.bat` in Explorer works too. The browser opens by itself.
+
+Rules for changing the code are in [DEVELOP.md](DEVELOP.md).
+
+---
+
+## The AI running inside
+
+| Task | Model | Runs on |
+|---|---|---|
+| Photo questions · chat | Gemma 3 4B INT4 | GPU |
+| Objects · pose · segmentation | YOLO11m (+pose/seg) | CPU |
+| Mask | YOLO11s-cls | CPU |
+| Face detection · age/gender · emotion · direction | OpenVINO pretrained | NPU |
+| Face distance · hand gestures · expression training | MediaPipe | CPU |
+| Depth map | Depth Anything V2 Small | GPU |
+| Background removal · upscaling | U2Net · SR-1032 | GPU |
+| Text recognition | easyocr (KO/EN) | CPU |
+| QR recognition | OpenCV QRCodeDetector | CPU |
+| Feature extraction for Train | MobileNetV2 1280d | NPU |
+| Speech to text | Whisper Small INT8 | CPU |
+| Text to speech | Supertonic 3 | CPU |
+
+---
+
+## License
+
+This project is distributed under **AGPL-3.0** (`LICENSE`). It includes YOLO (ultralytics, AGPL-3.0),
+so the whole thing is published on the same terms — you may take the source and models and use,
+modify and redistribute them.
+
+| Component | License |
+|---|---|
+| Gemma 3 | Gemma Terms of Use |
+| YOLO11 (ultralytics) | AGPL-3.0 |
+| OpenVINO / open_model_zoo face models | Apache-2.0 |
+| MediaPipe · U2Net · easyocr · Whisper (OpenVINO conversion) | Apache-2.0 |
+| Supertonic 3 (model weights) | OpenRAIL-M |
+| Supertonic inference procedure (speech_routes.py) | ported from the official MIT example (supertone-inc/supertonic) |
+| Blockly / TensorFlow.js / JSZip | Apache-2.0 / Apache-2.0 / MIT |
+
+**When you pass the TTS model (OpenRAIL-M) on to someone else** — commercial use, redistribution and
+hosting as a service are allowed. But you must ① include a copy of the license (`models/tts/LICENSE`),
+② carry **the use restrictions in Attachment A** into your terms and make the recipient aware of them,
+and ③ state that you changed the model files if you did.
+Restrictions (excerpt): exploiting or harming minors, spreading disinformation, impersonating people
+without consent, distributing machine-generated content without disclosing it, medical advice or
+diagnosis, automated law-enforcement or immigration decisions. These restrictions apply to the
+**TTS model weights only**.
