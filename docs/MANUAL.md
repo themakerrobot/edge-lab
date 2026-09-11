@@ -1,5 +1,7 @@
 # edge-lab 사용 설명서
 
+**한국어** · [English](#edge-lab-user-guide)
+
 화면마다 **번호가 붙은 자리**가 무엇을 하는 곳인지만 적었습니다.
 
 시작 — 바탕화면의 `edge-lab` 또는 `run.bat` 을 더블클릭하면 브라우저가 열립니다.
@@ -154,3 +156,167 @@ USB로 옮기려면 이 폴더를 통째로 복사하고, 다른 PC에서 설정
 | 다시 안내를 보고 싶어요 | 오른쪽 위 **?** |
 
 **웹캠은 없어도 됩니다** — 사진을 올려서 하면 됩니다.
+
+---
+---
+
+<a name="edge-lab-user-guide"></a>
+
+# edge-lab User Guide
+
+[한국어](#edge-lab-사용-설명서) · **English**
+
+Each screen is marked with **numbers**, and each number says what that spot does. That's all.
+
+To start — double-click `edge-lab` on the desktop, or `run.bat`. The browser opens by itself.
+The first launch takes 1-2 minutes while the AI loads.
+
+---
+
+## Home
+
+![Home](img/m-home.png)
+
+| | |
+|---|---|
+| **1** | Press from anywhere to go Home |
+| **2** | App icons — press to open (Try it · Blocks · Python · Train · Talk · Settings) |
+| **3** | API docs (for teachers) |
+| **4** | Korean ↔ English |
+
+---
+
+## Try it — 16 kinds of AI, one press away
+
+![Try it](img/m-try.png)
+
+| | |
+|---|---|
+| **1** | Pick which AI to use (face · objects · hands · text · change the photo …) |
+| **2** | Where the photo comes from — image file / webcam / sketchpad |
+| **3** | Live — keeps recognizing straight from the webcam |
+| **4** | **Run** — the spacebar works too |
+| **5** | Drop a photo here (drag & drop, or click) |
+| **6** | Result — boxes are drawn on what it found |
+| **7** | Pibo says — explains the result in words |
+| **8** | Close — back to Home |
+
+---
+
+## Blocks — snap blocks together to run the AI
+
+![Blocks](img/m-blocks.png)
+
+| | |
+|---|---|
+| **1** | Block drawer — image · AI recognition · sound · AI language · events … |
+| **2** | Drag blocks here and snap them together |
+| **3** | **Run ▶** / Stop |
+| **4** | Save · Load — your work goes to `Documents\Edge Lab\blocks` |
+| **5** | Examples — load a ready-made program and run it |
+| **6** | Stage — the photo taken and the result show here |
+| **7** | Progress log — one line at a time |
+| **8** | See as Python code — what your blocks become |
+
+> The camera turns on only while the "take a photo" block runs, and turns off when the run ends.
+
+---
+
+## Python — one line is enough
+
+![Python](img/m-code.png)
+
+| | |
+|---|---|
+| **1** | Where you write code — autocomplete is `Ctrl+Space` |
+| **2** | **Run ▶** (`Ctrl+Enter`) / Stop (`Esc`) |
+| **3** | Save · Load — to `Documents\Edge Lab\pycode` |
+| **4** | 16 examples |
+| **5** | Help — the commands you can use |
+| **6** | The picture sent by `show()` |
+| **7** | `print()` output |
+
+```python
+from themaker import *
+
+img = camera()                 # one shot from the webcam
+r = vision("face", img)        # find faces
+print("faces:", len(r))
+show(img, r)                   # see it with boxes drawn
+```
+
+---
+
+## Train — teach an AI yourself
+
+![Train](img/m-train.png)
+
+| | |
+|---|---|
+| **1** | The classes to tell apart — e.g. rock · paper · scissors |
+| **2** | Add a class — you need at least 2 to train |
+| **3** | What it learns from — photo · hand shape · expression · upper body · full body |
+| **4** | Webcam view (press [Webcam on] to start it) |
+| **5** | **Burst capture** — keeps shooting while held down (about 30 per class) |
+| **6** | **Start training** |
+| **7** | Results — accuracy · learning curve · the ones it got wrong |
+| **8** | Save — then use it from Try it, Blocks and Python |
+
+---
+
+## Talk — ask by voice or text
+
+![Talk](img/m-talk.png)
+
+| | |
+|---|---|
+| **1** | The conversation so far |
+| **2** | Mic — press and speak |
+| **3** | Type your question |
+| **4** | Send |
+| **5** | Camera on — sends what it sees along with your question |
+| **6** | Read aloud — pick the voice and the tone |
+| **7** | Add notes — it answers from inside what you added |
+
+---
+
+## Settings — check before class
+
+![Settings](img/m-options.png)
+
+| | |
+|---|---|
+| **1** | Run check — models · devices · save folder, all at once |
+| **2** | Check webcam |
+| **3** | Sound test |
+| **4** | Mic test — records 3 seconds and plays it straight back |
+| **5** | Name — stays with your work |
+| **6** | High contrast — when the screen is hard to read in a bright room |
+
+---
+
+## Where your work goes
+
+`Documents\Edge Lab` — it survives even when the program is overwritten with a new version.
+
+| Folder | What's in it |
+|---|---|
+| `user` | AI you trained |
+| `blocks` · `pycode` | Block and Python projects |
+| `db` | Notes added in Talk |
+| `stats` | Usage records · training results |
+
+To move it to a USB stick, copy the whole folder, then on another PC use **[Change]** in Settings to point at it.
+
+---
+
+## When something doesn't work
+
+| Symptom | Try this |
+|---|---|
+| The camera won't turn on | Lock/camera icon left of the address bar → **Allow**. Close video-call apps that may be using it |
+| No sound | Settings → **Sound test**. If still silent, **Open Windows sound settings** and check the default device |
+| The screen is too bright | Settings → **High contrast** |
+| I want the walkthrough again | **?** at the top right |
+
+**You do not need a webcam** — just upload a photo instead.
