@@ -13,8 +13,9 @@
             document.documentElement.classList.add("hc"); } catch (e) {}
   </script>
   <link rel="stylesheet" href="/lib/tokens.css">
-  <!-- 앱 실행 연출 + 흰 깜빡임 제거. head 에서 바탕을 깔아야 하므로 여기, tokens.css 뒤 -->
-  <script src="/lib/launch.js"></script>
+  <!-- 다 그려지기 전에는 내보내지 않는다. 앞 화면이 그대로 떠 있다가 완성된 화면으로
+       넘어간다(lib/tokens.css 의 view-transition). 늦어도 DOMContentLoaded 에 풀린다. -->
+  <link rel="expect" href="#el-built" blocking="render">
   <!-- 모델 목록·아이콘은 아래 인라인 스크립트가 바로 쓰므로 head 에서 먼저 싣는다 -->
   <script src="/lib/icons.js"></script>
   <script src="/lib/apps.js"></script>
@@ -1642,5 +1643,6 @@
   <script src="/lib/shell.js"></script>
   <script src="/lib/tour.js"></script>
   <script src="/lib/sysbar.js"></script>
+  <i id="el-built" hidden></i>
 </body>
 </html>
