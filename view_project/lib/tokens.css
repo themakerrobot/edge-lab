@@ -81,3 +81,38 @@ html.hc body { background-image: none; }          /* 배경 무늬 제거 */
 html.hc select, html.hc input, html.hc button,
 html.hc .panel, html.hc .q, html.hc .card { border-width: 2px; }
 html.hc .panel-head { border-width: 3px; }
+
+/* ===== 화면 전환 =====
+ *
+ * 일곱 화면은 각각 따로 된 문서다. 홈에서 아이콘을 누르면 브라우저가 문서를
+ * 통째로 새로 읽고, 전에는 그 사이가 이렇게 보였다.
+ *
+ *   1) 흰 깜빡임 — 페이지들이 body 에만 배경을 줘 놔서, 그것이 캔버스로
+ *      전파되기 전 한 프레임이 브라우저 기본 흰색이었다.
+ *   2) 반쯤 그려진 화면 — 무거운 <script> 가 <body> 안에 있어(blocks · code ·
+ *      train) 서랍이 비고 무대가 새까만 상태가 먼저 보였다.
+ *
+ * 덮개를 씌우는 방식(lib/launch.js 였다)은 그 둘을 가리긴 했지만,
+ * **화면 → 종이색 → 화면** 이 되어 그것대로 한 번 깜빡였다. 무엇을 그려 넣어도
+ * 마찬가지였다 — 이 화면들은 그냥 페이지가 바뀌는 수준이라 보이기 전에 걷힌다.
+ *
+ * 문서 간 View Transitions 는 중간에 빈 화면이 없다. 브라우저가 **떠나는 화면을
+ * 그대로 붙들고 있다가** 새 문서가 그릴 준비가 됐을 때 둘을 겹쳐 넘긴다.
+ * 반쯤 그려진 화면도 애초에 안 보인다. 지원하지 않는 브라우저는 그냥 이동한다 —
+ * 되돌릴 코드가 따로 없다.
+ *
+ * html 배경색은 이것과 별개로 필요하다. 전환이 없는 경우(새로고침, 주소 직접
+ * 입력, 미지원 브라우저)의 흰 깜빡임은 이 한 줄이 막는다.
+ */
+html { background-color: var(--paper); }
+
+@view-transition { navigation: auto; }
+
+/* 기본 250ms 는 이 정도 화면에 길다 */
+::view-transition-old(root),
+::view-transition-new(root) { animation-duration: 140ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) { animation: none; }
+}
