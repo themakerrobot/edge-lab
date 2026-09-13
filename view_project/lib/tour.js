@@ -267,22 +267,27 @@
     else tools.appendChild(b);
   }
 
-  /* 첫 화면에는 모델을 올리는 동안 부팅 덮개(#boot)가 떠 있다.
-     그게 떠 있을 때 시작하면 짚을 요소가 아직 없고 로딩 화면까지 가린다.
-     덮개가 사라진(=.done) 뒤에 시작한다. 덮개가 없는 화면은 바로 시작. */
-  function bootGone() {
+  /* 첫 화면에는 모델을 올리는 동안 부팅 덮개(#boot)가 떠 있고, 홈에서 앱으로
+     넘어온 직후에는 실행 덮개(#elOpen, lib/launch.js)가 떠 있다.
+     그게 떠 있을 때 시작하면 짚을 요소가 아직 없고 덮개까지 가린다.
+     덮개가 사라진 뒤에 시작한다. 덮개가 없는 화면은 바로 시작. */
+  function coverGone() {
     var b = document.getElementById("boot");
-    /* offsetParent 로 재면 안 된다 — #boot 는 position:fixed 라 떠 있어도 늘 null 이다.
+    /* offsetParent 로 재면 안 된다 — 덮개는 position:fixed 라 떠 있어도 늘 null 이다.
        그래서 덮개가 떠 있는데도 "사라졌다" 고 보고 말풍선이 그 위에 떴다. */
-    return !b || b.classList.contains("done") || getComputedStyle(b).display === "none";
+    if (b && !b.classList.contains("done") && getComputedStyle(b).display !== "none") return false;
+    if (document.getElementById("elOpen")) return false;
+    return true;
   }
 
+  /* 지켜보는 대상이 둘이고 하나는 나중에 생기므로, MutationObserver 대신 센다.
+     300ms × 60 = 18초까지 기다린다 — 그보다 오래 걸리면 안내는 접는다. */
   function startWhenReady() {
-    if (bootGone()) { setTimeout(start, 700); return; }
-    var mo = new MutationObserver(function () {
-      if (bootGone()) { mo.disconnect(); setTimeout(start, 700); }
-    });
-    mo.observe(document.getElementById("boot"), { attributes: true, attributeFilter: ["class", "style"] });
+    var left = 60;
+    (function tick() {
+      if (coverGone()) { setTimeout(start, 700); return; }
+      if (--left > 0) setTimeout(tick, 300);
+    })();
   }
 
   function boot() {
