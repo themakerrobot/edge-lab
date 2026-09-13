@@ -12,7 +12,7 @@
  *
  * 하는 일은 하나다. 누른 순간 종이색 덮개가 스며들고, 새 문서가 그 덮개를 이어받아
  * 준비되면 걷는다. 아이콘이 날아가거나 가운데에 뜨는 연출은 **두지 않는다** —
- * 이 화면들은 대개 1초 안에 열려서, 그 사이에 아이콘이 왔다 갔다 하면 열리는 것을
+ * 이 화면들은 대개 1초 안에 열려서, 그 사이에 무엇이 왔다 갔다 하면 열리는 것을
  * 도와주는 게 아니라 한 번 튀는 것처럼 보인다.
  *
  * 이동을 막지 않는다
@@ -44,10 +44,9 @@
  * (MutationObserver) 에 넣는다. 그때 <body> 는 아직 비어 있으므로, 뒤이어 파싱되는
  * 내용은 전부 덮개 아래에 깔린다.
  *
- * 오래 걸리면 그때만 알려준다
- * --------------------------
- * 빨리 열리는 화면에는 아무것도 띄우지 않는다. 준비가 HOLD 를 넘겨야 점 세 개가
- * 조용히 떠오른다 — 무거운 세 화면에서 "멈춘 것"으로 오해하지 않게.
+ * 덮개에는 아무것도 그리지 않는다. 종이색 한 장이다 — 이 화면들은 그냥 페이지가
+ * 바뀌는 수준이라, 무엇을 띄워도 보이기 전에 걷힌다. 오래 걸리는 것은 페이지를
+ * 여는 쪽이 아니라 모델을 **실행**하는 쪽이고, 그건 각 화면이 스스로 알린다.
  *
  * 부팅(모델 로딩) 덮개와는 배타적이다. lib/boot.js 는 sessionStorage vapi-ready 가
  * 서기 전까지 #boot 를 그리고, 이 파일은 그것이 선 뒤에만 그린다.
@@ -62,7 +61,6 @@
 
   var IN = 110;            /* 덮개가 스며드는 시간 */
   var OUT = 160;           /* 덮개가 걷히는 시간 */
-  var HOLD = 450;          /* 이보다 오래 걸리면 점을 띄운다 */
   var CAP = 4000;          /* 받는 쪽에서 덮개가 영원히 남지 않게 하는 상한 */
   var STUCK = 6000;        /* 이동이 끝내 일어나지 않은 경우의 상한 */
 
@@ -92,17 +90,7 @@
     "html{background-color:var(--paper,#fbf7ef)}",
 
     "#elGo{position:fixed;inset:0;z-index:121;pointer-events:none;",
-    "  background:var(--paper,#fbf7ef);",
-    "  display:flex;align-items:center;justify-content:center}",
-
-    /* 오래 걸릴 때만 떠오르는 점 셋 */
-    "#elGo .dots{display:flex;gap:7px;opacity:0}",
-    "#elGo .dots i{width:8px;height:8px;border-radius:50%;",
-    "  background:var(--cyan,#1f5f7a);opacity:.22;animation:elDot 1s infinite}",
-    "#elGo .dots i:nth-child(2){animation-delay:.15s}",
-    "#elGo .dots i:nth-child(3){animation-delay:.3s}",
-    "@keyframes elDot{0%,100%{opacity:.22}50%{opacity:1}}",
-    "@media (prefers-reduced-motion:reduce){#elGo .dots i{animation:none;opacity:.5}}"
+    "  background:var(--paper,#fbf7ef)}"
   ].join("\n");
 
   var st = document.createElement("style");
@@ -120,7 +108,6 @@
     var d = document.createElement("div");
     d.id = "elGo";
     d.setAttribute("aria-hidden", "true");
-    d.innerHTML = '<span class="dots"><i></i><i></i><i></i></span>';
     return d;
   }
   function drop(el) {
@@ -150,7 +137,6 @@
       if (document.getElementById("elGo")) return;
       var el = cover();
       document.body.insertBefore(el, document.body.firstChild);
-      var late = null;
       var capped = setTimeout(function () { drop(el); }, CAP);
 
       /* 떠난 쪽에서 스며들던 중이었으면 그 중간부터 잇는다.
@@ -166,14 +152,7 @@
         });
       }
 
-      /* 오래 걸리는 화면에서만 점을 띄운다 — 빨리 열리면 아무것도 안 보인다 */
-      late = setTimeout(function () {
-        var d = el.querySelector(".dots");
-        if (d) { d.style.opacity = ""; anim(d, 0, 1, 200); }
-      }, Math.max(0, (want.t0 || 0) + HOLD - Date.now()));
-
       function done() {
-        clearTimeout(late);
         clearTimeout(capped);
         var o = anim(el, 1, 0, OUT);
         if (!o) { drop(el); return; }
