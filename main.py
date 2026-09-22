@@ -183,7 +183,51 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="edge-lab", docs_url="/docs", lifespan=lifespan)
+# /docs 머리말 — 홈의 [API Docs] 가 여기로 온다. 보는 사람은 선생님이다.
+# 전에는 title 만 있어서 제목 한 줄과 경로 목록만 덩그러니 나왔다. 이 서버가
+# 무엇이고 · 어떤 묶음이 있고 · 인터넷 없이 돈다는 것을 여기서 알 수 있어야 한다.
+# Swagger UI 가 마크다운으로 그린다.
+DESCRIPTION = """\
+**교실 PC 안에서 도는 AI 서버입니다.**
+
+화면 일곱(홈 · 체험하기 · 블록 · 파이썬 · 가르치기 · 대화 · 설정)이 전부 여기를
+부릅니다. 블록 코딩과 `themaker` 파이썬 모듈도 같은 API 를 씁니다.
+
+**인터넷에 연결하지 않습니다.** 모델이 전부 이 PC 안에 있고, 웹캠으로 찍은 사진도
+이 컴퓨터 밖으로 나가지 않습니다.
+
+**켜고 1~2분은 준비 시간입니다.** 그동안 AI 호출은 503 으로 막히고, 화면과 작품
+저장·불러오기는 그대로 됩니다. 진행 상황은 `GET /ready` 로 볼 수 있습니다.
+
+**무엇이 어느 장치에서 도는지**는 `GET /system` 이 알려줍니다. OpenVINO 가 얼굴은
+NPU(없으면 GPU→CPU), 말로 답하는 AI·사물 인식·사진 바꾸기는 GPU, 글자·QR 은 CPU 로
+나눠 맡습니다.
+
+아이가 만든 것은 프로그램 폴더가 아니라 `문서\\Edge Lab` 에 남습니다 — 새 버전으로
+덮어써도 사라지지 않습니다.
+
+> **로그인이 없습니다.** 교실 PC 한 대에서 쓰는 전제입니다. 기본값이 `127.0.0.1`
+> 이라 그 PC 에서만 닿습니다. `VAPI_HOST` 로 바깥에 열지 마세요.
+"""
+
+# 묶음 설명 — 안 적으면 옆 목록에 "custom", "gan" 같은 이름만 뜬다
+TAGS = [
+    {"name": "face", "description": "얼굴 — 찾기 · 나이/성별 · 감정 · 거리와 방향 · 마스크"},
+    {"name": "object", "description": "사물 · 몸 · 손 — 80가지 사물, 사람 포즈, 손동작, 영역 칠하기. 가져온 YOLO 모델도 여기서 쓴다"},
+    {"name": "vlm", "description": "말로 답하는 AI — 사진에 대해 묻고 말로 답을 받는다 (몇 초 걸린다)"},
+    {"name": "gan", "description": "사진 바꾸기 — 배경 제거 · 화질 4배 · 깊이 지도"},
+    {"name": "code", "description": "글자 · QR — 문자 인식(OCR)과 QR/바코드"},
+    {"name": "custom", "description": "가르치기 — 특징 뽑기, 내가 가르친 AI 로 분류, 저장·불러오기"},
+    {"name": "blocks", "description": "블록 — 블록 작품 저장 · 목록 · 불러오기 · 지우기"},
+    {"name": "pycode", "description": "파이썬 — 코드 실행과 중지, 출력·그림 가져오기, 작품 저장"},
+    {"name": "chat", "description": "대화 — 주고받는 이야기와, 넣어 둔 자료 안에서 찾아 답하기"},
+    {"name": "speech", "description": "소리 — 읽어주기(TTS) · 받아쓰기(STT) · 목소리 고르기"},
+    {"name": "stats", "description": "사용 기록 — 수업에서 무엇을 얼마나 썼는지, 다음 반 전 초기화"},
+    {"name": "system", "description": "시스템 — 준비 상태, 장치 배정, 작업폴더 열기·바꾸기, 점검"},
+]
+
+app = FastAPI(title="edge-lab", description=DESCRIPTION, openapi_tags=TAGS,
+              docs_url="/docs", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True,
                    allow_methods=["*"], allow_headers=["*"])
 
