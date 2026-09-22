@@ -226,8 +226,39 @@ TAGS = [
     {"name": "system", "description": "시스템 — 준비 상태, 장치 배정, 작업폴더 열기·바꾸기, 점검"},
 ]
 
-app = FastAPI(title="edge-lab", description=DESCRIPTION, openapi_tags=TAGS,
-              docs_url="/docs", lifespan=lifespan)
+def _version():
+    """번들 버전. tools\\make_bundle.bat 이 배포본 루트에 VERSION.txt 를 남긴다
+    ("edge-lab 1.0.0"). 저장소에서 바로 띄운 경우에는 그 파일이 없다 — 그때
+    "0.1.0"(FastAPI 기본값)이 박히면 배포본인 척하게 되므로 dev 라고 적는다."""
+    try:
+        here = os.path.dirname(os.path.abspath(__file__))
+        with open(os.path.join(here, "VERSION.txt"), encoding="utf-8") as f:
+            txt = f.read().strip()
+        return txt.split()[-1] if txt else "dev"
+    except Exception:
+        return "dev"
+
+
+# docs_url=None 으로 기본 /docs 를 끄고 아래에서 직접 만든다 — 기본값은 Swagger UI 를
+# cdn.jsdelivr.net 에서 받아 오므로, 인터넷 없는 교실 PC 에서는 홈의 [API Docs] 를
+# 눌러도 흰 화면만 떴다. "인터넷 없이 내 컴퓨터에서 돌아요" 라고 적어 둔 프로그램에서
+# 그 한 장만 인터넷이 필요했던 셈이다. 파일은 view_project/lib/swagger/ 에 같이 넣었다.
+app = FastAPI(title="edge-lab", version=_version(),
+              description=DESCRIPTION, openapi_tags=TAGS,
+              docs_url=None, lifespan=lifespan)
+
+
+@app.get("/docs", include_in_schema=False)
+async def swagger_docs():
+    """API 문서 (선생님용). 그림·글씨를 전부 이 PC 안에서 읽는다."""
+    from fastapi.openapi.docs import get_swagger_ui_html
+    return get_swagger_ui_html(
+        openapi_url="/openapi.json",
+        title="edge-lab — API",
+        swagger_js_url="/lib/swagger/swagger-ui-bundle.js",
+        swagger_css_url="/lib/swagger/swagger-ui.css",
+        swagger_favicon_url="/assets/favicon-64.png",
+    )
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True,
                    allow_methods=["*"], allow_headers=["*"])
 
