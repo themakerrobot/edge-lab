@@ -137,9 +137,24 @@ echo === [7/8] verify bundled python ===
 for %%F in (main.py engines.py prompts.py paths.py hub.py mp_routes.py train_routes.py stats_routes.py code_routes.py speech_routes.py db_routes.py folderpick.py sysinfo.py themaker.py check.py smoke_test.py run.bat bundle_check.bat) do (
   if not exist %BUILD%\%%F (echo [ERROR] missing in bundle: %%F & exit /b 1)
 )
-for %%F in (view_project\index.html view_project\blocks.html view_project\train.html view_project\options.html view_project\code.html view_project\talk.html view_project\lib\ui.css view_project\lib\sysbar.js view_project\lib\split.js view_project\lib\tf.min-3.11.0.js view_project\lib\jszip.min.js view_project\lib\usage.js view_project\lib\cm\codemirror.js view_project\lib\cm\python.js view_project\lib\cm\show-hint.js) do (
+REM 화면 일곱 — home.html 이 런처(/)다. 빠지면 첫 화면부터 안 뜬다.
+for %%F in (view_project\home.html view_project\index.html view_project\blocks.html view_project\train.html view_project\options.html view_project\code.html view_project\talk.html) do (
   if not exist %BUILD%\%%F (echo [ERROR] missing in bundle: %%F & exit /b 1)
 )
+REM 일곱 화면이 함께 쓰는 공용 파일. tokens.css 는 색·치수에 화면 전환까지 갖고 있고,
+REM shell 은 타이틀바와 [닫기], boot 는 모델 로딩 화면이다 — 하나만 빠져도 화면이 망가진다.
+for %%F in (tokens.css ui.css shell.css shell.js apps.js icons.js boot.js tour.js sysbar.js split.js usage.js) do (
+  if not exist %BUILD%\view_project\lib\%%F (echo [ERROR] missing in bundle: view_project\lib\%%F & exit /b 1)
+)
+REM 같이 넣어 나가는 외부 라이브러리 — 이게 빠지면 그 화면만 통째로 죽는다
+for %%F in (lib\tf.min-3.11.0.js lib\jszip.min.js lib\cm\codemirror.js lib\cm\python.js lib\cm\show-hint.js blockly\blockly_compressed.js blockly\blocks_compressed.js blockly\javascript_compressed.js blockly\msg\ko.js blockly\msg\en.js) do (
+  if not exist %BUILD%\view_project\%%F (echo [ERROR] missing in bundle: view_project\%%F & exit /b 1)
+)
+REM 글꼴과 그림 — 폴더가 통째로 빠지면 화면이 기본 글꼴로 떨어진다
+for %%D in (fonts assets) do (
+  if not exist %BUILD%\view_project\%%D\ (echo [ERROR] missing in bundle: view_project\%%D\ & exit /b 1)
+)
+if not exist %BUILD%\view_project\fonts\fonts.css (echo [ERROR] missing in bundle: view_project\fonts\fonts.css & exit /b 1)
 for %%F in (mobilenetv2_feat.xml mobilenetv2_feat.bin mobilenetv2_feat.json) do (
   if not exist %BUILD%\models\backbone\%%F (echo [ERROR] missing in bundle: models\backbone\%%F & exit /b 1)
 )
