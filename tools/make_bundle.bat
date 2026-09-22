@@ -150,6 +150,11 @@ REM 같이 넣어 나가는 외부 라이브러리 — 이게 빠지면 그 화�
 for %%F in (lib\tf.min-3.11.0.js lib\jszip.min.js lib\cm\codemirror.js lib\cm\python.js lib\cm\show-hint.js blockly\blockly_compressed.js blockly\blocks_compressed.js blockly\javascript_compressed.js blockly\msg\ko.js blockly\msg\en.js) do (
   if not exist %BUILD%\view_project\%%F (echo [ERROR] missing in bundle: view_project\%%F & exit /b 1)
 )
+REM /docs 가 쓰는 Swagger UI — 없으면 [API Docs] 가 흰 화면이 된다.
+REM FastAPI 기본값은 이것을 CDN 에서 받아 오므로 인터넷 없는 교실 PC 에서 안 나왔다.
+for %%F in (swagger-ui-bundle.js swagger-ui.css LICENSE) do (
+  if not exist %BUILD%\view_project\lib\swagger\%%F (echo [ERROR] missing in bundle: view_project\lib\swagger\%%F & exit /b 1)
+)
 REM 글꼴과 그림 — 폴더가 통째로 빠지면 화면이 기본 글꼴로 떨어진다
 for %%D in (fonts assets) do (
   if not exist %BUILD%\view_project\%%D\ (echo [ERROR] missing in bundle: view_project\%%D\ & exit /b 1)
