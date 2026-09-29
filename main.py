@@ -48,12 +48,17 @@ def _find_app_browser():
     return None
 
 
+_APP_PROC = None   # 앱 창(--app) 프로세스 — [끄기] 때 같이 닫는다
+_SERVER = None     # uvicorn 서버 — [끄기] 가 멈춘다
+
+
 def open_browser():
     """서버가 뜨자마자 화면을 연다 — 모델 로딩은 뒤에서 계속되고,
     화면은 부팅(로딩) 안내를 보여준다.
 
     Chrome/Edge 가 있으면 앱 모드(--app)로 전용 창을 띄우고, 없으면 기본 브라우저로 연다.
-    끄고 싶으면 VAPI_NO_BROWSER=1, 앱 모드만 끄려면 VAPI_NO_APPMODE=1 로 실행한다."""
+    끄고 싶으면 VAPI_NO_BROWSER=1, 앱 모드만 끄려면 VAPI_NO_APPMODE=1 로 실행한다.
+    VAPI_KIOSK=1 이면 전체 화면(키오스크)으로 띄운다 — 빠져나가는 길은 셸의 [끄기] 다."""
     if os.environ.get("VAPI_NO_BROWSER"):
         return
     import subprocess
@@ -63,6 +68,7 @@ def open_browser():
     url = f"http://localhost:{PORT}"
 
     def _open():
+        global _APP_PROC
         time.sleep(1.0)  # uvicorn 소켓 바인딩 여유
         exe = None if os.environ.get("VAPI_NO_APPMODE") else _find_app_browser()
         if exe:
@@ -78,7 +84,13 @@ def open_browser():
                 zoom = os.environ.get("VAPI_ZOOM", "").strip()
                 if zoom:
                     args.append(f"--force-device-scale-factor={zoom}")
-                subprocess.Popen(args)
+                # 키오스크: 주소줄·창 틀 없이 화면 전체. 셸의 [끄기] 가 빠져나가는 길이다.
+                # Edge 는 --kiosk 와 --app 을 같이 줄 때의 동작이 Chrome 과 다를 수 있다 — 실기기 확인 필요.
+                if os.environ.get("VAPI_KIOSK"):
+                    args.append("--kiosk")
+                # [끄기] 가 창을 강제로 닫으므로 다음 실행 때 "복원할까요" 풍선이 뜨지 않게
+                args.append("--hide-crash-restore-bubble")
+                _APP_PROC = subprocess.Popen(args)
                 print("[browser] 앱 창으로 실행:", os.path.basename(exe))
                 return
             except Exception as ex:
@@ -905,6 +917,38 @@ async def open_folder():
     return {"result": "ok", "data": target}
 
 
+@app.post("/system/shutdown", tags=["system"], summary="끄기 (이 컴퓨터에서만)")
+async def shutdown(request: Request):
+    """셸의 [끄기]. 앱 창을 닫고 서버를 멈춘다 — 까만 창(run.bat)도 함께 닫힌다.
+
+    이 컴퓨터(127.0.0.1)에서 온 요청만 받는다. VAPI_HOST 로 다른 기기에 열어 두었을 때
+    옆 자리에서 이 PC 를 끄지 못하게. 저장 안 한 작업은 셸이 먼저 각 창에 알려
+    초안으로 적게 한 뒤 이것을 부른다."""
+    host = request.client.host if request.client else ""
+    if host not in ("127.0.0.1", "::1", "localhost"):
+        return JSONResponse({"result": "fail", "data": "이 컴퓨터에서만 끌 수 있어요."}, status_code=403)
+
+    def later():
+        time.sleep(0.8)                         # 응답이 브라우저에 닿을 여유
+        try:
+            code_routes.stop_all()              # 돌던 파이썬 프로그램도 — 카메라를 쥔 채 남지 않게
+        except Exception:
+            pass
+        p = _APP_PROC
+        if p is not None and p.poll() is None:
+            try:
+                p.terminate()
+            except Exception:
+                pass
+        if _SERVER is not None:
+            _SERVER.should_exit = True
+        else:
+            os._exit(0)
+    import threading
+    threading.Thread(target=later, daemon=True).start()
+    return {"result": "ok", "data": "끄는 중이에요."}
+
+
 @app.post("/system/sound_settings", tags=["system"], summary="윈도우 소리 설정 열기")
 async def open_sound_settings():
     """소리가 안 들릴 때 쓰는 길잡이.
@@ -1020,6 +1064,7 @@ if __name__ == "__main__":
     # app 을 문자열("main:app")로 주면 uvicorn 이 이 파일을 한 번 더 import 한다
     # (__main__ 과 main, 두 벌이 됨 → 시작 안내가 두 줄씩 찍히고 준비도 두 번 한다).
     # 자동 재시작을 쓰지 않으므로 객체를 그대로 넘긴다.
-    _QuietServer(uvicorn.Config(app, host=HOST, port=PORT,
-                                log_level="info" if verbose else "warning",
-                                access_log=verbose)).run()
+    _SERVER = _QuietServer(uvicorn.Config(app, host=HOST, port=PORT,
+                                          log_level="info" if verbose else "warning",
+                                          access_log=verbose))
+    _SERVER.run()

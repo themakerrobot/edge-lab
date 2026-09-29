@@ -94,6 +94,8 @@
                  background: #d9412b; color: #fff; font-size: 10.5px; line-height: 17px; text-align: center; }
     .os-bell b[hidden] { display: none; }
     .os-bell.open, .os-bell.open:hover { background: var(--cyan); color: #fff; border-color: var(--cyan); }
+    .os-power { width: 30px; padding: 0; justify-content: center; }
+    .os-power.open, .os-power.open:hover { background: var(--cyan); color: #fff; border-color: var(--cyan); }
     .os-clock { font-family: Menlo, Consolas, ui-monospace, monospace; font-weight: 700; font-size: 13px; padding: 0 4px 0 6px; }
     .os-clock small { font-weight: 400; font-size: 11px; color: var(--ink-2); margin-left: 5px; }
 
@@ -232,7 +234,9 @@
       <span class="os-chip os-ai wait" id="osAi"><span class="os-dot"></span><span class="lbl"></span></span>
       <a class="os-chip" id="osDocs" href="/docs" target="_blank">API</a>
       <button class="os-chip" id="osLang" type="button"></button>
+      <span class="os-chip" id="osBat" hidden></span>
       <span class="os-clock" id="osClock"></span>
+      <button class="os-chip os-power" id="osPower" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/></svg></button>
     </div>
   </div>
 
@@ -275,7 +279,7 @@
 
       /* 창 안의 페이지(lib/embed.js)가 이것을 보고 "셸 안에 있다" 고 안다.
          keys — 창에 포커스가 있어도 셸이 받는 단축키 */
-      window.EL_SHELL = { keys: ["alt+home"] };
+      window.EL_SHELL = { keys: ["alt+home"], keyFns: {}, hidden: [], teacher: false };
 
       var MAX = 4;                   // 뒤에 살려 둘 창 수. 창 하나가 페이지 하나라 메모리를 먹는다
       var A = window.EL_APPS;
@@ -295,7 +299,8 @@
           start: "바탕화면", fullTitle: "창이 너무 많아요",
           fullText: "{max}개까지 켜 둘 수 있어요. 하나를 닫으면 ‘{app}’ 창을 열게요.", cancel: "그만두기",
           notes: "알림", noteNone: "새 알림이 없어요", noteClear: "모두 지우기", now: "방금", ago: "{n}분 전",
-          aiReady: "AI 준비가 끝났어요. 이제 모든 앱을 쓸 수 있어요."
+          aiReady: "AI 준비가 끝났어요. 이제 모든 앱을 쓸 수 있어요.",
+          blocked: "‘{app}’ 은(는) 수업 중에는 쉬어요."
         },
         en: {
           hello: "What shall we do?", helloName: "{n}, what shall we do?",
@@ -309,7 +314,8 @@
           start: "Desktop", fullTitle: "Too many windows",
           fullText: "Up to {max} can stay open. Close one and ‘{app}’ will open.", cancel: "Cancel",
           notes: "Notifications", noteNone: "Nothing new", noteClear: "Clear all", now: "just now", ago: "{n} min ago",
-          aiReady: "The AI is ready. Every app can be used now."
+          aiReady: "The AI is ready. Every app can be used now.",
+          blocked: "‘{app}’ is resting during class."
         }
       };
       var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -319,6 +325,8 @@
       function icon(n) { return window.elIcon ? window.elIcon(n) : ""; }
       function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
         return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+      /* 선생님이 수업 모드로 숨긴 앱 (lib/os-teacher.js 가 EL_SHELL.hidden 을 채운다) */
+      function hiddenApp(path) { return (window.EL_SHELL.hidden || []).indexOf(path) >= 0 && !window.EL_SHELL.teacher; }
       function appOf(path) { return A.APPS.filter(function (x) { return x.href === path; })[0] || null; }
       function appName(path) { var a = appOf(path); return a ? (LANG === "en" ? a.en : a.ko) : path; }
 
@@ -340,6 +348,7 @@
         if (p.origin !== location.origin) { window.open(href, "_blank"); return; }
         if (p.path === "/" || p.path === "/home") { showDesk(); return; }
         if (!appOf(p.path)) { window.open(p.href, "_blank"); return; }   // /docs 같은 것 — 창이 아니다
+        if (hiddenApp(p.path)) { notify(null, fill(T("blocked"), { app: appName(p.path) }), [], true); return; }
         var w = wins[p.path];
         if (w) {
           /* ?from=blocks · ?add=… 처럼 넘길 것이 있으면 그 창을 새로 불러온다 (기록을 남기지 않게 replace).
@@ -445,6 +454,7 @@
       /* ─────────────── 단축키 ─────────────── */
       function onKey(k) {
         if (k === "alt+home") showDesk();
+        else if (window.EL_SHELL.keyFns[k]) window.EL_SHELL.keyFns[k]();
       }
       document.addEventListener("keydown", function (e) {
         var k = (e.ctrlKey ? "ctrl+" : "") + (e.altKey ? "alt+" : "") + (e.shiftKey ? "shift+" : "") +
@@ -466,6 +476,7 @@
         var box = $("osApps");
         box.innerHTML = "";
         A.APPS.forEach(function (a) {
+          if (hiddenApp(a.href) && !wins[a.href]) return;
           var run = !!wins[a.href], on = active === a.href;
           var name = LANG === "en" ? a.en : a.ko;
           var b = document.createElement("button");
@@ -615,15 +626,22 @@
         if (!$("osNote").hidden) { $("osNote").hidden = true; $("osBell").classList.remove("open"); }
       });
 
-      $("osStart").addEventListener("click", showDesk);
-      $("osLang").addEventListener("click", function () {
-        LANG = LANG === "ko" ? "en" : "ko";
+      $("osStart").addEventListener("click", function (e) {
+        e.stopPropagation();
+        if (window.EL_SHELL.onStart) window.EL_SHELL.onStart(); else showDesk();
+      });
+      var langFns = [];
+      function setLang(l) {
+        if (l === LANG) return;
+        LANG = l;
         try { localStorage.setItem("vapiLang", LANG); } catch (e) {}   // 창들은 storage 이벤트로 따라온다
         document.documentElement.lang = LANG;
         Object.keys(wins).forEach(function (k) { wins[k].frame.title = appName(k); });
         paintBar(); paintUse(); paintAi(); paintClock(); paintDesk(); paintBell();
         if (!$("osNote").hidden) paintNotes();
-      });
+        langFns.forEach(function (fn) { try { fn(LANG); } catch (e) { console.error(e); } });
+      }
+      $("osLang").addEventListener("click", function () { setLang(LANG === "ko" ? "en" : "ko"); });
 
       /* ─────────────── 바탕화면 ─────────────── */
       var who = "", models = null, sys = null;
@@ -634,6 +652,7 @@
         var box = $("dIcons");
         box.innerHTML = "";
         A.APPS.forEach(function (a) {
+          if (hiddenApp(a.href)) return;
           var b = document.createElement("a");
           b.href = a.href;
           b.className = "d-ic" + (a.href === "/options" ? " sys" : "") + (wins[a.href] ? " run" : "");
@@ -707,6 +726,22 @@
       pollAi();
       loadDesk();
 
+      /* 다른 셸 파일(lib/os-quick.js · os-start.js · os-teacher.js)이 쓰는 것 */
+      window.EL_SHELL.api = {
+        open: open, showDesk: showDesk, close: close,
+        notify: function (text, actions, toast) { notify(null, text, actions, toast !== false); },
+        lang: function () { return LANG; }, setLang: setLang,
+        onLang: function (fn) { langFns.push(fn); },
+        windows: function () { return Object.keys(wins); },
+        active: function () { return active; },
+        broadcast: function (action) { Object.keys(wins).forEach(function (k) { post(wins[k], action); }); },
+        resume: function () { if (active && wins[active]) post(wins[active], "show"); },
+        repaint: function () { paintBar(); paintDesk(); },
+        who: function () { return who; },
+        setWho: function (n) { who = n; paintDesk(); },
+        appName: appName, icon: icon, esc: esc, fill: fill
+      };
+
       /* /?open=/blocks 처럼 들어오면 그 앱을 바로 연다 */
       try {
         var want = new URLSearchParams(location.search).get("open");
@@ -714,6 +749,7 @@
       } catch (e) {}
     })();
   </script>
+  <script src="/lib/os-quick.js"></script>
   <script src="/lib/usage.js" data-page="home"></script>
   <i id="el-built" hidden></i>
 </body>
