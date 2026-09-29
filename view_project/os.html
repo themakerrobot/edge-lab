@@ -120,6 +120,7 @@
                background: var(--cyan); box-shadow: 0 6px 16px rgba(23,71,92,.24); }
     .d-ic .g svg { width: 34px; height: 34px; }
     .d-ic.sys .g { background: #5b6b76; box-shadow: 0 6px 14px rgba(40,50,60,.2); }
+    .d-ic.play .g { background: #d07a3e; box-shadow: 0 6px 14px rgba(150,80,30,.22); }
     .d-ic b { font-size: var(--fs-name); }
     .d-ic i { font-style: normal; font-size: 12.5px; color: var(--ink-2); line-height: 1.35; }
     .d-ic.run .g { outline: 3px solid rgba(31,95,122,.35); outline-offset: 3px; }
@@ -655,7 +656,7 @@
           if (hiddenApp(a.href)) return;
           var b = document.createElement("a");
           b.href = a.href;
-          b.className = "d-ic" + (a.href === "/options" ? " sys" : "") + (wins[a.href] ? " run" : "");
+          b.className = "d-ic" + (a.sys ? " sys" : a.play ? " play" : "") + (wins[a.href] ? " run" : "");
           b.innerHTML = '<span class="g">' + icon(a.ic) + "</span><b></b><i></i>";
           b.querySelector("b").textContent = LANG === "en" ? a.en : a.ko;
           b.querySelector("i").textContent = LANG === "en" ? a.en_d : a.ko_d;

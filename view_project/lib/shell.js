@@ -32,7 +32,11 @@
     "/code":     { ko: "파이썬",     en: "Python" },
     "/train":    { ko: "가르치기",   en: "Train" },
     "/talk":     { ko: "대화",       en: "Talk" },
+    "/studio":   { ko: "사진 스튜디오", en: "Photo studio" },
+    "/recorder": { ko: "녹음기",     en: "Recorder" },
+    "/story":    { ko: "이야기 극장", en: "Story theater" },
     "/works":    { ko: "내 작품",    en: "My work" },
+    "/tasks":    { ko: "AI 작업 관리자", en: "AI task manager" },
     "/options":  { ko: "설정",       en: "Settings" }
   };
   var CLOSE = { ko: "닫기", en: "Close" };

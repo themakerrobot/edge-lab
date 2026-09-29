@@ -54,7 +54,8 @@
     "QR코드 인식": { "g": "text", "ic": "qr", "api": "code/barcode", "params": {}, "tooltip": "이미지에서 바코드를 인식합니다.", "en": "QR code", "tooltip_en": "Reads QR codes in the image." }
   };
 
-  /* 화면 일곱. 런처의 첫 줄이다. 설명은 한 줄로 — 아이가 타일만 보고 고른다. */
+  /* 화면 열하나. 런처의 첫 줄이다. 설명은 한 줄로 — 아이가 타일만 보고 고른다.
+     play: 놀이 앱, sys: 시스템 앱 — 셸 바탕화면에서 색을 달리한다. */
   var APPS = [
     { href: "/try",     ic: "eye",    ko: "체험하기",   en: "Try it",
       ko_d: "AI 16가지를 눌러 봐요",        en_d: "Try 16 kinds of AI" },
@@ -66,9 +67,17 @@
       ko_d: "내가 직접 AI를 가르쳐요",      en_d: "Teach the AI yourself" },
     { href: "/talk",    ic: "talk",   ko: "대화",       en: "Talk",
       ko_d: "말하거나 써서 물어봐요",       en_d: "Ask by voice or text" },
+    { href: "/studio",  ic: "photo",  ko: "사진 스튜디오", en: "Photo studio", play: true,
+      ko_d: "배경 지우기 · 화질 · 깊이",     en_d: "Background · upscale · depth" },
+    { href: "/recorder", ic: "mic",   ko: "녹음기",     en: "Recorder", play: true,
+      ko_d: "말 → 글자 → 다시 읽기",        en_d: "Speech → text → read aloud" },
+    { href: "/story",   ic: "book",   ko: "이야기 극장", en: "Story theater", play: true,
+      ko_d: "인물마다 다른 목소리로",       en_d: "A voice for each character" },
     { href: "/works",   ic: "folder", ko: "내 작품",    en: "My work",
       ko_d: "만든 것을 한곳에서 열어요",    en_d: "Open everything you made" },
-    { href: "/options", ic: "gear",   ko: "설정",       en: "Settings",
+    { href: "/tasks",   ic: "gauge",  ko: "AI 작업 관리자", en: "AI task manager", sys: true,
+      ko_d: "어떤 AI 가 어디서 도는지",      en_d: "Which AI runs where" },
+    { href: "/options", ic: "gear",   ko: "설정",       en: "Settings", sys: true,
       ko_d: "수업 전 카메라·소리 점검",     en_d: "Check camera and sound" }
   ];
 

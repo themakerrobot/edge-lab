@@ -281,19 +281,40 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True,
 # "/blocks/" 처럼 빗금까지 적은 것은 페이지 주소 "/blocks" 와 구분하기 위해서다.
 ALLOW_WHILE_LOADING = ("/ready", "/system", "/lib", "/assets", "/fonts", "/blockly",
                        "/docs", "/openapi.json", "/favicon", "/stats", "/custom", "/pycode",
-                       "/blocks/", "/speech")
+                       "/blocks/", "/speech", "/chat/db")
+# 화면 주소 — 로딩 중에도 열린다. 새 화면을 만들면 여기에 더한다(빠지면 켜진 직후 1~2분은
+# 그 앱이 JSON 503 으로 뜬다 — 셸에 새 앱을 넣으며 한 번 겪었다).
+PAGE_PATHS = ("/", "/home", "/try", "/blocks", "/train", "/options", "/code", "/talk",
+              "/works", "/studio", "/recorder", "/story", "/tasks")
 
 
 @app.middleware("http")
 async def _loading_guard(request: Request, call_next):
     path = request.url.path
     if (not READY["ready"] and request.method != "OPTIONS"
-            and path not in ("/", "/try", "/blocks", "/train", "/options", "/code", "/talk")
+            and path not in PAGE_PATHS
             and not path.startswith(ALLOW_WHILE_LOADING)):
         return JSONResponse(status_code=503, content={
             "type": "loading", "result": "fail",
             "data": "AI를 준비하는 중이에요. 조금만 기다려 주세요.", "elapsed_ms": 0})
     return await call_next(request)
+
+
+# 무엇을 언제 불렀는지 — AI 작업 관리자(/tasks)의 "마지막 사용" · "부른 횟수".
+# 사용 통계(stats_routes)는 파일에 쌓는 누적값이고, 이것은 이번에 켠 뒤의 값이다.
+_USED = {}
+
+
+@app.middleware("http")
+async def _track_use(request: Request, call_next):
+    resp = await call_next(request)
+    if request.method == "POST" and resp.status_code < 400:
+        parts = [x for x in request.url.path.split("/") if x][:2]
+        if len(parts) == 2:
+            u = _USED.setdefault("/" + "/".join(parts), {"n": 0, "last": 0.0})
+            u["n"] += 1
+            u["last"] = time.time()
+    return resp
 
 
 @app.get("/ready", tags=["system"], summary="모델 준비 상태 (로딩 화면용)")
@@ -672,6 +693,34 @@ async def code_page():
         return f.read()
 
 
+@app.get("/studio", response_class=HTMLResponse)
+async def studio_page():
+    """사진 스튜디오 — 배경 지우기 · 화질 4배 · 깊이 지도 (/gan/*)."""
+    with open("view_project/studio.html", encoding="utf-8") as f:
+        return f.read()
+
+
+@app.get("/recorder", response_class=HTMLResponse)
+async def recorder_page():
+    """녹음기 — 말 → 글자(/speech/stt) → 다시 읽기(/speech/tts)."""
+    with open("view_project/recorder.html", encoding="utf-8") as f:
+        return f.read()
+
+
+@app.get("/story", response_class=HTMLResponse)
+async def story_page():
+    """이야기 극장 — 인물마다 다른 목소리(/speech/tts), AI 가 이어 쓰기(/chat/ask)."""
+    with open("view_project/story.html", encoding="utf-8") as f:
+        return f.read()
+
+
+@app.get("/tasks", response_class=HTMLResponse)
+async def tasks_page():
+    """AI 작업 관리자 — 어떤 AI 가 어디서 도는지 (/system/tasks)."""
+    with open("view_project/tasks.html", encoding="utf-8") as f:
+        return f.read()
+
+
 @app.get("/works", response_class=HTMLResponse)
 async def works_page():
     """내 작품 — 블록·파이썬·가르치기 작품·내 AI·자료를 한곳에서 열고 지운다."""
@@ -915,6 +964,59 @@ async def open_folder():
     except Exception as ex:
         return {"result": "fail", "data": str(ex)}
     return {"result": "ok", "data": target}
+
+
+@app.get("/system/tasks", tags=["system"], summary="AI 작업 관리자 — 모델별 장치 · 상태 · 마지막 사용")
+async def system_tasks():
+    """어떤 AI 가 어느 장치에 올라와 있고, 이번에 켠 뒤 몇 번·언제 불렸는지.
+
+    모델마다의 메모리는 주지 않는다 — OpenVINO 가 나눠 알려 주지 않아 잴 방법이 없다.
+    대신 이 프로그램 전체가 쓰는 메모리(proc_mem_gb)를 준다. 처음 쓸 때 올라오는 것
+    (STT · TTS · 자료 찾기 · 가져온 모델 · 손 인식 · 가르치기)은 loaded 로 구분한다.
+    내리기(끄기)는 하지 않는다 — 수업 중에 다시 올리면 수십 초가 걸린다."""
+    import engines as E
+    import speech_routes as SR
+    import train_routes as TR
+    import mp_routes as MR
+    from sysinfo import _proc_mem_gb
+    e = eng
+
+    def used(prefixes):
+        n, last = 0, 0.0
+        for k, u in list(_USED.items()):
+            if any(k.startswith(p) for p in prefixes):
+                n += u["n"]
+                last = max(last, u["last"])
+        return n, last
+
+    rows = []
+
+    def add(key, device, loaded, prefixes, lazy=False):
+        n, last = used(prefixes)
+        rows.append({"key": key, "device": str(device or "CPU").split(".")[0], "loaded": bool(loaded),
+                     "lazy": lazy, "calls": n, "last": last})
+
+    add("vlm", DEVICE_OF.get("look", E.DEV_VLM), e is not None and getattr(e, "vlm", None) is not None,
+        ["/vlm/", "/chat/ask", "/chat/rag"])
+    add("object", DEVICE_OF.get("object_search", "CPU"), e is not None and getattr(e, "object", None) is not None,
+        ["/object/object_"])
+    add("face", DEVICE_OF.get("face_analyze", E.DEV_FACE), e is not None and getattr(e, "face", None) is not None,
+        ["/face/face_", "/face/mask"])
+    add("gan", DEVICE_OF.get("portrait", E.DEV_GAN), e is not None and getattr(e, "gan", None) is not None, ["/gan/"])
+    add("code", "CPU", e is not None and getattr(e, "code", None) is not None, ["/code/"])
+    add("hand", "CPU", MR._hand is not None or MR._face is not None,
+        ["/face/mesh", "/object/hand", "/custom/pose", "/custom/face", "/custom/body"], lazy=True)
+    add("backbone", TR._device, TR._compiled is not None, ["/custom/embed", "/custom/predict"], lazy=True)
+    add("stt", SR._dev, SR._pipe is not None, ["/speech/stt"], lazy=True)
+    add("tts", "CPU", SR._tts is not None, ["/speech/tts"], lazy=True)
+    add("embed", "CPU", e is not None and getattr(e, "embed", None) is not None and e.embed.model is not None,
+        ["/chat/db", "/chat/find", "/chat/rag"], lazy=True)
+    add("user", "CPU", e is not None and getattr(e, "user", None) is not None and bool(getattr(e.user, "_cache", None)),
+        ["/object/detect_file"], lazy=True)
+    return {"result": "ok", "data": {
+        "models": rows, "now": time.time(), "ready": READY["ready"],
+        "proc_mem_gb": _proc_mem_gb(), "mem": _mem_info(), "cpu": _cpu_percent(),
+        "devices": [str(d) for d in E.core.available_devices]}}
 
 
 @app.post("/system/shutdown", tags=["system"], summary="끄기 (이 컴퓨터에서만)")
