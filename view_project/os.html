@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>edge-lab</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+  <link href="/fonts/fonts.css" rel="stylesheet">
+  <script>
+    /* 밝은 곳 모드: 화면이 그려지기 전에 적용해야 깜빡이지 않는다 */
+    try { if (localStorage.getItem("vapi-hc") === "1")
+            document.documentElement.classList.add("hc"); } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="/lib/tokens.css">
+  <link rel="expect" href="#el-built" blocking="render">
+  <script src="/lib/boot.js"></script>
+  <style>
+    /* 셸 — edge-lab 을 하나의 컴퓨터처럼 보이게 하는 첫 화면.
+     *
+     * 전에는 "/" 가 런처(home.html)였고, 앱을 누르면 페이지가 통째로 바뀌었다.
+     * 그러면 블록을 짜다 카메라를 보러 가는 순간 블록이 사라진다. 여기서는 셸이
+     * 계속 떠 있고, 앱은 그 안의 창(iframe)으로 열린다. 한 번에 하나를 보여 주되
+     * 뒤로 간 창도 살아 있어서, 돌아오면 하던 그대로다.
+     *
+     * 창 안의 페이지는 lib/embed.js 가 제목줄을 숨기고, 셸이 보내는 숨김/보임을
+     * 받아 카메라·실시간 인식을 멈춘다. 창을 여는 일은 이 파일만 한다 — 창 안의
+     * 링크도 embed.js 가 가로채 여기로 넘긴다.
+     *
+     * 옛 런처는 /home 에 그대로 둔다 (창 없이 쓰는 길).
+     */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      display: flex; flex-direction: column; height: 100dvh; overflow: hidden;
+      color: var(--ink); font-family: "Gowun Dodum", "Apple SD Gothic Neo", system-ui, sans-serif;
+      font-size: var(--fs-body); line-height: 1.5;
+      /* 바탕화면 — 그림 파일 없이 CSS 로만 */
+      background:
+        radial-gradient(1100px 620px at 8% 0%,   #d4e9f0 0%, rgba(212,233,240,0) 62%),
+        radial-gradient(900px 560px at 100% 100%, #fbe1cf 0%, rgba(251,225,207,0) 60%),
+        radial-gradient(700px 420px at 78% 18%,  #e3efdd 0%, rgba(227,239,221,0) 58%),
+        #f5efe3;
+    }
+    html.hc body { background: var(--paper); }
+    button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+    svg { display: block; }
+
+    /* ── 상단바 ── */
+    #osbar {
+      flex: 0 0 40px; display: flex; align-items: center; gap: 4px; padding: 0 8px 0 6px;
+      position: relative; z-index: 20; white-space: nowrap;
+      background: rgba(255,253,248,.82); backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(74,63,46,.16);
+    }
+    html.hc #osbar { background: #fff; border-bottom: 1.5px solid var(--line-d); }
+    .os-start { display: flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px 0 6px;
+                border-radius: 16px; font-weight: 700; font-size: 14px; }
+    .os-start img { width: 24px; height: 24px; }
+    .os-start:hover { background: rgba(31,95,122,.08); }
+    .os-start.on { background: var(--cyan); color: #fff; }
+    .os-sep { width: 1px; height: 20px; background: rgba(74,63,46,.2); margin: 0 6px; }
+    .os-apps { display: flex; gap: 3px; flex: 1 1 auto; min-width: 0; overflow: hidden; }
+    .os-app { position: relative; display: flex; align-items: center; gap: 7px; height: 32px; padding: 0 9px;
+              border-radius: 10px; font-size: 13.5px; color: var(--ink-2); flex: 0 0 auto; }
+    .os-app svg { width: 19px; height: 19px; }
+    .os-app:hover { background: rgba(31,95,122,.08); }
+    .os-app .lbl { display: none; }
+    .os-app.run .lbl { display: inline; }
+    .os-app.run::after { content: ""; position: absolute; left: 50%; bottom: 1px; width: 14px; height: 3px;
+                         border-radius: 2px; margin-left: -7px; background: rgba(31,95,122,.45); }
+    .os-app.on { background: #fff; color: var(--cyan-d); font-weight: 700; box-shadow: 0 1px 4px rgba(44,74,124,.14); }
+    .os-app.on::after { background: var(--cyan); width: 22px; margin-left: -11px; }
+    .os-app .x { display: none; width: 20px; height: 20px; border-radius: 10px; margin-right: -4px;
+                 align-items: center; justify-content: center; font-size: 15px; line-height: 1; color: var(--ink-2); }
+    .os-app.run.on .x, .os-app.run:hover .x { display: inline-flex; }
+    .os-app .x:hover { background: #fdecea; color: #a3321f; }
+    .os-tray { display: flex; align-items: center; gap: 5px; flex: 0 0 auto; }
+    .os-chip { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 14px;
+               font-size: 12.5px; background: rgba(255,255,255,.75); border: 1px solid rgba(74,63,46,.14); }
+    .os-chip svg { width: 15px; height: 15px; }
+    .os-chip[hidden] { display: none; }
+    button.os-chip:hover, a.os-chip:hover { background: #fff; }
+    .os-dot { width: 7px; height: 7px; border-radius: 50%; background: #c9bda6; flex: 0 0 auto; }
+    .os-ai.ok .os-dot { background: #3a9a55; }
+    .os-ai.wait .os-dot { background: #e0a030; }
+    .os-ai.bad .os-dot { background: #d9412b; }
+    /* 카메라·마이크를 쓰는 창이 있으면 — 개인정보 표시라 눈에 띄게 */
+    .os-use { background: #fdecea; border-color: #f2b8b0; color: #a3321f; font-weight: 700; }
+    .os-use .os-dot { background: #d9412b; }
+    .os-clock { font-family: Menlo, Consolas, ui-monospace, monospace; font-weight: 700; font-size: 13px; padding: 0 4px 0 6px; }
+    .os-clock small { font-weight: 400; font-size: 11px; color: var(--ink-2); margin-left: 5px; }
+
+    /* ── 바탕화면과 창이 함께 쓰는 자리 ── */
+    #osMain { flex: 1 1 auto; position: relative; min-height: 0; }
+
+    /* ── 바탕화면 ── */
+    #desk { position: absolute; inset: 0; overflow-y: auto; padding: 26px 28px 30px;
+            display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 28px; align-content: start; }
+    #desk[hidden] { display: none; }
+    .d-hero { grid-column: 1 / -1; display: flex; align-items: flex-end; gap: 18px; }
+    .d-hero .t { font-family: "Gowun Batang", serif; font-size: 56px; font-weight: 700; line-height: 1;
+                 letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+    .d-hero .d { font-size: 15px; color: var(--ink-2); padding-bottom: 6px; }
+    .d-hero .d b { display: block; font-family: "Gowun Batang", serif; font-size: 19px; color: var(--ink); margin-top: 3px; }
+    .d-hero img { height: 72px; margin-left: auto; }
+    .d-icons { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; align-content: start; }
+    .d-ic { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 10px 14px;
+            border-radius: 18px; text-align: center; }
+    .d-ic:hover { background: rgba(255,255,255,.6); }
+    .d-ic .g { width: 64px; height: 64px; border-radius: 20px; display: grid; place-items: center; color: #fff;
+               background: var(--cyan); box-shadow: 0 6px 16px rgba(23,71,92,.24); }
+    .d-ic .g svg { width: 34px; height: 34px; }
+    .d-ic.sys .g { background: #5b6b76; box-shadow: 0 6px 14px rgba(40,50,60,.2); }
+    .d-ic b { font-size: var(--fs-name); }
+    .d-ic i { font-style: normal; font-size: 12.5px; color: var(--ink-2); line-height: 1.35; }
+    .d-ic.run .g { outline: 3px solid rgba(31,95,122,.35); outline-offset: 3px; }
+    .d-side { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+    .w { background: rgba(255,255,255,.74); backdrop-filter: blur(8px); border: 1px solid rgba(74,63,46,.12);
+         border-radius: 16px; padding: 13px 16px; box-shadow: 0 4px 14px rgba(44,74,124,.08); }
+    html.hc .w { background: #fff; border-color: var(--line-d); }
+    .w h3 { font-size: 13px; color: var(--cyan-d); display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+    .w h3 svg { width: 15px; height: 15px; }
+    .w h3 em { margin-left: auto; font-style: normal; font-weight: 400; font-size: 12px; color: var(--ink-2); }
+    .w-row { display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 3px 6px; border-radius: 10px; font-size: 14px; width: 100%; text-align: left; }
+    .w-row:hover { background: rgba(31,95,122,.08); }
+    .w-row .i { width: 28px; height: 28px; border-radius: 9px; background: var(--cyan-bg); color: var(--cyan-d);
+                display: grid; place-items: center; flex: 0 0 auto; }
+    .w-row .i svg { width: 16px; height: 16px; }
+    .w-row span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .w-row small { font-size: 12px; color: var(--ink-2); flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 55%; }
+    .w-empty { font-size: 13px; color: var(--ink-2); padding: 4px 6px 2px; }
+    .devs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .dev { background: #fff; border: 1px solid rgba(74,63,46,.14); border-radius: 12px; padding: 8px 10px; min-width: 0; }
+    .dev b { font-family: Menlo, Consolas, monospace; font-size: 13px; color: var(--cyan-d); display: flex; align-items: center; gap: 6px; }
+    .dev i { display: block; font-style: normal; font-size: 12px; color: var(--ink-2); margin-top: 3px; line-height: 1.35; }
+    .dev.none { opacity: .45; }
+    .dev.none .os-dot { background: #c9bda6; }
+    .dev .os-dot { background: #3a9a55; }
+    .mem { height: 8px; border-radius: 4px; background: #ece5d6; overflow: hidden; margin-top: 10px; }
+    .mem i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #1f5f7a, #3d8fb0); border-radius: 4px; }
+    .mem-t { font-size: 12px; color: var(--ink-2); margin-top: 5px; }
+
+    /* ── 창 — 하나만 보이고, 뒤로 간 것도 살아 있다 ── */
+    #wins { position: absolute; inset: 0; pointer-events: none; }
+    .win { position: absolute; inset: 6px; border-radius: 10px; overflow: hidden; background: var(--paper);
+           border: 1px solid rgba(74,63,46,.22); box-shadow: 0 10px 30px rgba(44,74,124,.16);
+           visibility: hidden; pointer-events: none; }
+    /* display:none 이 아니라 visibility — 크기가 남아 있어야 블록 작업판처럼 제 크기를
+       재는 것들이 돌아왔을 때 멀쩡하다 */
+    .win.on { visibility: visible; pointer-events: auto; }
+    .win iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: var(--paper); }
+
+    /* ── 창이 너무 많을 때 ── */
+    #osFull { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; background: rgba(42,38,32,.28); }
+    #osFull[hidden] { display: none; }
+    .full-card { width: min(420px, calc(100% - 32px)); background: var(--paper); border: 1.5px solid var(--line-d);
+                 border-radius: 16px; padding: 18px 18px 14px; box-shadow: 0 20px 50px rgba(44,74,124,.3); }
+    .full-card h2 { font-family: "Gowun Batang", serif; font-size: 18px; margin-bottom: 4px; }
+    .full-card p { font-size: 13.5px; color: var(--ink-2); margin-bottom: 12px; }
+    .full-row { display: flex; align-items: center; gap: 10px; min-height: 46px; padding: 4px 6px; border-radius: 10px; }
+    .full-row + .full-row { border-top: 1px solid rgba(74,63,46,.1); }
+    .full-row svg { width: 20px; height: 20px; color: var(--cyan-d); }
+    .full-row span { flex: 1; font-size: 15px; }
+    .btn-s { height: 34px; padding: 0 14px; border-radius: 17px; border: 1px solid rgba(74,63,46,.25); background: #fff;
+             font-size: 13.5px; font-weight: 700; }
+    .btn-s:hover { border-color: #a3321f; color: #a3321f; }
+    .full-foot { display: flex; justify-content: flex-end; margin-top: 10px; }
+
+    @media (max-width: 1100px) {
+      #desk { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 760px) {
+      .os-start b, .os-clock small, #osDocs, .os-sep { display: none; }
+      .os-app.run .lbl { display: none; }
+      .os-ai .lbl { display: none; }
+      #desk { padding: 18px 16px 24px; }
+      .d-hero .t { font-size: 44px; }
+      .d-icons { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="osbar">
+    <button class="os-start" id="osStart" type="button"><img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b></button>
+    <span class="os-sep"></span>
+    <nav class="os-apps" id="osApps"></nav>
+    <div class="os-tray">
+      <span class="os-chip os-use" id="osCam" hidden></span>
+      <span class="os-chip os-use" id="osMic" hidden></span>
+      <span class="os-chip os-ai wait" id="osAi"><span class="os-dot"></span><span class="lbl"></span></span>
+      <a class="os-chip" id="osDocs" href="/docs" target="_blank">API</a>
+      <button class="os-chip" id="osLang" type="button"></button>
+      <span class="os-clock" id="osClock"></span>
+    </div>
+  </div>
+
+  <main id="osMain">
+    <section id="desk">
+      <div class="d-hero">
+        <span class="t" id="dTime"></span>
+        <span class="d"><span id="dDate"></span><b id="dHello"></b></span>
+        <img src="/assets/pibo-hello.png" alt="">
+      </div>
+      <div class="d-icons" id="dIcons"></div>
+      <div class="d-side">
+        <div class="w" id="wMine"></div>
+        <div class="w" id="wPc"></div>
+      </div>
+    </section>
+    <div id="wins"></div>
+  </main>
+
+  <div id="osFull" hidden>
+    <div class="full-card">
+      <h2 id="fullTitle"></h2>
+      <p id="fullText"></p>
+      <div id="fullList"></div>
+      <div class="full-foot"><button class="btn-s" id="fullCancel" type="button"></button></div>
+    </div>
+  </div>
+
+  <script src="/lib/icons.js"></script>
+  <script src="/lib/apps.js"></script>
+  <script>
+    (function () {
+      "use strict";
+
+      /* 창 안의 페이지(lib/embed.js)가 이것을 보고 "셸 안에 있다" 고 안다.
+         keys — 창에 포커스가 있어도 셸이 받는 단축키 */
+      window.EL_SHELL = { keys: ["alt+home"] };
+
+      var MAX = 4;                   // 뒤에 살려 둘 창 수. 창 하나가 페이지 하나라 메모리를 먹는다
+      var A = window.EL_APPS;
+      var LANG = A.lang();
+      document.documentElement.lang = LANG;
+
+      var UI = {
+        ko: {
+          hello: "무엇을 해 볼까요?", helloName: "{n}, 무엇을 해 볼까요?",
+          days: ["일", "월", "화", "수", "목", "금", "토"], date: "{m}월 {d}일 {w}요일",
+          mine: "내가 가르친 AI", mineGo: "가르치기에서 보기", mineNone: "아직 없어요. 가르치기에서 만들어 보세요.",
+          pc: "이 컴퓨터", pcSub: "AI 를 돌리는 곳", mem: "메모리 {u} / {t} GB",
+          work: { face: "얼굴", vlm: "말 · 사진 설명", vision: "사진 바꾸기", code: "글자 · QR" },
+          idle: "쉬는 중",
+          aiOk: "AI 준비", aiWait: "AI 준비 중", aiBad: "AI 문제",
+          cam: "카메라", mic: "마이크", close: "닫기", langBtn: "EN", docs: "API 문서 (선생님용)",
+          start: "바탕화면", fullTitle: "창이 너무 많아요",
+          fullText: "{max}개까지 켜 둘 수 있어요. 하나를 닫으면 ‘{app}’ 창을 열게요.", cancel: "그만두기"
+        },
+        en: {
+          hello: "What shall we do?", helloName: "{n}, what shall we do?",
+          days: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], date: "{w}, {mo} {d}",
+          mine: "AI I trained", mineGo: "Open in Train", mineNone: "None yet. Make one in Train.",
+          pc: "This computer", pcSub: "Where the AI runs", mem: "Memory {u} / {t} GB",
+          work: { face: "Faces", vlm: "Talk · describe", vision: "Photo effects", code: "Text · QR" },
+          idle: "idle",
+          aiOk: "AI ready", aiWait: "AI loading", aiBad: "AI problem",
+          cam: "Camera", mic: "Mic", close: "Close", langBtn: "한", docs: "API docs (for teachers)",
+          start: "Desktop", fullTitle: "Too many windows",
+          fullText: "Up to {max} can stay open. Close one and ‘{app}’ will open.", cancel: "Cancel"
+        }
+      };
+      var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      function T(k) { return UI[LANG][k]; }
+      function fill(s, o) { return s.replace(/\{(\w+)\}/g, function (_, k) { return o[k] != null ? o[k] : ""; }); }
+      function $(id) { return document.getElementById(id); }
+      function icon(n) { return window.elIcon ? window.elIcon(n) : ""; }
+      function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+      function appOf(path) { return A.APPS.filter(function (x) { return x.href === path; })[0] || null; }
+      function appName(path) { var a = appOf(path); return a ? (LANG === "en" ? a.en : a.ko) : path; }
+
+      /* ─────────────── 창 ─────────────── */
+      var wins = {};                 // 경로 → { el, frame, href, last, media:{camera,mic} }
+      var active = null;             // 보이는 창의 경로. null 이면 바탕화면
+      var pending = null;            // 창이 꽉 찼을 때 열려던 것
+
+      function pathOf(href) {
+        var u = new URL(href, location.href);
+        return { path: u.pathname.replace(/\/+$/, "") || "/", href: u.pathname + u.search + u.hash, origin: u.origin };
+      }
+      function post(w, action) {
+        try { w.frame.contentWindow.postMessage({ type: "el-shell", action: action }, location.origin); } catch (e) {}
+      }
+
+      function open(href, blank) {
+        var p = pathOf(href);
+        if (p.origin !== location.origin) { window.open(href, "_blank"); return; }
+        if (p.path === "/" || p.path === "/home") { showDesk(); return; }
+        if (!appOf(p.path)) { window.open(p.href, "_blank"); return; }   // /docs 같은 것 — 창이 아니다
+        var w = wins[p.path];
+        if (w) {
+          /* ?from=blocks 처럼 넘길 것이 있으면 그 창을 새로 불러온다 (기록을 남기지 않게 replace) */
+          if (p.href !== w.href && p.href !== p.path) {
+            w.href = p.href;
+            try { w.frame.contentWindow.location.replace(p.href); } catch (e) { w.frame.src = p.href; }
+          }
+          activate(p.path);
+          return;
+        }
+        if (Object.keys(wins).length >= MAX) { askClose(p); return; }
+        var el = document.createElement("div");
+        el.className = "win";
+        var f = document.createElement("iframe");
+        f.src = p.href;
+        f.title = appName(p.path);
+        f.setAttribute("allow", "camera; microphone; serial; clipboard-write; autoplay");
+        el.appendChild(f);
+        $("wins").appendChild(el);
+        wins[p.path] = { el: el, frame: f, href: p.href, last: 0, media: { camera: false, mic: false } };
+        activate(p.path);
+      }
+
+      function activate(path) {
+        Object.keys(wins).forEach(function (k) {
+          var w = wins[k];
+          if (k === path) {
+            if (!w.el.classList.contains("on")) { w.el.classList.add("on"); post(w, "show"); }
+            w.last = Date.now();
+          } else if (w.el.classList.contains("on")) {
+            w.el.classList.remove("on"); post(w, "hide");
+          }
+        });
+        active = path;
+        $("desk").hidden = true;
+        paintBar();
+        try { wins[path].frame.focus(); } catch (e) {}
+      }
+
+      function showDesk() {
+        if (active && wins[active]) { wins[active].el.classList.remove("on"); post(wins[active], "hide"); }
+        active = null;
+        $("desk").hidden = false;
+        paintBar(); paintDesk();
+        loadDesk();
+      }
+
+      function close(path) {
+        var w = wins[path];
+        if (!w) return;
+        w.el.remove();                      // 페이지가 내려가면 카메라·타이머도 함께 끝난다
+        delete wins[path];
+        if (active === path) showDesk(); else paintBar();
+        paintUse();
+      }
+
+      function askClose(p) {
+        pending = p;
+        $("fullTitle").textContent = T("fullTitle");
+        $("fullText").textContent = fill(T("fullText"), { max: MAX, app: appName(p.path) });
+        $("fullCancel").textContent = T("cancel");
+        var list = $("fullList");
+        list.innerHTML = "";
+        Object.keys(wins).sort(function (a, b) { return wins[a].last - wins[b].last; }).forEach(function (k) {
+          var a = appOf(k), row = document.createElement("div");
+          row.className = "full-row";
+          row.innerHTML = icon(a ? a.ic : "") + "<span>" + esc(appName(k)) + '</span><button class="btn-s" type="button">' + esc(T("close")) + "</button>";
+          row.querySelector("button").addEventListener("click", function () {
+            close(k);
+            $("osFull").hidden = true;
+            var go = pending; pending = null;
+            if (go) open(go.href);
+          });
+          list.appendChild(row);
+        });
+        $("osFull").hidden = false;
+      }
+      $("fullCancel").addEventListener("click", function () { pending = null; $("osFull").hidden = true; });
+
+      /* 창에서 오는 말 (lib/embed.js) */
+      window.addEventListener("message", function (e) {
+        if (e.origin !== location.origin || !e.data || e.data.type !== "el-win") return;
+        var path = null;
+        Object.keys(wins).forEach(function (k) { if (wins[k].frame.contentWindow === e.source) path = k; });
+        if (!path) return;
+        var w = wins[path], d = e.data;
+        if (d.action === "hello") {
+          if (active !== path) post(w, "hide");      // 뜨는 사이 다른 창으로 옮겨 갔다
+        } else if (d.action === "open") {
+          open(d.href, d.blank);
+        } else if (d.action === "media") {
+          w.media = { camera: !!d.camera, mic: !!d.mic };
+          paintUse();
+        } else if (d.action === "key") {
+          onKey(d.key);
+        }
+      });
+
+      /* ─────────────── 단축키 ─────────────── */
+      function onKey(k) {
+        if (k === "alt+home") showDesk();
+      }
+      document.addEventListener("keydown", function (e) {
+        var k = (e.ctrlKey ? "ctrl+" : "") + (e.altKey ? "alt+" : "") + (e.shiftKey ? "shift+" : "") +
+                (e.metaKey ? "meta+" : "") + String(e.key || "").toLowerCase();
+        if (window.EL_SHELL.keys.indexOf(k) >= 0) { e.preventDefault(); onKey(k); }
+      });
+
+      /* 뒤로 가기 — 셸을 떠나지 않고 바탕화면으로. 마우스 옆 단추를 누르는 아이가 많다. */
+      try { history.replaceState({ el: 0 }, ""); history.pushState({ el: 1 }, ""); } catch (e) {}
+      window.addEventListener("popstate", function () {
+        try { history.pushState({ el: 1 }, ""); } catch (e) {}
+        showDesk();
+      });
+
+      /* ─────────────── 상단바 ─────────────── */
+      function paintBar() {
+        $("osStart").classList.toggle("on", active === null);
+        $("osStart").title = T("start");
+        var box = $("osApps");
+        box.innerHTML = "";
+        A.APPS.forEach(function (a) {
+          var run = !!wins[a.href], on = active === a.href;
+          var name = LANG === "en" ? a.en : a.ko;
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "os-app" + (run ? " run" : "") + (on ? " on" : "");
+          b.title = name;
+          b.innerHTML = icon(a.ic) + '<span class="lbl">' + esc(name) + "</span>" +
+                        (run ? '<span class="x" title="' + esc(T("close")) + '">×</span>' : "");
+          b.addEventListener("click", function (e) {
+            if (e.target.closest(".x")) { close(a.href); return; }
+            if (on) showDesk(); else open(a.href);   // 보이는 앱을 다시 누르면 내린다
+          });
+          box.appendChild(b);
+        });
+        $("osLang").textContent = T("langBtn");
+        $("osLang").title = "한국어 / English";
+        $("osDocs").title = T("docs");
+      }
+
+      /* 카메라·마이크를 쓰는 창 */
+      function paintUse() {
+        var cam = [], mic = [];
+        Object.keys(wins).forEach(function (k) {
+          if (wins[k].media.camera) cam.push(appName(k));
+          if (wins[k].media.mic) mic.push(appName(k));
+        });
+        var CAM = '<span class="os-dot"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5h12v9H3z"/><path d="m15 11 6-3.5v9L15 13"/></svg>';
+        var MIC = '<span class="os-dot"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>';
+        $("osCam").hidden = !cam.length;
+        $("osCam").innerHTML = CAM + esc(cam.join(" · "));
+        $("osCam").title = T("cam");
+        $("osMic").hidden = !mic.length;
+        $("osMic").innerHTML = MIC + esc(mic.join(" · "));
+        $("osMic").title = T("mic");
+      }
+
+      /* AI 준비 상태 — 로딩이 끝날 때까지 자주, 그 뒤로는 가끔 */
+      var aiState = null;
+      function paintAi() {
+        var c = $("osAi"), s = aiState;
+        c.className = "os-chip os-ai " + (!s ? "wait" : s.error ? "bad" : s.ready ? "ok" : "wait");
+        c.querySelector(".lbl").textContent = !s ? T("aiWait")
+          : s.error ? T("aiBad")
+          : s.ready ? T("aiOk")
+          : T("aiWait") + (s.total ? " " + s.loaded + "/" + s.total : "");
+        c.title = s && s.error ? String(s.error) : "";
+      }
+      function pollAi() {
+        fetch("/ready").then(function (r) { return r.json(); }).then(function (r) {
+          aiState = r; paintAi();
+          setTimeout(pollAi, r.ready || r.error ? 30000 : 1500);
+        }).catch(function () { aiState = null; paintAi(); setTimeout(pollAi, 3000); });
+      }
+
+      function paintClock() {
+        var n = new Date();
+        var hh = String(n.getHours()).padStart(2, "0") + ":" + String(n.getMinutes()).padStart(2, "0");
+        $("osClock").innerHTML = hh + "<small>" + (n.getMonth() + 1) + "/" + n.getDate() + "</small>";
+        $("dTime").textContent = hh;
+        $("dDate").textContent = fill(T("date"), { m: n.getMonth() + 1, mo: MONTHS[n.getMonth()], d: n.getDate(), w: T("days")[n.getDay()] });
+      }
+
+      $("osStart").addEventListener("click", showDesk);
+      $("osLang").addEventListener("click", function () {
+        LANG = LANG === "ko" ? "en" : "ko";
+        try { localStorage.setItem("vapiLang", LANG); } catch (e) {}   // 창들은 storage 이벤트로 따라온다
+        document.documentElement.lang = LANG;
+        Object.keys(wins).forEach(function (k) { wins[k].frame.title = appName(k); });
+        paintBar(); paintUse(); paintAi(); paintClock(); paintDesk();
+      });
+
+      /* ─────────────── 바탕화면 ─────────────── */
+      var who = "", models = null, sys = null;
+
+      function paintDesk() {
+        $("dHello").textContent = who ? fill(T("helloName"), { n: who }) : T("hello");
+
+        var box = $("dIcons");
+        box.innerHTML = "";
+        A.APPS.forEach(function (a) {
+          var b = document.createElement("a");
+          b.href = a.href;
+          b.className = "d-ic" + (a.href === "/options" ? " sys" : "") + (wins[a.href] ? " run" : "");
+          b.innerHTML = '<span class="g">' + icon(a.ic) + "</span><b></b><i></i>";
+          b.querySelector("b").textContent = LANG === "en" ? a.en : a.ko;
+          b.querySelector("i").textContent = LANG === "en" ? a.en_d : a.ko_d;
+          b.addEventListener("click", function (e) { e.preventDefault(); open(a.href); });
+          box.appendChild(b);
+        });
+
+        var mine = $("wMine");
+        var h = "<h3>" + icon("train") + esc(T("mine")) + "<em>" + esc(T("mineGo")) + "</em></h3>";
+        if (models && models.length) {
+          models.slice(0, 4).forEach(function (m) {
+            h += '<button class="w-row" type="button" data-go="/train"><span class="i">' + icon("custom") + "</span><span>" +
+                 esc(m.title || m.slug) + "</span><small>" + esc((m.labels || []).join(" · ")) + "</small></button>";
+          });
+        } else {
+          h += '<div class="w-empty">' + esc(T("mineNone")) + "</div>";
+        }
+        mine.innerHTML = h;
+        mine.querySelectorAll("[data-go]").forEach(function (x) {
+          x.addEventListener("click", function () { open(x.getAttribute("data-go")); });
+        });
+
+        /* 이 컴퓨터 — 장치마다 무엇을 맡았는지. 사용률(%)은 넣지 않는다:
+           NPU·GPU 카운터는 드라이버마다 있기도 없기도 해서 빈칸이 고장으로 읽힌다 (lib/sysbar.js 와 같은 이유) */
+        var W = T("work"), job = { NPU: [], GPU: [], CPU: [] };
+        if (sys && sys.assign) {
+          Object.keys(W).forEach(function (k) {
+            var d = String(sys.assign[k] || "").toUpperCase().split(".")[0];
+            if (job[d]) job[d].push(W[k]);
+          });
+        }
+        var has = {};
+        ((sys && sys.devices) || []).forEach(function (d) {
+          var n = String(d && d.name != null ? d.name : d).toUpperCase().split(".")[0];
+          has[n] = true;
+        });
+        var pc = "<h3>" + icon("gear") + esc(T("pc")) + "<em>" + esc(T("pcSub")) + '</em></h3><div class="devs">';
+        ["NPU", "GPU", "CPU"].forEach(function (d) {
+          var off = sys && sys.devices && !has[d];
+          pc += '<div class="dev' + (off ? " none" : "") + '"><b><span class="os-dot"></span>' + d + "</b><i>" +
+                esc(job[d].length ? job[d].join(" · ") : T("idle")) + "</i></div>";
+        });
+        pc += "</div>";
+        if (sys && sys.mem) {
+          pc += '<div class="mem"><i style="width:' + Math.min(100, sys.mem.percent || 0) + '%"></i></div>' +
+                '<div class="mem-t">' + esc(fill(T("mem"), { u: sys.mem.used_gb, t: sys.mem.total_gb })) + "</div>";
+        }
+        $("wPc").innerHTML = pc;
+      }
+
+      /* 바탕화면에 올 때마다 새로 묻는다 — 방금 가르친 AI 가 바로 보이게 */
+      function loadDesk() {
+        fetch("/custom/models").then(function (r) { return r.json(); }).then(function (j) {
+          if (j && j.result === "ok") { models = j.data || []; paintDesk(); }
+        }).catch(function () {});
+        fetch("/system").then(function (r) { return r.json(); }).then(function (j) {
+          sys = j; paintDesk();
+        }).catch(function () {});
+      }
+      fetch("/system/workdir").then(function (r) { return r.json(); }).then(function (j) {
+        var d = j && j.data;
+        who = d && !d.name_is_default ? String(d.name || "").trim() : "";   // 윈도우 로그인 이름은 인사에 쓰지 않는다
+        paintDesk();
+      }).catch(function () {});
+
+      paintBar(); paintUse(); paintAi(); paintClock(); paintDesk();
+      setInterval(paintClock, 15000);
+      pollAi();
+      loadDesk();
+
+      /* /?open=/blocks 처럼 들어오면 그 앱을 바로 연다 */
+      try {
+        var want = new URLSearchParams(location.search).get("open");
+        if (want && want.charAt(0) === "/") open(want);
+      } catch (e) {}
+    })();
+  </script>
+  <script src="/lib/usage.js" data-page="home"></script>
+  <i id="el-built" hidden></i>
+</body>
+</html>

@@ -13,6 +13,8 @@
             document.documentElement.classList.add("hc"); } catch (e) {}
   </script>
   <link rel="stylesheet" href="/lib/tokens.css">
+  <!-- 셸(/) 안의 창으로 열렸을 때 — 제목줄 숨김·숨김/보임 전달. 다른 스크립트보다 먼저 -->
+  <script src="/lib/embed.js"></script>
   <!-- 다 그려지기 전에는 내보내지 않는다. 앞 화면이 그대로 떠 있다가 완성된 화면으로
        넘어간다(lib/tokens.css 의 view-transition). 늦어도 DOMContentLoaded 에 풀린다. -->
   <link rel="expect" href="#el-built" blocking="render">
@@ -978,6 +980,13 @@
     $("txtCamToggle").textContent = t("camOn");
   }
   $("camToggle").addEventListener("click", () => stream ? camOff() : camOn());
+  /* 셸 안의 창이 가려지면 카메라를 끈다. 켜 두었던 것이면 다시 보일 때 켠다 (lib/embed.js).
+     학습은 그대로 둔다 — 다른 창에 가 있는 동안 끝나도 된다. */
+  let camResume = false;
+  if (window.EL_WIN) {
+    EL_WIN.onHide(() => { camResume = !!stream; if (stream) camOff(); });
+    EL_WIN.onShow(() => { if (camResume) camOn(); camResume = false; });
+  }
   /* 열자마자 켜지 않는다 — 소스도 안 돌렸는데 카메라가 흐를 일은 없다(블록·파이썬과 같이).
      [웹캠 켜기] 를 눌러야 켜진다. */
 

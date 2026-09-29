@@ -13,6 +13,8 @@
             document.documentElement.classList.add("hc"); } catch (e) {}
   </script>
   <link rel="stylesheet" href="/lib/tokens.css">
+  <!-- 셸(/) 안의 창으로 열렸을 때 — 제목줄 숨김·숨김/보임 전달. 다른 스크립트보다 먼저 -->
+  <script src="/lib/embed.js"></script>
   <!-- 다 그려지기 전에는 내보내지 않는다. 앞 화면이 그대로 떠 있다가 완성된 화면으로
        넘어간다(lib/tokens.css 의 view-transition). 늦어도 DOMContentLoaded 에 풀린다. -->
   <link rel="expect" href="#el-built" blocking="render">
@@ -433,7 +435,7 @@
       m_say: "말하기: ", m_show: "보여주기: ",
       m_needDetect: "먼저 인식 블록을 실행하세요.",
       m_noBlocks: "(블록이 없어요)", m_assembleFirst: "블록을 먼저 조립해 주세요.",
-      m_start: "실행 시작", m_done: "실행 완료", m_stopped: "정지했어요.", m_error: "오류: ",
+      m_start: "실행 시작", m_done: "실행 완료", m_stopped: "정지했어요.", m_hiddenStop: "창을 내려서 멈췄어요.", m_error: "오류: ",
       m_loaded: "불러오기 완료: ", m_readFail: "파일을 읽을 수 없어요: ",
       newFile: "새 작품", savePrompt: "작품 이름을 정해 주세요",
       m_savedAs: "저장했어요: ", m_saveFail: "저장하지 못했어요: ",
@@ -651,7 +653,7 @@
       m_say: "say: ", m_show: "show: ",
       m_needDetect: "Run a detection block first.",
       m_noBlocks: "(no blocks yet)", m_assembleFirst: "Build some blocks first.",
-      m_start: "started", m_done: "finished", m_stopped: "stopped.", m_error: "error: ",
+      m_start: "started", m_done: "finished", m_stopped: "stopped.", m_hiddenStop: "Stopped because the window was put away.", m_error: "error: ",
       m_loaded: "loaded: ", m_readFail: "Could not read the file: ",
       newFile: "new project", savePrompt: "Name this project",
       m_savedAs: "Saved: ", m_saveFail: "Could not save: ",
@@ -2052,7 +2054,7 @@ def texts_of(result):
   document.getElementById("pyOpen").addEventListener("click", () => {
     refreshPython();
     try { sessionStorage.setItem("vapi-py-from-blocks", PY_TEXT); } catch (e) {}
-    location.href = "/code?from=blocks";
+    EL_WIN.open("/code?from=blocks");          // 셸 안이면 파이썬 창을 연다 (lib/embed.js)
   });
 
   const exModal = document.getElementById("exModal");
@@ -3146,6 +3148,13 @@ def texts_of(result):
     RT.stopFlag = true;
     if (RT.abort) RT.abort.abort();          // 진행 중인 AI 요청 즉시 끊기
     RT._stopVoice();
+  });
+  /* 셸 안의 창이 가려지면 돌던 프로그램을 멈춘다 (lib/embed.js). 사진 찍기·듣기 블록이
+     안 보이는 곳에서 계속 카메라·마이크를 켜지 않게. 다시 보여도 저절로 돌리지 않는다. */
+  if (window.EL_WIN) EL_WIN.onHide(() => {
+    if (!runButton.disabled) return;
+    document.getElementById("stopButton").click();
+    log(t("m_hiddenStop"));
   });
 
   /* ---------------- 새로 만들기 (블록 전부 지우기) ---------------- */

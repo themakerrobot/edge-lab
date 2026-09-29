@@ -30,7 +30,9 @@
   });
 
   setInterval(function () {
-    if (document.visibilityState === "visible" && Date.now() - lastInput < IDLE_MS) {
+    /* 셸 안의 가려진 창(lib/embed.js)은 visibilityState 가 "visible" 로 남는다 — 따로 본다 */
+    var shown = document.visibilityState === "visible" && !(window.EL_WIN && EL_WIN.hidden);
+    if (shown && Date.now() - lastInput < IDLE_MS) {
       activeSec += TICK_MS / 1000;
     }
   }, TICK_MS);
@@ -65,6 +67,7 @@
   document.addEventListener("visibilitychange", function () {
     if (document.visibilityState === "hidden") { send(true); }
   });
+  if (window.EL_WIN) EL_WIN.onHide(function () { send(false); });   // 창이 가려질 때도 끊어서 보낸다
   send(false);   // 페이지를 열었다는 사실은 바로 알린다
 
   /* 각 페이지에서 쓰는 이벤트 기록 함수 */

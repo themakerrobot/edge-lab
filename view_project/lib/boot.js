@@ -19,6 +19,8 @@
   var already = false;
   try { already = sessionStorage.getItem("vapi-ready") === "1"; } catch (e) {}
   if (already) return;
+  /* 셸 안의 창이면 그리지 않는다 — 부팅 안내는 셸이 한 번만 보여 준다 (lib/embed.js) */
+  if (document.documentElement.classList.contains("el-win")) return;
 
   var LANG = "ko";
   try { LANG = localStorage.getItem("vapiLang") === "en" ? "en" : "ko"; } catch (e) {}
