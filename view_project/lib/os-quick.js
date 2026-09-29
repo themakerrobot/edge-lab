@@ -355,6 +355,17 @@
     A.resume();                                   // 보던 창에 "보임" 을 다시 알린다
   }
   S.lock = lock;
+  /* 시작 메뉴의 찾기(lib/os-start.js)가 부르는 것 */
+  S.quick = {
+    open: function () { openQuick(true); },
+    hc: function () { openQuick(true); q.querySelector('[data-q="hc"]').click(); },
+    snd: function () { openQuick(true); soundTest(); },
+    mic: function () { openQuick(true); micTest(); },
+    tour: function () { openQuick(true); q.querySelector('[data-q="tour"]').click(); },
+    folder: function () { fetch("/system/open_folder", { method: "POST" }).catch(function () {}); },
+    name: function () { openQuick(true); q.querySelector('[data-q="name"]').click(); },
+    bye: function () { bye(); }
+  };
   S.keyFns["ctrl+alt+l"] = lock;
   S.keys.push("ctrl+alt+l");
 
