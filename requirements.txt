@@ -12,7 +12,7 @@
 openvino==2026.3.*
 openvino-genai==2026.3.*
 openvino-tokenizers==2026.3.*   # 자료 찾기(RAG) 토크나이저 IR 을 여는 확장
-onnxruntime==1.23.*
+onnxruntime==1.28.*            # requirements.lock.txt(실제 설치·번들에 쓰는 것)이 2026-08-12 부터 1.28.0 이다 — 맞춘다
 
 # --- 모델 ---
 ultralytics
