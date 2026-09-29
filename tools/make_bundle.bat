@@ -143,7 +143,7 @@ for %%F in (view_project\os.html view_project\home.html view_project\index.html 
 )
 REM 일곱 화면이 함께 쓰는 공용 파일. tokens.css 는 색·치수에 화면 전환까지 갖고 있고,
 REM shell 은 타이틀바와 [닫기], boot 는 모델 로딩 화면, embed 는 셸 안의 창 모드다 — 하나만 빠져도 화면이 망가진다.
-for %%F in (tokens.css ui.css shell.css shell.js apps.js icons.js boot.js tour.js sysbar.js split.js usage.js embed.js os-quick.js os-start.js) do (
+for %%F in (tokens.css ui.css shell.css shell.js apps.js icons.js boot.js tour.js sysbar.js split.js usage.js embed.js os-quick.js os-start.js os-teacher.js) do (
   if not exist %BUILD%\view_project\lib\%%F (echo [ERROR] missing in bundle: view_project\lib\%%F & exit /b 1)
 )
 REM 같이 넣어 나가는 외부 라이브러리 — 이게 빠지면 그 화면만 통째로 죽는다
