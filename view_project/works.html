@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>edge-lab — 내 작품</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+  <link href="/fonts/fonts.css" rel="stylesheet">
+  <script>
+    /* 밝은 곳 모드: 화면이 그려지기 전에 적용해야 깜빡이지 않는다 */
+    try { if (localStorage.getItem("vapi-hc") === "1")
+            document.documentElement.classList.add("hc"); } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="/lib/tokens.css">
+  <!-- 셸(/) 안의 창으로 열렸을 때 — 제목줄 숨김·숨김/보임 전달. 다른 스크립트보다 먼저 -->
+  <script src="/lib/embed.js"></script>
+  <link rel="expect" href="#el-built" blocking="render">
+  <style>
+    /* 내 작품 — 아이가 만든 것을 한곳에서 보고 연다.
+     *
+     * 전에는 작품이 앱마다 흩어져 있었다. 블록은 블록의 [불러오기], 파이썬은 파이썬의
+     * 목록, 가르치기 작품은 가르치기 6번 칸, 내가 가르친 AI 는 설정의 표. 무엇을 만들었는지
+     * 보려면 앱을 하나씩 열어야 했다. 여기서는 종류를 가리지 않고 새것부터 늘어놓고,
+     * [열기] 를 누르면 그 앱이 그 작품을 연 채로 뜬다 (/blocks?open=… 등).
+     *
+     * 목록·열기·지우기는 각 앱이 쓰던 API 를 그대로 쓴다. 새 API 는 없다.
+     */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      display: flex; flex-direction: column; height: 100dvh; overflow: hidden;
+      color: var(--ink); background: var(--paper);
+      font-family: "Gowun Dodum", "Apple SD Gothic Neo", system-ui, sans-serif;
+      line-height: 1.5; padding: var(--sp-2, 8px); gap: var(--sp-2, 8px);
+    }
+    button, input { font-family: inherit; color: var(--ink); }
+    .btn { border: 1.5px solid var(--line-d); background: #fff; font-weight: 600; padding: 6px 12px;
+           border-radius: var(--r); cursor: pointer; font-size: .9rem; }
+    .btn.primary { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; }
+    .btn.danger { border-color: var(--pen-red); color: var(--pen-red); }
+    .btn.sm { padding: 4px 10px; font-size: .84rem; }
+
+    .panel.kinds { flex: 0 0 250px; }
+    .panel.list { flex: 1 1 auto; }
+    .kind { display: flex; align-items: center; gap: 10px; width: 100%; min-height: var(--tap, 44px);
+            padding: 6px 10px; border: 1.5px solid transparent; border-radius: var(--r); background: none;
+            font-size: var(--fs-name, 15px); cursor: pointer; text-align: left; }
+    .kind:hover { background: var(--hover-bg); }
+    .kind.on { background: var(--cyan-bg); border-color: var(--cyan); font-weight: 700; color: var(--cyan-d); }
+    .kind .ic { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
+                background: var(--cyan); color: #fff; flex: 0 0 auto; }
+    .kind .ic svg { width: 18px; height: 18px; }
+    .kind .n { margin-left: auto; font-family: Menlo, Consolas, monospace; font-size: .82rem; color: var(--ink-2); }
+    .folder { margin-top: auto; border-top: 1px dashed var(--line); padding-top: 10px; }
+    .folder .path { font-family: Menlo, Consolas, monospace; font-size: .8rem; color: var(--ink-2);
+                    word-break: break-all; margin: 4px 0 8px; }
+
+    .find { flex: 1 1 auto; max-width: 280px; margin-left: auto; padding: 6px 10px;
+            border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; font-size: .9rem; }
+    .rows { display: flex; flex-direction: column; gap: 6px; }
+    .row { display: flex; align-items: center; gap: 12px; padding: 9px 12px; background: #fff;
+           border: 1.5px solid var(--line); border-radius: var(--r); }
+    .row:hover { border-color: var(--cyan); }
+    .row .ic { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center;
+               background: var(--cyan-bg); color: var(--cyan-d); flex: 0 0 auto; }
+    .row .ic svg { width: 22px; height: 22px; }
+    .row .tx { flex: 1 1 auto; min-width: 0; }
+    .row .tx b { display: block; font-size: var(--fs-name, 15px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .row .tx i { display: block; font-style: normal; font-size: .82rem; color: var(--ink-2);
+                 overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .row .acts { display: flex; gap: 6px; flex: 0 0 auto; flex-wrap: wrap; justify-content: flex-end; }
+    .empty { color: var(--ink-2); font-size: .92rem; padding: 18px 4px; text-align: center; }
+    .empty img { display: block; height: 70px; margin: 0 auto 8px; }
+
+    @media (max-width: 1023px) {
+      .panel.kinds { flex: 0 0 auto; }
+      .kinds .panel-body { flex-direction: row; flex-wrap: wrap; }
+      .kind { width: auto; }
+      .folder { margin-top: 0; width: 100%; }
+      .panel, .panel-body { overflow: visible; }
+    }
+    @media (max-width: 639px) {
+      .row { flex-wrap: wrap; }
+      .row .acts { width: 100%; justify-content: flex-start; }
+      .find { max-width: none; }
+    }
+  </style>
+  <link rel="stylesheet" href="/lib/ui.css">
+  <link rel="stylesheet" href="/lib/shell.css">
+</head>
+<body data-density="explore">
+  <div class="titlebar">
+    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요">
+      <img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b>
+    </a>
+    <span class="tb-sep"></span>
+    <span class="tb-app" id="txtTitle"></span>
+    <div class="h-tools">
+      <button id="langButton" title="한국어 / English">EN</button>
+    </div>
+  </div>
+
+  <div class="shell-body">
+    <div class="workbench">
+      <div class="main-container">
+
+        <div class="panel kinds">
+          <div class="panel-head">
+            <span class="q"><span class="qnum">1</span><span class="qtext" id="txtQ1">무엇을 볼까요</span></span>
+          </div>
+          <div class="panel-body" id="kinds">
+            <div class="folder">
+              <b style="font-size:.88rem" id="txtFolder">작업 폴더</b>
+              <div class="path" id="workPath">—</div>
+              <button class="btn sm" id="openFolder"><span id="txtOpenFolder">폴더 열기</span></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel list">
+          <div class="panel-head">
+            <span class="q"><span class="qnum">2</span><span class="qtext" id="txtQ2">내가 만든 것</span></span>
+            <input class="find" id="find" type="search" autocomplete="off">
+          </div>
+          <div class="panel-body">
+            <div class="rows" id="rows"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="/lib/icons.js"></script>
+  <script>
+    (function () {
+      "use strict";
+      var LANG = "ko";
+      try { LANG = localStorage.getItem("vapiLang") === "en" ? "en" : "ko"; } catch (e) {}
+      document.documentElement.lang = LANG;
+
+      var I18N = {
+        ko: {
+          titleTag: "edge-lab — 내 작품", langBtn: "EN",
+          q1: "무엇을 볼까요", q2: "내가 만든 것", find: "이름으로 찾기",
+          folder: "작업 폴더", openFolder: "폴더 열기",
+          all: "모두", blocks: "블록", code: "파이썬", model: "내가 가르친 AI", project: "가르치기 작품", db: "대화 자료",
+          open: "열기", toBlocks: "블록에 넣기", toTry: "체험하기", toTalk: "대화에서 쓰기", del: "지우기",
+          askDel: "‘{n}’ 을(를) 지울까요? 되돌릴 수 없어요.", delFail: "지우지 못했어요: ",
+          none: "아직 만든 것이 없어요. 블록·파이썬·가르치기에서 만들고 저장하면 여기 모여요.",
+          noneKind: "이 종류는 아직 없어요.", noHit: "‘{q}’ 와(과) 맞는 것이 없어요.",
+          pieces: "조각 {n}개", classes: "{n}가지"
+        },
+        en: {
+          titleTag: "edge-lab — My work", langBtn: "한",
+          q1: "What to show", q2: "Things I made", find: "Find by name",
+          folder: "Work folder", openFolder: "Open folder",
+          all: "All", blocks: "Blocks", code: "Python", model: "AI I trained", project: "Train projects", db: "Talk notes",
+          open: "Open", toBlocks: "Put in Blocks", toTry: "Try it", toTalk: "Use in Talk", del: "Delete",
+          askDel: "Delete ‘{n}’? This cannot be undone.", delFail: "Could not delete: ",
+          none: "Nothing yet. Save something in Blocks, Python or Train and it will show up here.",
+          noneKind: "Nothing of this kind yet.", noHit: "Nothing matches ‘{q}’.",
+          pieces: "{n} pieces", classes: "{n} kinds"
+        }
+      };
+      function t(k) { return I18N[LANG][k] !== undefined ? I18N[LANG][k] : I18N.ko[k]; }
+      function $(id) { return document.getElementById(id); }
+      function icon(n) { return window.elIcon ? window.elIcon(n) : ""; }
+      function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+      function go(href) { if (window.EL_WIN) EL_WIN.open(href); else location.href = href; }
+      function enc(s) { return encodeURIComponent(s); }
+
+      /* 종류마다: 목록 주소 · 한 줄로 바꾸기 · 단추 · 지우기 */
+      var KINDS = [
+        { key: "blocks", ic: "blocks", url: "/blocks/works",
+          row: function (w) { return { name: w.name, at: w.mtime * 1000 }; },
+          acts: function (r) { return [["open", "/blocks?open=" + enc(r.name), true]]; },
+          del: function (r) { return fetch("/blocks/work?name=" + enc(r.name), { method: "DELETE" }); } },
+        { key: "code", ic: "code", url: "/pycode/works",
+          row: function (w) { return { name: w.name, at: w.mtime * 1000 }; },
+          acts: function (r) { return [["open", "/code?open=" + enc(r.name), true]]; },
+          del: function (r) { return fetch("/pycode/delete", { method: "POST", headers: { "Content-Type": "application/json" },
+                                                                 body: JSON.stringify({ name: r.name }) }); } },
+        { key: "model", ic: "custom", url: "/custom/models",
+          row: function (m) { return { name: m.title || m.slug, slug: m.slug, at: when(m.created),
+                                       sub: (m.labels || []).join(" · ") }; },
+          acts: function (r) { var k = enc("custom:" + r.slug);
+                               return [["toBlocks", "/blocks?add=" + k, true], ["toTry", "/try?m=" + k]]; },
+          del: function (r) { return fetch("/custom/models/" + enc(r.slug), { method: "DELETE" }); } },
+        { key: "project", ic: "train", url: "/custom/projects",
+          row: function (m) { return { name: m.title || m.slug, slug: m.slug, at: when(m.saved) }; },
+          acts: function (r) { return [["open", "/train?project=" + enc(r.slug), true]]; },
+          del: function (r) { return fetch("/custom/project/" + enc(r.slug), { method: "DELETE" }); } },
+        { key: "db", ic: "book", url: "/chat/db",
+          row: function (m) { return { name: m.title || m.slug, slug: m.slug, at: when(m.saved),
+                                       sub: m.count ? t("pieces").replace("{n}", m.count) : "" }; },
+          acts: function () { return [["toTalk", "/talk", true]]; },
+          del: function (r) { return fetch("/chat/db/" + enc(r.slug), { method: "DELETE" }); } }
+      ];
+      function when(s) {                     /* "2026-09-28 10:00:00" → 시각. 못 읽으면 0 */
+        var d = s ? new Date(String(s).replace(" ", "T")) : null;
+        return d && !isNaN(d) ? d.getTime() : 0;
+      }
+      function dateText(ms) {
+        if (!ms) return "";
+        var d = new Date(ms), now = new Date();
+        var hm = String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+        if (d.toDateString() === now.toDateString()) return hm;
+        return LANG === "en" ? (d.getMonth() + 1) + "/" + d.getDate() : (d.getMonth() + 1) + "월 " + d.getDate() + "일";
+      }
+
+      var ROWS = [], SHOW = "all";
+
+      function load() {
+        return Promise.all(KINDS.map(function (k) {
+          return fetch(k.url).then(function (r) { return r.json(); }).then(function (j) {
+            var list = j && j.result === "ok" && Array.isArray(j.data) ? j.data : [];
+            return list.map(function (x) { var r = k.row(x); r.kind = k; return r; });
+          }).catch(function () { return []; });
+        })).then(function (parts) {
+          ROWS = [].concat.apply([], parts).sort(function (a, b) { return b.at - a.at; });   // 새것부터
+          paintKinds(); paintRows();
+        });
+      }
+
+      function paintKinds() {
+        var box = $("kinds");
+        box.querySelectorAll(".kind").forEach(function (x) { x.remove(); });
+        var folder = box.querySelector(".folder");
+        [{ key: "all", ic: "home" }].concat(KINDS).forEach(function (k) {
+          var n = k.key === "all" ? ROWS.length : ROWS.filter(function (r) { return r.kind.key === k.key; }).length;
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "kind" + (SHOW === k.key ? " on" : "");
+          b.innerHTML = '<span class="ic">' + icon(k.ic) + "</span><span>" + esc(t(k.key)) + '</span><span class="n">' + n + "</span>";
+          b.addEventListener("click", function () { SHOW = k.key; paintKinds(); paintRows(); });
+          box.insertBefore(b, folder);
+        });
+      }
+
+      function paintRows() {
+        var q = $("find").value.trim().toLowerCase();
+        var list = ROWS.filter(function (r) {
+          return (SHOW === "all" || r.kind.key === SHOW) && (!q || r.name.toLowerCase().indexOf(q) >= 0);
+        });
+        var box = $("rows");
+        box.innerHTML = "";
+        if (!list.length) {
+          var msg = q ? t("noHit").replace("{q}", q) : ROWS.length ? t("noneKind") : t("none");
+          box.innerHTML = '<div class="empty">' + (ROWS.length ? "" : '<img src="/assets/pibo-idea.png" alt="">') + esc(msg) + "</div>";
+          return;
+        }
+        list.forEach(function (r) {
+          var el = document.createElement("div");
+          el.className = "row";
+          var sub = [t(r.kind.key), r.sub, dateText(r.at)].filter(Boolean).join(" · ");
+          el.innerHTML = '<span class="ic">' + icon(r.kind.ic) + '</span><span class="tx"><b></b><i></i></span><span class="acts"></span>';
+          el.querySelector("b").textContent = r.name;
+          el.querySelector("i").textContent = sub;
+          var acts = el.querySelector(".acts");
+          r.kind.acts(r).forEach(function (a) {
+            var b = document.createElement("button");
+            b.type = "button";
+            b.className = "btn sm" + (a[2] ? " primary" : "");
+            b.textContent = t(a[0]);
+            b.addEventListener("click", function () { go(a[1]); });
+            acts.appendChild(b);
+          });
+          var d = document.createElement("button");
+          d.type = "button"; d.className = "btn sm danger"; d.textContent = t("del");
+          d.addEventListener("click", function () {
+            if (!confirm(t("askDel").replace("{n}", r.name))) return;
+            r.kind.del(r).then(function (res) { return res.json(); }).then(function (j) {
+              if (j && j.result && j.result !== "ok") throw new Error(j.data);
+              load();
+            }).catch(function (e) { alert(t("delFail") + (e.message || e)); });
+          });
+          acts.appendChild(d);
+          box.appendChild(el);
+        });
+      }
+
+      function paintText() {
+        document.title = t("titleTag");
+        $("txtQ1").textContent = t("q1"); $("txtQ2").textContent = t("q2");
+        $("find").placeholder = t("find");
+        $("txtFolder").textContent = t("folder"); $("txtOpenFolder").textContent = t("openFolder");
+        $("langButton").textContent = t("langBtn");
+        if (window.navRepaint) window.navRepaint();
+      }
+
+      $("find").addEventListener("input", paintRows);
+      $("openFolder").addEventListener("click", function () {
+        fetch("/system/open_folder", { method: "POST" }).catch(function () {});
+      });
+      $("langButton").addEventListener("click", function () {
+        try { localStorage.setItem("vapiLang", LANG === "ko" ? "en" : "ko"); } catch (e) {}
+        location.reload();
+      });
+      fetch("/system/workdir").then(function (r) { return r.json(); }).then(function (j) {
+        if (j && j.data) $("workPath").textContent = j.data.work_dir || j.data.path || "—";
+      }).catch(function () {});
+
+      /* 다른 창에서 저장·삭제했을 수 있다 — 다시 보일 때마다 새로 읽는다 */
+      if (window.EL_WIN) EL_WIN.onShow(load);
+      document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") load(); });
+
+      paintText();
+      load();
+    })();
+  </script>
+  <script src="/lib/shell.js"></script>
+  <script src="/lib/usage.js" data-page="works"></script>
+  <i id="el-built" hidden></i>
+</body>
+</html>

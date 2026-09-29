@@ -441,7 +441,7 @@
       m_savedAs: "저장했어요: ", m_saveFail: "저장하지 못했어요: ",
       m_noWorks: "저장한 작품이 아직 없어요.", m_pickWork: "불러올 작품의 번호를 적어 주세요",
       m_notBlocks: "블록 작품 파일이 아니에요",
-      m_askNew: "블록을 전부 지우고 새로 시작할까요?", m_newOk: "새로 시작해요.", m_draftBack: "지난번 블록을 이어서 보여 줘요.",
+      m_askNew: "블록을 전부 지우고 새로 시작할까요?", m_newOk: "새로 시작해요.", m_draftBack: "지난번 블록을 이어서 보여 줘요.", m_askOpen: "지금 블록을 내려놓고 ‘{n}’ 을(를) 열까요? 저장 안 한 블록은 사라져요.", m_added: "‘{n}’ AI 블록을 놓았어요. 끌어서 쓰세요.", m_noModel: "그 AI 를 찾지 못했어요: ",
       btn_new: "새로 만들기",
       tts: "ko-KR",
     },
@@ -659,7 +659,7 @@
       m_savedAs: "Saved: ", m_saveFail: "Could not save: ",
       m_noWorks: "No saved projects yet.", m_pickWork: "Type the number to open",
       m_notBlocks: "not a blocks file",
-      m_askNew: "Clear every block and start over?", m_newOk: "Starting over.", m_draftBack: "Picked up your blocks from last time.",
+      m_askNew: "Clear every block and start over?", m_newOk: "Starting over.", m_draftBack: "Picked up your blocks from last time.", m_askOpen: "Put the current blocks away and open ‘{n}’? Unsaved blocks will be lost.", m_added: "Placed a block for the ‘{n}’ AI. Drag it where you need it.", m_noModel: "Could not find that AI: ",
       btn_new: "New",
       tts: "en-US",
     },
@@ -3209,7 +3209,57 @@ def texts_of(result):
       }
     } catch (e) { console.error(e); }
     draftReady = true;
+    fromUrl();
   });
+
+  /* 다른 앱이 부탁한 것 — 셸 알림의 [블록에 넣기], 내 작품의 [열기].
+     ?open=작품이름 → 그 작품을 연다 · ?add=custom:모델 → 그 AI 블록을 놓는다.
+     초안을 되살린 뒤에 한다 — 하던 블록 위에 더하거나, 물어보고 바꾼다. */
+  function fromUrl() {
+    let q;
+    try { q = new URLSearchParams(location.search); } catch (e) { return; }
+    const open = q.get("open"), add = q.get("add");
+    if (!open && !add) return;
+    try { history.replaceState(null, "", location.pathname); } catch (e) {}   // 새로고침 때 또 하지 않게
+    if (open) openWork(open);
+    else if (add.indexOf("custom:") === 0) addCustom(add.slice(7));
+  }
+  async function openWork(name) {
+    if (ws.getAllBlocks(false).length && BLOCK_NAME !== name &&
+        !confirm(t("m_askOpen").replace("{n}", name))) return;
+    try {
+      const r = await (await fetch("/blocks/work?name=" + encodeURIComponent(name))).json();
+      if (r.result !== "ok") throw new Error(r.data);
+      Blockly.serialization.workspaces.load(JSON.parse(r.data.state), ws);
+      BLOCK_NAME = r.data.name;
+      showBlockFile();
+      log(t("m_loaded") + r.data.name);
+    } catch (e) { alert(t("m_readFail") + (e.message || e)); }
+  }
+  function addCustom(slug) {
+    const m = CUSTOM_MODELS.filter(x => x.slug === slug)[0];
+    if (!m) { log(t("m_noModel") + slug); return; }
+    try {
+      const b = ws.newBlock("ai_custom");
+      b.setFieldValue(slug, "MODEL");
+      /* 바로 쓸 수 있게 「웹캠에서 사진 찍기」 를 끼워 둔다 */
+      const cap = ws.newBlock("ai_capture");
+      b.getInput("IMG").connection.connect(cap.outputConnection);
+      [b, cap].forEach(x => { x.initSvg(); x.render(); });
+      /* 하던 블록 아래에 놓는다 — 위에 겹치면 무엇이 새로 왔는지 안 보인다. 없으면 보이는 곳 왼쪽 위 */
+      const others = ws.getTopBlocks(false).filter(x => x !== b);
+      if (others.length) {
+        const box = ws.getBlocksBoundingBox();
+        b.moveBy(box.left, box.bottom + 40);
+      } else {
+        const v = ws.getMetricsManager().getViewMetrics(true);
+        b.moveBy(v.left + 40, v.top + 40);
+      }
+      b.select();
+      ws.centerOnBlock(b.id);
+      log(t("m_added").replace("{n}", m.title || slug));
+    } catch (e) { console.error(e); log(t("m_error") + e); }
+  }
 
   /* ---------------- 저장/불러오기 ---------------- */
   /* 저장은 작업 폴더(blocks)로 간다 — 파이썬 화면과 같은 규약이다.

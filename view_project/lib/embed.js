@@ -14,6 +14,9 @@
  *     EL_WIN.onHide(fn)        가려질 때 — 카메라를 끄고 실시간 인식을 멈춘다
  *     EL_WIN.onShow(fn)        다시 보일 때
  *     EL_WIN.open("/code?…")   다른 화면 열기. 창이면 셸에 부탁하고, 아니면 그냥 이동한다
+ *     EL_WIN.notify(글, { actions: [{ label, href }], always })
+ *                              알림. 셸 상단바 알림 목록에 남고, 이 창이 안 보이는 중이면
+ *                              (always 면 보고 있어도) 토스트로 뜬다. 창이 아니면 아무 일도 없다
  *
  * 이 파일이 혼자 하는 것 (창일 때):
  *   - 제목줄·부팅 덮개·시스템 패널을 숨긴다 (셸이 한 번만 보여 준다)
@@ -42,6 +45,11 @@
     open: function (href) {
       if (shell) post("open", { href: href });
       else location.href = href;
+    },
+    notify: function (text, opts) {
+      if (!shell) return;
+      opts = opts || {};
+      post("notify", { text: String(text || ""), actions: opts.actions || [], always: !!opts.always });
     }
   };
 
@@ -121,7 +129,7 @@
   });
 
   /* ── 앱 화면으로 가는 링크는 셸이 연다 ── */
-  var APP_PATHS = ["/", "/home", "/try", "/blocks", "/code", "/train", "/talk", "/options"];
+  var APP_PATHS = ["/", "/home", "/try", "/blocks", "/code", "/train", "/talk", "/works", "/options"];
   document.addEventListener("click", function (e) {
     if (e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey) return;
     var a = e.target && e.target.closest ? e.target.closest("a[href]") : null;

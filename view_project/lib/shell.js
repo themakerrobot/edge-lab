@@ -32,6 +32,7 @@
     "/code":     { ko: "파이썬",     en: "Python" },
     "/train":    { ko: "가르치기",   en: "Train" },
     "/talk":     { ko: "대화",       en: "Talk" },
+    "/works":    { ko: "내 작품",    en: "My work" },
     "/options":  { ko: "설정",       en: "Settings" }
   };
   var CLOSE = { ko: "닫기", en: "Close" };

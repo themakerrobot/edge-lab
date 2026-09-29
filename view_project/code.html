@@ -292,12 +292,14 @@
     const DICT = {
       ko: {
         titleTag: "edge-lab — 파이썬", title: "edge-lab",
+        nDone: "파이썬 프로그램이 끝났어요.", nStopped: "파이썬 프로그램이 멈췄어요.", nShow: "결과 보기",
         eyebrow: "파이썬으로 AI를 불러 봐요 · 인터넷 없이 내 컴퓨터에서",
         langBtn: "EN",
         edHead: "파이썬 코드를 써요", outHead: "결과를 확인해요",
         guide: "도움말", guideOff: "도움말 ✕", example: "예제", save: "저장", load: "불러오기",
         newCode: "새로 만들기",
         askNew: "쓰던 코드를 지우고 새로 시작할까요?",
+        askOpen: "지금 코드를 내려놓고 ‘{n}’ 을(를) 열까요? 저장 안 한 코드는 사라져요.",
         keysTitle: "단축키",
         keysBody: "Ctrl+Enter 실행 · Esc 정지 · Ctrl+/ 주석 · Alt+↑↓ 줄 옮기기 · Shift+Alt+↓ 줄 복제 · Ctrl+D 줄 지우기 · Ctrl+Space 자동완성 · Ctrl+S 저장",
         helpHead: "도움말", helpMore: "기능 이름 · 종류 표 보기", helpSearch: "찾기 (예: 얼굴, 소리)",
@@ -321,11 +323,13 @@
       },
       en: {
         titleTag: "edge-lab — Python", title: "edge-lab",
+        nDone: "Your Python program finished.", nStopped: "Your Python program stopped.", nShow: "See the output",
         eyebrow: "call AI from Python · runs on this computer",
         langBtn: "한",
         edHead: "Write Python code", outHead: "Check the result",
         newCode: "New",
         askNew: "Clear what you wrote and start over?",
+        askOpen: "Put the current code away and open ‘{n}’? Unsaved code will be lost.",
         keysTitle: "Shortcuts",
         keysBody: "Ctrl+Enter run · Esc stop · Ctrl+/ comment · Alt+↑↓ move line · Shift+Alt+↓ duplicate · Ctrl+D delete line · Ctrl+Space autocomplete · Ctrl+S save",
         guide: "Help", guideOff: "Help ✕", example: "Examples", save: "Save", load: "Load",
@@ -458,6 +462,9 @@ show(img, r)                # 결과를 화면에서 보기 (박스가 그려져
           SID = null;
           if (j.data.stopped) { print("\n" + t("stopped") + "\n", "sys"); setState("stStop"); }
           else { print("\n" + endMsg(j.data.exit) + "\n", "sys"); setState("stDone"); }
+          /* 다른 창에 가 있는 동안 끝났으면 알린다 (lib/embed.js) */
+          if (window.EL_WIN && EL_WIN.hidden)
+            EL_WIN.notify(t(j.data.stopped ? "nStopped" : "nDone"), { actions: [{ label: t("nShow"), href: "/code" }] });
         }
       } catch (e) { /* 다음 폴링에서 재시도 */
       } finally { polling = false; }
@@ -501,6 +508,20 @@ show(img, r)                # 결과를 화면에서 보기 (박스가 그려져
     /* 새로 만들기 = 정말 비운다. 첫 줄(import)만 남긴다 — 그게 없으면 아무 것도 안 되고,
        아이가 매번 외워 쓰기에는 부담이라 이 한 줄은 두는 것이 낫다. */
     const EMPTY_CODE = "from themaker import *\n\n";
+
+    /* 내 작품에서 [열기] — /code?open=이름. 지금 코드가 비어 있지 않으면 물어본다 */
+    (async function openFromUrl() {
+      let name = "";
+      try { name = new URLSearchParams(location.search).get("open") || ""; } catch (e) {}
+      if (!name) return;
+      try { history.replaceState(null, "", location.pathname); } catch (e) {}   // 새로고침 때 또 열지 않게
+      const r = await (await fetch(`/pycode/work?name=${encodeURIComponent(name)}`)).json();
+      if (r.result !== "ok") return;
+      const now = cm.getValue().trim();
+      if (now && now !== DEFAULT_CODE.trim() && now !== EMPTY_CODE.trim() && now !== r.data.code.trim() &&
+          LAST_NAME !== name && !confirm(t("askOpen").replace("{n}", name))) return;
+      cm.setValue(r.data.code); LAST_NAME = name; showFile();
+    })();
     document.getElementById("newButton").onclick = () => {
       const now = cm.getValue().trim();
       if (now && now !== EMPTY_CODE.trim() && !confirm(t("askNew"))) return;

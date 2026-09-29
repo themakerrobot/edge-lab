@@ -89,6 +89,11 @@
     /* 카메라·마이크를 쓰는 창이 있으면 — 개인정보 표시라 눈에 띄게 */
     .os-use { background: #fdecea; border-color: #f2b8b0; color: #a3321f; font-weight: 700; }
     .os-use .os-dot { background: #d9412b; }
+    .os-bell { position: relative; padding: 0 9px; }
+    .os-bell b { position: absolute; top: -4px; right: -4px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px;
+                 background: #d9412b; color: #fff; font-size: 10.5px; line-height: 17px; text-align: center; }
+    .os-bell b[hidden] { display: none; }
+    .os-bell.open, .os-bell.open:hover { background: var(--cyan); color: #fff; border-color: var(--cyan); }
     .os-clock { font-family: Menlo, Consolas, ui-monospace, monospace; font-weight: 700; font-size: 13px; padding: 0 4px 0 6px; }
     .os-clock small { font-weight: 400; font-size: 11px; color: var(--ink-2); margin-left: 5px; }
 
@@ -152,6 +157,39 @@
     .win.on { visibility: visible; pointer-events: auto; }
     .win iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: var(--paper); }
 
+    /* ── 알림 — 토스트(잠깐 뜨는 것)와 목록(상단바 종) ── */
+    #osToasts { position: fixed; top: 48px; right: 10px; z-index: 70; display: flex; flex-direction: column; gap: 8px;
+                width: min(340px, calc(100% - 20px)); pointer-events: none; }
+    .toast, .note { display: grid; grid-template-columns: auto 1fr auto; gap: 2px 11px; align-items: start;
+                    padding: 11px 12px 11px 13px; border-radius: 14px; background: rgba(255,253,248,.97);
+                    border: 1px solid rgba(74,63,46,.16); }
+    .toast { box-shadow: 0 14px 34px rgba(44,74,124,.24); pointer-events: auto; cursor: pointer;
+             animation: toastIn .18s ease-out; }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(-6px); } }
+    @media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
+    .toast .i, .note .i { grid-row: 1 / 4; width: 34px; height: 34px; border-radius: 11px; background: var(--cyan); color: #fff;
+                          display: grid; place-items: center; }
+    .toast .i svg, .note .i svg { width: 19px; height: 19px; }
+    .toast b, .note b { font-size: 13.5px; }
+    .toast b small, .note b small { font-weight: 400; color: var(--ink-2); font-size: 12px; margin-left: 6px; }
+    .toast p, .note p { grid-column: 2 / 4; font-size: 13.5px; color: var(--ink); line-height: 1.45; word-break: keep-all; }
+    .toast .x { width: 24px; height: 24px; border-radius: 12px; font-size: 16px; line-height: 1; color: var(--ink-2); }
+    .toast .x:hover { background: rgba(31,95,122,.1); }
+    .acts { grid-column: 2 / 4; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .act { height: 32px; padding: 0 13px; border-radius: 16px; border: 1px solid rgba(31,95,122,.35); background: #fff;
+           font-size: 13px; font-weight: 700; color: var(--cyan-d); }
+    .act:hover { background: var(--cyan); color: #fff; border-color: var(--cyan); }
+    #osNote { position: fixed; top: 46px; right: 10px; z-index: 80; width: min(360px, calc(100% - 20px));
+              max-height: calc(100dvh - 60px); overflow-y: auto; padding: 12px; border-radius: 18px;
+              background: rgba(250,246,238,.97); border: 1px solid rgba(74,63,46,.18); box-shadow: 0 18px 44px rgba(44,74,124,.24); }
+    #osNote[hidden] { display: none; }
+    .note-head { display: flex; align-items: center; margin: 0 2px 8px; }
+    .note-head b { font-size: 14px; }
+    .note-head button { margin-left: auto; font-size: 12.5px; color: var(--ink-2); padding: 4px 8px; border-radius: 8px; }
+    .note-head button:hover { background: rgba(31,95,122,.1); }
+    #noteList { display: flex; flex-direction: column; gap: 8px; }
+    .note-none { font-size: 13px; color: var(--ink-2); padding: 10px 4px 6px; text-align: center; }
+
     /* ── 창이 너무 많을 때 ── */
     #osFull { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; background: rgba(42,38,32,.28); }
     #osFull[hidden] { display: none; }
@@ -190,6 +228,7 @@
     <div class="os-tray">
       <span class="os-chip os-use" id="osCam" hidden></span>
       <span class="os-chip os-use" id="osMic" hidden></span>
+      <button class="os-chip os-bell" id="osBell" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4S6 14 6 9Z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg><b id="osBellN" hidden></b></button>
       <span class="os-chip os-ai wait" id="osAi"><span class="os-dot"></span><span class="lbl"></span></span>
       <a class="os-chip" id="osDocs" href="/docs" target="_blank">API</a>
       <button class="os-chip" id="osLang" type="button"></button>
@@ -212,6 +251,12 @@
     </section>
     <div id="wins"></div>
   </main>
+
+  <div id="osToasts"></div>
+  <div id="osNote" hidden>
+    <div class="note-head"><b id="noteTitle"></b><button id="noteClear" type="button"></button></div>
+    <div id="noteList"></div>
+  </div>
 
   <div id="osFull" hidden>
     <div class="full-card">
@@ -248,7 +293,9 @@
           aiOk: "AI 준비", aiWait: "AI 준비 중", aiBad: "AI 문제",
           cam: "카메라", mic: "마이크", close: "닫기", langBtn: "EN", docs: "API 문서 (선생님용)",
           start: "바탕화면", fullTitle: "창이 너무 많아요",
-          fullText: "{max}개까지 켜 둘 수 있어요. 하나를 닫으면 ‘{app}’ 창을 열게요.", cancel: "그만두기"
+          fullText: "{max}개까지 켜 둘 수 있어요. 하나를 닫으면 ‘{app}’ 창을 열게요.", cancel: "그만두기",
+          notes: "알림", noteNone: "새 알림이 없어요", noteClear: "모두 지우기", now: "방금", ago: "{n}분 전",
+          aiReady: "AI 준비가 끝났어요. 이제 모든 앱을 쓸 수 있어요."
         },
         en: {
           hello: "What shall we do?", helloName: "{n}, what shall we do?",
@@ -260,7 +307,9 @@
           aiOk: "AI ready", aiWait: "AI loading", aiBad: "AI problem",
           cam: "Camera", mic: "Mic", close: "Close", langBtn: "한", docs: "API docs (for teachers)",
           start: "Desktop", fullTitle: "Too many windows",
-          fullText: "Up to {max} can stay open. Close one and ‘{app}’ will open.", cancel: "Cancel"
+          fullText: "Up to {max} can stay open. Close one and ‘{app}’ will open.", cancel: "Cancel",
+          notes: "Notifications", noteNone: "Nothing new", noteClear: "Clear all", now: "just now", ago: "{n} min ago",
+          aiReady: "The AI is ready. Every app can be used now."
         }
       };
       var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -293,8 +342,10 @@
         if (!appOf(p.path)) { window.open(p.href, "_blank"); return; }   // /docs 같은 것 — 창이 아니다
         var w = wins[p.path];
         if (w) {
-          /* ?from=blocks 처럼 넘길 것이 있으면 그 창을 새로 불러온다 (기록을 남기지 않게 replace) */
-          if (p.href !== w.href && p.href !== p.path) {
+          /* ?from=blocks · ?add=… 처럼 넘길 것이 있으면 그 창을 새로 불러온다 (기록을 남기지 않게 replace).
+             같은 주소라도 다시 — 알림의 [블록에 넣기] 를 두 번 누르면 두 번 넣는 것이 맞다.
+             하던 것은 각 페이지의 초안 자동 저장이 지킨다. */
+          if (p.href !== p.path) {
             w.href = p.href;
             try { w.frame.contentWindow.location.replace(p.href); } catch (e) { w.frame.src = p.href; }
           }
@@ -384,6 +435,8 @@
         } else if (d.action === "media") {
           w.media = { camera: !!d.camera, mic: !!d.mic };
           paintUse();
+        } else if (d.action === "notify") {
+          notify(path, d.text, d.actions, !!d.always || active !== path);
         } else if (d.action === "key") {
           onKey(d.key);
         }
@@ -450,7 +503,7 @@
       }
 
       /* AI 준비 상태 — 로딩이 끝날 때까지 자주, 그 뒤로는 가끔 */
-      var aiState = null;
+      var aiState = null, aiWasLoading = false;
       function paintAi() {
         var c = $("osAi"), s = aiState;
         c.className = "os-chip os-ai " + (!s ? "wait" : s.error ? "bad" : s.ready ? "ok" : "wait");
@@ -462,6 +515,8 @@
       }
       function pollAi() {
         fetch("/ready").then(function (r) { return r.json(); }).then(function (r) {
+          if (r.ready && aiWasLoading) notify(null, T("aiReady"), [], true);   // 켜 둔 채 기다린 사람에게
+          aiWasLoading = !r.ready && !r.error;
           aiState = r; paintAi();
           setTimeout(pollAi, r.ready || r.error ? 30000 : 1500);
         }).catch(function () { aiState = null; paintAi(); setTimeout(pollAi, 3000); });
@@ -475,13 +530,99 @@
         $("dDate").textContent = fill(T("date"), { m: n.getMonth() + 1, mo: MONTHS[n.getMonth()], d: n.getDate(), w: T("days")[n.getDay()] });
       }
 
+      /* ─────────────── 알림 ─────────────── */
+      var notes = [], unread = 0;
+      var BELL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4S6 14 6 9Z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>';
+
+      function notify(src, text, actions, toast) {
+        var acts = (Array.isArray(actions) ? actions : []).filter(function (a) {
+          return a && typeof a.href === "string" && a.href.charAt(0) === "/" && a.href.charAt(1) !== "/";   // 이 컴퓨터 안의 화면만
+        }).slice(0, 3).map(function (a) { return { label: String(a.label || "").slice(0, 30), href: a.href }; });
+        var n = { src: src, text: String(text || "").slice(0, 200), actions: acts, at: Date.now() };
+        notes.unshift(n);
+        if (notes.length > 20) notes.pop();
+        unread++;
+        paintBell();
+        if (!$("osNote").hidden) paintNotes();
+        if (toast) showToast(n);
+      }
+      function ago(t) {
+        var m = Math.floor((Date.now() - t) / 60000);
+        return m < 1 ? T("now") : fill(T("ago"), { n: m });
+      }
+      function noteEl(n, cls, onDone) {
+        var a = n.src ? appOf(n.src) : null;
+        var el = document.createElement("div");
+        el.className = cls;
+        el.innerHTML = '<span class="i">' + (a ? icon(a.ic) : BELL) + "</span><b>" + esc(n.src ? appName(n.src) : "edge-lab") +
+          "<small>" + esc(ago(n.at)) + "</small></b>" +
+          (cls === "toast" ? '<button class="x" type="button" title="' + esc(T("close")) + '">×</button>' : "<span></span>") +
+          "<p>" + esc(n.text) + "</p>";
+        if (n.actions.length) {
+          var box = document.createElement("div");
+          box.className = "acts";
+          n.actions.forEach(function (x) {
+            var b = document.createElement("button");
+            b.type = "button"; b.className = "act"; b.textContent = x.label;
+            b.addEventListener("click", function (e) { e.stopPropagation(); onDone(); open(x.href); });
+            box.appendChild(b);
+          });
+          el.appendChild(box);
+        }
+        el.addEventListener("click", function (e) {
+          if (e.target.closest(".x")) { onDone(); return; }
+          onDone();
+          if (n.src) open(n.src);                  // 알림을 누르면 그 창으로
+        });
+        return el;
+      }
+      function showToast(n) {
+        var box = $("osToasts");
+        while (box.children.length >= 3) box.lastChild.remove();
+        var t = null;
+        var el = noteEl(n, "toast", function () { clearTimeout(t); el.remove(); });
+        box.insertBefore(el, box.firstChild);
+        t = setTimeout(function () { el.remove(); }, 8000);
+        el.addEventListener("mouseenter", function () { clearTimeout(t); });
+        el.addEventListener("mouseleave", function () { t = setTimeout(function () { el.remove(); }, 4000); });
+      }
+      function paintBell() {
+        var b = $("osBellN");
+        b.hidden = !unread;
+        b.textContent = unread > 9 ? "9+" : String(unread);
+        $("osBell").title = T("notes");
+      }
+      function paintNotes() {
+        $("noteTitle").textContent = T("notes");
+        $("noteClear").textContent = T("noteClear");
+        var list = $("noteList");
+        list.innerHTML = "";
+        if (!notes.length) { list.innerHTML = '<div class="note-none">' + esc(T("noteNone")) + "</div>"; return; }
+        notes.forEach(function (n) {
+          list.appendChild(noteEl(n, "note", function () { $("osNote").hidden = true; $("osBell").classList.remove("open"); }));
+        });
+      }
+      $("osBell").addEventListener("click", function (e) {
+        e.stopPropagation();
+        var show = $("osNote").hidden;
+        $("osNote").hidden = !show;
+        $("osBell").classList.toggle("open", show);
+        if (show) { unread = 0; paintBell(); paintNotes(); $("osToasts").innerHTML = ""; }
+      });
+      $("noteClear").addEventListener("click", function (e) { e.stopPropagation(); notes = []; paintNotes(); });
+      $("osNote").addEventListener("click", function (e) { e.stopPropagation(); });
+      document.addEventListener("click", function () {
+        if (!$("osNote").hidden) { $("osNote").hidden = true; $("osBell").classList.remove("open"); }
+      });
+
       $("osStart").addEventListener("click", showDesk);
       $("osLang").addEventListener("click", function () {
         LANG = LANG === "ko" ? "en" : "ko";
         try { localStorage.setItem("vapiLang", LANG); } catch (e) {}   // 창들은 storage 이벤트로 따라온다
         document.documentElement.lang = LANG;
         Object.keys(wins).forEach(function (k) { wins[k].frame.title = appName(k); });
-        paintBar(); paintUse(); paintAi(); paintClock(); paintDesk();
+        paintBar(); paintUse(); paintAi(); paintClock(); paintDesk(); paintBell();
+        if (!$("osNote").hidden) paintNotes();
       });
 
       /* ─────────────── 바탕화면 ─────────────── */
@@ -561,7 +702,7 @@
         paintDesk();
       }).catch(function () {});
 
-      paintBar(); paintUse(); paintAi(); paintClock(); paintDesk();
+      paintBar(); paintUse(); paintAi(); paintClock(); paintDesk(); paintBell();
       setInterval(paintClock, 15000);
       pollAi();
       loadDesk();

@@ -54,7 +54,7 @@
     "QR코드 인식": { "g": "text", "ic": "qr", "api": "code/barcode", "params": {}, "tooltip": "이미지에서 바코드를 인식합니다.", "en": "QR code", "tooltip_en": "Reads QR codes in the image." }
   };
 
-  /* 화면 여섯. 런처의 첫 줄이다. 설명은 한 줄로 — 아이가 타일만 보고 고른다. */
+  /* 화면 일곱. 런처의 첫 줄이다. 설명은 한 줄로 — 아이가 타일만 보고 고른다. */
   var APPS = [
     { href: "/try",     ic: "eye",    ko: "체험하기",   en: "Try it",
       ko_d: "AI 16가지를 눌러 봐요",        en_d: "Try 16 kinds of AI" },
@@ -66,6 +66,8 @@
       ko_d: "내가 직접 AI를 가르쳐요",      en_d: "Teach the AI yourself" },
     { href: "/talk",    ic: "talk",   ko: "대화",       en: "Talk",
       ko_d: "말하거나 써서 물어봐요",       en_d: "Ask by voice or text" },
+    { href: "/works",   ic: "folder", ko: "내 작품",    en: "My work",
+      ko_d: "만든 것을 한곳에서 열어요",    en_d: "Open everything you made" },
     { href: "/options", ic: "gear",   ko: "설정",       en: "Settings",
       ko_d: "수업 전 카메라·소리 점검",     en_d: "Check camera and sound" }
   ];

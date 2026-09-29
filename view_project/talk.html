@@ -265,6 +265,7 @@
   const I18N = {
     ko: {
       titleTag:"edge-lab — 대화", title:"edge-lab",
+      nAnswer:"답이 왔어요: ", nShow:"대화 보기",
       eyebrow:"AI와 이야기해요 · 인터넷 없이 내 컴퓨터에서",
       home:"홈", langBtn:"EN", q1:"이야기해요", q2:"사진 · 자료",
       send:"보내기", newTalk:"새 대화",
@@ -308,6 +309,7 @@
     },
     en: {
       titleTag:"edge-lab — Talk", title:"edge-lab",
+      nAnswer:"An answer came: ", nShow:"Open Talk",
       eyebrow:"Talk with the AI · runs on your computer, no internet",
       home:"Home", langBtn:"한", q1:"Let's talk", q2:"Photo · Material",
       send:"Send", newTalk:"New talk",
@@ -803,6 +805,10 @@
       turns.push({ q: text, a: answer });
       if (turns.length > 20) turns.shift();       // 화면 기록이 한없이 늘지 않게
       speak(answer);
+      /* 답을 기다리다 다른 창으로 갔으면 알린다 (lib/embed.js) — 말하는 AI 는 몇 초 걸린다 */
+      if (window.EL_WIN && EL_WIN.hidden)
+        EL_WIN.notify(T("nAnswer") + (answer.length > 60 ? answer.slice(0, 60) + "…" : answer),
+                      { actions: [{ label: T("nShow"), href: "/talk" }] });
     } catch (e) {
       box.innerHTML = esc(T("err") + " (" + (e.message || e) + ")");
     }
