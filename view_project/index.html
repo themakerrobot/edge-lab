@@ -783,6 +783,15 @@
         group.appendChild(o);
       });
       modelSelect.appendChild(group);
+      /* /try?m=custom:… — 가르치기의 [체험하기에서 써 보기]·내 작품에서 들어온 경우.
+         위의 pickFromUrl 은 이 목록이 오기 전에 돌아서 여기서 한 번 더 고른다. */
+      let want = "";
+      try { want = new URLSearchParams(location.search).get("m") || ""; } catch (e) {}
+      if (want.indexOf("custom:") === 0 && SERVICE_LIST[want]) {
+        modelSelect.value = want;
+        guide.textContent = mTip(want);
+        modelSelect.dispatchEvent(new Event('change'));
+      }
     }
 
     const tabButtons = document.querySelectorAll('.tabButton');

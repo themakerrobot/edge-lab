@@ -660,6 +660,13 @@ async def code_page():
         return f.read()
 
 
+@app.get("/works", response_class=HTMLResponse)
+async def works_page():
+    """내 작품 — 블록·파이썬·가르치기 작품·내 AI·자료를 한곳에서 열고 지운다."""
+    with open("view_project/works.html", encoding="utf-8") as f:
+        return f.read()
+
+
 # 어떤 버전으로 돌고 있는지 — 문제 생겼을 때 "언제부터" 를 찾는 근거
 KEY_PACKAGES = ["openvino", "openvino-genai", "onnxruntime", "ultralytics",
                 "mediapipe", "opencv-python", "numpy", "easyocr", "fastapi",

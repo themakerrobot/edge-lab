@@ -470,6 +470,8 @@
   const I18N = {
     ko: {
       titleTag: "edge-lab — 가르치기", title: "edge-lab",
+      nTrained: "학습이 끝났어요.", nAcc: "시험 정답률 {p}%.", nSaveGo: "저장하러 가기",
+      nSaved: "‘{n}’ AI 를 저장했어요. 이제 블록·체험하기에서 쓸 수 있어요.", nToBlocks: "블록에 넣기", nToTry: "체험하기에서 써 보기",
       eyebrow: "내가 직접 AI를 학습시켜요 · 인터넷 없이 내 컴퓨터에서",
       langBtn: "EN",
       modeImage: "사진", modePose: "손모양", modeFace: "표정",
@@ -563,6 +565,8 @@
     },
     en: {
       titleTag: "edge-lab — Train", title: "edge-lab",
+      nTrained: "Training finished.", nAcc: "Test accuracy {p}%.", nSaveGo: "Go save it",
+      nSaved: "Saved the ‘{n}’ AI. You can use it in Blocks and Try it now.", nToBlocks: "Put in Blocks", nToTry: "Try it",
       eyebrow: "train your very own AI · runs on this computer",
       langBtn: "한",
       modeImage: "Photo", modePose: "Hand", modeFace: "Face",
@@ -1628,6 +1632,12 @@
       } catch (e) { /* 기록 실패는 학습에 지장 없다 */ }
 
       bar(1); log(t("logDone"));
+      /* 셸 안이면 알림 — 다른 창에 가 있어도 끝난 줄 안다 (lib/embed.js). 다른 앱에서 쓰려면 저장해야 한다 */
+      if (window.EL_WIN) {
+        const pct = REPORT.total ? Math.round(REPORT.correct / REPORT.total * 100) : null;
+        EL_WIN.notify(t("nTrained") + (pct !== null ? " " + t("nAcc").replace("{p}", pct) : ""),
+                      { actions: [{ label: t("nSaveGo"), href: "/train" }] });
+      }
       openSect(4);
       $("pred").innerHTML = '<div class="hint">' + t("q4ready") + '</div>';
       $("testOnce").disabled = $("testLive").disabled = false;
@@ -1744,6 +1754,13 @@
       if (j.result !== "ok") throw new Error(j.data);
       log(t("savedOk"));
       if (window.vapiStat) vapiStat("model_saved");
+      /* 저장한 AI 를 바로 다른 앱으로 — 보고 있어도 띄운다. 다음 할 일이 이 두 단추다 */
+      if (window.EL_WIN && j.data && j.data.slug) {
+        const key = encodeURIComponent("custom:" + j.data.slug);
+        EL_WIN.notify(t("nSaved").replace("{n}", j.data.title || title), { always: true, actions: [
+          { label: t("nToBlocks"), href: "/blocks?add=" + key },
+          { label: t("nToTry"), href: "/try?m=" + key }] });
+      }
       loadSaved();
     } catch (e) { alert(t("aServer") + cleanErr(e)); }
     $("saveBtn").disabled = false; $("txtSave").textContent = t("save");
@@ -1941,6 +1958,19 @@
     });
   }
   loadProjects();
+
+  /* 내 작품에서 [열기] — /train?project=슬러그. 보관해 둔 가르치기 작품을 불러온다 */
+  (async function projectFromUrl() {
+    let slug = "";
+    try { slug = new URLSearchParams(location.search).get("project") || ""; } catch (e) {}
+    if (!slug) return;
+    try { history.replaceState(null, "", location.pathname); } catch (e) {}   // 새로고침 때 또 열지 않게
+    try {
+      const r = await fetch("/custom/project/" + encodeURIComponent(slug));
+      if (!r.ok || (r.headers.get("content-type") || "").indexOf("zip") < 0) throw new Error(slug);
+      await loadProjectZip(await r.blob());
+    } catch (err) { alert(t("aServer") + cleanErr(err)); }
+  })();
 
   /* ---------------- 임시 저장 (새로고침 복구) ---------------- */
   function b64(f32) {
