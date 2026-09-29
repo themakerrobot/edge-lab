@@ -29,6 +29,7 @@ router = APIRouter()
 
 ROOT = Path(__file__).resolve().parent
 from paths import PYCODE_DIR, BLOCKS_DIR       # noqa: E402
+import trash                                     # noqa: E402  (지운 작품은 휴지통으로)
 WORK_DIR = Path(PYCODE_DIR)                    # 저장한 작품
 RUN_DIR = WORK_DIR / ".run"                    # 실행용 임시 파일
 MAX_OUTPUT = 200_000                           # 세션당 출력 버퍼 상한(문자)
@@ -246,11 +247,10 @@ def blocks_work(name: str = Query(...)):
     return _ok({"name": p.stem, "state": p.read_text(encoding="utf-8")})
 
 
-@router.delete("/blocks/work", tags=["blocks"], summary="블록 작품 지우기")
+@router.delete("/blocks/work", tags=["blocks"], summary="블록 작품 지우기 (휴지통으로)")
 def blocks_delete(name: str = Query(...)):
     p = BLOCK_DIR / (_safe(name) + ".json")
-    if p.exists():
-        p.unlink()
+    trash.put("blocks", _safe(name), [str(p)])      # 바로 없애지 않는다 — 내 작품의 휴지통에서 되살린다
     return _ok({"deleted": _safe(name)})
 
 
@@ -273,9 +273,8 @@ def pycode_work(name: str = Query(...)):
     return _ok({"name": p.stem, "code": p.read_text(encoding="utf-8")})
 
 
-@router.post("/pycode/delete", tags=["pycode"], summary="작품 삭제")
+@router.post("/pycode/delete", tags=["pycode"], summary="작품 삭제 (휴지통으로)")
 def pycode_delete(name: str = Body(..., embed=True)):
     p = WORK_DIR / (_safe(name) + ".py")
-    if p.exists():
-        p.unlink()
+    trash.put("code", _safe(name), [str(p)])        # 바로 없애지 않는다 — 내 작품의 휴지통에서 되살린다
     return _ok({"deleted": _safe(name)})

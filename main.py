@@ -202,7 +202,8 @@ async def lifespan(app: FastAPI):
 DESCRIPTION = """\
 **교실 PC 안에서 도는 AI 서버입니다.**
 
-화면 일곱(홈 · 체험하기 · 블록 · 파이썬 · 가르치기 · 대화 · 설정)이 전부 여기를
+셸(바탕화면)과 앱들(체험하기 · 블록 · 파이썬 · 가르치기 · 대화 · 사진 스튜디오 · 녹음기 · 이야기 극장 ·
+내 작품 · AI 작업 관리자 · 설정)이 전부 여기를
 부릅니다. 블록 코딩과 `themaker` 파이썬 모듈도 같은 API 를 씁니다.
 
 **인터넷에 연결하지 않습니다.** 모델이 전부 이 PC 안에 있고, 웹캠으로 찍은 사진도
@@ -234,8 +235,9 @@ TAGS = [
     {"name": "pycode", "description": "파이썬 — 코드 실행과 중지, 출력·그림 가져오기, 작품 저장"},
     {"name": "chat", "description": "대화 — 주고받는 이야기와, 넣어 둔 자료 안에서 찾아 답하기"},
     {"name": "speech", "description": "소리 — 읽어주기(TTS) · 받아쓰기(STT) · 목소리 고르기"},
+    {"name": "works", "description": "내 작품 — 이름 바꾸기 · 휴지통(지운 작품 되살리기, 30일)"},
     {"name": "stats", "description": "사용 기록 — 수업에서 무엇을 얼마나 썼는지, 다음 반 전 초기화"},
-    {"name": "system", "description": "시스템 — 준비 상태, 장치 배정, 작업폴더 열기·바꾸기, 점검"},
+    {"name": "system", "description": "시스템 — 준비 상태, 장치 배정, AI 작업 관리자, 작업폴더 열기·바꾸기, 점검, 끄기"},
 ]
 
 def _version():
@@ -281,7 +283,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True,
 # "/blocks/" 처럼 빗금까지 적은 것은 페이지 주소 "/blocks" 와 구분하기 위해서다.
 ALLOW_WHILE_LOADING = ("/ready", "/system", "/lib", "/assets", "/fonts", "/blockly",
                        "/docs", "/openapi.json", "/favicon", "/stats", "/custom", "/pycode",
-                       "/blocks/", "/speech", "/chat/db")
+                       "/blocks/", "/speech", "/chat/db", "/works/")
 # 화면 주소 — 로딩 중에도 열린다. 새 화면을 만들면 여기에 더한다(빠지면 켜진 직후 1~2분은
 # 그 앱이 JSON 503 으로 뜬다 — 셸에 새 앱을 넣으며 한 번 겪었다).
 PAGE_PATHS = ("/", "/home", "/try", "/blocks", "/train", "/options", "/code", "/talk",
@@ -340,6 +342,9 @@ stats_routes.install(app)
 
 import code_routes  # noqa: E402  (파이썬 IDE: /pycode/run·stop·output·save ...)
 app.include_router(code_routes.router)
+
+import works_routes  # noqa: E402  (내 작품: 이름 바꾸기 · 휴지통)
+app.include_router(works_routes.router)
 
 import db_routes  # noqa: E402  (자료에서 찾아 답하기: /chat/db, /chat/find, /chat/rag)
 app.include_router(db_routes.router)

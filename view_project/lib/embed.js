@@ -46,6 +46,13 @@
       if (shell) post("open", { href: href });
       else location.href = href;
     },
+    /* 브라우저 밖에서 쓰는 카메라·마이크를 알린다 — 파이썬 프로그램(서버)이 camera()·listen()
+       을 부를 때. 브라우저가 쥔 것은 이 파일이 저절로 알린다. */
+    useMedia: function (kind, on) {
+      if (!shell || (kind !== "camera" && kind !== "mic")) return;
+      extra[kind] = !!on;
+      report();
+    },
     notify: function (text, opts) {
       if (!shell) return;
       opts = opts || {};
@@ -76,11 +83,12 @@
 
   /* ── 카메라·마이크 사용 보고 ── */
   var live = [];
+  var extra = { camera: false, mic: false };      // EL_WIN.useMedia 로 페이지가 알린 것
   function report() {
     var cam = false, mic = false;
     live = live.filter(function (t) { return t.readyState === "live"; });
     live.forEach(function (t) { if (t.kind === "video") cam = true; else if (t.kind === "audio") mic = true; });
-    post("media", { camera: cam, mic: mic });
+    post("media", { camera: cam || extra.camera, mic: mic || extra.mic });
   }
   var md = navigator.mediaDevices;
   if (md && md.getUserMedia) {
