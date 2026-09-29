@@ -39,6 +39,7 @@ router = APIRouter()
 BACKBONE_XML = "models/backbone/mobilenetv2_feat.xml"
 from paths import (USER_DIR, PROJECT_DIR, PYCODE_DIR, REPORTS_PATH,   # noqa: E402
                    TMP_DIR)
+import trash                                                        # noqa: E402  (지운 AI·작품은 휴지통으로)
 IMAGE_DIR = TMP_DIR + os.sep
 IMAGE_DIM = 1280
 POSE_DIM = 63                       # 21점 × (x,y,z)
@@ -661,7 +662,13 @@ async def custom_delete(request: Request, slug: str):
         d = os.path.join(USER_DIR, s)
         if not os.path.isdir(d):
             raise ValueError(f"모델을 찾을 수 없습니다: {slug}")
-        shutil.rmtree(d)
+        title = s
+        try:
+            with open(os.path.join(d, "meta.json"), encoding="utf-8") as f:
+                title = json.load(f).get("title") or s
+        except Exception:
+            pass
+        trash.put("model", title, [d])        # 바로 없애지 않는다 — 내 작품의 휴지통에서 되살린다
         with _lock:
             _heads.pop(s, None)
         return {"slug": s, "deleted": True}
@@ -723,14 +730,16 @@ async def project_get(request: Request, slug: str):
 async def project_delete(request: Request, slug: str):
     def fn():
         s = _slugify(slug)
-        hit = False
-        for ext in (".zip", ".json"):
-            p = os.path.join(PROJECT_DIR, s + ext)
-            if os.path.exists(p):
-                os.remove(p)
-                hit = True
-        if not hit:
+        files = [os.path.join(PROJECT_DIR, s + ext) for ext in (".zip", ".json")]
+        if not any(os.path.exists(p) for p in files):
             raise ValueError(f"작품을 찾을 수 없습니다: {slug}")
+        title = s
+        try:
+            with open(files[1], encoding="utf-8") as f:
+                title = json.load(f).get("title") or s
+        except Exception:
+            pass
+        trash.put("project", title, files)    # 바로 없애지 않는다 — 내 작품의 휴지통에서 되살린다
         return {"slug": s, "deleted": True}
     return _run("project_delete", fn)
 

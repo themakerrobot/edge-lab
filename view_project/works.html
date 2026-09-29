@@ -24,7 +24,11 @@
      * 보려면 앱을 하나씩 열어야 했다. 여기서는 종류를 가리지 않고 새것부터 늘어놓고,
      * [열기] 를 누르면 그 앱이 그 작품을 연 채로 뜬다 (/blocks?open=… 등).
      *
-     * 목록·열기·지우기는 각 앱이 쓰던 API 를 그대로 쓴다. 새 API 는 없다.
+     * 줄마다 ⋯ 메뉴: 이름 바꾸기(/works/rename) · 내보내기(파일로) · 바탕화면에 두기 · 지우기.
+     * 지우기는 휴지통으로 간다(trash.py) — 왼쪽 [휴지통] 에서 되살린다. 30일이 지나면 비워진다.
+     * [가져오기] 는 다른 컴퓨터에서 내보낸 파일(.json 블록 · .py 파이썬 · .zip 가르치기)을 받는다.
+     *
+     * 목록·열기·지우기는 각 앱이 쓰던 API 를 그대로 쓴다.
      */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -50,15 +54,16 @@
     .kind .ic { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
                 background: var(--cyan); color: #fff; flex: 0 0 auto; }
     .kind .ic svg { width: 18px; height: 18px; }
+    .kind.trash .ic { background: #5b6b76; }
     .kind .n { margin-left: auto; font-family: Menlo, Consolas, monospace; font-size: .82rem; color: var(--ink-2); }
     .folder { margin-top: auto; border-top: 1px dashed var(--line); padding-top: 10px; }
     .folder .path { font-family: Menlo, Consolas, monospace; font-size: .8rem; color: var(--ink-2);
                     word-break: break-all; margin: 4px 0 8px; }
 
-    .find { flex: 1 1 auto; max-width: 280px; margin-left: auto; padding: 6px 10px;
+    .find { flex: 1 1 auto; max-width: 260px; margin-left: auto; padding: 6px 10px;
             border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; font-size: .9rem; }
     .rows { display: flex; flex-direction: column; gap: 6px; }
-    .row { display: flex; align-items: center; gap: 12px; padding: 9px 12px; background: #fff;
+    .row { position: relative; display: flex; align-items: center; gap: 12px; padding: 9px 12px; background: #fff;
            border: 1.5px solid var(--line); border-radius: var(--r); }
     .row:hover { border-color: var(--cyan); }
     .row .ic { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center;
@@ -68,9 +73,18 @@
     .row .tx b { display: block; font-size: var(--fs-name, 15px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .row .tx i { display: block; font-style: normal; font-size: .82rem; color: var(--ink-2);
                  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .row .pin { font-size: .75rem; color: var(--cyan-d); background: var(--cyan-bg); border-radius: 8px; padding: 1px 7px; margin-left: 6px; font-weight: 400; }
     .row .acts { display: flex; gap: 6px; flex: 0 0 auto; flex-wrap: wrap; justify-content: flex-end; }
+    .more { width: 34px; height: 30px; padding: 0; font-size: 1.1rem; line-height: 1; }
+    .menu { position: absolute; right: 10px; top: calc(100% - 4px); z-index: 20; min-width: 170px; background: #fff;
+            border: 1.5px solid var(--line-d); border-radius: 10px; box-shadow: 0 10px 26px rgba(44,74,124,.2); padding: 4px; }
+    .menu button { display: block; width: 100%; text-align: left; padding: 8px 10px; border: 0; background: none; border-radius: 7px;
+                   font-size: .9rem; cursor: pointer; }
+    .menu button:hover { background: var(--cyan-bg); }
+    .menu button.danger { color: var(--pen-red); }
     .empty { color: var(--ink-2); font-size: .92rem; padding: 18px 4px; text-align: center; }
     .empty img { display: block; height: 70px; margin: 0 auto 8px; }
+    .note { font-size: .85rem; color: var(--cyan-d); min-height: 1.2em; }
 
     @media (max-width: 1023px) {
       .panel.kinds { flex: 0 0 auto; }
@@ -121,8 +135,11 @@
           <div class="panel-head">
             <span class="q"><span class="qnum">2</span><span class="qtext" id="txtQ2">내가 만든 것</span></span>
             <input class="find" id="find" type="search" autocomplete="off">
+            <button class="btn sm" id="importBtn" type="button"></button>
+            <input type="file" id="importIn" accept=".json,.py,.zip" multiple hidden>
           </div>
           <div class="panel-body">
+            <div class="note" id="note"></div>
             <div class="rows" id="rows"></div>
           </div>
         </div>
@@ -132,6 +149,7 @@
   </div>
 
   <script src="/lib/icons.js"></script>
+  <script src="/lib/jszip.min.js"></script>
   <script>
     (function () {
       "use strict";
@@ -144,23 +162,33 @@
           titleTag: "edge-lab — 내 작품", langBtn: "EN",
           q1: "무엇을 볼까요", q2: "내가 만든 것", find: "이름으로 찾기",
           folder: "작업 폴더", openFolder: "폴더 열기",
-          all: "모두", blocks: "블록", code: "파이썬", model: "내가 가르친 AI", project: "가르치기 작품", db: "대화 자료",
+          all: "모두", blocks: "블록", code: "파이썬", model: "내가 가르친 AI", project: "가르치기 작품", db: "대화 자료", trash: "휴지통",
           open: "열기", toBlocks: "블록에 넣기", toTry: "체험하기", toTalk: "대화에서 쓰기", del: "지우기",
-          askDel: "‘{n}’ 을(를) 지울까요? 되돌릴 수 없어요.", delFail: "지우지 못했어요: ",
+          rename: "이름 바꾸기", export: "파일로 내보내기", pin: "바탕화면에 두기", unpin: "바탕화면에서 빼기", pinned: "바탕화면",
+          restore: "되살리기", emptyTrash: "휴지통 비우기", askEmpty: "휴지통을 비울까요? 되돌릴 수 없어요.",
+          askDel: "‘{n}’ 을(를) 휴지통으로 옮길까요? 30일 안에는 되살릴 수 있어요.", delFail: "지우지 못했어요: ",
+          renameAsk: "새 이름", renameFail: "이름을 바꾸지 못했어요: ", restored: "‘{n}’ 을(를) 되살렸어요.",
+          trashed: "‘{n}’ 을(를) 휴지통으로 옮겼어요.", trashEmpty: "휴지통이 비어 있어요.", trashNote: "지운 작품은 30일 동안 여기 있어요.",
+          imp: "가져오기", impOk: "{n}개를 가져왔어요.", impFail: "가져오지 못한 파일: ", impBad: "모르는 파일이에요",
           none: "아직 만든 것이 없어요. 블록·파이썬·가르치기에서 만들고 저장하면 여기 모여요.",
           noneKind: "이 종류는 아직 없어요.", noHit: "‘{q}’ 와(과) 맞는 것이 없어요.",
-          pieces: "조각 {n}개", classes: "{n}가지"
+          pieces: "조각 {n}개", noExport: "이 종류는 파일로 내보낼 수 없어요."
         },
         en: {
           titleTag: "edge-lab — My work", langBtn: "한",
           q1: "What to show", q2: "Things I made", find: "Find by name",
           folder: "Work folder", openFolder: "Open folder",
-          all: "All", blocks: "Blocks", code: "Python", model: "AI I trained", project: "Train projects", db: "Talk notes",
+          all: "All", blocks: "Blocks", code: "Python", model: "AI I trained", project: "Train projects", db: "Talk notes", trash: "Trash",
           open: "Open", toBlocks: "Put in Blocks", toTry: "Try it", toTalk: "Use in Talk", del: "Delete",
-          askDel: "Delete ‘{n}’? This cannot be undone.", delFail: "Could not delete: ",
+          rename: "Rename", export: "Export to a file", pin: "Put on desktop", unpin: "Take off desktop", pinned: "desktop",
+          restore: "Restore", emptyTrash: "Empty trash", askEmpty: "Empty the trash? This cannot be undone.",
+          askDel: "Move ‘{n}’ to the trash? You can restore it within 30 days.", delFail: "Could not delete: ",
+          renameAsk: "New name", renameFail: "Could not rename: ", restored: "Restored ‘{n}’.",
+          trashed: "Moved ‘{n}’ to the trash.", trashEmpty: "The trash is empty.", trashNote: "Deleted work stays here for 30 days.",
+          imp: "Import", impOk: "Imported {n}.", impFail: "Could not import: ", impBad: "unknown file",
           none: "Nothing yet. Save something in Blocks, Python or Train and it will show up here.",
           noneKind: "Nothing of this kind yet.", noHit: "Nothing matches ‘{q}’.",
-          pieces: "{n} pieces", classes: "{n} kinds"
+          pieces: "{n} pieces", noExport: "This kind cannot be exported."
         }
       };
       function t(k) { return I18N[LANG][k] !== undefined ? I18N[LANG][k] : I18N.ko[k]; }
@@ -170,34 +198,70 @@
         return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
       function go(href) { if (window.EL_WIN) EL_WIN.open(href); else location.href = href; }
       function enc(s) { return encodeURIComponent(s); }
+      function json(r) { return r.json(); }
+      function note(s) { $("note").textContent = s || ""; }
+      function download(blob, name) {
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(blob); a.download = name;
+        document.body.appendChild(a); a.click(); a.remove();
+      }
 
-      /* 종류마다: 목록 주소 · 한 줄로 바꾸기 · 단추 · 지우기 */
+      /* 종류마다: 목록 주소 · 한 줄로 바꾸기 · 단추 · 지우기 · 내보내기 */
       var KINDS = [
         { key: "blocks", ic: "blocks", url: "/blocks/works",
-          row: function (w) { return { name: w.name, at: w.mtime * 1000 }; },
+          row: function (w) { return { name: w.name, id: w.name, at: w.mtime * 1000 }; },
+          open: function (r) { return "/blocks?open=" + enc(r.name); },
           acts: function (r) { return [["open", "/blocks?open=" + enc(r.name), true]]; },
-          del: function (r) { return fetch("/blocks/work?name=" + enc(r.name), { method: "DELETE" }); } },
+          del: function (r) { return fetch("/blocks/work?name=" + enc(r.name), { method: "DELETE" }); },
+          exp: function (r) {
+            return fetch("/blocks/work?name=" + enc(r.name)).then(json).then(function (j) {
+              if (j.result !== "ok") throw new Error(j.data);
+              return [new Blob([j.data.state], { type: "application/json" }), r.name + ".blocks.json"];
+            });
+          } },
         { key: "code", ic: "code", url: "/pycode/works",
-          row: function (w) { return { name: w.name, at: w.mtime * 1000 }; },
+          row: function (w) { return { name: w.name, id: w.name, at: w.mtime * 1000 }; },
+          open: function (r) { return "/code?open=" + enc(r.name); },
           acts: function (r) { return [["open", "/code?open=" + enc(r.name), true]]; },
           del: function (r) { return fetch("/pycode/delete", { method: "POST", headers: { "Content-Type": "application/json" },
-                                                                 body: JSON.stringify({ name: r.name }) }); } },
+                                                                 body: JSON.stringify({ name: r.name }) }); },
+          exp: function (r) {
+            return fetch("/pycode/work?name=" + enc(r.name)).then(json).then(function (j) {
+              if (j.result !== "ok") throw new Error(j.data);
+              return [new Blob([j.data.code], { type: "text/x-python" }), r.name + ".py"];
+            });
+          } },
         { key: "model", ic: "custom", url: "/custom/models",
-          row: function (m) { return { name: m.title || m.slug, slug: m.slug, at: when(m.created),
+          row: function (m) { return { name: m.title || m.slug, id: m.slug, slug: m.slug, at: when(m.created),
                                        sub: (m.labels || []).join(" · ") }; },
+          open: function (r) { return "/try?m=" + enc("custom:" + r.slug); },
           acts: function (r) { var k = enc("custom:" + r.slug);
                                return [["toBlocks", "/blocks?add=" + k, true], ["toTry", "/try?m=" + k]]; },
-          del: function (r) { return fetch("/custom/models/" + enc(r.slug), { method: "DELETE" }); } },
+          del: function (r) { return fetch("/custom/models/" + enc(r.slug), { method: "DELETE" }); },
+          exp: function (r) {
+            return fetch("/custom/models/" + enc(r.slug) + "/file").then(function (x) {
+              if (!x.ok) throw new Error(x.status); return x.blob();
+            }).then(function (b) { return [b, r.name + ".model.zip"]; });
+          } },
         { key: "project", ic: "train", url: "/custom/projects",
-          row: function (m) { return { name: m.title || m.slug, slug: m.slug, at: when(m.saved) }; },
+          row: function (m) { return { name: m.title || m.slug, id: m.slug, slug: m.slug, at: when(m.saved) }; },
+          open: function (r) { return "/train?project=" + enc(r.slug); },
           acts: function (r) { return [["open", "/train?project=" + enc(r.slug), true]]; },
-          del: function (r) { return fetch("/custom/project/" + enc(r.slug), { method: "DELETE" }); } },
+          del: function (r) { return fetch("/custom/project/" + enc(r.slug), { method: "DELETE" }); },
+          exp: function (r) {
+            return fetch("/custom/project/" + enc(r.slug)).then(function (x) {
+              if (!x.ok) throw new Error(x.status); return x.blob();
+            }).then(function (b) { return [b, r.name + ".project.zip"]; });
+          } },
         { key: "db", ic: "book", url: "/chat/db",
-          row: function (m) { return { name: m.title || m.slug, slug: m.slug, at: when(m.saved),
+          row: function (m) { return { name: m.title || m.slug, id: m.slug, slug: m.slug, at: when(m.saved),
                                        sub: m.count ? t("pieces").replace("{n}", m.count) : "" }; },
+          open: function () { return "/talk"; },
           acts: function () { return [["toTalk", "/talk", true]]; },
           del: function (r) { return fetch("/chat/db/" + enc(r.slug), { method: "DELETE" }); } }
       ];
+      var KIND = {};
+      KINDS.forEach(function (k) { KIND[k.key] = k; });
       function when(s) {                     /* "2026-09-28 10:00:00" → 시각. 못 읽으면 0 */
         var d = s ? new Date(String(s).replace(" ", "T")) : null;
         return d && !isNaN(d) ? d.getTime() : 0;
@@ -210,16 +274,40 @@
         return LANG === "en" ? (d.getMonth() + 1) + "/" + d.getDate() : (d.getMonth() + 1) + "월 " + d.getDate() + "일";
       }
 
-      var ROWS = [], SHOW = "all";
+      /* 바탕화면에 둔 작품 — 셸(os.html)이 같은 값을 읽어 바탕화면에 그린다 */
+      var PIN_KEY = "el-desk-pins";
+      function pins() { try { return JSON.parse(localStorage.getItem(PIN_KEY) || "[]"); } catch (e) { return []; } }
+      function pinKey(r) { return r.kind.key + ":" + r.id; }
+      function isPinned(r) { return pins().some(function (p) { return p.key === pinKey(r); }); }
+      function togglePin(r) {
+        var list = pins(), k = pinKey(r);
+        if (list.some(function (p) { return p.key === k; })) list = list.filter(function (p) { return p.key !== k; });
+        else list.push({ key: k, kind: r.kind.key, name: r.name, ic: r.kind.ic, href: r.kind.open(r) });
+        try { localStorage.setItem(PIN_KEY, JSON.stringify(list.slice(-12))); } catch (e) {}
+      }
 
+      var ROWS = [], TRASH = [], SHOW = "all";
+
+      var loadedKinds = {};
       function load() {
+        loadedKinds = {};
         return Promise.all(KINDS.map(function (k) {
-          return fetch(k.url).then(function (r) { return r.json(); }).then(function (j) {
-            var list = j && j.result === "ok" && Array.isArray(j.data) ? j.data : [];
-            return list.map(function (x) { var r = k.row(x); r.kind = k; return r; });
+          return fetch(k.url).then(json).then(function (j) {
+            var good = j && j.result === "ok" && Array.isArray(j.data);
+            if (good) loadedKinds[k.key] = true;
+            return (good ? j.data : []).map(function (x) { var r = k.row(x); r.kind = k; return r; });
           }).catch(function () { return []; });
-        })).then(function (parts) {
+        }).concat([fetch("/works/trash").then(json).then(function (j) {
+          return j && j.result === "ok" && Array.isArray(j.data) ? j.data : [];
+        }).catch(function () { return []; })])).then(function (parts) {
+          TRASH = parts.pop();
           ROWS = [].concat.apply([], parts).sort(function (a, b) { return b.at - a.at; });   // 새것부터
+          /* 바탕화면에 둔 것 중 사라진 것은 뺀다 (다른 곳에서 지웠을 때).
+             목록을 제대로 받아 온 종류만 — 잠깐 못 받았다고 아이콘을 지우면 안 된다 */
+          var alive = {};
+          ROWS.forEach(function (r) { alive[pinKey(r)] = true; });
+          var p = pins(), q = p.filter(function (x) { return alive[x.key] || !loadedKinds[x.kind]; });
+          if (q.length !== p.length) try { localStorage.setItem(PIN_KEY, JSON.stringify(q)); } catch (e) {}
           paintKinds(); paintRows();
         });
       }
@@ -228,24 +316,35 @@
         var box = $("kinds");
         box.querySelectorAll(".kind").forEach(function (x) { x.remove(); });
         var folder = box.querySelector(".folder");
-        [{ key: "all", ic: "home" }].concat(KINDS).forEach(function (k) {
-          var n = k.key === "all" ? ROWS.length : ROWS.filter(function (r) { return r.kind.key === k.key; }).length;
+        [{ key: "all", ic: "home" }].concat(KINDS).concat([{ key: "trash", ic: "folder" }]).forEach(function (k) {
+          var n = k.key === "all" ? ROWS.length : k.key === "trash" ? TRASH.length
+                : ROWS.filter(function (r) { return r.kind.key === k.key; }).length;
           var b = document.createElement("button");
           b.type = "button";
-          b.className = "kind" + (SHOW === k.key ? " on" : "");
+          b.className = "kind" + (SHOW === k.key ? " on" : "") + (k.key === "trash" ? " trash" : "");
           b.innerHTML = '<span class="ic">' + icon(k.ic) + "</span><span>" + esc(t(k.key)) + '</span><span class="n">' + n + "</span>";
-          b.addEventListener("click", function () { SHOW = k.key; paintKinds(); paintRows(); });
+          b.addEventListener("click", function () { SHOW = k.key; note(""); paintKinds(); paintRows(); });
           box.insertBefore(b, folder);
         });
       }
 
+      function btn(label, cls, fn) {
+        var b = document.createElement("button");
+        b.type = "button"; b.className = "btn sm" + (cls ? " " + cls : ""); b.textContent = label;
+        b.addEventListener("click", function (e) { e.stopPropagation(); fn(); });
+        return b;
+      }
+      function closeMenus() { document.querySelectorAll(".menu").forEach(function (m) { m.remove(); }); }
+      document.addEventListener("click", closeMenus);
+
       function paintRows() {
         var q = $("find").value.trim().toLowerCase();
+        var box = $("rows");
+        box.innerHTML = "";
+        if (SHOW === "trash") return paintTrash(box, q);
         var list = ROWS.filter(function (r) {
           return (SHOW === "all" || r.kind.key === SHOW) && (!q || r.name.toLowerCase().indexOf(q) >= 0);
         });
-        var box = $("rows");
-        box.innerHTML = "";
         if (!list.length) {
           var msg = q ? t("noHit").replace("{q}", q) : ROWS.length ? t("noneKind") : t("none");
           box.innerHTML = '<div class="empty">' + (ROWS.length ? "" : '<img src="/assets/pibo-idea.png" alt="">') + esc(msg) + "</div>";
@@ -257,34 +356,141 @@
           var sub = [t(r.kind.key), r.sub, dateText(r.at)].filter(Boolean).join(" · ");
           el.innerHTML = '<span class="ic">' + icon(r.kind.ic) + '</span><span class="tx"><b></b><i></i></span><span class="acts"></span>';
           el.querySelector("b").textContent = r.name;
+          if (isPinned(r)) el.querySelector("b").insertAdjacentHTML("beforeend", '<span class="pin">' + esc(t("pinned")) + "</span>");
           el.querySelector("i").textContent = sub;
           var acts = el.querySelector(".acts");
-          r.kind.acts(r).forEach(function (a) {
-            var b = document.createElement("button");
-            b.type = "button";
-            b.className = "btn sm" + (a[2] ? " primary" : "");
-            b.textContent = t(a[0]);
-            b.addEventListener("click", function () { go(a[1]); });
-            acts.appendChild(b);
+          r.kind.acts(r).forEach(function (a) { acts.appendChild(btn(t(a[0]), a[2] ? "primary" : "", function () { go(a[1]); })); });
+          var more = btn("⋯", "more", function () {
+            var open = el.querySelector(".menu");
+            closeMenus();
+            if (open) return;
+            var m = document.createElement("div");
+            m.className = "menu";
+            var item = function (label, fn, cls) {
+              var b = document.createElement("button");
+              b.type = "button"; b.textContent = label; if (cls) b.className = cls;
+              b.addEventListener("click", function (e) { e.stopPropagation(); closeMenus(); fn(); });
+              m.appendChild(b);
+            };
+            item(t("rename"), function () { rename(r); });
+            if (r.kind.exp) item(t("export"), function () { exportRow(r); });
+            item(isPinned(r) ? t("unpin") : t("pin"), function () { togglePin(r); paintRows(); });
+            item(t("del"), function () { del(r); }, "danger");
+            el.appendChild(m);
           });
-          var d = document.createElement("button");
-          d.type = "button"; d.className = "btn sm danger"; d.textContent = t("del");
-          d.addEventListener("click", function () {
-            if (!confirm(t("askDel").replace("{n}", r.name))) return;
-            r.kind.del(r).then(function (res) { return res.json(); }).then(function (j) {
-              if (j && j.result && j.result !== "ok") throw new Error(j.data);
-              load();
-            }).catch(function (e) { alert(t("delFail") + (e.message || e)); });
-          });
-          acts.appendChild(d);
+          more.title = "⋯";
+          acts.appendChild(more);
           box.appendChild(el);
         });
       }
 
+      function paintTrash(box, q) {
+        var head = document.createElement("div");
+        head.className = "row"; head.style.borderStyle = "dashed";
+        head.innerHTML = '<span class="tx"><i></i></span><span class="acts"></span>';
+        head.querySelector("i").textContent = TRASH.length ? t("trashNote") : t("trashEmpty");
+        if (TRASH.length) head.querySelector(".acts").appendChild(btn(t("emptyTrash"), "danger", function () {
+          if (!confirm(t("askEmpty"))) return;
+          fetch("/works/trash", { method: "DELETE" }).then(load);
+        }));
+        box.appendChild(head);
+        TRASH.filter(function (x) { return !q || String(x.label).toLowerCase().indexOf(q) >= 0; }).forEach(function (x) {
+          var k = KIND[x.kind] || { ic: "folder", key: x.kind };
+          var el = document.createElement("div");
+          el.className = "row";
+          el.innerHTML = '<span class="ic">' + icon(k.ic) + '</span><span class="tx"><b></b><i></i></span><span class="acts"></span>';
+          el.querySelector("b").textContent = x.label || x.id;
+          el.querySelector("i").textContent = [t(k.key), dateText(x.at * 1000)].filter(Boolean).join(" · ");
+          el.querySelector(".acts").appendChild(btn(t("restore"), "primary", function () {
+            fetch("/works/trash/restore", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: x.id }) })
+              .then(json).then(function (j) {
+                if (!j || j.result !== "ok") throw new Error(j && j.data);
+                note(t("restored").replace("{n}", x.label));
+                return load();
+              }).catch(function (e) { alert((e && e.message) || e); });
+          }));
+          box.appendChild(el);
+        });
+      }
+
+      function rename(r) {
+        var to = prompt(t("renameAsk"), r.name);
+        if (to === null || !to.trim() || to.trim() === r.name) return;
+        fetch("/works/rename", { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ kind: r.kind.key, id: r.id, to: to.trim() }) }).then(json).then(function (j) {
+          if (!j || j.result !== "ok") throw new Error(j && j.data);
+          /* 바탕화면에 둔 것이면 거기 이름·주소도 바꾼다 */
+          var list = pins(), k = pinKey(r);
+          var nid = (r.kind.key === "blocks" || r.kind.key === "code") ? (j.data.name || to.trim()) : r.id;
+          list.forEach(function (p) {
+            if (p.key !== k) return;
+            var nr = { kind: r.kind, id: nid, name: j.data.name || to.trim(), slug: r.slug };
+            p.key = r.kind.key + ":" + nid; p.name = nr.name; p.href = r.kind.open(nr);
+          });
+          try { localStorage.setItem(PIN_KEY, JSON.stringify(list)); } catch (e) {}
+          return load();
+        }).catch(function (e) { alert(t("renameFail") + ((e && e.message) || e)); });
+      }
+      function exportRow(r) {
+        if (!r.kind.exp) { alert(t("noExport")); return; }
+        r.kind.exp(r).then(function (x) { download(x[0], x[1]); }).catch(function (e) { alert((e && e.message) || e); });
+      }
+      function del(r) {
+        if (!confirm(t("askDel").replace("{n}", r.name))) return;
+        r.kind.del(r).then(json).then(function (j) {
+          if (j && j.result && j.result !== "ok") throw new Error(j.data);
+          note(t("trashed").replace("{n}", r.name));
+          load();
+        }).catch(function (e) { alert(t("delFail") + (e.message || e)); });
+      }
+
+      /* ── 가져오기 — 내보낸 파일을 다른 컴퓨터에서 받는다 ── */
+      function base(name) { return name.replace(/\.(blocks\.json|json|py|model\.zip|project\.zip|zip)$/i, ""); }
+      function importOne(f) {
+        var nm = base(f.name);
+        if (/\.json$/i.test(f.name)) {
+          return f.text().then(function (txt) {
+            JSON.parse(txt);                                     // 블록 작품인지만 본다
+            return fetch("/blocks/save", { method: "POST", headers: { "Content-Type": "application/json" },
+                                           body: JSON.stringify({ name: nm, state: txt }) });
+          });
+        }
+        if (/\.py$/i.test(f.name)) {
+          return f.text().then(function (txt) {
+            return fetch("/pycode/save", { method: "POST", headers: { "Content-Type": "application/json" },
+                                           body: JSON.stringify({ name: nm, code: txt }) });
+          });
+        }
+        if (/\.zip$/i.test(f.name)) {
+          return JSZip.loadAsync(f).then(function (z) {
+            var fd = new FormData();
+            fd.append("uploadFile", f, f.name);
+            fd.append("title", nm);
+            /* 가르치기 작품은 project.json 을, 내 AI 는 model.json 을 담고 있다 */
+            return fetch(z.file("project.json") ? "/custom/project/save" : "/custom/upload", { method: "POST", body: fd });
+          });
+        }
+        return Promise.reject(new Error(t("impBad")));
+      }
+      $("importBtn").addEventListener("click", function () { $("importIn").click(); });
+      $("importIn").addEventListener("change", function () {
+        var files = [].slice.call(this.files); this.value = "";
+        var okN = 0, bad = [];
+        Promise.all(files.map(function (f) {
+          return importOne(f).then(json).then(function (j) {
+            if (!j || j.result !== "ok") throw new Error(j && j.data);
+            okN++;
+          }).catch(function () { bad.push(f.name); });
+        })).then(function () {
+          note(t("impOk").replace("{n}", okN) + (bad.length ? " " + t("impFail") + bad.join(", ") : ""));
+          SHOW = "all"; load();
+        });
+      });
+
       function paintText() {
         document.title = t("titleTag");
         $("txtQ1").textContent = t("q1"); $("txtQ2").textContent = t("q2");
-        $("find").placeholder = t("find");
+        $("find").placeholder = t("find"); $("importBtn").textContent = t("imp");
         $("txtFolder").textContent = t("folder"); $("txtOpenFolder").textContent = t("openFolder");
         $("langButton").textContent = t("langBtn");
         if (window.navRepaint) window.navRepaint();
@@ -298,7 +504,7 @@
         try { localStorage.setItem("vapiLang", LANG === "ko" ? "en" : "ko"); } catch (e) {}
         location.reload();
       });
-      fetch("/system/workdir").then(function (r) { return r.json(); }).then(function (j) {
+      fetch("/system/workdir").then(json).then(function (j) {
         if (j && j.data) $("workPath").textContent = j.data.work_dir || j.data.path || "—";
       }).catch(function () {});
 

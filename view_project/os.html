@@ -123,6 +123,17 @@
     .d-ic.play .g { background: #d07a3e; box-shadow: 0 6px 14px rgba(150,80,30,.22); }
     .d-ic b { font-size: var(--fs-name); }
     .d-ic i { font-style: normal; font-size: 12.5px; color: var(--ink-2); line-height: 1.35; }
+    .d-file .g { background: #fff; color: var(--ink-2); border-radius: 8px 20px 8px 8px; border: 1.5px solid rgba(74,63,46,.22);
+                 box-shadow: 0 4px 10px rgba(44,74,124,.12); position: relative; }
+    .d-file .g .ext { font-family: Menlo, Consolas, monospace; font-size: 11px; font-weight: 700; }
+    .d-file .g .badge { position: absolute; right: -8px; bottom: -6px; width: 28px; height: 28px; border-radius: 9px; background: var(--cyan);
+                        color: #fff; display: grid; place-items: center; border: 2px solid #fff; }
+    .d-file .g .badge svg { width: 16px; height: 16px; }
+    .d-file { position: relative; }
+    .d-file b { font-weight: 400; font-size: 14px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .d-file .unpin { position: absolute; top: 4px; right: 10px; width: 22px; height: 22px; border-radius: 11px; display: none;
+                     background: #fff; border: 1px solid rgba(74,63,46,.2); font-size: 14px; line-height: 1; color: var(--ink-2); }
+    .d-file:hover .unpin { display: block; }
     .d-ic.run .g { outline: 3px solid rgba(31,95,122,.35); outline-offset: 3px; }
     .d-side { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
     .w { background: rgba(255,255,255,.74); backdrop-filter: blur(8px); border: 1px solid rgba(74,63,46,.12);
@@ -664,6 +675,30 @@
           box.appendChild(b);
         });
 
+        /* 바탕화면에 둔 작품 (내 작품의 ⋯ → 바탕화면에 두기). 종이 모양에 어느 앱 것인지 딱지 */
+        var PINS = [];
+        try { PINS = JSON.parse(localStorage.getItem("el-desk-pins") || "[]"); } catch (e) {}
+        PINS.forEach(function (p) {
+          if (!p || typeof p.href !== "string" || p.href.charAt(0) !== "/") return;
+          var f = document.createElement("a");
+          f.href = p.href;
+          f.className = "d-ic d-file";
+          f.title = p.name;
+          f.innerHTML = '<span class="g"><span class="ext">' + esc(({ blocks: "BLK", code: "PY", model: "AI", project: "PRJ", db: "TXT" })[p.kind] || "") +
+                        '</span><span class="badge">' + icon(p.ic || "folder") + '</span></span><b></b><button class="unpin" type="button" title="×">×</button>';
+          f.querySelector("b").textContent = p.name;
+          f.addEventListener("click", function (e) {
+            e.preventDefault();
+            if (e.target.closest(".unpin")) {
+              var left = PINS.filter(function (x) { return x.key !== p.key; });
+              try { localStorage.setItem("el-desk-pins", JSON.stringify(left)); } catch (err) {}
+              paintDesk(); return;
+            }
+            open(p.href);
+          });
+          box.appendChild(f);
+        });
+
         var mine = $("wMine");
         var h = "<h3>" + icon("train") + esc(T("mine")) + "<em>" + esc(T("mineGo")) + "</em></h3>";
         if (models && models.length) {
@@ -706,6 +741,9 @@
         }
         $("wPc").innerHTML = pc;
       }
+
+      /* 내 작품 창에서 바탕화면에 두거나 빼면 바로 다시 그린다 (같은 출처라 storage 이벤트가 온다) */
+      window.addEventListener("storage", function (e) { if (e.key === "el-desk-pins") paintDesk(); });
 
       /* 바탕화면에 올 때마다 새로 묻는다 — 방금 가르친 AI 가 바로 보이게 */
       function loadDesk() {

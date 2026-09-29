@@ -27,6 +27,7 @@ from fastapi import APIRouter, File, Form, Query, Request, UploadFile
 
 import hub
 from paths import DB_DIR
+import trash                 # 지운 자료는 휴지통으로
 
 router = APIRouter()
 
@@ -259,7 +260,13 @@ async def db_delete(request: Request, slug: str):
     p = _path_of(slug)
     if not p:
         return _fail("자료를 찾을 수 없어요: %s" % slug)
-    os.remove(p)
+    title = slug
+    try:
+        with open(p, encoding="utf-8") as f:
+            title = json.load(f).get("title") or slug
+    except Exception:
+        pass
+    trash.put("db", title, [p])               # 바로 없애지 않는다 — 내 작품의 휴지통에서 되살린다
     return _ok({"slug": os.path.splitext(os.path.basename(p))[0], "deleted": True})
 
 

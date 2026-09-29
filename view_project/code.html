@@ -430,6 +430,13 @@ show(img, r)                # 결과를 화면에서 보기 (박스가 그려져
         if (j.result !== "ok") { print(j.data + "\n", "err"); setState("stReady"); return; }
         SID = j.data.sid;
         pollTimer = setInterval(poll, 300);
+        /* 프로그램이 camera()·listen() 을 쓰면 도는 동안 셸 상단바에 "사용 중" 을 띄운다 (lib/embed.js).
+           카메라는 서버의 파이썬이 잡으므로 브라우저는 모른다 — 코드에 그 말이 있는지로 본다. */
+        if (window.EL_WIN) {
+          const src = cm.getValue().replace(/#.*$/gm, "");
+          EL_WIN.useMedia("camera", /\bcamera\s*\(/.test(src));
+          EL_WIN.useMedia("mic", /\blisten\s*\(/.test(src));
+        }
       } catch (e) { print(String(e) + "\n", "err"); setState("stReady"); }
     }
 
@@ -460,6 +467,7 @@ show(img, r)                # 결과를 화면에서 보기 (박스가 그려져
         if (j.data.done) {
           clearInterval(pollTimer); pollTimer = null;
           SID = null;
+          if (window.EL_WIN) { EL_WIN.useMedia("camera", false); EL_WIN.useMedia("mic", false); }
           if (j.data.stopped) { print("\n" + t("stopped") + "\n", "sys"); setState("stStop"); }
           else { print("\n" + endMsg(j.data.exit) + "\n", "sys"); setState("stDone"); }
           /* 다른 창에 가 있는 동안 끝났으면 알린다 (lib/embed.js) */
@@ -491,6 +499,7 @@ show(img, r)                # 결과를 화면에서 보기 (박스가 그려져
       setTimeout(() => {
         if (SID === sid) {
           clearInterval(pollTimer); pollTimer = null; SID = null;
+          if (window.EL_WIN) { EL_WIN.useMedia("camera", false); EL_WIN.useMedia("mic", false); }
           print("\n" + t("stopped") + "\n", "sys"); setState("stStop");
         }
       }, 3000);
