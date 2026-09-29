@@ -608,11 +608,18 @@ def code_barcode(path):
 
 
 # ---------------------------------------------------------------- view
-# "/" 는 런처다 — 큰 아이콘으로 앱과 AI 를 늘어놓고 골라 여는 첫 화면.
-# 전에는 "/" 가 곧 체험하기였고 AI 16종이 그 안 드롭다운에 숨어 있었다.
-# 체험하기는 "/try" 로 옮겼다. 런처 타일은 "/try?m=<모델키>" 로 들어간다.
+# "/" 는 셸이다 — 상단바와 바탕화면이 늘 떠 있고, 앱은 그 안의 창(iframe)으로 열린다.
+# 뒤로 간 창도 살아 있어서 블록을 짜다 카메라를 보고 와도 그대로다 (view_project/os.html).
+# 창 안의 페이지는 lib/embed.js 가 제목줄을 숨기고 숨김/보임을 받는다.
+# 옛 런처(페이지째 바뀌는 방식)는 "/home" 에 남겨 둔다 — 창 없이 쓰는 길.
 @app.get("/", response_class=HTMLResponse)
 async def home():
+    with open("view_project/os.html", encoding="utf-8") as f:
+        return f.read()
+
+
+@app.get("/home", response_class=HTMLResponse)
+async def home_launcher():
     with open("view_project/home.html", encoding="utf-8") as f:
         return f.read()
 
