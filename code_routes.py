@@ -145,6 +145,19 @@ def pycode_stop(sid: str = Body(..., embed=True)):
     return _ok({"stopped": True})
 
 
+def stop_all():
+    """돌고 있는 파이썬 프로그램을 모두 멈춘다 — 셸의 [끄기] 가 부른다.
+    서버만 꺼지고 아이 프로그램이 카메라를 쥔 채 남지 않게."""
+    with _lock:
+        sids = [k for k, s in _sessions.items() if s["proc"].poll() is None]
+    for k in sids:
+        try:
+            pycode_stop(k)
+        except Exception:
+            pass
+    return len(sids)
+
+
 @router.get("/pycode/output", tags=["pycode"], summary="출력 가져오기 (폴링)")
 def pycode_output(sid: str = Query(...), pos: int = Query(0)):
     with _lock:
