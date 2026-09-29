@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>edge-lab — AI 작업 관리자</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+  <link href="/fonts/fonts.css" rel="stylesheet">
+  <script>
+    try { if (localStorage.getItem("vapi-hc") === "1")
+            document.documentElement.classList.add("hc"); } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="/lib/tokens.css">
+  <script src="/lib/embed.js"></script>
+  <link rel="expect" href="#el-built" blocking="render">
+  <style>
+    /* AI 작업 관리자 — 어떤 AI 가 어느 장치(NPU · GPU · CPU)에 올라와 있고, 이번에 켠 뒤
+     * 몇 번 · 언제 불렸는지 (/system/tasks).
+     *
+     * 넣지 않은 것 두 가지와 그 이유:
+     *   NPU·GPU 사용률(%) — 드라이버마다 성능 카운터가 있기도 없기도 해서 빈칸이 고장으로
+     *                        읽힌다 (lib/sysbar.js 와 같은 이유). 대신 "마지막 사용" 을 준다.
+     *   모델별 메모리 · 내리기 — OpenVINO 가 모델마다 나눠 알려 주지 않고, 수업 중에 내렸다
+     *                        다시 올리면 수십 초가 걸린다. 이 프로그램 전체가 쓰는 양만 보인다.
+     * 보이는 동안 3초마다 새로 읽고, 가려지면 멈춘다.
+     */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; color: var(--ink); background: var(--paper);
+           font-family: "Gowun Dodum", "Apple SD Gothic Neo", system-ui, sans-serif; line-height: 1.5;
+           padding: var(--sp-2, 8px); gap: var(--sp-2, 8px); }
+    .cards { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 10px; }
+    .card { background: #fff; border: 1.5px solid var(--line); border-radius: 12px; padding: 10px 14px; min-width: 0; }
+    .card h4 { font-size: .82rem; color: var(--ink-2); font-weight: 400; display: flex; align-items: center; gap: 6px; }
+    .card .v { font-family: Menlo, Consolas, monospace; font-size: 1.45rem; font-weight: 700; margin-top: 2px; }
+    .card .v small { font-size: .82rem; color: var(--ink-2); font-weight: 400; }
+    .card p { font-size: .8rem; color: var(--ink-2); }
+    .card.npu .v { color: #2f6a3a; } .card.gpu .v { color: #1f5f7a; } .card.cpu .v { color: #8a5a14; }
+    .card.off { opacity: .45; }
+    .bar { height: 8px; border-radius: 4px; background: #ece5d6; overflow: hidden; margin-top: 6px; }
+    .bar i { display: block; height: 100%; background: linear-gradient(90deg, #1f5f7a, #3d8fb0); }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #c9bda6; display: inline-block; }
+    .dot.on { background: #3a9a55; } .dot.busy { background: #e0a030; box-shadow: 0 0 0 3px rgba(224,160,48,.25); }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; background: #fff; border: 1.5px solid var(--line); border-radius: 12px; overflow: hidden; font-size: .92rem; }
+    th { text-align: left; font-weight: 400; font-size: .8rem; color: var(--ink-2); padding: 8px 12px; background: #faf6ee; border-bottom: 1px solid var(--line); }
+    td { padding: 8px 12px; border-bottom: 1px dashed rgba(74,63,46,.14); vertical-align: middle; }
+    tr:last-child td { border-bottom: 0; }
+    td b { display: block; } td i { font-style: normal; font-size: .8rem; color: var(--ink-2); }
+    .pill { display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 12px; font-family: Menlo, Consolas, monospace; font-size: .78rem; font-weight: 700; }
+    .pill.NPU { background: #e6f2e8; color: #2f6a3a; } .pill.GPU { background: #e3eef3; color: #1f5f7a; } .pill.CPU { background: #f7ecd9; color: #8a5a14; }
+    .st { display: inline-flex; align-items: center; gap: 6px; font-size: .85rem; }
+    .num { font-family: Menlo, Consolas, monospace; font-size: .85rem; }
+    .note { font-size: .8rem; color: var(--ink-2); }
+    @media (max-width: 1023px) { .cards { grid-template-columns: 1fr 1fr; } .panel, .panel-body { overflow: visible; } }
+    @media (max-width: 639px) { th:nth-child(4), td:nth-child(4) { display: none; } }
+  </style>
+  <link rel="stylesheet" href="/lib/ui.css">
+  <link rel="stylesheet" href="/lib/shell.css">
+</head>
+<body data-density="explore">
+  <div class="titlebar">
+    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요"><img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b></a>
+    <span class="tb-sep"></span><span class="tb-app" id="txtTitle"></span>
+    <div class="h-tools"><button id="langButton" title="한국어 / English">EN</button></div>
+  </div>
+  <div class="shell-body"><div class="workbench"><div class="main-container">
+    <div class="panel" style="flex:1 1 auto">
+      <div class="panel-head"><span class="q"><span class="qnum">1</span><span class="qtext" id="txtQ">이 컴퓨터에서 도는 AI</span></span>
+        <span class="note" id="upd" style="margin-left:auto"></span></div>
+      <div class="panel-body">
+        <div class="cards" id="cards"></div>
+        <table><thead><tr><th id="thM"></th><th id="thD"></th><th id="thS"></th><th id="thL"></th><th id="thN"></th></tr></thead><tbody id="rows"></tbody></table>
+        <div class="note" id="foot"></div>
+      </div>
+    </div>
+  </div></div></div>
+
+  <script>
+  (function () {
+    "use strict";
+    var LANG = "ko";
+    try { LANG = localStorage.getItem("vapiLang") === "en" ? "en" : "ko"; } catch (e) {}
+    document.documentElement.lang = LANG;
+    var I18N = {
+      ko: { title: "edge-lab — AI 작업 관리자", lang: "EN", q: "이 컴퓨터에서 도는 AI",
+            mem: "메모리", memSub: "이 프로그램 {p} GB · 컴퓨터 전체 {u} / {t} GB", models: "{n}개 모델", idle: "쉬는 중", none: "없음",
+            cpuSub: "지금 사용률", thM: "AI", thD: "장치", thS: "상태", thL: "마지막 사용", thN: "부른 횟수",
+            up: "올라와 있음", lazy: "처음 쓸 때 올라와요", down: "아직 안 올라옴", busy: "방금 씀",
+            now: "방금", sec: "{n}초 전", min: "{n}분 전", hr: "{n}시간 전", never: "—", upd: "3초마다 새로",
+            foot: "NPU·GPU 사용률과 모델별 메모리는 보이지 않아요 — 드라이버가 알려 주지 않는 PC 가 있어서예요. 한 번 올라온 AI 는 끄기 전까지 메모리에 남아요.",
+            loading: "AI 를 준비하는 중이에요 — 끝나면 채워져요.",
+            M: { vlm: ["말하는 AI · Gemma 3 4B", "대화 · 사진 보고 답하기 · 이야기 이어 쓰기"],
+                 object: ["사물 찾기 · YOLO11m", "사물 · 사람 자세 · 영역"],
+                 face: ["얼굴 분석", "찾기 · 나이·성별 · 감정 · 마스크"],
+                 gan: ["사진 바꾸기", "배경 지우기 · 화질 4배 · 깊이 지도"],
+                 code: ["글자 · QR 읽기", "EasyOCR · QR"],
+                 hand: ["손 · 얼굴선 (MediaPipe)", "손동작 · 얼굴 거리 · 가르치기 골격"],
+                 backbone: ["가르치기 특징 추출", "내가 가르친 AI 의 눈"],
+                 stt: ["말 → 글자 (Whisper)", "대화 마이크 · 녹음기"],
+                 tts: ["글자 → 말 (Supertonic)", "목소리 · 이야기 극장"],
+                 embed: ["자료 찾기", "대화의 내 자료에서 답하기"],
+                 user: ["가져온 모델", "models 폴더에 넣은 YOLO"] } },
+      en: { title: "edge-lab — AI task manager", lang: "한", q: "AI running on this computer",
+            mem: "Memory", memSub: "This program {p} GB · whole PC {u} / {t} GB", models: "{n} models", idle: "idle", none: "none",
+            cpuSub: "usage now", thM: "AI", thD: "Device", thS: "State", thL: "Last used", thN: "Calls",
+            up: "Loaded", lazy: "Loads on first use", down: "Not loaded yet", busy: "Just used",
+            now: "just now", sec: "{n}s ago", min: "{n} min ago", hr: "{n} h ago", never: "—", upd: "refreshes every 3 s",
+            foot: "NPU/GPU usage and per-model memory are not shown — some drivers do not report them. A loaded AI stays in memory until shutdown.",
+            loading: "The AI is getting ready — this fills in when it is done.",
+            M: { vlm: ["Talking AI · Gemma 3 4B", "Talk · ask about photos · story writing"],
+                 object: ["Object detection · YOLO11m", "Objects · human pose · segments"],
+                 face: ["Face analysis", "Find · age/gender · emotion · mask"],
+                 gan: ["Photo effects", "Background · 4x upscale · depth"],
+                 code: ["Text · QR", "EasyOCR · QR"],
+                 hand: ["Hands · face mesh (MediaPipe)", "Gestures · face distance · training skeletons"],
+                 backbone: ["Training features", "The eyes of your own AI"],
+                 stt: ["Speech → text (Whisper)", "Talk mic · Recorder"],
+                 tts: ["Text → speech (Supertonic)", "Voices · Story theater"],
+                 embed: ["Notes search", "Answers from your notes in Talk"],
+                 user: ["Imported models", "YOLO files in the models folder"] } }
+    };
+    function t(k) { return I18N[LANG][k] !== undefined ? I18N[LANG][k] : I18N.ko[k]; }
+    function $(id) { return document.getElementById(id); }
+    function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+    function ago(last, now) {
+      if (!last) return t("never");
+      var s = Math.max(0, Math.round(now - last));
+      return s < 5 ? t("now") : s < 60 ? t("sec").replace("{n}", s) : s < 3600 ? t("min").replace("{n}", Math.round(s / 60)) : t("hr").replace("{n}", Math.round(s / 3600));
+    }
+
+    function paint(d) {
+      var M = t("M"), now = d.now;
+      var devs = (d.devices || []).map(function (x) { return String(x).split(".")[0].toUpperCase(); });
+      var mem = d.mem || {};
+      var h = '<div class="card"><h4>' + esc(t("mem")) + '</h4><div class="v">' + (mem.used_gb != null ? mem.used_gb : "—") +
+              "<small> / " + (mem.total_gb != null ? mem.total_gb : "—") + ' GB</small></div><div class="bar"><i style="width:' + (mem.percent || 0) + '%"></i></div><p>' +
+              esc(t("memSub").replace("{p}", d.proc_mem_gb != null ? d.proc_mem_gb : "—").replace("{u}", mem.used_gb != null ? mem.used_gb : "—").replace("{t}", mem.total_gb != null ? mem.total_gb : "—")) + "</p></div>";
+      ["NPU", "GPU", "CPU"].forEach(function (dv) {
+        var on = d.models.filter(function (m) { return m.loaded && m.device === dv; });
+        var recent = on.some(function (m) { return m.last && now - m.last < 5; });
+        var has = !devs.length || devs.indexOf(dv) >= 0;
+        h += '<div class="card ' + dv.toLowerCase() + (has ? "" : " off") + '"><h4><span class="dot ' + (recent ? "busy" : on.length ? "on" : "") + '"></span>' + dv + "</h4>" +
+             '<div class="v">' + (dv === "CPU" && d.cpu != null ? d.cpu + "<small> %</small>" : on.length + "<small> " + esc(t("models").replace("{n}", "").trim()) + "</small>") + "</div>" +
+             "<p>" + esc(!has ? t("none") : dv === "CPU" ? t("cpuSub") + " · " + t("models").replace("{n}", on.length) : on.length ? on.map(function (m) { return M[m.key][0].split(" · ")[0]; }).join(" · ") : t("idle")) + "</p></div>";
+      });
+      $("cards").innerHTML = h;
+      $("rows").innerHTML = d.models.map(function (m) {
+        var name = M[m.key] || [m.key, ""];
+        var recent = m.last && now - m.last < 5;
+        var st = m.loaded ? (recent ? ["busy", t("busy")] : ["on", t("up")]) : ["", m.lazy ? t("lazy") : t("down")];
+        return "<tr><td><b>" + esc(name[0]) + "</b><i>" + esc(name[1]) + '</i></td><td><span class="pill ' + esc(m.device) + '">' + esc(m.device) + "</span></td>" +
+               '<td><span class="st"><span class="dot ' + st[0] + '"></span>' + esc(st[1]) + '</span></td><td class="num">' + esc(ago(m.last, now)) +
+               '</td><td class="num">' + m.calls + "</td></tr>";
+      }).join("");
+      $("foot").textContent = d.ready === false ? t("loading") : t("foot");
+    }
+
+    var timer = null;
+    function load() {
+      fetch("/system/tasks").then(function (r) { return r.json(); }).then(function (j) {
+        if (j && j.result === "ok") paint(j.data);
+      }).catch(function () {});
+    }
+    function startPoll() { if (!timer) { load(); timer = setInterval(load, 3000); } }
+    function stopPoll() { clearInterval(timer); timer = null; }
+    if (window.EL_WIN) { EL_WIN.onHide(stopPoll); EL_WIN.onShow(startPoll); }
+    document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") stopPoll(); else startPoll(); });
+
+    document.title = t("title"); $("langButton").textContent = t("lang"); $("txtQ").textContent = t("q"); $("upd").textContent = t("upd");
+    ["thM", "thD", "thS", "thL", "thN"].forEach(function (k) { $(k).textContent = t(k); });
+    $("langButton").addEventListener("click", function () {
+      try { localStorage.setItem("vapiLang", LANG === "ko" ? "en" : "ko"); } catch (e) {}
+      location.reload();
+    });
+    startPoll();
+  })();
+  </script>
+  <script src="/lib/shell.js"></script>
+  <script src="/lib/usage.js" data-page="tasks"></script>
+  <i id="el-built" hidden></i>
+</body>
+</html>

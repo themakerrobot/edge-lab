@@ -39,6 +39,41 @@ def _cpu_percent():
         return None
 
 
+def _proc_mem_gb():
+    """이 프로그램(서버 프로세스)이 쓰는 메모리 — AI 작업 관리자가 보여 준다.
+    모델마다 따로 재는 방법은 없다(OpenVINO 가 나눠 알려 주지 않는다). 모델이 모두
+    이 프로세스 안에 올라오므로 이 값이 "AI 가 쓰는 메모리" 에 가장 가깝다.
+    내장 GPU 가 쓰는 공유 메모리는 여기 안 잡힐 수 있다."""
+    try:
+        if os.name == "nt":
+            import ctypes
+            from ctypes import wintypes
+
+            class _PMC(ctypes.Structure):
+                _fields_ = [("cb", wintypes.DWORD), ("PageFaultCount", wintypes.DWORD),
+                            ("PeakWorkingSetSize", ctypes.c_size_t), ("WorkingSetSize", ctypes.c_size_t),
+                            ("QuotaPeakPagedPoolUsage", ctypes.c_size_t), ("QuotaPagedPoolUsage", ctypes.c_size_t),
+                            ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t), ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
+                            ("PagefileUsage", ctypes.c_size_t), ("PeakPagefileUsage", ctypes.c_size_t)]
+            k32 = ctypes.windll.kernel32
+            k32.GetCurrentProcess.restype = wintypes.HANDLE      # 가짜 핸들(-1)이 64비트로 넘어가게
+            fn = k32.K32GetProcessMemoryInfo
+            fn.argtypes = [wintypes.HANDLE, ctypes.POINTER(_PMC), wintypes.DWORD]
+            fn.restype = wintypes.BOOL
+            c = _PMC()
+            c.cb = ctypes.sizeof(_PMC)
+            if not fn(k32.GetCurrentProcess(), ctypes.byref(c), c.cb):
+                return None
+            return round(c.WorkingSetSize / 2**30, 2)
+        with open("/proc/self/status") as f:
+            for line in f:
+                if line.startswith("VmRSS:"):
+                    return round(int(line.split()[1]) * 1024 / 2**30, 2)
+    except Exception:
+        return None
+    return None
+
+
 def _mem_info():
     """메모리 사용률 — psutil 없이. 윈도우는 ctypes, 리눅스는 /proc/meminfo."""
     try:

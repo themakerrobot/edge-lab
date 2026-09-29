@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>edge-lab — 이야기 극장</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+  <link href="/fonts/fonts.css" rel="stylesheet">
+  <script>
+    try { if (localStorage.getItem("vapi-hc") === "1")
+            document.documentElement.classList.add("hc"); } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="/lib/tokens.css">
+  <script src="/lib/embed.js"></script>
+  <link rel="expect" href="#el-built" blocking="render">
+  <style>
+    /* 이야기 극장 — 인물을 정하고 인물마다 목소리를 골라 대본을 읽힌다.
+     *
+     * 목소리는 이 컴퓨터의 TTS(/speech/tts)가 만든다 — story-play 가 브라우저에서 받아 쓰던
+     * 것과 같은 계열의 모델이 여기서는 이미 서버에 있다. [AI 가 이어 쓰기] 는 말하는 AI
+     * (/chat/ask)에게 다음 한 줄을 부탁한다. 대본은 이 컴퓨터에 초안으로 남고(story-draft),
+     * 파일로 저장·열기도 된다.
+     */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; color: var(--ink); background: var(--paper);
+           font-family: "Gowun Dodum", "Apple SD Gothic Neo", system-ui, sans-serif; line-height: 1.5;
+           padding: var(--sp-2, 8px); gap: var(--sp-2, 8px); }
+    button, input, select { font-family: inherit; color: var(--ink); }
+    .btn { border: 1.5px solid var(--line-d); background: #fff; font-weight: 600; padding: 7px 13px; border-radius: var(--r); cursor: pointer; font-size: .92rem; }
+    .btn.primary { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; }
+    .btn.sm { padding: 4px 9px; font-size: .84rem; }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+    .panel.cast { flex: 0 0 320px; } .panel.script { flex: 1 1 auto; }
+    .who { display: grid; grid-template-columns: 14px 1fr 96px auto; gap: 6px; align-items: center; }
+    .who .dot { width: 14px; height: 14px; border-radius: 50%; }
+    .who input, .who select, .line input, .line select { height: 36px; border: 1.5px solid var(--line); border-radius: var(--r); padding: 0 8px; background: #fff; font-size: .92rem; min-width: 0; }
+    .lines { display: flex; flex-direction: column; gap: 6px; }
+    .line { display: grid; grid-template-columns: 26px 110px 1fr auto; gap: 6px; align-items: center; padding: 4px; border-radius: 10px; border: 1.5px solid transparent; }
+    .line .n { font-family: Menlo, Consolas, monospace; font-size: .8rem; color: var(--ink-2); text-align: right; }
+    .line.now { border-color: var(--cyan); background: var(--cyan-bg); }
+    .line select { font-weight: 700; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .hint { font-size: .85rem; color: var(--ink-2); }
+    .x { width: 30px; height: 30px; border-radius: 15px; border: 0; background: none; cursor: pointer; color: var(--ink-2); font-size: 16px; }
+    .x:hover { background: #fdecea; color: #a3321f; }
+    @media (max-width: 1023px) { .panel.cast { flex: 0 0 auto; } .panel, .panel-body { overflow: visible; } }
+    @media (max-width: 639px) { .line { grid-template-columns: 22px 90px 1fr auto; } }
+  </style>
+  <link rel="stylesheet" href="/lib/ui.css">
+  <link rel="stylesheet" href="/lib/shell.css">
+</head>
+<body data-density="explore">
+  <div class="titlebar">
+    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요"><img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b></a>
+    <span class="tb-sep"></span><span class="tb-app" id="txtTitle"></span>
+    <div class="h-tools"><button id="langButton" title="한국어 / English">EN</button></div>
+  </div>
+  <div class="shell-body"><div class="workbench"><div class="main-container">
+
+    <div class="panel cast">
+      <div class="panel-head"><span class="q"><span class="qnum">1</span><span class="qtext" id="txtQ1">등장인물</span></span>
+        <button class="btn sm" id="addWho" type="button" style="margin-left:auto"></button></div>
+      <div class="panel-body">
+        <div class="hint" id="castHint"></div>
+        <div id="cast" style="display:flex;flex-direction:column;gap:6px"></div>
+        <div class="row" style="margin-top:auto">
+          <button class="btn sm" id="newBtn" type="button"></button>
+          <button class="btn sm" id="sampleBtn" type="button"></button>
+          <button class="btn sm" id="saveBtn" type="button"></button>
+          <button class="btn sm" id="openBtn" type="button"></button>
+          <input type="file" id="fileIn" accept=".json,application/json" hidden>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel script">
+      <div class="panel-head"><span class="q"><span class="qnum">2</span><span class="qtext" id="txtQ2">대본</span></span>
+        <span class="row" style="margin-left:auto">
+          <button class="btn" id="aiBtn" type="button"></button>
+          <button class="btn primary" id="playBtn" type="button"></button>
+        </span></div>
+      <div class="panel-body">
+        <div class="lines" id="lines"></div>
+        <div class="row"><button class="btn sm" id="addLine" type="button"></button><span class="hint" id="msg"></span></div>
+      </div>
+    </div>
+
+  </div></div></div>
+
+  <script>
+  (function () {
+    "use strict";
+    var LANG = "ko";
+    try { LANG = localStorage.getItem("vapiLang") === "en" ? "en" : "ko"; } catch (e) {}
+    document.documentElement.lang = LANG;
+    var I18N = {
+      ko: { title: "edge-lab — 이야기 극장", lang: "EN", q1: "등장인물", q2: "대본",
+            castHint: "인물마다 목소리를 골라요. 이름을 바꾸면 대본에도 바뀌어요.", addWho: "+ 인물", whoPh: "이름",
+            addLine: "+ 한 줄", linePh: "대사를 써요", play: "▶ 공연하기", stop: "■ 멈추기", ai: "AI 가 이어 쓰기",
+            aiBusy: "AI 가 생각하는 중…", aiFail: "이어 쓰지 못했어요: ", notReady: "AI 가 아직 준비 중이에요.",
+            ttsFail: "목소리를 만들지 못했어요: ", newS: "새 이야기", sample: "예시", save: "파일로 저장", open: "파일 열기",
+            askNew: "지금 대본을 지우고 새로 시작할까요?", badFile: "이야기 파일이 아니에요.", empty: "대사를 한 줄 이상 써 주세요.",
+            narr: "해설", done: "공연 끝!", nDone: "공연이 끝났어요.", nShow: "극장 보기",
+            aiPrompt: "다음은 어린이가 쓰는 짧은 연극 대본이다. 등장인물: {cast}.\n대본:\n{lines}\n\n이어지는 다음 대사 한 줄만 '이름: 대사' 형식으로 써라. 등장인물 이름 중 하나를 쓰고, 20자 안팎으로 짧게.",
+            sampleData: { cast: [["해설", "F1"], ["토끼", "F2"], ["거북이", "M1"]],
+              lines: [[0, "옛날 옛적에, 발이 빠른 토끼와 느린 거북이가 살았어요."], [1, "거북아, 나랑 달리기 시합 할래?"], [2, "좋아. 천천히 가도 끝까지 갈 거야."],
+                      [0, "토끼는 한참 앞서 가다가 나무 밑에서 낮잠을 잤어요."], [2, "영차, 영차. 조금만 더!"], [1, "어? 거북이가 벌써 도착했잖아!"]] } },
+      en: { title: "edge-lab — Story theater", lang: "한", q1: "Characters", q2: "Script",
+            castHint: "Pick a voice for each character. Renaming updates the script too.", addWho: "+ Character", whoPh: "Name",
+            addLine: "+ Line", linePh: "Write a line", play: "▶ Perform", stop: "■ Stop", ai: "AI writes the next line",
+            aiBusy: "The AI is thinking…", aiFail: "Could not continue: ", notReady: "The AI is still loading.",
+            ttsFail: "Could not make the voice: ", newS: "New story", sample: "Example", save: "Save file", open: "Open file",
+            askNew: "Clear this script and start a new one?", badFile: "That is not a story file.", empty: "Write at least one line.",
+            narr: "Narrator", done: "The end!", nDone: "The show is over.", nShow: "Open the theater",
+            aiPrompt: "This is a short play script written by a child. Characters: {cast}.\nScript:\n{lines}\n\nWrite only the next line as 'Name: line'. Use one of the character names and keep it under 12 words.",
+            sampleData: { cast: [["Narrator", "F1"], ["Rabbit", "F2"], ["Turtle", "M1"]],
+              lines: [[0, "Once upon a time, a fast rabbit and a slow turtle lived in the woods."], [1, "Turtle, want to race me?"], [2, "Sure. I may be slow, but I will finish."],
+                      [0, "The rabbit ran far ahead, then took a nap under a tree."], [2, "Step by step. Almost there!"], [1, "What? The turtle already won!"]] } }
+    };
+    function t(k) { return I18N[LANG][k] !== undefined ? I18N[LANG][k] : I18N.ko[k]; }
+    function $(id) { return document.getElementById(id); }
+    function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+    var COLORS = ["#5b6b76", "#d07a3e", "#3a8a5c", "#7a5bb0", "#1f5f7a", "#b4451c"];
+    var KEY = "story-draft";
+    var VOICES = ["F1"];
+
+    var S = null;                  // { cast:[{name, voice}], lines:[{who, text}] }
+    function fromSample() {
+      var d = t("sampleData");
+      return { cast: d.cast.map(function (c) { return { name: c[0], voice: c[1] }; }),
+               lines: d.lines.map(function (l) { return { who: l[0], text: l[1] }; }) };
+    }
+    function blank() { return { cast: [{ name: t("narr"), voice: "F1" }], lines: [{ who: 0, text: "" }] }; }
+    try { S = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) {}
+    if (!S || !Array.isArray(S.cast) || !Array.isArray(S.lines)) S = fromSample();
+    function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+
+    function voiceOpts(sel) {
+      return VOICES.map(function (v) { return '<option' + (v === sel ? " selected" : "") + ">" + esc(v) + "</option>"; }).join("");
+    }
+    function paintCast() {
+      $("cast").innerHTML = S.cast.map(function (c, i) {
+        return '<div class="who"><span class="dot" style="background:' + COLORS[i % COLORS.length] + '"></span>' +
+          '<input data-cn="' + i + '" value="' + esc(c.name) + '" placeholder="' + esc(t("whoPh")) + '" maxlength="12">' +
+          '<select data-cv="' + i + '">' + voiceOpts(c.voice) + "</select>" +
+          (S.cast.length > 1 ? '<button class="x" type="button" data-cx="' + i + '">×</button>' : "<span></span>") + "</div>";
+      }).join("");
+    }
+    function paintLines() {
+      $("lines").innerHTML = S.lines.map(function (l, i) {
+        return '<div class="line" data-li="' + i + '"><span class="n">' + (i + 1) + "</span>" +
+          '<select data-lw="' + i + '" style="color:' + COLORS[l.who % COLORS.length] + '">' + S.cast.map(function (c, k) {
+            return '<option value="' + k + '"' + (k === l.who ? " selected" : "") + ">" + esc(c.name) + "</option>";
+          }).join("") + "</select>" +
+          '<input data-lt="' + i + '" value="' + esc(l.text) + '" placeholder="' + esc(t("linePh")) + '" maxlength="200">' +
+          '<button class="x" type="button" data-lx="' + i + '">×</button></div>';
+      }).join("");
+    }
+    function paintAll() { paintCast(); paintLines(); }
+
+    function paintText() {
+      document.title = t("title"); $("langButton").textContent = t("lang");
+      $("txtQ1").textContent = t("q1"); $("txtQ2").textContent = t("q2");
+      $("castHint").textContent = t("castHint"); $("addWho").textContent = t("addWho"); $("addLine").textContent = t("addLine");
+      $("aiBtn").textContent = t("ai"); $("playBtn").textContent = playing ? t("stop") : t("play");
+      $("newBtn").textContent = t("newS"); $("sampleBtn").textContent = t("sample"); $("saveBtn").textContent = t("save"); $("openBtn").textContent = t("open");
+      if (window.navRepaint) window.navRepaint();
+    }
+
+    /* ── 고치기 ── */
+    document.addEventListener("input", function (e) {
+      var el = e.target, a;
+      if ((a = el.getAttribute("data-cn")) !== null) { S.cast[+a].name = el.value; paintLines(); }
+      else if ((a = el.getAttribute("data-lt")) !== null) S.lines[+a].text = el.value;
+      else return;
+      save();
+    });
+    document.addEventListener("change", function (e) {
+      var el = e.target, a;
+      if ((a = el.getAttribute("data-cv")) !== null) S.cast[+a].voice = el.value;
+      else if ((a = el.getAttribute("data-lw")) !== null) { S.lines[+a].who = +el.value; paintLines(); }
+      else return;
+      save();
+    });
+    document.addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b) return;
+      var a;
+      if ((a = b.getAttribute("data-cx")) !== null) {
+        var k = +a;
+        S.cast.splice(k, 1);
+        S.lines.forEach(function (l) { if (l.who === k) l.who = 0; else if (l.who > k) l.who--; });
+        paintAll(); save();
+      } else if ((a = b.getAttribute("data-lx")) !== null) {
+        S.lines.splice(+a, 1); if (!S.lines.length) S.lines.push({ who: 0, text: "" });
+        paintLines(); save();
+      }
+    });
+    $("addWho").addEventListener("click", function () {
+      if (S.cast.length >= 6) return;
+      S.cast.push({ name: "", voice: VOICES[S.cast.length % VOICES.length] });
+      paintAll(); save();
+      var ins = $("cast").querySelectorAll("input"); ins[ins.length - 1].focus();
+    });
+    $("addLine").addEventListener("click", function () {
+      var last = S.lines[S.lines.length - 1];
+      S.lines.push({ who: last ? (last.who + 1) % S.cast.length : 0, text: "" });
+      paintLines(); save();
+      var ins = $("lines").querySelectorAll("input"); ins[ins.length - 1].focus();
+    });
+    $("newBtn").addEventListener("click", function () { if (!confirm(t("askNew"))) return; S = blank(); paintAll(); save(); });
+    $("sampleBtn").addEventListener("click", function () { if (!confirm(t("askNew"))) return; S = fromSample(); fixVoices(); paintAll(); save(); });
+    $("saveBtn").addEventListener("click", function () {
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([JSON.stringify({ kind: "edge-lab-story", cast: S.cast, lines: S.lines }, null, 2)], { type: "application/json" }));
+      a.download = ((S.cast[1] && S.cast[1].name) || "story") + ".story.json";
+      document.body.appendChild(a); a.click(); a.remove();
+    });
+    $("openBtn").addEventListener("click", function () { $("fileIn").click(); });
+    $("fileIn").addEventListener("change", function () {
+      var f = this.files[0]; this.value = "";
+      if (!f) return;
+      f.text().then(function (txt) {
+        var d = JSON.parse(txt);
+        if (!d || !Array.isArray(d.cast) || !Array.isArray(d.lines)) throw new Error();
+        S = { cast: d.cast.map(function (c) { return { name: String(c.name || ""), voice: String(c.voice || "F1") }; }),
+              lines: d.lines.map(function (l) { return { who: +l.who || 0, text: String(l.text || "") }; }) };
+        fixVoices(); paintAll(); save();
+      }).catch(function () { alert(t("badFile")); });
+    });
+
+    /* ── 공연 — 한 줄씩 읽는다. 다음 줄은 읽는 동안 미리 만든다 ── */
+    var playing = false, audio = null;
+    function tts(line) {
+      var c = S.cast[line.who] || S.cast[0];
+      return fetch("/speech/tts", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: line.text, voice: c.voice, lang: LANG }) }).then(function (r) {
+          if (r.status === 503) throw new Error(t("notReady"));
+          if (!r.ok || (r.headers.get("Content-Type") || "").indexOf("audio") < 0) return r.json().then(function (j) { throw new Error(j && j.data); });
+          return r.blob();
+        });
+    }
+    function mark(i) {
+      [].forEach.call($("lines").children, function (el, k) { el.classList.toggle("now", k === i); });
+      var el = $("lines").children[i]; if (el) el.scrollIntoView({ block: "nearest" });
+    }
+    function play() {
+      var list = S.lines.map(function (l, i) { return { l: l, i: i }; }).filter(function (x) { return x.l.text.trim(); });
+      if (!list.length) { $("msg").textContent = t("empty"); return; }
+      playing = true; paintText(); $("msg").textContent = "";
+      var next = tts(list[0].l), k = 0;
+      (function step() {
+        if (!playing) return;
+        if (k >= list.length) { finish(true); return; }
+        var cur = list[k];
+        mark(cur.i);
+        next.then(function (blob) {
+          if (!playing) return;
+          if (k + 1 < list.length) next = tts(list[k + 1].l);       // 다음 줄을 미리
+          audio = new Audio(URL.createObjectURL(blob));
+          audio.onended = function () { k++; step(); };
+          audio.play().catch(function () { k++; step(); });
+        }).catch(function (e) { $("msg").textContent = t("ttsFail") + ((e && e.message) || e); finish(false); });
+      })();
+    }
+    function finish(done) {
+      playing = false;
+      if (audio) { audio.pause(); audio = null; }
+      mark(-1); paintText();
+      if (done) {
+        $("msg").textContent = t("done");
+        if (window.vapiStat) vapiStat("story_play");
+        if (window.EL_WIN && EL_WIN.hidden) EL_WIN.notify(t("nDone"), { actions: [{ label: t("nShow"), href: "/story" }] });
+      }
+    }
+    $("playBtn").addEventListener("click", function () { if (playing) finish(false); else play(); });
+
+    /* ── AI 가 이어 쓰기 ── */
+    $("aiBtn").addEventListener("click", function () {
+      var b = this; b.disabled = true; $("msg").textContent = t("aiBusy");
+      var names = S.cast.map(function (c) { return c.name; });
+      var prompt = t("aiPrompt").replace("{cast}", names.join(", ")).replace("{lines}", S.lines.filter(function (l) { return l.text.trim(); })
+        .slice(-12).map(function (l) { return (S.cast[l.who] || S.cast[0]).name + ": " + l.text; }).join("\n"));
+      fetch("/chat/ask?" + new URLSearchParams({ prompt: prompt, lang: LANG }), { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ history: "", persona: "" }) }).then(function (r) {
+          if (r.status === 503) throw new Error(t("notReady"));
+          return r.json();
+        }).then(function (j) {
+          if (!j || j.result !== "ok") throw new Error(j && j.data);
+          var ans = String((j.data && j.data.answer) || "").trim().split("\n").filter(Boolean)[0] || "";
+          var m = ans.match(/^\s*\**([^:：]{1,12})\**\s*[:：]\s*(.+)$/);
+          var who = 0, text = ans;
+          if (m) {
+            var k = names.map(function (n) { return n.trim(); }).indexOf(m[1].trim());
+            if (k >= 0) who = k;
+            text = m[2];
+          }
+          text = text.replace(/^["“'‘]|["”'’]$/g, "").trim();
+          if (!text) throw new Error("—");
+          S.lines = S.lines.filter(function (l) { return l.text.trim(); });
+          S.lines.push({ who: who, text: text });
+          paintLines(); save(); mark(S.lines.length - 1);
+          $("msg").textContent = "";
+          if (window.vapiStat) vapiStat("story_ai");
+        }).catch(function (e) { $("msg").textContent = t("aiFail") + ((e && e.message) || e); })
+        .then(function () { b.disabled = false; });
+    });
+
+    if (window.EL_WIN) EL_WIN.onHide(function () { /* 공연은 이어 간다 — 소리만 나는 일이라 가려져도 괜찮다 */ });
+
+    /* 목소리 목록 — 없는 목소리를 가진 인물은 첫 목소리로 */
+    function fixVoices() { S.cast.forEach(function (c, i) { if (VOICES.indexOf(c.voice) < 0) c.voice = VOICES[i % VOICES.length]; }); }
+    fetch("/speech/voices").then(function (r) { return r.json(); }).then(function (j) {
+      var d = (j && j.data) || {};
+      if (d.voices && d.voices.length) VOICES = d.voices;
+      fixVoices(); paintAll();
+    }).catch(function () { paintAll(); });
+
+    $("langButton").addEventListener("click", function () {
+      try { localStorage.setItem("vapiLang", LANG === "ko" ? "en" : "ko"); } catch (e) {}
+      location.reload();
+    });
+    paintText(); paintAll();
+  })();
+  </script>
+  <script src="/lib/shell.js"></script>
+  <script src="/lib/usage.js" data-page="story"></script>
+  <i id="el-built" hidden></i>
+</body>
+</html>

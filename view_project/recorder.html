@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>edge-lab — 녹음기</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+  <link href="/fonts/fonts.css" rel="stylesheet">
+  <script>
+    try { if (localStorage.getItem("vapi-hc") === "1")
+            document.documentElement.classList.add("hc"); } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="/lib/tokens.css">
+  <script src="/lib/embed.js"></script>
+  <link rel="expect" href="#el-built" blocking="render">
+  <style>
+    /* 녹음기 — 말을 녹음하고, 글자로 바꾸고(/speech/stt), 그 글을 다른 목소리로 다시 읽는다(/speech/tts).
+     *
+     * 대화 앱에도 마이크가 있지만 거기서는 질문을 넣는 길일 뿐이다. 여기서는 소리 → 글자 →
+     * 소리 한 바퀴를 눈으로 보는 것이 목적이다: 내 말이 어떻게 받아 적히는지, 고친 글을
+     * 컴퓨터 목소리가 어떻게 읽는지. 녹음은 이 컴퓨터 밖으로 나가지 않는다.
+     */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; color: var(--ink); background: var(--paper);
+           font-family: "Gowun Dodum", "Apple SD Gothic Neo", system-ui, sans-serif; line-height: 1.5;
+           padding: var(--sp-2, 8px); gap: var(--sp-2, 8px); }
+    button, input, select, textarea { font-family: inherit; color: var(--ink); }
+    .btn { border: 1.5px solid var(--line-d); background: #fff; font-weight: 600; padding: 7px 13px; border-radius: var(--r); cursor: pointer; font-size: .92rem; }
+    .btn.primary { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+    .panel.rec { flex: 0 0 360px; } .panel.txt { flex: 1 1 auto; }
+    .recbtn { width: 120px; height: 120px; border-radius: 50%; border: 0; margin: 10px auto 4px; display: grid; place-items: center; cursor: pointer;
+              background: #d9412b; color: #fff; box-shadow: 0 8px 22px rgba(170,50,30,.3); }
+    .recbtn svg { width: 48px; height: 48px; }
+    .recbtn.on { background: #fff; color: #d9412b; border: 6px solid #d9412b; animation: pulse 1.2s ease-in-out infinite; }
+    @keyframes pulse { 50% { box-shadow: 0 0 0 12px rgba(217,65,43,.15); } }
+    @media (prefers-reduced-motion: reduce) { .recbtn.on { animation: none; } }
+    .clock { font-family: Menlo, Consolas, monospace; font-size: 1.6rem; font-weight: 700; text-align: center; }
+    .level { height: 10px; border-radius: 5px; background: #ece5d6; overflow: hidden; }
+    .level i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #3a9a55, #e0a030, #d9412b); transition: width .08s; }
+    .hint { font-size: .85rem; color: var(--ink-2); text-align: center; }
+    .takes { display: flex; flex-direction: column; gap: 6px; }
+    .take { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; cursor: pointer; }
+    .take.on { border-color: var(--cyan); background: var(--cyan-bg); }
+    .take b { flex: 1; font-size: .92rem; } .take small { color: var(--ink-2); font-family: Menlo, Consolas, monospace; font-size: .78rem; }
+    textarea { width: 100%; min-height: 150px; flex: 1 1 auto; resize: none; border: 1.5px solid var(--line); border-radius: var(--r); padding: 12px;
+               font-size: 1.15rem; line-height: 1.6; background: #fff; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .row select { height: 36px; border: 1.5px solid var(--line); border-radius: var(--r); padding: 0 8px; background: #fff; font-size: .92rem; }
+    .meta { font-family: Menlo, Consolas, monospace; font-size: .8rem; color: var(--ink-2); }
+    audio { width: 100%; }
+    @media (max-width: 1023px) { .panel.rec { flex: 0 0 auto; } .panel, .panel-body { overflow: visible; } }
+  </style>
+  <link rel="stylesheet" href="/lib/ui.css">
+  <link rel="stylesheet" href="/lib/shell.css">
+</head>
+<body data-density="explore">
+  <div class="titlebar">
+    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요"><img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b></a>
+    <span class="tb-sep"></span><span class="tb-app" id="txtTitle"></span>
+    <div class="h-tools"><button id="langButton" title="한국어 / English">EN</button></div>
+  </div>
+  <div class="shell-body"><div class="workbench"><div class="main-container">
+
+    <div class="panel rec">
+      <div class="panel-head"><span class="q"><span class="qnum">1</span><span class="qtext" id="txtQ1">녹음하기</span></span></div>
+      <div class="panel-body">
+        <button class="recbtn" id="recBtn" type="button"></button>
+        <div class="clock" id="clock">0:00</div>
+        <div class="level"><i id="lvl"></i></div>
+        <div class="hint" id="recHint"></div>
+        <div class="takes" id="takes"></div>
+      </div>
+    </div>
+
+    <div class="panel txt">
+      <div class="panel-head">
+        <span class="q"><span class="qnum">2</span><span class="qtext" id="txtQ2">글자로 · 다시 읽기</span></span>
+      </div>
+      <div class="panel-body">
+        <audio id="play" controls hidden></audio>
+        <div class="row">
+          <button class="btn primary" id="sttBtn" type="button" disabled></button>
+          <span class="meta" id="sttMeta"></span>
+        </div>
+        <textarea class="grow" id="text"></textarea>
+        <div class="row">
+          <select id="voice"></select>
+          <select id="speed"></select>
+          <button class="btn primary" id="ttsBtn" type="button"></button>
+          <button class="btn" id="ttsSave" type="button" disabled></button>
+          <span class="meta" id="ttsMeta"></span>
+        </div>
+      </div>
+    </div>
+
+  </div></div></div>
+
+  <script src="/lib/icons.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var LANG = "ko";
+    try { LANG = localStorage.getItem("vapiLang") === "en" ? "en" : "ko"; } catch (e) {}
+    document.documentElement.lang = LANG;
+    var I18N = {
+      ko: { title: "edge-lab — 녹음기", lang: "EN", q1: "녹음하기", q2: "글자로 · 다시 읽기",
+            hintIdle: "빨간 단추를 누르고 말해 보세요. 다시 누르면 멈춰요 (최대 30초).", hintRec: "녹음 중… 다시 누르면 멈춰요",
+            micFail: "마이크를 쓸 수 없어요 — 설정에서 마이크를 확인해 주세요.", take: "녹음 {n}",
+            stt: "글자로 바꾸기", sttBusy: "받아 적는 중…", sttFail: "알아듣지 못했어요: ", sttEmpty: "말소리가 들리지 않았어요.",
+            ph: "녹음을 글자로 바꾸면 여기에 나와요. 직접 써도 돼요.",
+            tts: "다시 읽기", ttsBusy: "목소리 만드는 중…", ttsFail: "읽지 못했어요: ", ttsSave: "읽은 소리 저장", notReady: "AI 가 아직 준비 중이에요.",
+            slow: "느리게", normal: "보통", fast: "빠르게", voice: "목소리 {v}" },
+      en: { title: "edge-lab — Recorder", lang: "한", q1: "Record", q2: "To text · read aloud",
+            hintIdle: "Press the red button and talk. Press again to stop (up to 30 s).", hintRec: "Recording… press again to stop",
+            micFail: "The mic cannot be used — check it in Settings.", take: "Take {n}",
+            stt: "Turn into text", sttBusy: "Writing it down…", sttFail: "Could not understand: ", sttEmpty: "No speech was heard.",
+            ph: "The text of your recording shows up here. You can type too.",
+            tts: "Read aloud", ttsBusy: "Making the voice…", ttsFail: "Could not read: ", ttsSave: "Save the voice", notReady: "The AI is still loading.",
+            slow: "Slow", normal: "Normal", fast: "Fast", voice: "Voice {v}" }
+    };
+    function t(k) { return I18N[LANG][k] !== undefined ? I18N[LANG][k] : I18N.ko[k]; }
+    function $(id) { return document.getElementById(id); }
+    var MIC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>';
+    var STOP = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
+    var MAX_SEC = 30;
+
+    var takes = [], cur = -1, rec = null, ttsBlob = null;
+
+    function paintText() {
+      document.title = t("title"); $("langButton").textContent = t("lang");
+      $("txtQ1").textContent = t("q1"); $("txtQ2").textContent = t("q2");
+      $("sttBtn").textContent = t("stt"); $("ttsBtn").textContent = t("tts"); $("ttsSave").textContent = t("ttsSave");
+      $("text").placeholder = t("ph");
+      $("speed").innerHTML = [["slow", 0.85], ["normal", 1.05], ["fast", 1.3]].map(function (s) {
+        return '<option value="' + s[1] + '"' + (s[0] === "normal" ? " selected" : "") + ">" + t(s[0]) + "</option>";
+      }).join("");
+      paintRec();
+      if (window.navRepaint) window.navRepaint();
+    }
+    function paintRec() {
+      $("recBtn").innerHTML = rec ? STOP : MIC;
+      $("recBtn").classList.toggle("on", !!rec);
+      $("recHint").textContent = rec ? t("hintRec") : t("hintIdle");
+    }
+    function paintTakes() {
+      $("takes").innerHTML = takes.map(function (k, i) {
+        return '<div class="take' + (i === cur ? " on" : "") + '" data-i="' + i + '"><b>' + t("take").replace("{n}", i + 1) + "</b><small>" + k.sec.toFixed(1) + "s</small></div>";
+      }).join("");
+      $("sttBtn").disabled = cur < 0;
+    }
+
+    /* ── 녹음 — 서버 STT 는 WAV 만 받는다. PCM 을 모아 44바이트 헤더를 붙인다 (대화 앱과 같은 방식) ── */
+    function wav(pcm, sr) {
+      var buf = new ArrayBuffer(44 + pcm.length * 2), dv = new DataView(buf);
+      var put = function (o, s) { for (var i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); };
+      put(0, "RIFF"); dv.setUint32(4, 36 + pcm.length * 2, true); put(8, "WAVEfmt ");
+      dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+      dv.setUint32(24, sr, true); dv.setUint32(28, sr * 2, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
+      put(36, "data"); dv.setUint32(40, pcm.length * 2, true);
+      for (var i = 0; i < pcm.length; i++) dv.setInt16(44 + i * 2, Math.max(-1, Math.min(1, pcm[i])) * 32767, true);
+      return new Blob([buf], { type: "audio/wav" });
+    }
+    function start() {
+      navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+        var ac = new (window.AudioContext || window.webkitAudioContext)();
+        var src = ac.createMediaStreamSource(stream), node = ac.createScriptProcessor(4096, 1, 1), chunks = [];
+        node.onaudioprocess = function (e) {
+          var d = e.inputBuffer.getChannelData(0);
+          chunks.push(new Float32Array(d));
+          var peak = 0; for (var i = 0; i < d.length; i += 16) peak = Math.max(peak, Math.abs(d[i]));
+          $("lvl").style.width = Math.min(100, peak * 140) + "%";
+        };
+        src.connect(node); node.connect(ac.destination);
+        var t0 = Date.now();
+        rec = { stream: stream, ac: ac, src: src, node: node, chunks: chunks, t0: t0,
+                tick: setInterval(function () {
+                  var s = (Date.now() - t0) / 1000;
+                  $("clock").textContent = Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
+                  if (s >= MAX_SEC) stop();
+                }, 200) };
+        paintRec();
+      }).catch(function () { $("recHint").textContent = t("micFail"); });
+    }
+    function stop() {
+      if (!rec) return;
+      var r = rec; rec = null;
+      clearInterval(r.tick);
+      r.node.disconnect(); r.src.disconnect(); r.node.onaudioprocess = null;
+      r.stream.getTracks().forEach(function (x) { x.stop(); });
+      var total = r.chunks.reduce(function (n, c) { return n + c.length; }, 0), pcm = new Float32Array(total), at = 0;
+      r.chunks.forEach(function (c) { pcm.set(c, at); at += c.length; });
+      var sr = r.ac.sampleRate;
+      try { r.ac.close(); } catch (e) {}
+      $("lvl").style.width = "0";
+      if (total < sr * 0.3) { paintRec(); return; }          // 너무 짧으면 버린다
+      takes.push({ blob: wav(pcm, sr), sec: total / sr });
+      cur = takes.length - 1;
+      select(cur);
+      paintRec();
+      if (window.vapiStat) vapiStat("rec_take");
+    }
+    function select(i) {
+      cur = i; paintTakes();
+      $("play").src = URL.createObjectURL(takes[i].blob); $("play").hidden = false;
+    }
+    $("recBtn").addEventListener("click", function () { if (rec) stop(); else start(); });
+    $("takes").addEventListener("click", function (e) { var d = e.target.closest("[data-i]"); if (d) select(+d.getAttribute("data-i")); });
+    if (window.EL_WIN) EL_WIN.onHide(stop);                 // 가려지면 녹음을 멈춘다 — 마이크를 쥔 채 남지 않게
+
+    /* ── 글자로 ── */
+    $("sttBtn").addEventListener("click", function () {
+      if (cur < 0) return;
+      var b = this; b.disabled = true; $("sttMeta").textContent = t("sttBusy");
+      var fd = new FormData();
+      fd.append("uploadFile", takes[cur].blob, "rec.wav");
+      fetch("/speech/stt?lang=" + LANG, { method: "POST", body: fd }).then(function (r) {
+        if (r.status === 503) throw new Error(t("notReady"));
+        return r.json();
+      }).then(function (j) {
+        if (!j || j.result !== "ok") throw new Error(j && j.data);
+        var text = String((j.data && j.data.text) || "").trim();
+        $("text").value = text;
+        $("sttMeta").textContent = text ? ((j.device || "") + " · " + (j.elapsed_ms || "?") + " ms") : t("sttEmpty");
+      }).catch(function (e) { $("sttMeta").textContent = t("sttFail") + ((e && e.message) || e); })
+        .then(function () { b.disabled = cur < 0; });
+    });
+
+    /* ── 다시 읽기 ── */
+    function fillVoices() {
+      fetch("/speech/voices").then(function (r) { return r.json(); }).then(function (j) {
+        var d = (j && j.data) || {};
+        var list = d.voices && d.voices.length ? d.voices : ["F1"];
+        $("voice").innerHTML = list.map(function (v) { return '<option value="' + v + '">' + t("voice").replace("{v}", v) + "</option>"; }).join("");
+        var want = ""; try { want = localStorage.getItem("vapi-voice") || ""; } catch (e) {}
+        $("voice").value = list.indexOf(want) >= 0 ? want : (d.default || list[0]);
+      }).catch(function () { $("voice").innerHTML = '<option value="F1">' + t("voice").replace("{v}", "F1") + "</option>"; });
+    }
+    $("ttsBtn").addEventListener("click", function () {
+      var text = $("text").value.trim();
+      if (!text) { $("text").focus(); return; }
+      var b = this; b.disabled = true; $("ttsMeta").textContent = t("ttsBusy");
+      fetch("/speech/tts", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: text, voice: $("voice").value, lang: LANG, speed: +$("speed").value }) }).then(function (r) {
+        if (r.status === 503) throw new Error(t("notReady"));
+        if (!r.ok || (r.headers.get("Content-Type") || "").indexOf("audio") < 0) return r.json().then(function (j) { throw new Error(j && j.data); });
+        return r.blob();
+      }).then(function (blob) {
+        ttsBlob = blob; $("ttsSave").disabled = false; $("ttsMeta").textContent = "";
+        var a = new Audio(URL.createObjectURL(blob)); a.play().catch(function () {});
+        if (window.vapiStat) vapiStat("rec_tts");
+      }).catch(function (e) { $("ttsMeta").textContent = t("ttsFail") + ((e && e.message) || e); })
+        .then(function () { b.disabled = false; });
+    });
+    $("ttsSave").addEventListener("click", function () {
+      if (!ttsBlob) return;
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(ttsBlob); a.download = "voice-" + $("voice").value + ".wav";
+      document.body.appendChild(a); a.click(); a.remove();
+    });
+
+    $("langButton").addEventListener("click", function () {
+      try { localStorage.setItem("vapiLang", LANG === "ko" ? "en" : "ko"); } catch (e) {}
+      location.reload();
+    });
+    paintText(); paintTakes(); fillVoices();
+  })();
+  </script>
+  <script src="/lib/shell.js"></script>
+  <script src="/lib/usage.js" data-page="recorder"></script>
+  <i id="el-built" hidden></i>
+</body>
+</html>
