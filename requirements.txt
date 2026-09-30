@@ -32,3 +32,6 @@ opencv-python
 pillow
 numpy
 sounddevice
+
+# --- 보드(MCU) 시리얼 ---
+pyserial

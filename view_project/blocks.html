@@ -239,7 +239,7 @@
 
       cat_image: "이미지", cat_img_edit: "이미지 바꾸기", cat_img_draw: "이미지 그리기",
       cat_vision: "AI 인식", cat_sound: "소리",
-      cat_lang: "AI 언어", cat_event: "이벤트",
+      cat_lang: "AI 언어", cat_event: "이벤트", cat_board: "보드",
       cat_logic: "논리", cat_loop: "반복", cat_math: "수학", cat_text: "텍스트",
       cat_list: "목록", cat_var: "변수", cat_func: "함수",
       lbl_img_ask: "— 사진에게 물어보기 —", lbl_basic: "— 기본 인식 —",
@@ -269,6 +269,11 @@
       b_say_tip: "소리 내어 읽고 말풍선으로 보여줘요. 목소리(여자·남자)와 빠르기도 함께 골라요.",
       o_slow: "느리게", o_normal: "보통", o_fast: "빠르게",
       b_listen: "%1초 동안 듣기", b_listen_tip: "마이크로 듣고 글자로 바꿔 줘요 (음성 인식).",
+      b_bd_send: "보드에 %1 보내기", b_bd_send_tip: "보드에 글자 한 줄을 보내요 (답은 기다리지 않아요). 보드 앱에서 먼저 연결해요.",
+      b_bd_ask: "보드에 %1 보내고 답 받기 (최대 %2 초)", b_bd_ask_tip: "보낸 뒤 처음 들어온 줄이 답이에요. 답이 없으면 빈 글자예요.",
+      b_bd_read: "보드에서 한 줄 받기 (최대 %1 초)", b_bd_read_tip: "보드가 보낸 줄을 차례로 받아요. 없으면 빈 글자예요.",
+      b_bd_ok: "보드가 연결됐나요?", b_bd_ok_tip: "보드 앱에서 연결해 두었으면 참이에요.",
+      m_board: "보드 → ", m_boardRx: "보드 ← ", m_boardNone: "(답 없음)",
       m_listen: "듣는 중... ", m_sec: "초", m_heard: "들은 말: ",
       m_noMic: "마이크를 쓸 수 없어요. 마이크 권한을 확인해 주세요.",
       m_sttFail: "말을 알아듣지 못했어요.",
@@ -457,7 +462,7 @@
 
       cat_image: "Image", cat_img_edit: "Change image", cat_img_draw: "Draw on image",
       cat_vision: "AI Vision", cat_sound: "Sound",
-      cat_lang: "AI Language", cat_event: "Events",
+      cat_lang: "AI Language", cat_event: "Events", cat_board: "Board",
       cat_logic: "Logic", cat_loop: "Loops", cat_math: "Math", cat_text: "Text",
       cat_list: "Lists", cat_var: "Variables", cat_func: "Functions",
       lbl_img_ask: "— ask about the photo —", lbl_basic: "— basic detection —",
@@ -487,6 +492,11 @@
       b_say_tip: "Reads it aloud and shows a speech bubble. Pick the voice and the speed too.",
       o_slow: "slow", o_normal: "normal", o_fast: "fast",
       b_listen: "listen for %1 s", b_listen_tip: "Listens with the mic and turns it into text.",
+      b_bd_send: "send %1 to the board", b_bd_send_tip: "Sends one line of text to the board (does not wait for an answer). Connect it in the Board app first.",
+      b_bd_ask: "send %1 to the board, get the answer (up to %2 s)", b_bd_ask_tip: "The first line that comes back is the answer. Empty text if none.",
+      b_bd_read: "get a line from the board (up to %1 s)", b_bd_read_tip: "Takes the lines the board sends, one by one. Empty text if none.",
+      b_bd_ok: "board connected?", b_bd_ok_tip: "True when the board is connected in the Board app.",
+      m_board: "board → ", m_boardRx: "board ← ", m_boardNone: "(no answer)",
       m_listen: "listening... ", m_sec: "s", m_heard: "heard: ",
       m_noMic: "Can't use the microphone. Check the permission.",
       m_sttFail: "Couldn't understand the speech.",
@@ -839,6 +849,9 @@
       ai_transform: b =>
         "vision(" + q(pick(M_TRANS, field(b, "KIND"))) + ", " + img(b, "IMG") + ")",
       ai_listen: b => "listen(" + field(b, "SEC") + ")",
+      bd_ask: b => "board_ask(" + val(b, "TEXT", "''") + ", " + field(b, "SEC") + ")",
+      bd_read: b => "board_read(" + field(b, "SEC") + ")",
+      bd_ok: () => "board_connected()",
 
       /* ---- 사진 편집 (아홉 칸) ---- */
       ed_resize: b => "resize(" + img(b, "IMG") + ", " + num(b, "F", 2) + ")",
@@ -942,6 +955,8 @@
       } else if (T === "st_say") {
         out.push(p + "speak(" + val(b, "TEXT", "''")
                  + voiceArg(field(b, "V"), field(b, "S")) + ")");
+      } else if (T === "bd_send") {
+        out.push(p + "board_send(" + val(b, "TEXT", "''") + ")");
       } else if (T === "st_show_image") {
         lastShown = img(b, "IMG");         // 무대에 보인 것을 기억 (저장·박스가 이걸 쓴다)
         out.push(p + "show(" + lastShown + ")");
@@ -1148,7 +1163,7 @@ def texts_of(result):
   }
 
   /* ---------------- 커스텀 블록 정의 ---------------- */
-  const C_AI = 220, C_VLM = 260, C_JUDGE = 40, C_SOUND = 20, C_EVENT = 45,
+  const C_AI = 220, C_VLM = 260, C_JUDGE = 40, C_SOUND = 20, C_EVENT = 45, C_BOARD = 95,
         C_EDIT = 175, C_EDITX = 190;
   const IMG = { type: "input_value", name: "IMG", check: "String" };
   const opt = keys => keys.map(k => [t("o_" + k), k]);
@@ -1415,6 +1430,16 @@ def texts_of(result):
         tooltip: t("b_listen_tip"),
         args0: [ { type: "field_dropdown", name: "SEC",
                    options: [["2", "2"], ["3", "3"], ["4", "4"], ["5", "5"], ["8", "8"]] } ] },
+      // 보드 (MCU) — 명령 이름은 펌웨어가 정한다. 여기서는 글자 한 줄을 주고받기만 한다
+      { type: "bd_send", message0: t("b_bd_send"), previousStatement: null, nextStatement: null,
+        colour: C_BOARD, tooltip: t("b_bd_send_tip"), args0: [ { type: "input_value", name: "TEXT" } ] },
+      { type: "bd_ask", message0: t("b_bd_ask"), output: "String", colour: C_BOARD, inputsInline: true,
+        tooltip: t("b_bd_ask_tip"),
+        args0: [ { type: "input_value", name: "TEXT" },
+                 { type: "field_dropdown", name: "SEC", options: [["0.5", "0.5"], ["1", "1"], ["2", "2"], ["5", "5"]] } ] },
+      { type: "bd_read", message0: t("b_bd_read"), output: "String", colour: C_BOARD, tooltip: t("b_bd_read_tip"),
+        args0: [ { type: "field_dropdown", name: "SEC", options: [["0.5", "0.5"], ["1", "1"], ["2", "2"], ["5", "5"]] } ] },
+      { type: "bd_ok", message0: t("b_bd_ok"), output: "Boolean", colour: C_BOARD, tooltip: t("b_bd_ok_tip") },
       { type: "st_show_image", message0: t("b_show_image"), previousStatement: null, nextStatement: null,
         colour: C_EDIT, args0: [ IMG ] },
       { type: "st_boxes", message0: t("b_boxes"), previousStatement: null, nextStatement: null,
@@ -1480,6 +1505,10 @@ def texts_of(result):
   G.forBlock["st_say"]        = b =>
     `await RT.say(${V(b,"TEXT","''")}, "${b.getFieldValue("V")}", "${b.getFieldValue("S")}");\n`;
   G.forBlock["ai_listen"]     = b => [`(await AI.listen(${b.getFieldValue("SEC")}))`, Order.ATOMIC];
+  G.forBlock["bd_send"]       = b => `await RT.boardSend(${V(b,"TEXT","''")});\n`;
+  G.forBlock["bd_ask"]        = b => [`(await RT.boardAsk(${V(b,"TEXT","''")}, ${b.getFieldValue("SEC")}))`, Order.ATOMIC];
+  G.forBlock["bd_read"]       = b => [`(await RT.boardRead(${b.getFieldValue("SEC")}))`, Order.ATOMIC];
+  G.forBlock["bd_ok"]         = () => [`(await RT.boardOk())`, Order.ATOMIC];
   G.forBlock["st_show_image"] = b => `await RT.showImage(${V(b,"IMG","null")});\n`;
   G.forBlock["st_boxes"]      = () => "await RT.drawBoxes();\n";
   G.forBlock["st_clear"]      = () => "RT.clearStage();\n";
@@ -1633,6 +1662,11 @@ def texts_of(result):
         { kind: "block", type: "ev_wait_face" },
         { kind: "block", type: "ev_wait_hand" },
         { kind: "block", type: "ev_wait_custom", inputs: { LABEL: txt("") } } ] },
+      { kind: "category", name: t("cat_board"), colour: C_BOARD, contents: [
+        { kind: "block", type: "bd_ok" },
+        { kind: "block", type: "bd_send", inputs: { TEXT: txt("") } },
+        { kind: "block", type: "bd_ask", inputs: { TEXT: txt("") } },
+        { kind: "block", type: "bd_read" } ] },
     ] };
   }
 
@@ -3094,6 +3128,46 @@ def texts_of(result):
       shotImg.style.display = "none";
       shownURL = null;
     },
+    /* 보드 — 포트는 서버가 쥐고 있다(/board/*). 보드 앱에서 연결해 두면 여기서는 보내고 받기만 한다.
+       _bseq: 이 실행이 어디까지 읽었는지 — 실행을 누르기 전에 들어온 줄은 읽지 않는다 */
+    async _bpost(url, body) {
+      if (RT.stopFlag) throw "STOP";
+      const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" },
+                                   body: JSON.stringify(body), signal: RT.abort ? RT.abort.signal : undefined });
+      const j = await r.json();
+      if (RT.stopFlag) throw "STOP";
+      if (!j || j.result !== "ok") throw String((j && j.data) || "board");
+      return j.data;
+    },
+    async boardCursor() {
+      if (RT._bseq == null) {
+        const j = await (await fetch("/board/status")).json();
+        RT._bseq = (j.data && j.data.seq) || 0;
+      }
+      return RT._bseq;
+    },
+    async boardSend(text) {
+      await RT.boardCursor();
+      await RT._bpost("/board/send", { text: String(text) });
+      log(t("m_board") + text);
+    },
+    async boardAsk(text, sec) {
+      await RT.boardCursor();
+      const d = await RT._bpost("/board/ask", { text: String(text), timeout: Number(sec) });
+      RT._bseq = Math.max(RT._bseq, d.seq || 0);
+      log(t("m_board") + text + "   " + (d.reply != null ? t("m_boardRx") + d.reply : t("m_boardNone")));
+      return d.reply == null ? "" : d.reply;
+    },
+    async boardRead(sec) {
+      const d = await RT._bpost("/board/read", { after: await RT.boardCursor(), timeout: Number(sec) });
+      RT._bseq = d.seq;
+      if (d.line != null) log(t("m_boardRx") + d.line);
+      return d.line == null ? "" : d.line;
+    },
+    async boardOk() {
+      try { const j = await (await fetch("/board/status")).json(); return !!(j.data && j.data.connected); }
+      catch (e) { return false; }
+    },
     async wait(s) {
       const until = Date.now() + Number(s) * 1000;
       while (Date.now() < until) {
@@ -3116,7 +3190,7 @@ def texts_of(result):
     if (runButton.disabled) return;
     RT.stopFlag = false; RT.iter = 0;
     RT.voice = "F1"; RT.speed = "normal";   // 목소리·빠르기는 실행마다 기본값으로
-    RT.aiCalls = 0; RT.lastAiAt = 0;
+    RT.aiCalls = 0; RT.lastAiAt = 0; RT._bseq = null;
     RT.abort = new AbortController();
     RT._vars = {};
     document.getElementById("varsBox").style.display = "none";

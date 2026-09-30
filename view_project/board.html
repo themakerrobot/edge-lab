@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>edge-lab — 보드</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+  <link href="/fonts/fonts.css" rel="stylesheet">
+  <script>
+    try { if (localStorage.getItem("vapi-hc") === "1")
+            document.documentElement.classList.add("hc"); } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="/lib/tokens.css">
+  <script src="/lib/embed.js"></script>
+  <link rel="expect" href="#el-built" blocking="render">
+  <style>
+    /* 보드 — USB 시리얼 포트를 골라 연결하고, 글자 한 줄 명령을 보내 답을 본다.
+     *
+     * 포트는 서버(board.py)가 연다. 여기서 연결해 두면 블록의 "보드" 블록과 파이썬의 board_* 함수가
+     * 같은 연결을 쓴다. 코딩 없이 보드가 살아 있는지 확인하는 곳이고, 문제가 생기면 선생님이 먼저 여는 화면이다.
+     *
+     * 속도(baud)·줄 끝은 펌웨어에 맞춘다 — 여기서는 기본값(115200 · LF)만 둔다.
+     */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; color: var(--ink); background: var(--paper);
+           font-family: "Gowun Dodum", "Apple SD Gothic Neo", system-ui, sans-serif; line-height: 1.5;
+           padding: var(--sp-2, 8px); gap: var(--sp-2, 8px); }
+    button, input, select { font-family: inherit; color: var(--ink); }
+    .panel.conn { flex: 0 0 320px; } .panel.term { flex: 1 1 auto; }
+    .btn { border: 1.5px solid var(--line-d); background: #fff; font-weight: 600; padding: 6px 13px; border-radius: var(--r); cursor: pointer;
+           font-size: .92rem; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+    .btn.primary { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; }
+    .btn.danger { color: var(--pen-red); border-color: var(--pen-red); }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+    .btn.sm { min-height: 32px; padding: 3px 10px; font-size: .85rem; }
+    .st { font-weight: 700; font-size: var(--fs-head, 14px); color: var(--cyan-d); }
+    .hint { font-size: var(--fs-side, 13px); color: var(--ink-2); }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .sec { display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1.5px dashed var(--line); }
+    select, .inp { height: 40px; border: 1.5px solid var(--line); border-radius: var(--r); padding: 0 10px; background: #fff; font-size: .95rem; }
+    .ports { display: flex; flex-direction: column; gap: 6px; }
+    .ports button { text-align: left; border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; padding: 7px 10px; cursor: pointer; }
+    .ports button b { display: block; font-family: Menlo, Consolas, monospace; font-size: .95rem; }
+    .ports button small { color: var(--ink-2); font-size: var(--fs-side, 13px); }
+    .ports button em { font-style: normal; color: #2f8a4c; font-weight: 700; font-size: var(--fs-side, 13px); }
+    .ports button.on { border-color: var(--cyan); background: var(--cyan-bg); }
+    .state { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: var(--r); background: #f4efe4; font-weight: 600; }
+    .state i { width: 10px; height: 10px; border-radius: 50%; background: #a39a8a; flex: 0 0 auto; }
+    .state.on { background: #e3f1e6; color: #1e5b30; } .state.on i { background: #2f8a4c; }
+    .state.bad { background: #fbe3dc; color: #8f3312; } .state.bad i { background: #c2412a; }
+    .log { font-family: Menlo, Consolas, monospace; font-size: 14px; background: #1f2328; color: #e6e8ec; border-radius: var(--r);
+           padding: 10px 12px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; min-height: 160px; }
+    .log div { line-height: 1.55; }
+    .log .tx { color: #8cc8ff; } .log .rx { color: #b8f0b0; } .log .sys { color: #a7adb8; font-style: italic; }
+    .log .tm { color: #6f7682; margin-right: 8px; }
+    .log .ask { color: #ffd479; }
+    .log.notime .tm { display: none; }
+    .send { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .send .inp { flex: 1 1 260px; font-family: Menlo, Consolas, monospace; font-size: 1rem; }
+    .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .chips button { border: 1.5px solid var(--line); background: #fff; border-radius: 14px; padding: 3px 10px 3px 12px; cursor: pointer;
+                    font-family: Menlo, Consolas, monospace; font-size: .9rem; display: inline-flex; align-items: center; gap: 6px; }
+    .chips button span { color: var(--ink-2); font-family: inherit; }
+    .chips button span:hover { color: var(--pen-red); }
+    .chk { display: inline-flex; align-items: center; gap: 5px; font-size: .9rem; cursor: pointer; }
+    @media (max-width: 1023px) { .main-container { flex-direction: column; } .panel.conn, .panel.term { flex: 0 0 auto; }
+                                 .panel, .panel-body { overflow: visible; } body { overflow: auto; height: auto; } .log { height: 50vh; } }
+  </style>
+  <link rel="stylesheet" href="/lib/ui.css">
+  <link rel="stylesheet" href="/lib/shell.css">
+</head>
+<body data-density="explore">
+  <div class="titlebar">
+    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요"><img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b></a>
+    <span class="tb-sep"></span><span class="tb-app" id="txtTitle"></span>
+    <div class="h-tools"><button id="langButton" title="한국어 / English">EN</button></div>
+  </div>
+  <div class="shell-body"><div class="workbench"><div class="main-container">
+    <div class="panel conn">
+      <div class="panel-head"><span class="q"><span class="qnum">1</span><span class="qtext" id="txtQ1"></span></span>
+        <button class="btn sm" type="button" id="refresh" style="margin-left:auto"></button></div>
+      <div class="panel-body">
+        <div class="state" id="state"><i></i><span id="stateText"></span></div>
+        <div class="st" id="txtPorts"></div>
+        <div class="ports" id="ports"></div>
+        <div class="sec">
+          <div class="row"><span class="hint" id="txtBaud" style="width:60px"></span><select id="baud"></select></div>
+          <div class="row"><span class="hint" id="txtEol" style="width:60px"></span><select id="eol"></select></div>
+          <div class="hint" id="txtMatch"></div>
+        </div>
+        <div class="row">
+          <button class="btn primary" type="button" id="connBtn" style="flex:1"></button>
+          <button class="btn danger" type="button" id="discBtn" style="flex:1"></button>
+        </div>
+        <div class="sec">
+          <div class="st" id="txtUse"></div>
+          <div class="hint" id="txtUseHint"></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel term">
+      <div class="panel-head"><span class="q"><span class="qnum">2</span><span class="qtext" id="txtQ2"></span></span>
+        <div class="row" style="margin-left:auto">
+          <label class="chk"><input type="checkbox" id="showTime" checked><span id="txtTime"></span></label>
+          <button class="btn sm" type="button" id="clearLog"></button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="log grow" id="log"></div>
+        <div class="send">
+          <input class="inp" id="cmd" autocomplete="off" spellcheck="false">
+          <button class="btn" type="button" id="sendBtn"></button>
+          <button class="btn primary" type="button" id="askBtn"></button>
+          <select id="wait"><option value="0.5">0.5s</option><option value="1" selected>1s</option><option value="2">2s</option><option value="5">5s</option></select>
+        </div>
+        <div class="row"><span class="hint" id="txtFav"></span><div class="chips" id="favs"></div>
+          <button class="btn sm" type="button" id="addFav"></button></div>
+      </div>
+    </div>
+  </div></div></div>
+
+  <script src="/lib/icons.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var LANG = "ko";
+    try { LANG = localStorage.getItem("vapiLang") === "en" ? "en" : "ko"; } catch (e) {}
+    document.documentElement.lang = LANG;
+    var I18N = {
+      ko: { title: "edge-lab — 보드", lang: "EN", q1: "연결", q2: "주고받기", refresh: "다시 찾기", ports: "포트",
+            noPorts: "보드가 보이지 않아요. USB 케이블을 꽂고 [다시 찾기] 를 눌러요.", noSerial: "pyserial 이 설치되어 있지 않아요 — 설치를 확인해 주세요.",
+            baud: "속도", eol: "줄 끝", match: "속도와 줄 끝은 보드 펌웨어와 같아야 해요.",
+            conn: "연결", disc: "끊기", on: "연결됨 · {p} · {b}", off: "연결 안 됨", lost: "연결이 끊겼어요 — 케이블을 확인해 주세요",
+            pick: "포트를 먼저 골라요", use: "블록 · 파이썬에서", useHint: "여기서 연결해 두면 블록의 [보드] 블록과 파이썬의 board_send · board_ask · board_read 가 이 연결을 써요.",
+            time: "시간", clear: "화면 지우기", ph: "보낼 명령 (한 줄)", send: "보내기", ask: "보내고 답 기다리기",
+            none: "(답 없음)", fav: "자주 쓰는 명령", addFav: "+ 지금 명령 넣기", fail: "안 됐어요: " },
+      en: { title: "edge-lab — Board", lang: "한", q1: "Connect", q2: "Talk to it", refresh: "Find again", ports: "Ports",
+            noPorts: "No board found. Plug in the USB cable and press [Find again].", noSerial: "pyserial is not installed — check the install.",
+            baud: "Speed", eol: "Line end", match: "Speed and line end must match the board firmware.",
+            conn: "Connect", disc: "Disconnect", on: "Connected · {p} · {b}", off: "Not connected", lost: "Connection lost — check the cable",
+            pick: "Pick a port first", use: "In Blocks · Python", useHint: "Connect here, then the [Board] blocks and Python's board_send · board_ask · board_read use this connection.",
+            time: "Time", clear: "Clear", ph: "Command to send (one line)", send: "Send", ask: "Send and wait for answer",
+            none: "(no answer)", fav: "Saved commands", addFav: "+ Save this command", fail: "Failed: " }
+    };
+    function t(k) { return I18N[LANG][k] !== undefined ? I18N[LANG][k] : I18N.ko[k]; }
+    function $(id) { return document.getElementById(id); }
+    function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+    function lsj(k, d) { try { return JSON.parse(localStorage.getItem(k) || "null") || d; } catch (e) { return d; } }
+    function lss(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+
+    var BAUDS = [9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600];
+    var pref = lsj("el-board", { port: "", baud: 115200, eol: "lf" });
+    var favs = lsj("el-board-favs", []), hist = [], hi = -1;
+    var st = { connected: false }, seq = 0, picked = pref.port, poll = 0;
+
+    function api(url, body) {
+      return fetch(url, body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+        .then(function (r) { return r.json(); })
+        .then(function (j) { if (!j || j.result !== "ok") throw new Error((j && j.data) || "?"); return j.data; });
+    }
+
+    /* ── 포트 ── */
+    function loadPorts() {
+      api("/board/ports").then(function (list) {
+        if (!list.length) { $("ports").innerHTML = '<div class="hint">' + esc(t("noPorts")) + "</div>"; return; }
+        if (!picked || !list.some(function (p) { return p.device === picked; })) picked = (list.filter(function (p) { return p.hint; })[0] || list[0]).device;
+        $("ports").innerHTML = list.map(function (p) {
+          return '<button type="button" data-p="' + esc(p.device) + '"' + (p.device === picked ? ' class="on"' : "") + "><b>" + esc(p.device) + "</b>" +
+            (p.hint ? "<em>" + esc(p.hint) + "</em> " : "") + "<small>" + esc(p.description) + "</small></button>";
+        }).join("");
+      }).catch(function (e) { $("ports").innerHTML = '<div class="hint">' + esc(/pyserial/.test(e.message) ? t("noSerial") : t("fail") + e.message) + "</div>"; });
+    }
+    $("ports").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-p]"); if (!b) return;
+      picked = b.getAttribute("data-p");
+      Array.prototype.forEach.call(this.children, function (x) { x.classList.toggle("on", x === b); });
+    });
+    $("refresh").addEventListener("click", loadPorts);
+
+    /* ── 연결 ── */
+    function paintState() {
+      var s = $("state");
+      s.className = "state" + (st.connected ? " on" : st.lost ? " bad" : "");
+      $("stateText").textContent = st.connected ? t("on").replace("{p}", st.port).replace("{b}", st.baud) : st.lost ? t("lost") : t("off");
+      $("connBtn").disabled = st.connected; $("discBtn").disabled = !st.connected;
+      $("sendBtn").disabled = $("askBtn").disabled = !st.connected;
+    }
+    function refreshStatus() {
+      return api("/board/status").then(function (d) { st = d; paintState(); }).catch(function () {});
+    }
+    $("connBtn").addEventListener("click", function () {
+      if (!picked) { toastLine(t("pick")); return; }
+      pref = { port: picked, baud: +$("baud").value, eol: $("eol").value }; lss("el-board", pref);
+      this.disabled = true;
+      api("/board/connect", pref).then(function (d) { st = d; paintState(); pull(); $("cmd").focus(); })
+        .catch(function (e) { toastLine(t("fail") + e.message); refreshStatus(); });
+    });
+    $("discBtn").addEventListener("click", function () {
+      api("/board/disconnect", {}).then(function (d) { st = d; paintState(); pull(); });
+    });
+
+    /* ── 기록 ── */
+    function hhmmss(ts) { var d = new Date(ts * 1000), p = function (n) { return String(n).padStart(2, "0"); }; return p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds()); }
+    function addLine(cls, text, ts) {
+      var box = $("log"), atEnd = box.scrollTop + box.clientHeight >= box.scrollHeight - 30;
+      var el = document.createElement("div"); el.className = cls;
+      el.innerHTML = '<span class="tm">' + hhmmss(ts || Date.now() / 1000) + "</span>" + (cls === "tx" ? "→ " : cls === "rx" ? "← " : "") + esc(text);
+      box.appendChild(el);
+      while (box.children.length > 800) box.removeChild(box.firstChild);
+      if (atEnd) box.scrollTop = box.scrollHeight;
+    }
+    function toastLine(text) { addLine("sys", text); }
+    var pulling = null;                  // 한 번에 하나만 — 겹치면 같은 줄이 두 번 찍힌다
+    function pull() {
+      if (pulling) return pulling.then(pull);
+      pulling = api("/board/lines?after=" + seq).then(function (d) {
+        d.lines.forEach(function (e) { if (e.seq > seq) addLine(e.dir, e.text, e.t); });
+        seq = Math.max(seq, d.seq);
+        if (d.lines.some(function (e) { return e.dir === "sys"; })) refreshStatus();
+      }).catch(function () {}).then(function () { pulling = null; });
+      return pulling;
+    }
+    /* 보이는 동안만 0.3초마다 — 가려지면 멈춘다 */
+    function startPoll() { if (!poll) poll = setInterval(pull, 300); }
+    function stopPoll() { clearInterval(poll); poll = 0; }
+    if (window.EL_WIN) { EL_WIN.onHide(stopPoll); EL_WIN.onShow(function () { refreshStatus(); pull(); startPoll(); }); }
+    $("clearLog").addEventListener("click", function () { $("log").innerHTML = ""; });
+    $("showTime").addEventListener("change", function () { $("log").classList.toggle("notime", !this.checked); });
+
+    /* ── 보내기 ── */
+    function remember(v) { if (hist[hist.length - 1] !== v) hist.push(v); hist = hist.slice(-50); hi = hist.length; }
+    function doSend(ask) {
+      var v = $("cmd").value.trim(); if (!v || !st.connected) return;
+      remember(v);
+      if (!ask) { api("/board/send", { text: v }).then(pull).catch(function (e) { toastLine(t("fail") + e.message); refreshStatus(); }); $("cmd").value = ""; return; }
+      $("askBtn").disabled = true;
+      api("/board/ask", { text: v, timeout: +$("wait").value }).then(function (d) {
+        return pull().then(function () { addLine("ask", (d.reply != null ? "✓ " + d.reply : t("none")) + "   (" + d.ms + " ms)"); });
+      }).catch(function (e) { toastLine(t("fail") + e.message); refreshStatus(); })
+        .then(function () { $("askBtn").disabled = !st.connected; });
+      $("cmd").value = "";
+    }
+    $("sendBtn").addEventListener("click", function () { doSend(false); });
+    $("askBtn").addEventListener("click", function () { doSend(true); });
+    $("cmd").addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); doSend(!e.shiftKey); }      // Enter = 보내고 답 기다리기, Shift+Enter = 보내기만
+      else if (e.key === "ArrowUp" && hist.length) { hi = Math.max(0, hi - 1); this.value = hist[hi]; e.preventDefault(); }
+      else if (e.key === "ArrowDown" && hist.length) { hi = Math.min(hist.length, hi + 1); this.value = hist[hi] || ""; e.preventDefault(); }
+    });
+
+    /* ── 자주 쓰는 명령 (이 컴퓨터에 기억) ── */
+    function paintFavs() {
+      $("favs").innerHTML = favs.map(function (f, i) { return '<button type="button" data-f="' + i + '">' + esc(f) + '<span data-x="' + i + '">×</span></button>'; }).join("");
+    }
+    $("favs").addEventListener("click", function (e) {
+      var x = e.target.closest("[data-x]");
+      if (x) { favs.splice(+x.getAttribute("data-x"), 1); lss("el-board-favs", favs); paintFavs(); return; }
+      var b = e.target.closest("[data-f]"); if (!b) return;
+      $("cmd").value = favs[+b.getAttribute("data-f")]; $("cmd").focus();
+    });
+    $("addFav").addEventListener("click", function () {
+      var v = $("cmd").value.trim() || hist[hist.length - 1]; if (!v || favs.indexOf(v) >= 0) return;
+      favs.push(v); favs = favs.slice(-12); lss("el-board-favs", favs); paintFavs();
+    });
+
+    /* ── 글자 ── */
+    $("langButton").addEventListener("click", function () {
+      try { localStorage.setItem("vapiLang", LANG === "ko" ? "en" : "ko"); } catch (e) {}
+      location.reload();
+    });
+    document.title = t("title"); $("langButton").textContent = t("lang");
+    $("txtQ1").textContent = t("q1"); $("txtQ2").textContent = t("q2"); $("refresh").textContent = t("refresh");
+    $("txtPorts").textContent = t("ports"); $("txtBaud").textContent = t("baud"); $("txtEol").textContent = t("eol"); $("txtMatch").textContent = t("match");
+    $("connBtn").textContent = t("conn"); $("discBtn").textContent = t("disc");
+    $("txtUse").textContent = t("use"); $("txtUseHint").textContent = t("useHint");
+    $("txtTime").textContent = t("time"); $("clearLog").textContent = t("clear");
+    $("cmd").placeholder = t("ph"); $("sendBtn").textContent = t("send"); $("askBtn").textContent = t("ask");
+    $("txtFav").textContent = t("fav"); $("addFav").textContent = t("addFav");
+    $("baud").innerHTML = BAUDS.map(function (b) { return '<option value="' + b + '"' + (b === pref.baud ? " selected" : "") + ">" + b + "</option>"; }).join("");
+    $("eol").innerHTML = [["lf", "LF (\\n)"], ["crlf", "CR LF (\\r\\n)"], ["cr", "CR (\\r)"]].map(function (x) {
+      return '<option value="' + x[0] + '"' + (x[0] === pref.eol ? " selected" : "") + ">" + x[1] + "</option>";
+    }).join("");
+    paintFavs(); paintState(); loadPorts();
+    refreshStatus().then(pull);
+    startPoll();
+  })();
+  </script>
+  <script src="/lib/shell.js"></script>
+  <script src="/lib/usage.js" data-page="board"></script>
+  <i id="el-built" hidden></i>
+</body>
+</html>

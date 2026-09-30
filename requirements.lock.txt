@@ -84,6 +84,7 @@ shapely==2.1.2
 shellingham==1.5.4
 six==1.17.0
 sounddevice==0.5.5
+pyserial==3.5
 starlette==1.6.0
 sympy==1.14.0
 tabulate==0.10.0

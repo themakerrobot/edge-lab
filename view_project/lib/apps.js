@@ -83,6 +83,8 @@
       ko_d: "한글 · 영어 자판과 낱말 비",   en_d: "Korean & English, word rain" },
     { href: "/calc",    ic: "calc",   cat: "tool", ko: "계산기",     en: "Calculator",
       ko_d: "큰 수를 우리말로 읽어 줘요",   en_d: "Reads numbers out in words" },
+    { href: "/notes",   ic: "note",   cat: "tool", ko: "메모장",     en: "Notes",
+      ko_d: "짧은 글을 적어 둬요",          en_d: "Jot things down" },
     { href: "/recorder", ic: "mic",   cat: "tool", ko: "녹음기",     en: "Recorder",
       ko_d: "말 → 글자 → 다시 읽기",        en_d: "Speech → text → read aloud" },
     { href: "/story",   ic: "book",   cat: "tool", ko: "이야기 극장", en: "Story theater",
@@ -91,6 +93,8 @@
       ko_d: "만든 것을 한곳에서 열어요",    en_d: "Open everything you made" },
     { href: "/tasks",   ic: "gauge",  cat: "sys",  ko: "AI 작업 관리자", en: "AI task manager",
       ko_d: "어떤 AI 가 어디서 도는지",      en_d: "Which AI runs where" },
+    { href: "/board",   ic: "chip",   cat: "sys",  ko: "보드",       en: "Board",
+      ko_d: "보드 연결 · 명령 보내 보기",   en_d: "Connect a board, try commands" },
     { href: "/options", ic: "gear",   cat: "sys",  ko: "설정",       en: "Settings",
       ko_d: "수업 전 카메라·소리 점검",     en_d: "Check camera and sound" }
   ];
