@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>edge-lab — AI 눈</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+  <link href="/fonts/fonts.css" rel="stylesheet">
+  <script>
+    try { if (localStorage.getItem("vapi-hc") === "1")
+            document.documentElement.classList.add("hc"); } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="/lib/tokens.css">
+  <script src="/lib/embed.js"></script>
+  <link rel="expect" href="#el-built" blocking="render">
+  <style>
+    /* AI 눈 — 그림 보는 눈(아주 작은 합성곱 신경망)을 처음부터 가르치고, 그 속을 들여다보고, 속여 본다.
+     *
+     * 가르치기(/train)는 이미 배운 큰 모델 위에 내 사진을 얹는다 — 빠르고 잘 맞지만 속이 안 보인다.
+     * 여기서는 필터 8개짜리 CNN 을 매번 맨 처음부터 배운다. 층이 하나뿐이라 필터와 특징 지도를
+     * 그대로 그려 보여 줄 수 있고, 기울이기·작게·어둡게로 약점을 찾아 "데이터 늘리기"로 고쳐 본다.
+     * 계산은 전부 브라우저 안(lib/eye/, 배우기는 Web Worker)이라 서버 AI 가 준비되기 전에도 된다.
+     *
+     * ml-lab 의 "AI 눈" 활동(themakerrobot/ml-lab, MIT, 커밋 e17acd7)을 이 저장소 화면에 맞게 다시 짰다.
+     * 계산 파일(cnn · exam · imgops · worker)은 그대로 옮겼고 상수도 바꾸지 않았다 (ml-lab DEVELOP.md "AI 눈 활동: 잰 값").
+     */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root { --go: #3a9a55; --bad: #c2412a; --src: clamp(220px, 34vh, 340px); }
+    html.hc { --go: #237a3b; --bad: #9e2e19; }
+    [hidden] { display: none !important; }
+    body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; color: var(--ink); background: var(--paper);
+           font-family: "Gowun Dodum", "Apple SD Gothic Neo", system-ui, sans-serif; line-height: 1.5;
+           padding: var(--sp-2, 8px); gap: var(--sp-2, 8px); }
+    button, input, select { font-family: inherit; color: var(--ink); }
+    .btn { border: 1.5px solid var(--line-d); background: #fff; font-weight: 600; padding: 7px 13px; border-radius: var(--r); cursor: pointer;
+           font-size: .92rem; min-height: 40px; display: inline-flex; align-items: center; gap: 6px; }
+    .btn.primary { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+    .btn.wide { width: 100%; justify-content: center; min-height: var(--tap, 48px); font-size: 1rem; }
+    .btn svg { width: 18px; height: 18px; flex: 0 0 auto; }
+    .inp { border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; padding: 0 10px; min-height: 40px; font-size: .95rem; min-width: 0; }
+    .inp:focus { outline: 2px solid var(--cyan); outline-offset: 0; border-color: var(--cyan); }
+
+    .panel.side { flex: 0 0 280px; } .panel.stage { flex: 1 1 auto; } .panel.out { flex: 0 0 340px; }
+    .st { font-weight: 700; font-size: var(--fs-head, 14px); color: var(--cyan-d); }
+    .hint { font-size: var(--fs-side, 13px); color: var(--ink-2); }
+    .sec { display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1.5px dashed var(--line); }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .num { font-family: Menlo, Consolas, monospace; font-size: var(--fs-mono, 13px); }
+
+    /* 머리표 — 가르치기로 가는 길 · 진행 단계 */
+    .totrain { border: 1.5px solid var(--cyan); background: var(--cyan-bg); color: var(--cyan-d); border-radius: 999px; cursor: pointer;
+               display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+    .totrain:hover { background: #fff; }
+    .totrain svg { width: 15px; height: 15px; }
+    .steps { display: flex; gap: 4px; margin-left: auto; font-size: var(--fs-side, 13px); flex-wrap: wrap; }
+    .steps span { padding: 2px 8px; border-radius: 12px; border: 1.5px solid var(--line); color: var(--ink-2); white-space: nowrap; }
+    .steps span.done { border-color: var(--go); color: var(--go); }
+    .steps span.on { border-color: var(--pen-blue); background: var(--pen-blue); color: #fff; font-weight: 700; }
+    .steps em { font-style: normal; }
+
+    /* 두세 개 중 하나 */
+    .seg { display: flex; border: 1.5px solid var(--line-d); border-radius: var(--r); overflow: hidden; }
+    .seg button { flex: 1; border: 0; background: #fff; padding: 0 12px; min-height: var(--tap, 48px); font-size: 1rem; font-weight: 600; cursor: pointer;
+                  display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+    .seg button + button { border-left: 1.5px solid var(--line-d); }
+    .seg button.on { background: var(--pen-blue); color: #fff; }
+    .seg svg { width: 18px; height: 18px; }
+
+    /* 종류 */
+    .addrow { flex-wrap: nowrap; } .addrow .inp { flex: 1; }
+    .addrow .btn { padding: 0; width: 44px; justify-content: center; }
+    .cls { border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; padding: 6px 8px; cursor: pointer; display: flex; flex-direction: column; gap: 4px; }
+    .cls.on { border-color: var(--cyan); background: var(--cyan-bg); box-shadow: inset 3px 0 0 var(--cyan); }
+    .cls .top { display: flex; align-items: center; gap: 6px; min-height: 32px; }
+    .cls .nm { flex: 1; font-weight: 700; font-size: var(--fs-name, 16px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cls .rn { flex: 1; min-height: 32px; font-size: .95rem; }
+    .cls .ct { color: var(--ink-2); white-space: nowrap; }
+    .cls .ct.low { color: var(--pen-red); }
+    .ib { width: 32px; height: 32px; flex: 0 0 auto; border: 1.5px solid transparent; border-radius: var(--r); background: none; cursor: pointer;
+          display: grid; place-items: center; color: var(--ink-2); }
+    .ib:hover { border-color: var(--line); background: #fff; color: var(--ink); }
+    .ib svg { width: 16px; height: 16px; }
+    .thumbs { display: flex; flex-wrap: wrap; gap: 3px; }
+    .thumbs img { width: 26px; height: 26px; image-rendering: pixelated; border: 1px solid var(--line); border-radius: 2px; cursor: pointer; }
+    .cls .thumbs img:hover { outline: 2px solid var(--pen-red); outline-offset: -1px; }
+    .clist { display: flex; flex-direction: column; gap: 6px; }
+
+    /* 보여 주기 — 그리기 판 / 카메라 · AI가 보는 그림 */
+    .eye-in { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; justify-content: center; align-content: center; }
+    /* ui.css 의 .grow 는 min-height:0 이라 낮은 화면에서 그리기 판이 아래 칸과 겹쳤다 — 내용만큼은 지킨다 */
+    .panel-body > .eye-in.grow { min-height: auto; }
+    .eye-src, .eye-ai { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+    .srcbox { position: relative; width: var(--src); height: var(--src); border-radius: var(--r); overflow: hidden; }
+    #pad { display: block; width: 100%; height: 100%; background: #fff; border: 1.5px solid var(--line-d); border-radius: var(--r);
+           touch-action: none; cursor: crosshair; }
+    #camVid { display: block; width: 100%; height: 100%; object-fit: cover; background: #2b2721; }
+    #camOff { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+              background: #3a342c; color: #f4efe4; font-size: var(--fs-side, 13px); text-align: center; padding: 16px; }
+    #camOff svg { width: 40px; height: 40px; opacity: .8; }
+    /* 가운데 70% 네모 — grab() 이 자르는 곳과 똑같다 (영상은 object-fit:cover 로 가운데 정사각형만 보인다) */
+    .cam-frame { position: absolute; inset: 15%; border: 3px dashed #fff; border-radius: 4px; box-shadow: 0 0 0 999px rgba(20,18,14,.32); pointer-events: none; }
+    .srcrow { display: flex; gap: 8px; align-items: center; width: var(--src); }
+    .srcrow .hint { flex: 1; line-height: 1.3; }
+    #seeCv { width: 128px; height: 128px; image-rendering: pixelated; border: 1.5px solid var(--line-d); border-radius: 3px; background: #fff; }
+    .eye-ai .hint { max-width: 150px; text-align: center; line-height: 1.35; }
+    .capwrap { display: flex; flex-direction: column; gap: 6px; }
+    .selinfo { font-size: var(--fs-side, 13px); padding: 6px 10px; border-radius: var(--r); background: #f4efe4; color: var(--ink-2); }
+    .selinfo.on { background: var(--cyan-bg); color: var(--cyan-d); font-weight: 700; }
+    .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    /* 막대 */
+    .bar { display: flex; flex-direction: column; gap: 2px; }
+    .bar .bl { display: flex; justify-content: space-between; gap: 8px; font-size: var(--fs-side, 13px); }
+    .bar .bl span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .bar .bt { height: 10px; border-radius: 5px; background: #ece5d6; overflow: hidden; }
+    .bar .bf { height: 100%; background: var(--pen-blue); transition: width .12s; }
+    .bar.top .bf { background: var(--go); } .bar.top .bl { font-weight: 700; }
+    #pred { display: flex; flex-direction: column; gap: 6px; }
+
+    /* 속이기 막대 */
+    .thr .lb { display: flex; justify-content: space-between; font-size: var(--fs-side, 13px); }
+    .thr input[type=range] { width: 100%; accent-color: var(--pen-blue); height: 26px; cursor: pointer; }
+
+    /* 배우기 */
+    .augs { display: flex; flex-wrap: wrap; gap: 6px; }
+    .augs label { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 10px; border: 1.5px solid var(--line);
+                  border-radius: var(--r); background: #fff; cursor: pointer; font-size: .92rem; font-weight: 600; }
+    .augs label:has(input:checked) { border-color: var(--cyan); background: var(--cyan-bg); color: var(--cyan-d); }
+    .augs input { width: 18px; height: 18px; accent-color: var(--pen-blue); }
+    .prg .lb { display: flex; justify-content: space-between; font-size: var(--fs-side, 13px); }
+    .prg .tr { height: 10px; border-radius: 5px; background: #ece5d6; overflow: hidden; }
+    .prg .fl { height: 100%; width: 0; background: var(--go); }
+    #chart { width: 100%; height: 100px; display: block; border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; }
+    .legend { display: flex; gap: 14px; font-size: var(--fs-side, 13px); }
+    .legend i { display: inline-block; width: 14px; height: 3px; vertical-align: middle; margin-right: 4px; }
+
+    /* 속이기 시험 표 */
+    table.exam { width: 100%; border-collapse: collapse; font-size: var(--fs-side, 13px); background: #fff; }
+    table.exam th, table.exam td { border: 1px solid var(--line); padding: 4px 5px; text-align: center; }
+    table.exam th { background: #f4efe4; font-weight: 700; white-space: nowrap; }
+    table.exam td.nm { text-align: left; word-break: keep-all; }
+    table.exam td.low { color: var(--pen-red); font-weight: 700; }
+
+    /* 들여다보기 */
+    .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .fcell { position: relative; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .fcell canvas { width: 100%; aspect-ratio: 1; image-rendering: pixelated; border: 1px solid var(--line); border-radius: 3px; background: #fff; }
+    .fno { position: absolute; left: 3px; top: 1px; font-size: 11px; color: var(--ink-2); text-shadow: 0 0 2px #fff; }
+    .note { min-height: 32px; width: 100%; padding: 0 5px; font-size: 12.5px; }
+    .empty { border: 1.5px dashed var(--line); border-radius: var(--r); padding: 12px; text-align: center; }
+
+    #loadFile { display: none; }
+    .row .btn.half { flex: 1; justify-content: center; }
+
+    #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 18px;
+             border-radius: 10px; font-size: .95rem; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 5; max-width: 90vw; text-align: center; }
+    #toast.on { opacity: 1; }
+
+    @media (max-width: 1439px) { .panel.side { flex-basis: 260px; } .panel.out { flex-basis: 320px; } }
+    /* 좁으면 단계는 번호만 — 머리표가 두 줄이 되면 옆 칸과 점선이 어긋난다 */
+    @media (max-width: 1279px) { .steps em { display: none; } }
+    @media (max-width: 1023px) { .main-container { flex-direction: column; } .panel.side, .panel.out, .panel.stage { flex: 0 0 auto; }
+                                 .panel, .panel-body { overflow: visible; } body { overflow: auto; height: auto; }
+                                 .duo { grid-template-columns: 1fr 1fr; } :root { --src: 260px; } }
+    @media (max-width: 639px) { .duo { grid-template-columns: 1fr; } }
+  </style>
+  <link rel="stylesheet" href="/lib/ui.css">
+  <link rel="stylesheet" href="/lib/shell.css">
+</head>
+<body data-density="explore">
+  <div class="titlebar">
+    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요"><img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b></a>
+    <span class="tb-sep"></span><span class="tb-app" id="txtTitle"></span>
+    <div class="h-tools"><button id="langButton" title="한국어 / English">EN</button></div>
+  </div>
+  <div class="shell-body"><div class="workbench"><div class="main-container">
+
+    <!-- 1. 종류와 예시 -->
+    <div class="panel side">
+      <div class="panel-head"><span class="q"><span class="qnum">1</span><span class="qtext" id="txtQ1"></span></span></div>
+      <div class="panel-body">
+        <div class="st" id="txtHow"></div>
+        <div class="seg" id="srcSeg">
+          <button type="button" data-src="cam"></button>
+          <button type="button" data-src="draw" class="on"></button>
+        </div>
+        <button class="btn wide" id="sampleBtn" type="button"></button>
+        <div class="sec">
+          <div class="st" id="txtKinds"></div>
+          <div class="row addrow">
+            <input class="inp" id="clsName" type="text" maxlength="12" autocomplete="off">
+            <button class="btn" id="clsAdd" type="button"></button>
+          </div>
+          <div class="clist" id="clsList"></div>
+          <div class="hint" id="txtClsHint"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. 보여 주기 · AI가 보는 그림 · 속이기 -->
+    <div class="panel stage">
+      <div class="panel-head">
+        <span class="q"><span class="qnum">2</span><span class="qtext" id="txtQ2"></span></span>
+        <button class="totrain" id="toTrain" type="button"></button>
+        <div class="steps" id="steps"><span data-s="1"></span><span data-s="2"></span><span data-s="3"></span><span data-s="4"></span></div>
+      </div>
+      <div class="panel-body">
+        <div class="eye-in grow">
+          <div class="eye-src">
+            <div class="srcbox" id="camBox" hidden>
+              <video id="camVid" playsinline muted></video>
+              <div class="cam-frame"></div>
+              <div id="camOff"></div>
+            </div>
+            <div class="srcbox" id="drawBox"><canvas id="pad" width="256" height="256"></canvas></div>
+            <div class="srcrow">
+              <button class="btn" id="padClear" type="button"></button>
+              <span class="hint" id="srcHint"></span>
+            </div>
+          </div>
+          <div class="eye-ai">
+            <div class="st" id="txtSees"></div>
+            <canvas id="seeCv" width="32" height="32"></canvas>
+            <div class="hint" id="txtSeesHint"></div>
+          </div>
+        </div>
+        <div class="capwrap">
+          <div class="selinfo" id="selInfo"></div>
+          <button class="btn primary wide" id="capBtn" type="button" disabled></button>
+        </div>
+        <div class="duo">
+          <div class="sec">
+            <div class="st" id="txtAnswer"></div>
+            <div id="pred"></div>
+          </div>
+          <div class="sec" id="trickSec">
+            <div class="st" id="txtTrick"></div>
+            <div class="thr"><div class="lb"><span id="txtRot"></span><span class="num" id="rotVal">0°</span></div>
+              <input type="range" id="rot" min="-90" max="90" step="5" value="0"></div>
+            <div class="thr"><div class="lb"><span id="txtScl"></span><span class="num" id="sclVal">100%</span></div>
+              <input type="range" id="scl" min="40" max="130" step="5" value="100"></div>
+            <div class="thr"><div class="lb"><span id="txtBrt"></span><span class="num" id="brtVal">100%</span></div>
+              <input type="range" id="brt" min="20" max="120" step="5" value="100"></div>
+            <div class="row"><button class="btn" id="trickReset" type="button"></button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. 배우기 · 속이기 시험 · 들여다보기 -->
+    <div class="panel out">
+      <div class="panel-head"><span class="q"><span class="qnum">3</span><span class="qtext" id="txtQ3"></span></span></div>
+      <div class="panel-body">
+        <div class="st" id="txtAug"></div>
+        <div class="augs" id="augs">
+          <label><input type="checkbox" data-aug="rotate"><span id="txtARot"></span></label>
+          <label><input type="checkbox" data-aug="shift"><span id="txtAShift"></span></label>
+          <label><input type="checkbox" data-aug="bright"><span id="txtABright"></span></label>
+        </div>
+        <button class="btn primary wide" id="trainBtn" type="button" disabled></button>
+        <div class="hint" id="trainHint"></div>
+        <div class="prg">
+          <div class="lb"><span id="prgLabel"></span><span class="num" id="prgPct"></span></div>
+          <div class="tr"><div class="fl" id="prgFill"></div></div>
+        </div>
+        <canvas id="chart"></canvas>
+        <div class="legend"><span><i style="background:var(--pen-blue)"></i><span id="txtAcc"></span></span><span><i style="background:var(--pen-red)"></i><span id="txtLoss"></span></span></div>
+
+        <div class="sec" id="examSec">
+          <div class="st" id="txtExam"></div>
+          <div id="exam"></div>
+          <div id="wrongWrap"></div>
+        </div>
+
+        <div class="sec" id="lookSec">
+          <div class="st" id="txtFilters"></div>
+          <div class="grid4" id="filters"></div>
+          <div class="hint" id="txtFiltersHint"></div>
+          <div class="st" style="margin-top:6px" id="txtMaps"></div>
+          <div class="grid4" id="maps"></div>
+          <div class="hint" id="txtMapsHint"></div>
+        </div>
+
+        <div class="sec">
+          <div class="st" id="txtShare"></div>
+          <div class="row">
+            <button class="btn half" id="saveBtn" type="button" disabled></button>
+            <button class="btn half" id="loadBtn" type="button"></button>
+          </div>
+          <input type="file" id="loadFile" accept=".json,application/json">
+          <div class="hint" id="txtShareHint"></div>
+        </div>
+      </div>
+    </div>
+
+  </div></div></div>
+  <div id="toast"></div>
+
+  <script>
+  (function () {
+    "use strict";
+    /* 계산(합성곱 신경망 · 그림 바꾸기)은 lib/eye/ 의 ES 모듈이다. 화면 글자는 여기서 바로 그리고,
+       모듈은 import() 로 따로 불러온다 — 모듈을 기다리느라 빈 글자가 먼저 보이지 않게. */
+    let M = null;                  // { TinyCNN, IMG, OUT, K, transform, drawShape } — 불러오면 채운다
+    let LANG = "ko";
+    try { LANG = localStorage.getItem("vapiLang") === "en" ? "en" : "ko"; } catch (e) {}
+    document.documentElement.lang = LANG;
+    const I18N = {
+      ko: { title: "edge-lab — AI 눈", app: "AI 눈", lang: "EN",
+            q1: "종류 & 예시", q2: "보여 주기", q3: "배우기 & 들여다보기",
+            toTrain: "가르치기 (내 사진으로)", toTrainTip: "내 사진으로 AI를 가르치는 [가르치기]를 열어요",
+            s1: "① 예시 모으기", s2: "② 배우기", s3: "③ 들여다보기", s4: "④ 속이기",
+            how: "어떻게 보여 줄까요?", cam: "카메라", draw: "그리기", sample: "예시 그림 넣기 (○ △ ☆)",
+            kinds: "종류", namePh: "이름 (예: 동그라미)", addTip: "종류 더하기",
+            clsHint: "종류를 누른 뒤 예시를 모아요. 종류마다 20장이면 충분해요. 작은 그림을 누르면 지워요.",
+            noCls: "아직 종류가 없어요. 이름을 적어 더하거나 [예시 그림 넣기]를 눌러 봐요.",
+            shots: "{n}장", del: "지우기", rename: "이름 바꾸기", thumbTip: "누르면 이 예시를 지워요",
+            dup: "같은 이름이 이미 있어요", max: "종류는 6개까지 만들 수 있어요", delAsk: "이 종류와 예시를 지울까요?",
+            samplesAdded: "종류마다 예시 그림 20장을 넣었어요",
+            circle: "동그라미", triangle: "세모", star: "별",
+            camOffMsg: "카메라가 꺼져 있어요", camFail: "카메라를 쓸 수 없어요. 그리기나 예시 그림으로 해 보세요",
+            camHint: "가운데 점선 네모 안만 AI가 봐요. 그림과 영상은 이 컴퓨터 밖으로 나가지 않아요.",
+            drawHint: "흰 종이에 까만 펜으로 크게 그려요. 그림은 이 컴퓨터 밖으로 나가지 않아요.",
+            clear: "지우기", sees: "AI가 보는 그림 (32×32)", seesHint: "AI는 이 작은 흑백 그림만 봐요.",
+            selNone: "종류를 골라 주세요", sel: "고른 종류: {n}",
+            capCam: "꾹 눌러서 예시 모으기", capDraw: "이 그림 넣기", needCam: "카메라를 켜 주세요",
+            answer: "AI의 답", afterTrain: "배운 뒤에 보여요", reTrain: "종류가 바뀌어서 다시 배워야 해요",
+            trick: "AI 속이기 — 그림을 바꿔 봐요", rot: "기울이기", scl: "크기", brt: "밝기", reset: "되돌리기",
+            aug: "데이터 늘리기 — 배울 때 그림을 흔들어요", aRotate: "돌리기", aShift: "옮기기·크기", aBright: "밝기",
+            train: "배우기 시작", trainAgain: "다시 배우기",
+            trainNeed: "두 종류 이상, 종류마다 예시를 {n}장 넘게 모으면 눌러요.", trainOk: "인터넷 없이 이 컴퓨터에서 배워요. 흔들기를 켜면 두 배로 오래 배워요.",
+            notYet: "아직 안 배웠어요", learning: "배우는 중", learned: "다 배웠어요 · 맞힌 비율 {p}%", loadedM: "불러온 모델: {n}",
+            acc: "맞힌 비율", loss: "틀린 정도",
+            exam: "속이기 시험 — 모은 그림을 바꿔서 물어봐요", examEmpty: "배울 때마다 한 줄씩 쌓여요",
+            shake: "흔들기", eStraight: "똑바로", eTilt: "기울이기", eSmall: "작게", eDark: "어둡게", noAug: "안 흔듦",
+            wrong: "배운 그림인데도 틀린 것 ({n})",
+            filters: "AI가 배운 필터 8개",
+            filtersHint: "AI가 스스로 만든 5×5 무늬예요. 파란 칸은 \"여기가 밝으면\", 빨간 칸은 \"여기가 어두우면\" 반응해요.",
+            maps: "필터를 거친 그림 (특징 지도)",
+            mapsHint: "진한 곳이 필터가 찾은 곳이에요. 여러 그림을 보여 주며 각 필터가 무엇을 찾는지 적어 봐요.",
+            notePh: "무엇을 찾나?", lookEmpty: "배운 뒤에 보여요",
+            share: "모델 주고받기", save: "내보내기", load: "불러오기", shareHint: "다른 모둠의 모델을 불러와 내 그림으로 시험해 봐요.",
+            loadOk: "모델을 불러왔어요. 내 그림으로 시험해 봐요", loadBad: "파일을 읽지 못했어요. 내보낸 모델 파일이 맞는지 확인해 주세요",
+            workerFail: "불러오지 못했어요. 새로고침해 주세요" },
+      en: { title: "edge-lab — AI eye", app: "AI eye", lang: "한",
+            q1: "Kinds & examples", q2: "Show", q3: "Learn & look inside",
+            toTrain: "Train (with my photos)", toTrainTip: "Open Train, where you teach an AI with your own photos",
+            s1: "① Collect", s2: "② Learn", s3: "③ Look inside", s4: "④ Trick it",
+            how: "How will you show it?", cam: "Camera", draw: "Draw", sample: "Add samples (○ △ ☆)",
+            kinds: "Kinds", namePh: "Name (e.g. Circle)", addTip: "Add a kind",
+            clsHint: "Pick a kind, then collect examples. 20 per kind is plenty. Click a small picture to remove it.",
+            noCls: "No kinds yet. Type a name and add it, or press [Add sample shapes].",
+            shots: "{n}", del: "Delete", rename: "Rename", thumbTip: "Click to remove this example",
+            dup: "That name is already used", max: "You can make up to 6 kinds", delAsk: "Delete this kind and its examples?",
+            samplesAdded: "Added 20 sample pictures to each kind",
+            circle: "Circle", triangle: "Triangle", star: "Star",
+            camOffMsg: "The camera is off", camFail: "Can't use the camera. Try drawing or the sample shapes",
+            camHint: "The AI only sees inside the dashed square. Pictures and video never leave this computer.",
+            drawHint: "Draw big with a black pen on white paper. Drawings never leave this computer.",
+            clear: "Clear", sees: "What the AI sees (32×32)", seesHint: "The AI only sees this tiny gray picture.",
+            selNone: "Pick a kind", sel: "Kind: {n}",
+            capCam: "Hold to collect examples", capDraw: "Add this drawing", needCam: "Turn the camera on",
+            answer: "The AI's answer", afterTrain: "Shows up after learning", reTrain: "The kinds changed — learn again",
+            trick: "Trick the AI — change the picture", rot: "Tilt", scl: "Size", brt: "Brightness", reset: "Reset",
+            aug: "Data augmentation — shake pictures while learning", aRotate: "Rotate", aShift: "Move·size", aBright: "Brightness",
+            train: "Start learning", trainAgain: "Learn again",
+            trainNeed: "Press once two or more kinds have over {n} examples each.", trainOk: "Learns on this computer, no internet. Shaking makes it learn twice as long.",
+            notYet: "Not learned yet", learning: "Learning", learned: "Done · {p}% right", loadedM: "Loaded model: {n}",
+            acc: "Right answers", loss: "How wrong",
+            exam: "Trick test — ask with changed pictures", examEmpty: "One row is added each time it learns",
+            shake: "Shaking", eStraight: "Straight", eTilt: "Tilted", eSmall: "Small", eDark: "Dark", noAug: "None",
+            wrong: "Learned pictures it still got wrong ({n})",
+            filters: "The 8 filters the AI learned",
+            filtersHint: "5×5 patterns the AI made by itself. Blue cells react to \"bright here\", red cells to \"dark here\".",
+            maps: "Pictures after each filter (feature maps)",
+            mapsHint: "Dark spots are where a filter found something. Show many pictures and write what each filter looks for.",
+            notePh: "Looks for?", lookEmpty: "Shows up after learning",
+            share: "Share models", save: "Export", load: "Import", shareHint: "Import another group's model and test it with your drawings.",
+            loadOk: "Model loaded. Test it with your own pictures", loadBad: "Couldn't read the file. Check it is an exported model file",
+            workerFail: "Couldn't load. Please refresh" }
+    };
+    function t(k) { return I18N[LANG][k] !== undefined ? I18N[LANG][k] : I18N.ko[k]; }
+    const $ = id => document.getElementById(id);
+    const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+    const rgb = hex => { const h = hex.replace("#", ""); return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16)); };
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    const SV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">';
+    const IC = {
+      video: SV + '<rect x="2.5" y="6" width="13" height="12" rx="2"/><path d="m15.5 10.5 6-3.5v10l-6-3.5"/></svg>',
+      videoOff: SV + '<path d="M3 3l18 18M15.5 11.5 21.5 7v10l-3-1.8M13 18H4.5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h1"/><path d="M9.5 6h4a2 2 0 0 1 2 2v3"/></svg>',
+      pen: SV + '<path d="M4 20l1-4.5L16 4.5a2.1 2.1 0 0 1 3 3L8 18.5Z"/><path d="M14 6.5l3 3"/></svg>',
+      shapes: SV + '<circle cx="7" cy="7.5" r="4"/><path d="M17 3.5 21.5 11h-9Z"/><path d="m8 13.5 1.4 2.9 3.1.4-2.3 2.2.6 3.1L8 20.6 5.2 22.1l.6-3.1-2.3-2.2 3.1-.4Z"/><rect x="14.5" y="14" width="7" height="7" rx="1"/></svg>',
+      plus: SV + '<path d="M12 5v14M5 12h14"/></svg>',
+      x: SV + '<path d="M6 6l12 12M18 6 6 18"/></svg>',
+      edit: SV + '<path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17Z"/></svg>',
+      eraser: SV + '<path d="m7 21-4-4a1.4 1.4 0 0 1 0-2L14 4a1.4 1.4 0 0 1 2 0l5 5a1.4 1.4 0 0 1 0 2L11 21Z"/><path d="M21 21H7M9 10l6 6"/></svg>',
+      camera: SV + '<path d="M3 8a2 2 0 0 1 2-2h2.5L9 4h6l1.5 2H19a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><circle cx="12" cy="13" r="3.5"/></svg>',
+      learn: SV + '<path d="M12 4 22 8.6 12 13.2 2 8.6 12 4Z"/><path d="M6 10.6v4.9c0 1.7 2.7 3.1 6 3.1s6-1.4 6-3.1v-4.9"/></svg>',
+      undo: SV + '<path d="M4 9h11a5 5 0 0 1 0 10H9"/><path d="M8 5 4 9l4 4"/></svg>',
+      down: SV + '<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>',
+      up: SV + '<path d="M12 16V5M7 10l5-5 5 5M5 20h14"/></svg>',
+      back: SV + '<path d="M19 12H5M11 6l-6 6 6 6"/></svg>'
+    };
+
+    /* ml-lab page.js 그대로 */
+    const MAX_CLASS = 6, MIN_PER_CLASS = 5, SAMPLE_N = 20;
+    const EXAM_COLS = [["straight", "eStraight"], ["tilt", "eTilt"], ["small", "eSmall"], ["dark", "eDark"]];
+    const AUG_NAME = { rotate: "aRotate", shift: "aShift", bright: "aBright" };
+    const SAMPLE_KINDS = ["circle", "triangle", "star"];
+
+    /* ── 상태 ── */
+    const classes = [];              // { name, xs: Float32Array[] }
+    let sel = -1, renaming = -1;
+    let src = "draw";
+    let model = null, modelNames = [], modelFrom = "", lastAcc = null, training = false;
+    let notes = Array(8).fill("");
+    const examRows = [];             // { aug:[키...], exam }
+    let hist = [], step = 1, tricked = false;
+    let trainSnap = [], pendingNames = [], pendingAug = {};
+
+    let toastTimer = 0;
+    function toast(msg) {
+      const el = $("toast"); el.textContent = msg; el.classList.add("on");
+      clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove("on"), 2400);
+    }
+    function setStep(n) {
+      step = n;
+      Array.prototype.forEach.call($("steps").children, el => {
+        const s = +el.getAttribute("data-s");
+        el.classList.toggle("on", s === n); el.classList.toggle("done", s < n);
+      });
+    }
+    const argmax = a => { let b = 0; for (let i = 1; i < a.length; i++) if (a[i] > a[b]) b = i; return b; };
+
+    /* ── 글자 ── */
+    function set(id, s) { const el = $(id); if (el) el.textContent = s; }
+    function paintText() {
+      document.title = t("title"); $("langButton").textContent = t("lang");
+      set("txtQ1", t("q1")); set("txtQ2", t("q2")); set("txtQ3", t("q3"));
+      $("toTrain").innerHTML = IC.back + esc(t("toTrain")); $("toTrain").title = t("toTrainTip");
+      Array.prototype.forEach.call($("steps").children, el => {
+        const s = t("s" + el.getAttribute("data-s"));          // "① 예시 모으기" → 번호 + 이름 (좁으면 이름을 숨긴다)
+        el.innerHTML = esc(s.slice(0, 1)) + "<em>" + esc(s.slice(1)) + "</em>"; el.title = s.slice(2);
+      });
+      set("txtHow", t("how"));
+      $("srcSeg").children[0].innerHTML = IC.video + esc(t("cam"));
+      $("srcSeg").children[1].innerHTML = IC.pen + esc(t("draw"));
+      $("sampleBtn").innerHTML = IC.shapes + esc(t("sample"));
+      set("txtKinds", t("kinds")); $("clsName").placeholder = t("namePh");
+      $("clsAdd").innerHTML = IC.plus; $("clsAdd").title = t("addTip"); $("clsAdd").setAttribute("aria-label", t("addTip"));
+      set("txtClsHint", t("clsHint"));
+      $("camOff").innerHTML = IC.videoOff + "<span>" + esc(t("camOffMsg")) + "</span>";
+      $("padClear").innerHTML = IC.eraser + esc(t("clear"));
+      set("txtSees", t("sees")); set("txtSeesHint", t("seesHint"));
+      set("txtAnswer", t("answer")); set("txtTrick", t("trick"));
+      set("txtRot", t("rot")); set("txtScl", t("scl")); set("txtBrt", t("brt"));
+      $("trickReset").innerHTML = IC.undo + esc(t("reset"));
+      set("txtAug", t("aug")); set("txtARot", t("aRotate")); set("txtAShift", t("aShift")); set("txtABright", t("aBright"));
+      set("txtAcc", t("acc")); set("txtLoss", t("loss"));
+      set("txtExam", t("exam")); set("txtFilters", t("filters")); set("txtFiltersHint", t("filtersHint"));
+      set("txtMaps", t("maps")); set("txtMapsHint", t("mapsHint"));
+      set("txtShare", t("share")); set("txtShareHint", t("shareHint"));
+      $("saveBtn").innerHTML = IC.down + esc(t("save")); $("loadBtn").innerHTML = IC.up + esc(t("load"));
+      paintSrc(); paintTrain(); renderClasses(); renderExam(); renderFilters(); paintPred(null);
+      if (window.navRepaint) window.navRepaint();
+    }
+
+    /* 32×32 흑백 → 작은 그림 주소 (썸네일) */
+    const thumbCv = document.createElement("canvas"); thumbCv.width = thumbCv.height = 32;
+    const urlCache = new WeakMap();
+    function toURL(x) {
+      if (urlCache.has(x)) return urlCache.get(x);
+      const n = Math.round(Math.sqrt(x.length)), g = thumbCv.getContext("2d"), im = g.createImageData(n, n);
+      for (let i = 0; i < n * n; i++) {
+        const v = Math.round(x[i] * 255);
+        im.data[i * 4] = im.data[i * 4 + 1] = im.data[i * 4 + 2] = v; im.data[i * 4 + 3] = 255;
+      }
+      g.putImageData(im, 0, 0);
+      const u = thumbCv.toDataURL();
+      urlCache.set(x, u);
+      return u;
+    }
+
+    /* ── 종류 ── */
+    function addClass(name) {
+      name = name.trim();
+      if (!name) return -1;
+      if (classes.some(c => c.name === name)) { toast(t("dup")); return -1; }
+      if (classes.length >= MAX_CLASS) { toast(t("max")); return -1; }
+      classes.push({ name: name, xs: [] });
+      classesChanged();
+      return classes.length - 1;
+    }
+    $("clsAdd").addEventListener("click", () => { const i = addClass($("clsName").value); if (i >= 0) { $("clsName").value = ""; pick(i); } });
+    $("clsName").addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing) $("clsAdd").click(); });
+    function pick(i) { sel = i; renderClasses(); }
+
+    /* 종류가 늘거나 줄면 배운 모델은 더 이상 맞지 않는다 (ml-lab 과 같다).
+       불러온 모델은 내 종류와 상관없이 따로 온 것이라 그대로 둔다. */
+    function classesChanged(removed) {
+      if (model && modelFrom === "train" && (removed || modelNames.length !== classes.length)) dropModel();
+      renderClasses();
+    }
+    function dropModel() {
+      model = null; modelNames = []; modelFrom = ""; lastAcc = null;
+      $("saveBtn").disabled = true;
+      paintPred(t("reTrain"));
+      renderFilters();
+      $("prgFill").style.width = "0"; $("prgPct").textContent = "";
+      paintTrain();
+    }
+
+    function renderClasses() {
+      if (!classes.length) {
+        $("clsList").innerHTML = '<div class="hint empty">' + esc(t("noCls")) + "</div>";
+      } else {
+        $("clsList").innerHTML = classes.map((c, i) => {
+          const shown = c.xs.slice(-48), off = c.xs.length - shown.length;
+          const head = i === renaming
+            ? '<input class="inp rn" data-rn="' + i + '" maxlength="12" value="' + esc(c.name) + '">'
+            : '<span class="nm">' + esc(c.name) + "</span>";
+          return '<div class="cls' + (i === sel ? " on" : "") + '" data-i="' + i + '">' +
+            '<div class="top">' + head +
+              '<span class="ct num' + (c.xs.length < MIN_PER_CLASS ? " low" : "") + '">' + esc(t("shots").replace("{n}", c.xs.length)) + "</span>" +
+              '<button class="ib" type="button" data-ren="' + i + '" title="' + esc(t("rename")) + '" aria-label="' + esc(t("rename")) + '">' + IC.edit + "</button>" +
+              '<button class="ib" type="button" data-del="' + i + '" title="' + esc(t("del")) + '" aria-label="' + esc(t("del")) + '">' + IC.x + "</button>" +
+            "</div>" +
+            (shown.length ? '<div class="thumbs">' + shown.map((x, j) =>
+              '<img src="' + toURL(x) + '" data-c="' + i + '" data-j="' + (off + j) + '" alt="" title="' + esc(t("thumbTip")) + '">').join("") + "</div>" : "") +
+            "</div>";
+        }).join("");
+        const rn = $("clsList").querySelector("[data-rn]");
+        if (rn) { rn.focus(); rn.select(); }
+      }
+      const c = classes[sel];
+      $("selInfo").textContent = c ? t("sel").replace("{n}", c.name) : t("selNone");
+      $("selInfo").classList.toggle("on", !!c);
+      $("capBtn").disabled = !c;
+      const ready = classes.filter(k => k.xs.length >= MIN_PER_CLASS).length >= 2;
+      $("trainBtn").disabled = training || !ready || !M;
+      $("trainHint").textContent = ready ? t("trainOk") : t("trainNeed").replace("{n}", MIN_PER_CLASS - 1);
+      if (!model && step > 1 && !training) setStep(1);
+    }
+    $("clsList").addEventListener("click", e => {
+      if (e.target.closest("[data-rn]")) return;
+      const d = e.target.closest("[data-del]"), r = e.target.closest("[data-ren]"), im = e.target.closest("img"), card = e.target.closest(".cls");
+      if (d) {
+        const i = +d.getAttribute("data-del");
+        if (classes[i].xs.length && !confirm(t("delAsk"))) return;
+        classes.splice(i, 1);
+        if (sel === i) sel = Math.min(i, classes.length - 1); else if (sel > i) sel--;
+        renaming = -1;
+        classesChanged(true); return;
+      }
+      if (r) { renaming = +r.getAttribute("data-ren"); sel = renaming; renderClasses(); return; }
+      if (im) { classes[+im.getAttribute("data-c")].xs.splice(+im.getAttribute("data-j"), 1); renderClasses(); return; }
+      if (card) pick(+card.getAttribute("data-i"));
+    });
+    /* 이름 바꾸기 — Enter/바깥 누르기로 확정, Esc 로 취소. 순서는 그대로라 배운 모델도 그대로 쓴다 */
+    function finishRename(inp, keep) {
+      if (renaming < 0) return;
+      const i = renaming, v = inp.value.trim();
+      renaming = -1;
+      if (keep && v && v !== classes[i].name) {
+        if (classes.some((c, k) => k !== i && c.name === v)) toast(t("dup"));
+        else {
+          classes[i].name = v;
+          if (model && modelFrom === "train" && modelNames.length === classes.length) modelNames[i] = v;
+        }
+      }
+      renderClasses();
+    }
+    $("clsList").addEventListener("keydown", e => {
+      const inp = e.target.closest("[data-rn]"); if (!inp) return;
+      if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); finishRename(inp, true); }
+      else if (e.key === "Escape") { e.preventDefault(); finishRename(inp, false); }
+    });
+    $("clsList").addEventListener("focusout", e => { const inp = e.target.closest && e.target.closest("[data-rn]"); if (inp) finishRename(inp, true); });
+
+    /* 예시 그림 세트 (○ △ ☆) */
+    $("sampleBtn").addEventListener("click", () => {
+      if (!M) return;
+      for (const kind of SAMPLE_KINDS) {
+        const name = t(kind);
+        let i = classes.findIndex(c => c.name === name);
+        if (i < 0) i = addClass(name);
+        if (i < 0) continue;
+        for (let n = 0; n < SAMPLE_N; n++) classes[i].xs.push(M.drawShape(kind));
+      }
+      if (sel < 0 && classes.length) sel = 0;
+      renderClasses();
+      toast(t("samplesAdded"));
+      if (window.vapiStat) vapiStat("eye_samples");
+    });
+
+    /* ── 입력: 그리기 판 ── */
+    const pad = $("pad"), pg = pad.getContext("2d");
+    function clearPad() { pg.fillStyle = "#FFFFFF"; pg.fillRect(0, 0, pad.width, pad.height); }
+    clearPad();
+    let drawing = false, lastPt = null;
+    const padPt = e => { const r = pad.getBoundingClientRect(); return [(e.clientX - r.left) * pad.width / r.width, (e.clientY - r.top) * pad.height / r.height]; };
+    pad.addEventListener("pointerdown", e => { drawing = true; lastPt = padPt(e); try { pad.setPointerCapture(e.pointerId); } catch (err) {} stroke(lastPt); });
+    pad.addEventListener("pointermove", e => { if (drawing) { const p = padPt(e); stroke(p); lastPt = p; } });
+    ["pointerup", "pointercancel"].forEach(ev => pad.addEventListener(ev, () => { drawing = false; }));
+    function stroke(p) {
+      // 32칸으로 줄이면 선 굵기가 1.5칸쯤 된다 — 예시 그림의 펜 굵기와 비슷하게
+      pg.strokeStyle = "#1A1A1A"; pg.lineWidth = 12; pg.lineCap = "round"; pg.lineJoin = "round";
+      pg.beginPath(); pg.moveTo(lastPt[0], lastPt[1]); pg.lineTo(p[0] + 0.01, p[1]); pg.stroke();
+    }
+    $("padClear").addEventListener("click", clearPad);
+
+    /* ── 입력: 카메라 ──
+       [카메라] 를 고를 때만 켜고, [그리기] 로 돌아가면 끈다. 열자마자 켜지 않는다.
+       좌우를 뒤집지 않는다 — 카드를 보여 주는 활동이라 글자·모양 방향이 그대로여야 한다 (ml-lab DEVELOP.md). */
+    const vid = $("camVid");
+    let stream = null, camGen = 0, camBusy = false;
+    async function camOn() {
+      const my = ++camGen;
+      try {
+        const s = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false });
+        if (my !== camGen) { s.getTracks().forEach(tr => tr.stop()); return false; }   // 기다리는 사이에 꺼 달라고 했다
+        stream = s; vid.srcObject = s;
+        try { await vid.play(); } catch (e) {}
+        $("camOff").hidden = true;
+        if (window.vapiStat) vapiStat("eye_camera");
+        return true;
+      } catch (e) {
+        if (my === camGen) toast(t("camFail"));
+        return false;
+      }
+    }
+    function camOff() {
+      camGen++;
+      if (stream) stream.getTracks().forEach(tr => tr.stop());
+      stream = null; vid.srcObject = null; $("camOff").hidden = false;
+    }
+    $("srcSeg").addEventListener("click", async e => {
+      const b = e.target.closest("[data-src]"); if (!b || camBusy) return;
+      const want = b.getAttribute("data-src");
+      if (want === src) return;
+      if (want === "cam") {
+        camBusy = true;
+        const ok = await camOn();
+        camBusy = false;
+        if (!ok) return;
+      } else camOff();
+      src = want;
+      paintSrc();
+    });
+    function paintSrc() {
+      Array.prototype.forEach.call($("srcSeg").children, o => o.classList.toggle("on", o.getAttribute("data-src") === src));
+      $("camBox").hidden = src !== "cam";
+      $("drawBox").hidden = src !== "draw";
+      $("padClear").hidden = src !== "draw";
+      $("srcHint").textContent = src === "cam" ? t("camHint") : t("drawHint");
+      $("capBtn").innerHTML = src === "cam" ? IC.camera + esc(t("capCam")) : IC.plus + esc(t("capDraw"));
+    }
+
+    /* 지금 보이는 것 → 32×32 흑백 (0 검정 ~ 1 흰색) */
+    const smallCv = document.createElement("canvas"); smallCv.width = smallCv.height = 32;
+    const sg = smallCv.getContext("2d", { willReadFrequently: true });
+    function grab() {
+      if (!M) return null;
+      const IMG = M.IMG;
+      sg.imageSmoothingEnabled = true; sg.imageSmoothingQuality = "high";
+      if (src === "cam") {
+        if (!stream || vid.readyState < 2) return null;
+        const vw = vid.videoWidth, vh = vid.videoHeight, s = Math.min(vw, vh) * 0.7;   // 가운데 네모 (화면의 점선 칸)
+        sg.drawImage(vid, (vw - s) / 2, (vh - s) / 2, s, s, 0, 0, IMG, IMG);
+      } else {
+        sg.drawImage(pad, 0, 0, IMG, IMG);
+      }
+      const d = sg.getImageData(0, 0, IMG, IMG).data, x = new Float32Array(IMG * IMG);
+      for (let i = 0; i < IMG * IMG; i++) x[i] = (0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2]) / 255;
+      return x;
+    }
+
+    /* ── 예시 모으기 ── 그림은 한 장씩 넣고 판을 비운다, 카메라는 누르는 동안 초당 5장 */
+    let capTimer = 0;
+    function capOnce() {
+      const c = classes[sel]; if (!c) return;
+      const x = grab(); if (!x) { toast(t(src === "cam" ? "needCam" : "workerFail")); return; }
+      c.xs.push(x);
+      renderClasses();
+    }
+    function capStop() { clearInterval(capTimer); capTimer = 0; }
+    $("capBtn").addEventListener("pointerdown", e => {
+      if ($("capBtn").disabled || e.button > 0) return;
+      if (src === "draw") { capOnce(); clearPad(); return; }
+      e.preventDefault(); capOnce();
+      capStop(); capTimer = setInterval(capOnce, 200);
+    });
+    ["pointerup", "pointerleave", "pointercancel"].forEach(ev => $("capBtn").addEventListener(ev, capStop));
+    /* 키보드(Enter·스페이스)로 누른 것 — pointerdown 이 없으니 한 장만 */
+    $("capBtn").addEventListener("click", e => { if (e.detail === 0 && !$("capBtn").disabled) { capOnce(); if (src === "draw") clearPad(); } });
+
+    /* ── 배우기 (Web Worker) ── */
+    const worker = new Worker("/lib/eye/worker.js", { type: "module" });
+    worker.onerror = e => { training = false; renderClasses(); paintTrain(); toast(t("workerFail")); console.error(e); };
+
+    function paintTrain() {
+      $("trainBtn").innerHTML = IC.learn + esc(model && modelFrom === "train" ? t("trainAgain") : t("train"));
+      if (training) { $("prgLabel").textContent = t("learning"); return; }
+      $("prgLabel").textContent = !model ? t("notYet")
+        : modelFrom === "file" ? t("loadedM").replace("{n}", modelNames.join(" · "))
+        : t("learned").replace("{p}", lastAcc);
+    }
+    $("trainBtn").addEventListener("click", () => {
+      if (training || !M) return;
+      const X = [], Y = [];
+      trainSnap = [];
+      classes.forEach((c, i) => c.xs.forEach(x => { X.push(Array.from(x)); Y.push(i); trainSnap.push([x, i]); }));
+      const aug = {};
+      $("augs").querySelectorAll("input").forEach(i => { aug[i.getAttribute("data-aug")] = i.checked; });
+      const anyAug = Object.values(aug).some(Boolean);
+      training = true; renderClasses();
+      hist = []; drawChart();
+      $("prgFill").style.width = "0"; $("prgPct").textContent = "0%";
+      paintTrain(); setStep(2);
+      pendingNames = classes.map(c => c.name);
+      pendingAug = aug;
+      worker.postMessage({ type: "train", X: X, Y: Y, nClass: classes.length, aug: aug, epochs: anyAug ? 40 : 20 });
+    });
+
+    worker.onmessage = ({ data: m }) => {
+      if (m.type === "progress") {
+        hist.push(m);
+        const pct = Math.round(m.epoch / m.epochs * 100);
+        $("prgFill").style.width = pct + "%"; $("prgPct").textContent = pct + "%";
+        drawChart();
+      } else if (m.type === "done") {
+        training = false;
+        model = M.TinyCNN.fromJSON(m.model); modelNames = pendingNames; modelFrom = "train";
+        lastAcc = Math.round(m.acc * 100);
+        $("prgPct").textContent = "";
+        $("saveBtn").disabled = false;
+        examRows.push({ aug: Object.keys(pendingAug).filter(k => pendingAug[k]), exam: m.exam });
+        tricked = false;
+        paintTrain(); renderExam(); renderWrong(m.wrong); renderFilters();
+        renderClasses(); setStep(3);
+        if (window.vapiStat) vapiStat("eye_train");
+        if (window.EL_WIN && EL_WIN.hidden) EL_WIN.notify(t("learned").replace("{p}", lastAcc), { actions: [{ label: t("app"), href: "/eye" }] });
+      }
+    };
+
+    function drawChart() {
+      const c = $("chart"), dpr = window.devicePixelRatio || 1, W = c.clientWidth, H = c.clientHeight;
+      if (!W || !H) return;
+      c.width = W * dpr; c.height = H * dpr;
+      const g = c.getContext("2d"); g.scale(dpr, dpr); g.clearRect(0, 0, W, H);
+      if (hist.length < 2) return;
+      const n = hist[0].epochs, maxL = Math.max.apply(null, hist.map(h => h.loss));
+      const line = (pts, color) => {
+        g.strokeStyle = color; g.lineWidth = 2; g.beginPath();
+        pts.forEach(([i, v], k) => { const x = 6 + (i - 1) / (n - 1) * (W - 12), y = H - 6 - v * (H - 12); if (k) g.lineTo(x, y); else g.moveTo(x, y); });
+        g.stroke();
+      };
+      line(hist.filter(h => h.acc !== null).map(h => [h.epoch, h.acc]), css("--pen-blue"));
+      line(hist.map(h => [h.epoch, h.loss / maxL]), css("--pen-red"));
+    }
+    new ResizeObserver(drawChart).observe($("chart"));
+
+    /* ── 속이기 시험 표 — 배울 때마다 한 줄씩 쌓인다 (수업 3차시의 전후 비교표) ── */
+    function renderExam() {
+      if (!examRows.length) { $("exam").innerHTML = '<div class="hint">' + esc(t("examEmpty")) + "</div>"; return; }
+      const pct = v => '<td class="num' + (v < 0.6 ? " low" : "") + '">' + Math.round(v * 100) + "%</td>";
+      $("exam").innerHTML = '<table class="exam"><tr><th>' + esc(t("shake")) + "</th>" +
+        EXAM_COLS.map(([, k]) => "<th>" + esc(t(k)) + "</th>").join("") + "</tr>" +
+        examRows.map(r => '<tr><td class="nm">' + esc(r.aug.length ? r.aug.map(k => t(AUG_NAME[k])).join("+") : t("noAug")) + "</td>" +
+          EXAM_COLS.map(([k]) => pct(r.exam[k])).join("") + "</tr>").join("") + "</table>";
+    }
+    function renderWrong(wrong) {
+      if (!wrong || !wrong.length) { $("wrongWrap").innerHTML = ""; return; }
+      $("wrongWrap").innerHTML = '<div class="hint" style="margin:6px 0 4px">' + esc(t("wrong").replace("{n}", wrong.length)) + "</div>" +
+        '<div class="thumbs">' + wrong.slice(0, 24).map(([n, a]) => {
+          const s = trainSnap[n]; if (!s) return "";
+          return '<img src="' + toURL(s[0]) + '" alt="" title="' + esc(pendingNames[s[1]] + " → " + (modelNames[a] || "?")) + '">';
+        }).join("") + "</div>";
+    }
+
+    /* ── 들여다보기: 필터 · 특징 지도 ── */
+    function renderFilters() {
+      if (!model) {
+        $("filters").innerHTML = '<div class="hint empty" style="grid-column:1/-1">' + esc(t("lookEmpty")) + "</div>";
+        $("maps").innerHTML = "";
+        return;
+      }
+      const K = M.K, OUT = M.OUT, W = model.p.W, F = model.F;
+      $("filters").innerHTML = Array.from({ length: F }, (_, f) =>
+        '<div class="fcell"><canvas width="' + K + '" height="' + K + '" data-f="' + f + '"></canvas><span class="fno num">' + (f + 1) + "</span></div>").join("");
+      const pos = rgb(css("--pen-blue")), neg = rgb(css("--pen-red")), bg = [255, 255, 255];
+      $("filters").querySelectorAll("canvas").forEach(cv => {
+        const f = +cv.getAttribute("data-f"), g = cv.getContext("2d"), im = g.createImageData(K, K);
+        let mx = 1e-6;
+        for (let i = 0; i < K * K; i++) mx = Math.max(mx, Math.abs(W[f * K * K + i]));
+        for (let i = 0; i < K * K; i++) {
+          const v = W[f * K * K + i] / mx, col = v >= 0 ? pos : neg, a = Math.abs(v);
+          for (let ch = 0; ch < 3; ch++) im.data[i * 4 + ch] = Math.round(bg[ch] + (col[ch] - bg[ch]) * a);
+          im.data[i * 4 + 3] = 255;
+        }
+        g.putImageData(im, 0, 0);
+      });
+      // 해석 메모는 특징 지도 밑에 둔다 — 5×5 무늬보다 "어떤 그림에서 켜지나"가 훨씬 읽기 쉽다
+      $("maps").innerHTML = Array.from({ length: F }, (_, f) =>
+        '<div class="fcell"><canvas width="' + OUT + '" height="' + OUT + '" data-m="' + f + '"></canvas>' +
+        '<input class="inp note" data-n="' + f + '" maxlength="12" placeholder="' + (f + 1) + ". " + esc(t("notePh")) + '" value="' + esc(notes[f] || "") + '"></div>').join("");
+    }
+    $("maps").addEventListener("input", e => { const n = e.target.getAttribute && e.target.getAttribute("data-n"); if (n !== null) notes[+n] = e.target.value; });
+
+    function drawMaps(Z) {
+      const cvs = $("maps").querySelectorAll("canvas");
+      if (!cvs.length) return;
+      const OUT = M.OUT;
+      let mx = 1e-6;
+      for (let i = 0; i < Z.length; i++) if (Z[i] > mx) mx = Z[i];      // 여덟 장을 같은 잣대로 — 어느 필터가 더 반응했는지 비교
+      const acc = rgb(css("--pen-blue")), bg = [255, 255, 255];
+      cvs.forEach((cv, f) => {
+        const g = cv.getContext("2d"), im = g.createImageData(OUT, OUT);
+        for (let i = 0; i < OUT * OUT; i++) {
+          const a = Z[f * OUT * OUT + i] / mx;
+          for (let ch = 0; ch < 3; ch++) im.data[i * 4 + ch] = Math.round(bg[ch] + (acc[ch] - bg[ch]) * a);
+          im.data[i * 4 + 3] = 255;
+        }
+        g.putImageData(im, 0, 0);
+      });
+    }
+
+    /* ── 속이기 ── */
+    function trick() {
+      return { rot: +$("rot").value * Math.PI / 180, scale: +$("scl").value / 100, bright: +$("brt").value / 100 };
+    }
+    const isTricked = () => +$("rot").value !== 0 || +$("scl").value !== 100 || +$("brt").value !== 100;
+    [["rot", "rotVal", "°"], ["scl", "sclVal", "%"], ["brt", "brtVal", "%"]].forEach(([id, out, unit]) => {
+      $(id).addEventListener("input", () => {
+        $(out).textContent = $(id).value + unit;
+        if (model) {
+          setStep(4);
+          if (!tricked && window.vapiStat) vapiStat("eye_trick");
+          tricked = true;
+        }
+      });
+    });
+    $("trickReset").addEventListener("click", () => {
+      $("rot").value = 0; $("scl").value = 100; $("brt").value = 100;
+      $("rotVal").textContent = "0°"; $("sclVal").textContent = "100%"; $("brtVal").textContent = "100%";
+    });
+
+    /* ── 실시간: AI가 보는 그림 · 답 · 특징 지도 ── 초당 12번이면 충분하다 (저사양 PC 배려) */
+    function paintPred(msg) {
+      if (model && !msg) return;
+      $("pred").innerHTML = '<div class="hint">' + esc(msg || t("afterTrain")) + "</div>";
+    }
+    const see = $("seeCv"), seeG = see.getContext("2d");
+    let lastT = 0, liveRaf = 0, liveOn = false, lastOut = null;
+    function live(now) {
+      if (!liveOn) return;
+      liveRaf = requestAnimationFrame(live);
+      if (now - lastT < 80) return;
+      lastT = now;
+      let x = grab();
+      if (!x) return;
+      if (isTricked()) x = M.transform(x, trick());
+      const IMG = M.IMG, im = seeG.createImageData(IMG, IMG);
+      for (let i = 0; i < IMG * IMG; i++) {
+        const v = Math.round(x[i] * 255);
+        im.data[i * 4] = im.data[i * 4 + 1] = im.data[i * 4 + 2] = v; im.data[i * 4 + 3] = 255;
+      }
+      seeG.putImageData(im, 0, 0);
+      if (!model) { lastOut = null; return; }
+      const r = model.forward(x), out = r.out, best = argmax(out);
+      lastOut = { out: Array.from(out), best: best, name: modelNames[best] };
+      $("pred").innerHTML = Array.from(out).map((v, c) =>
+        '<div class="bar' + (c === best ? " top" : "") + '"><div class="bl"><span>' + esc(modelNames[c] != null ? modelNames[c] : "?") + "</span>" +
+        '<span class="num">' + Math.round(v * 100) + '%</span></div><div class="bt"><div class="bf" style="width:' + (v * 100).toFixed(1) + '%"></div></div></div>').join("");
+      drawMaps(r.Z);
+    }
+    function liveStart() { if (liveOn) return; liveOn = true; lastT = 0; liveRaf = requestAnimationFrame(live); }
+    function liveStop() { liveOn = false; cancelAnimationFrame(liveRaf); }
+
+    /* ── 모델 주고받기 — ml-lab 과 같은 파일 모양이라 두 곳 모델을 서로 불러올 수 있다 ── */
+    $("saveBtn").addEventListener("click", () => {
+      if (!model) return;
+      const body = JSON.stringify({ app: "ml-lab-eye", v: 1, names: modelNames, notes: notes, model: model.toJSON() });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([body], { type: "application/json" }));
+      a.download = "ai-eye-" + (modelNames.join("-").slice(0, 30) || "model") + ".json";
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      if (window.vapiStat) vapiStat("eye_export");
+    });
+    $("loadBtn").addEventListener("click", () => $("loadFile").click());
+    $("loadFile").addEventListener("change", async () => {
+      const f = $("loadFile").files[0]; $("loadFile").value = "";
+      if (!f || !M) return;
+      try {
+        const o = JSON.parse(await f.text());
+        if (o.app !== "ml-lab-eye" || !o.model || !Array.isArray(o.names) || o.names.length !== o.model.nClass) throw new Error("bad");
+        model = M.TinyCNN.fromJSON(o.model); modelNames = o.names.map(String); modelFrom = "file";
+        notes = Array.from({ length: model.F }, (_, i) => String((o.notes || [])[i] || ""));
+        $("saveBtn").disabled = false;
+        paintTrain(); renderFilters(); setStep(3);
+        toast(t("loadOk"));
+        if (window.vapiStat) vapiStat("eye_import");
+      } catch (e) {
+        toast(t("loadBad"));
+      }
+    });
+
+    /* ── 가르치기로 — 이 앱은 가르치기의 "AI 눈 들여다보기" 짝이다 ── */
+    $("toTrain").addEventListener("click", () => {
+      if (window.EL_WIN) EL_WIN.open("/train"); else location.href = "/train";
+    });
+
+    /* 가려지면 카메라와 실시간 계산을 멈춘다. 카메라를 켜 두었던 것이면 다시 보일 때 켠다 (lib/embed.js).
+       배우기(워커)는 그대로 둔다 — 다른 창에 가 있는 동안 끝나면 알림이 뜬다. */
+    let camResume = false;
+    if (window.EL_WIN) {
+      EL_WIN.onHide(() => {
+        capStop(); drawing = false; liveStop();
+        camResume = !!stream;
+        if (stream) camOff();
+      });
+      EL_WIN.onShow(() => {
+        liveStart();
+        if (camResume && src === "cam") camOn();
+        camResume = false;
+      });
+    }
+
+    $("langButton").addEventListener("click", () => {
+      try { localStorage.setItem("vapiLang", LANG === "ko" ? "en" : "ko"); } catch (e) {}
+      location.reload();
+    });
+
+    setStep(1); paintText();
+
+    /* 계산 모듈 불러오기 */
+    Promise.all([import("/lib/eye/cnn.js"), import("/lib/eye/imgops.js")]).then(([cnn, ops]) => {
+      M = { TinyCNN: cnn.TinyCNN, IMG: cnn.IMG, OUT: cnn.OUT, K: cnn.K, transform: ops.transform, drawShape: ops.drawShape };
+      renderClasses();
+      if (!(window.EL_WIN && EL_WIN.hidden)) liveStart();
+    }).catch(e => { console.error(e); toast(t("workerFail")); });
+
+    /* 시험용 */
+    window.EL_EYE = {
+      classes: classes, addClass: addClass, pick: pick, grab: () => grab(), clearPad: clearPad,
+      get ready() { return !!M; }, get model() { return model; }, get modelNames() { return modelNames.slice(); },
+      get training() { return training; }, get src() { return src; }, get stream() { return stream; },
+      get live() { return liveOn; }, get lastOut() { return lastOut; }, get examRows() { return examRows; },
+      get step() { return step; }, get notes() { return notes; }
+    };
+  })();
+  </script>
+  <script src="/lib/shell.js"></script>
+  <script src="/lib/usage.js" data-page="eye"></script>
+  <i id="el-built" hidden></i>
+</body>
+</html>

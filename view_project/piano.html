@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>edge-lab — 피아노</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+  <link href="/fonts/fonts.css" rel="stylesheet">
+  <script>
+    try { if (localStorage.getItem("vapi-hc") === "1")
+            document.documentElement.classList.add("hc"); } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="/lib/tokens.css">
+  <script src="/lib/embed.js"></script>
+  <link rel="expect" href="#el-built" blocking="render">
+  <style>
+    /* 피아노 — 건반·드럼·박자기·녹음을 한 화면에. 소리는 전부 브라우저가 그 자리에서 만든다
+     * (Web Audio 발진기 + 잡음). 녹음 파일(샘플)이 없어서 인터넷도 서버 AI 도 필요 없다.
+     *
+     * 건반은 두 옥타브(도4~시5). 마우스·손가락(여러 개)·키보드 두 줄로 친다.
+     * 따라 치기는 다음에 칠 건반을 반짝이고, 맞는 건반을 눌러야 한 칸 넘어간다 — 박자는 안 본다.
+     * 노래는 저작권이 끝난 민요·고전만 넣었다.
+     */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root { --c0: #d9483b; --c2: #e88327; --c4: #d6b21f; --c5: #3f9a4a; --c7: #2f7fc4; --c9: #4a55b0; --c11: #8a4fa8;
+            --hit: #ffd35c; --hit-d: #c99a12; --good: #3a9a55; --bad: #c2412a; }
+    html.hc { --hit: #ffc933; --good: #237a3b; --bad: #9e2e19; }
+    body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; color: var(--ink); background: var(--paper);
+           font-family: "Gowun Dodum", "Apple SD Gothic Neo", system-ui, sans-serif; line-height: 1.5;
+           padding: var(--sp-2, 8px); gap: var(--sp-2, 8px); }
+    button, input { font-family: inherit; color: var(--ink); }
+    .btn { border: 1.5px solid var(--line-d); background: #fff; font-weight: 600; padding: 4px 12px; border-radius: var(--r); cursor: pointer;
+           font-size: .92rem; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; }
+    .btn.primary { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; }
+    .btn.rec { color: var(--pen-red); border-color: var(--pen-red); }
+    .btn.rec.on { background: var(--pen-red); color: #fff; }
+    .btn.on { background: var(--cyan-bg); border-color: var(--cyan); color: var(--cyan-d); }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+    .btn svg { width: 16px; height: 16px; flex: 0 0 auto; }
+    .btn.sq { width: 40px; padding: 0; }
+    .panel-head .btn { min-height: 32px; }
+
+    .panel.side { flex: 0 0 272px; } .panel.play { flex: 1 1 auto; } .panel.more { flex: 0 0 290px; }
+    .st { font-weight: 700; font-size: var(--fs-head, 14px); color: var(--cyan-d); display: flex; align-items: center; gap: 6px; }
+    .st .sp { flex: 1; }
+    .hint { font-size: var(--fs-side, 13px); color: var(--ink-2); }
+    .sec { display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1.5px dashed var(--line); }
+    .sec:first-child { padding-top: 0; border-top: 0; }
+    .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .num { font-family: Menlo, Consolas, monospace; font-size: var(--fs-mono, 13px); }
+    .keymap { display: grid; grid-template-columns: auto 1fr; gap: 4px 8px; align-items: center; font-size: var(--fs-side, 13px); color: var(--ink-2); }
+    .keymap > span:nth-child(odd) { white-space: nowrap; }
+    kbd { font-family: Menlo, Consolas, monospace; font-size: 12px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px;
+          padding: 0 4px; background: #fff; }
+
+    /* 악기 — 넷 중 하나 */
+    .inst { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .inst button { min-height: var(--tap, 48px); border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; cursor: pointer;
+                   display: flex; align-items: center; gap: 8px; padding: 4px 10px; font-size: .98rem; font-weight: 600; }
+    .inst button svg { width: 26px; height: 26px; flex: 0 0 auto; }
+    .inst button.on { border-color: var(--cyan); background: var(--cyan-bg); color: var(--cyan-d); box-shadow: inset 0 0 0 1px var(--cyan); }
+
+    .seg { display: inline-flex; border: 1.5px solid var(--line-d); border-radius: var(--r); overflow: hidden; }
+    .seg button { border: 0; background: #fff; padding: 0 12px; min-height: 40px; font-size: .92rem; font-weight: 600; cursor: pointer; }
+    .seg button + button { border-left: 1.5px solid var(--line-d); }
+    .seg button.on { background: var(--pen-blue); color: #fff; }
+    .lr { display: flex; align-items: center; gap: 8px; }
+    .lr > span:first-child { flex: 0 0 auto; min-width: 58px; font-size: var(--fs-side, 13px); font-weight: 600; }
+    .lr .grow1 { flex: 1; min-width: 0; }
+    input[type=range] { width: 100%; accent-color: var(--pen-blue); height: 28px; cursor: pointer; }
+    .val { min-width: 34px; text-align: right; }
+
+    /* 박자기 */
+    .bpm { font-family: Menlo, Consolas, monospace; font-size: 1.5rem; font-weight: 700; min-width: 56px; text-align: center; }
+    .beats { display: flex; gap: 6px; }
+    .beats i { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--line); background: #fff; transition: background .05s; }
+    .beats i.on { background: var(--pen-blue); border-color: var(--pen-blue-d); }
+    .beats i.on.acc { background: var(--pen-red); border-color: var(--pen-red); }
+
+    /* 따라 치기 띠 */
+    .follow { border: 1.5px solid var(--line); border-radius: var(--r); background: #fffdf8; padding: 6px 8px; display: flex; flex-direction: column; gap: 6px; }
+    .follow .top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .follow .top b { font-size: 1.02rem; }
+    .follow .top .sp { flex: 1; }
+    .chips { display: flex; flex-wrap: wrap; gap: 4px; max-height: 69px; overflow-y: auto; position: relative; }
+    .chips span { min-width: 34px; padding: 2px 6px; border-radius: 8px; border: 1.5px solid var(--line); background: #fff; text-align: center;
+                  font-weight: 700; font-size: .95rem; border-bottom-width: 4px; }
+    .chips span.done { opacity: .45; background: #e6f3e8; }
+    .chips span.cur { background: var(--hit); border-color: var(--hit-d); transform: translateY(-1px); }
+    .chips span.wrong { background: #f7d4cb; border-color: var(--bad); }
+    .chips span.gap { margin-right: 10px; }
+    /* 높은 옥타브는 음 이름 위에 점 — 악보에서 높은 도를 적는 방식 (CDE 는 숫자가 붙어 필요 없다) */
+    body[data-names=ko] .wk.hi .nm, body[data-names=ko] .chips span.hi { position: relative; }
+    body[data-names=ko] .wk.hi .nm::before, body[data-names=ko] .chips span.hi::before {
+      content: ""; position: absolute; left: 50%; top: -3px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: currentColor; }
+    body[data-names=ko] .chips span.hi::before { top: 1px; width: 4px; height: 4px; margin-left: -2px; }
+    .done-msg { color: var(--good); font-weight: 700; }
+
+    /* 건반 */
+    .kbwrap { display: flex; min-height: 190px; }
+    .kb { position: relative; flex: 1; display: flex; touch-action: none; user-select: none; -webkit-user-select: none; max-height: 470px;
+          border-top: 6px solid #3b332a; border-radius: 4px; }
+    .wk { flex: 1 1 0; min-width: 0; position: relative; background: #fff; border: 1.5px solid var(--line-d); border-top: 0; margin-left: -1.5px;
+          border-radius: 0 0 10px 10px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 2px;
+          padding-bottom: 8px; cursor: pointer; }
+    .wk:first-child { margin-left: 0; }
+    .wk::after { content: ""; position: absolute; left: 18%; right: 18%; bottom: 3px; height: 4px; border-radius: 2px; background: var(--pc, transparent); }
+    .wk .nm { font-weight: 700; font-size: 1.05rem; line-height: 1.1; }
+    .wk .lt, .bk .lt { font-family: Menlo, Consolas, monospace; font-size: 12px; color: var(--ink-2); min-height: 16px; white-space: nowrap; }
+    .bk { position: absolute; top: 0; height: 60%; width: calc(100% / 14 * .62); transform: translateX(-50%); z-index: 2;
+          background: linear-gradient(#3a332c, #1e1a16); border: 1.5px solid #120f0c; border-top: 0; border-radius: 0 0 6px 6px;
+          display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 6px; cursor: pointer; }
+    .bk .lt { color: #e9e2d4; }
+    .bk .nm { color: #cfc6b5; font-size: 11px; font-weight: 700; }
+    .wk.on { background: var(--cyan-bg); box-shadow: inset 0 -6px 0 var(--cyan); }
+    .bk.on { background: linear-gradient(#2c5d73, #17475c); }
+    .wk.next { background: #fff1c7; box-shadow: inset 0 0 0 3px var(--hit-d); animation: nx 1s ease-in-out infinite; }
+    .bk.next { background: linear-gradient(#e0a92a, #b47f0c); animation: nx 1s ease-in-out infinite; }
+    @keyframes nx { 50% { filter: brightness(1.07); } }
+    @media (prefers-reduced-motion: reduce) { .wk.next, .bk.next { animation: none; } }
+
+    /* 드럼 */
+    .drums { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+    .drums button { min-height: 64px; border-radius: 12px; border: 1.5px solid var(--line-d); background: #fff; cursor: pointer; touch-action: none;
+                    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; font-weight: 700; font-size: .98rem;
+                    border-bottom-width: 4px; user-select: none; }
+    .drums button small { font-family: Menlo, Consolas, monospace; font-size: 12px; color: var(--ink-2); font-weight: 400; }
+    .drums button.hit { transform: translateY(2px); border-bottom-width: 2px; background: var(--hit); }
+
+    /* 녹음 · 칸 */
+    .recst { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: var(--r); background: #f4efe4; font-size: var(--fs-side, 13px); min-height: 36px; }
+    .recst .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line); flex: 0 0 auto; }
+    .recst.rec .dot { background: var(--pen-red); animation: bl 1s steps(2) infinite; }
+    .recst.play .dot { background: var(--good); }
+    @keyframes bl { 50% { opacity: .2; } }
+    .recrow { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+    .recrow .btn { min-height: var(--tap, 48px); padding: 4px 6px; }
+    .slots { display: flex; flex-direction: column; gap: 4px; }
+    .slot { display: flex; align-items: center; gap: 6px; }
+    .slot .nm { flex: 1; min-width: 0; font-size: var(--fs-side, 13px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .slot .nm b { font-weight: 700; margin-right: 4px; }
+    .slot .btn { min-height: 36px; padding: 2px 10px; font-size: .88rem; }
+
+    /* 노래 고르기 */
+    .songs { display: flex; flex-direction: column; gap: 6px; }
+    .songs button { display: flex; align-items: center; gap: 8px; min-height: var(--tap, 48px); padding: 4px 10px; text-align: left;
+                    border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; cursor: pointer; }
+    .songs button b { display: block; font-size: .98rem; font-weight: 600; }
+    .songs button small { display: block; font-size: var(--fs-side, 13px); color: var(--ink-2); }
+    .songs button svg { width: 22px; height: 22px; flex: 0 0 auto; color: var(--cyan-d); }
+    .songs button.on { border-color: var(--cyan); background: var(--cyan-bg); }
+    .songs button:hover { background: var(--hover-bg); } .songs button.on:hover { background: var(--cyan-bg); }
+
+    #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 18px;
+             border-radius: 10px; font-size: .95rem; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 5; }
+    #toast.on { opacity: 1; }
+
+    @media (max-width: 1439px) { .panel.side { flex-basis: 256px; } .panel.more { flex-basis: 270px; } }
+    @media (max-width: 1023px) { .main-container { flex-direction: column; } .panel.side, .panel.more, .panel.play { flex: 0 0 auto; }
+                                 .panel, .panel-body { overflow: visible; } body { overflow: auto; height: auto; }
+                                 .panel.play { order: -1; } .kbwrap { height: 260px; } .drums { grid-template-columns: repeat(3, 1fr); } }
+  </style>
+  <link rel="stylesheet" href="/lib/ui.css">
+  <link rel="stylesheet" href="/lib/shell.css">
+</head>
+<body data-density="explore">
+  <div class="titlebar">
+    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요"><img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b></a>
+    <span class="tb-sep"></span><span class="tb-app" id="txtTitle"></span>
+    <div class="h-tools"><button id="langButton" title="한국어 / English">EN</button></div>
+  </div>
+  <div class="shell-body"><div class="workbench"><div class="main-container">
+
+    <div class="panel side">
+      <div class="panel-head"><span class="q"><span class="qnum">1</span><span class="qtext" id="txtQ1"></span></span></div>
+      <div class="panel-body">
+        <div class="sec">
+          <div class="st" id="txtInst"></div>
+          <div class="inst" id="inst"></div>
+        </div>
+        <div class="sec">
+          <div class="lr"><span id="txtVol"></span><input class="grow1" type="range" id="vol" min="0" max="100" step="1"><span class="num val" id="volVal"></span></div>
+          <div class="lr"><span id="txtSus"></span><button class="btn grow1" type="button" id="susBtn"></button></div>
+          <div class="lr"><span id="txtNames"></span>
+            <div class="seg" id="nameSeg"><button type="button" data-n="ko">도레미</button><button type="button" data-n="en">CDE</button></div></div>
+          <div class="lr"><span id="txtOct"></span>
+            <button class="btn sq" type="button" id="octDown" aria-label="-">&minus;</button>
+            <span class="num val" id="octVal" style="text-align:center"></span>
+            <button class="btn sq" type="button" id="octUp" aria-label="+">+</button>
+            <span class="hint"><kbd>←</kbd> <kbd>→</kbd></span></div>
+        </div>
+        <div class="sec">
+          <div class="st"><span id="txtMetro"></span><span class="sp"></span><div class="beats" id="beats"></div></div>
+          <div class="lr">
+            <button class="btn sq" type="button" id="bpmDown" aria-label="-">&minus;</button>
+            <input class="grow1" type="range" id="bpm" min="60" max="180" step="1">
+            <button class="btn sq" type="button" id="bpmUp" aria-label="+">+</button>
+          </div>
+          <div class="row">
+            <span class="bpm" id="bpmVal"></span><span class="hint">BPM</span><span style="flex:1"></span>
+            <div class="seg" id="beatSeg"><button type="button" data-b="2">2</button><button type="button" data-b="3">3</button><button type="button" data-b="4">4</button></div>
+          </div>
+          <button class="btn primary" type="button" id="metroBtn" style="min-height:var(--tap,48px)"></button>
+        </div>
+        <div class="sec">
+          <div class="st" id="txtKeys"></div>
+          <div class="keymap" id="keymap"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel play">
+      <div class="panel-head"><span class="q"><span class="qnum">2</span><span class="qtext" id="txtQ2"></span></span></div>
+      <div class="panel-body">
+        <div class="follow" id="follow"></div>
+        <div class="kbwrap grow"><div class="kb" id="kb"></div></div>
+        <div class="st" id="txtDrums"></div>
+        <div class="drums" id="drums"></div>
+      </div>
+    </div>
+
+    <div class="panel more">
+      <div class="panel-head"><span class="q"><span class="qnum">3</span><span class="qtext" id="txtQ3"></span></span></div>
+      <div class="panel-body">
+        <div class="sec">
+          <div class="st" id="txtRec"></div>
+          <div class="recrow">
+            <button class="btn rec" type="button" id="recBtn"></button>
+            <button class="btn" type="button" id="playBtn"></button>
+            <button class="btn" type="button" id="clearBtn"></button>
+          </div>
+          <div class="recst" id="recSt"><span class="dot"></span><span id="recTxt"></span></div>
+          <div class="slots" id="slots"></div>
+        </div>
+        <div class="sec">
+          <div class="st" id="txtSongs"></div>
+          <div class="songs" id="songs"></div>
+        </div>
+      </div>
+    </div>
+
+  </div></div></div>
+  <div id="toast"></div>
+
+  <script>
+  (function () {
+    "use strict";
+    var LANG = "ko";
+    try { LANG = localStorage.getItem("vapiLang") === "en" ? "en" : "ko"; } catch (e) {}
+    document.documentElement.lang = LANG;
+    var I18N = {
+      ko: { title: "edge-lab — 피아노", lang: "EN", q1: "소리", q2: "건반", q3: "녹음 · 따라 치기",
+            inst: "악기", piano: "피아노", organ: "오르간", xylo: "실로폰", chip: "8비트",
+            vol: "크기", sus: "울림", susOn: "길게 울려요", susOff: "짧게 끊어요", names: "음 이름", oct: "옥타브",
+            metro: "박자기", start: "박자 시작", stop: "박자 멈춤",
+            keys: "키보드로 치기", kWhite: "흰 건반", kBlack: "검은 건반", kLow: "높은 도~시", kDrum: "드럼",
+            drums: "드럼 — 눌러서 두드려요",
+            kick: "킥", snare: "스네어", hat: "하이햇", clap: "박수", tom: "탐탐", cym: "심벌",
+            rec: "녹음", recGo: "녹음", recStop: "멈추기", play: "듣기", playStop: "멈추기", clear: "지우기",
+            recEmpty: "[녹음]을 누르고 건반을 쳐 봐요.", recOn: "녹음 중… {s}초 · 음 {n}개", recHas: "음 {n}개 · {s}초",
+            playing: "들려주는 중… {s}초", slot: "칸 {n}", slotEmpty: "비어 있어요", save: "저장", load: "불러오기",
+            saveAsk: "칸 {n}에 있던 녹음을 바꿀까요?", saved: "칸 {n}에 저장했어요", loaded: "칸 {n}을 불러왔어요",
+            nothing: "먼저 녹음해요", full: "저장 공간이 모자라요",
+            songs: "노래 따라 치기", noSong: "[노래 따라 치기]에서 노래를 고르면 칠 건반이 노랗게 반짝여요. 맞는 건반을 누르면 다음으로 넘어가요.",
+            listen: "들어 보기", again: "처음부터", quit: "그만", step: "{i} / {n}",
+            songDone: "다 쳤어요! 틀린 건반 {w}번", bravo: "노래를 끝까지 쳤어요!",
+            twinkle: "반짝반짝 작은 별", butterfly: "나비야", plane: "비행기", joy: "환희의 송가",
+            fr: "프랑스 민요", de: "독일 민요", us: "미국 민요", bee: "베토벤 교향곡 9번" },
+      en: { title: "edge-lab — Piano", lang: "한", q1: "Sound", q2: "Keyboard", q3: "Record · Play along",
+            inst: "Instrument", piano: "Piano", organ: "Organ", xylo: "Xylophone", chip: "8-bit",
+            vol: "Volume", sus: "Sustain", susOn: "Long ring", susOff: "Short", names: "Names", oct: "Octave",
+            metro: "Metronome", start: "Start beat", stop: "Stop beat",
+            keys: "Play with the keyboard", kWhite: "white keys", kBlack: "black keys", kLow: "high C–B", kDrum: "drums",
+            drums: "Drums — tap to play",
+            kick: "Kick", snare: "Snare", hat: "Hi-hat", clap: "Clap", tom: "Tom", cym: "Cymbal",
+            rec: "Record", recGo: "Record", recStop: "Stop", play: "Play", playStop: "Stop", clear: "Clear",
+            recEmpty: "Press [Record] and play some keys.", recOn: "Recording… {s}s · {n} notes", recHas: "{n} notes · {s}s",
+            playing: "Playing… {s}s", slot: "Slot {n}", slotEmpty: "empty", save: "Save", load: "Load",
+            saveAsk: "Replace the recording in slot {n}?", saved: "Saved to slot {n}", loaded: "Loaded slot {n}",
+            nothing: "Record something first", full: "Out of storage space",
+            songs: "Play along", noSong: "Pick a song under [Play along] and the next key glows yellow. Press the right key to move on.",
+            listen: "Listen", again: "Restart", quit: "Stop", step: "{i} / {n}",
+            songDone: "Finished! {w} wrong keys", bravo: "You played the whole song!",
+            twinkle: "Twinkle Twinkle Little Star", butterfly: "Butterfly (Hänschen klein)", plane: "Mary Had a Little Lamb", joy: "Ode to Joy",
+            fr: "French folk song", de: "German folk song", us: "American folk song", bee: "Beethoven, Symphony No. 9" }
+    };
+    function t(k) { return I18N[LANG][k] !== undefined ? I18N[LANG][k] : I18N.ko[k]; }
+    function $(id) { return document.getElementById(id); }
+    function fmt(s, o) { return String(s).replace(/\{(\w+)\}/g, function (_, k) { return o[k]; }); }
+
+    var SVG = function (d, fill) {
+      return '<svg viewBox="0 0 24 24" fill="' + (fill ? "currentColor" : "none") + '" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + "</svg>";
+    };
+    var IC = {
+      piano: SVG('<rect x="2.5" y="5" width="19" height="14" rx="1.5"/><path d="M7.2 5v14M11.9 5v14M16.6 5v14"/><path d="M5.8 5v7M9.8 5v7M14.4 5v7M18.4 5v7" stroke-width="2.6"/>'),
+      organ: SVG('<path d="M4 20V9M8 20V5M12 20V3M16 20V5M20 20V9"/><path d="M2.5 20.5h19"/><path d="M3 11h2M7 7h2M11 5h2M15 7h2M19 11h2"/>'),
+      xylo:  SVG('<rect x="3" y="4" width="3.4" height="16" rx="1"/><rect x="8" y="5.5" width="3.4" height="13" rx="1"/><rect x="13" y="7" width="3.4" height="10" rx="1"/><rect x="18" y="8.5" width="3" height="7" rx="1"/>'),
+      chip:  SVG('<path d="M2.5 16h3.5V8h4v8h4V8h4v8h3.5"/><path d="M2.5 20.5h19" stroke-dasharray="1.5 2"/>'),
+      rec:   SVG('<circle cx="12" cy="12" r="6.5"/>', true),
+      stop:  SVG('<rect x="6.5" y="6.5" width="11" height="11" rx="1.5"/>', true),
+      play:  SVG('<path d="M7.5 5v14l11-7z"/>', true),
+      trash: SVG('<path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13"/>'),
+      ear:   SVG('<path d="M7 9a5 5 0 0 1 10 0c0 3-3 4-3 7a2.5 2.5 0 0 1-5 0"/><path d="M10 10a2 2 0 0 1 4 0c0 1.5-1.5 2-1.5 3"/>'),
+      again: SVG('<path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4.5 4.5v4h4"/>'),
+      note:  SVG('<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>')
+    };
+
+    /* ───────── 음 ───────── */
+    var LO = 60, HI = 83;                                                   // 도4(C4) ~ 시5(B5), 흰 건반 14개
+    var PC_KO = ["도", "도#", "레", "레#", "미", "파", "파#", "솔", "솔#", "라", "라#", "시"];
+    var PC_EN = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+    var WHITE = [0, 2, 4, 5, 7, 9, 11];
+    function isBlack(m) { return WHITE.indexOf(m % 12) < 0; }
+    function freq(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+
+    var set = { inst: "piano", vol: 70, sus: false, names: LANG, bpm: 100, beats: 4 };
+    try { var sv = JSON.parse(localStorage.getItem("el-piano") || "{}"); for (var k in sv) if (k in set) set[k] = sv[k]; } catch (e) {}
+    function keep() { try { localStorage.setItem("el-piano", JSON.stringify(set)); } catch (e) {} }
+    function nm(m) { return (set.names === "en" ? PC_EN : PC_KO)[m % 12]; }
+
+    /* 키보드 두 줄 — e.code 로 본다. 한글 입력기가 켜져 있어도 e.key 와 달리 자리가 그대로다 */
+    var TOP = { KeyA: 0, KeyW: 1, KeyS: 2, KeyE: 3, KeyD: 4, KeyF: 5, KeyT: 6, KeyG: 7, KeyY: 8, KeyH: 9, KeyU: 10, KeyJ: 11,
+                KeyK: 12, KeyO: 13, KeyL: 14, KeyP: 15, Semicolon: 16, Quote: 17 };
+    var LOW = { KeyZ: 12, KeyX: 14, KeyC: 16, KeyV: 17, KeyB: 19, KeyN: 21, KeyM: 23 };   // 아래 줄 = 윗 옥타브 흰 건반
+    function codeName(c) { return c === "Semicolon" ? ";" : c === "Quote" ? "'" : c.slice(3); }
+    var shift = 0;                                                          // ← → 로 한 옥타브씩 (-1 ~ +1)
+
+    /* ───────── 소리 (Web Audio) ───────── */
+    var ctx = null, master = null, noise = null;
+    function audio() {
+      if (!ctx) {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        ctx = new AC();
+        var comp = ctx.createDynamicsCompressor();                         // 여러 건반을 한꺼번에 눌러도 찢어지지 않게
+        comp.threshold.value = -14; comp.ratio.value = 4;
+        master = ctx.createGain(); master.gain.value = vol();
+        master.connect(comp); comp.connect(ctx.destination);
+        noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+        var d = noise.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      }
+      if (ctx.state === "suspended") ctx.resume();
+      return ctx;
+    }
+    function vol() { var v = set.vol / 100; return v * v * 0.9; }         // 귀는 로그로 듣는다 — 제곱이면 슬라이더가 고르게 느껴진다
+
+    /* 악기마다 발진기 섞기와 ADSR 이 다르다. decay 가 있으면 누르고 있어도 줄어든다(타악기형) */
+    var INST = {
+      piano: { parts: [["triangle", 1, .55], ["sine", 2, .2], ["sine", 1.003, .25], ["sine", 3, .05]], a: .004, peak: .5, decay: .9, sus: 0, rel: .22, lp: 7 },
+      organ: { parts: [["sine", 1, .45], ["sine", 2, .3], ["sine", 3, .16], ["sine", 4, .08]], a: .025, peak: .32, decay: 0, sus: 1, rel: .09, vib: 5.5 },
+      xylo:  { parts: [["sine", 1, .75], ["sine", 3.98, .22, .07]], a: .002, peak: .6, decay: .22, sus: 0, rel: .12 },
+      chip:  { parts: [["square", 1, .35], ["square", 2, .06]], a: .004, peak: .3, decay: 0, sus: 1, rel: .05 }
+    };
+    function voice(m, name, when) {
+      var c = audio(); if (!c) return null;
+      var I = INST[name] || INST.piano, f = freq(m), t0 = when || c.currentTime;
+      var env = c.createGain(); env.gain.value = 0;
+      var out = env, oscs = [];
+      if (I.lp) {                                                           // 피아노: 처음엔 밝고 곧 둥글어지는 음색
+        var lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.Q.value = .6;
+        lp.frequency.setValueAtTime(Math.min(16000, f * I.lp), t0);
+        lp.frequency.setTargetAtTime(Math.min(8000, f * 2.5), t0 + .02, .4);
+        lp.connect(env); out = lp;
+      }
+      var vib = null;
+      if (I.vib) { vib = c.createOscillator(); vib.frequency.value = I.vib; var vg = c.createGain(); vg.gain.value = f * .004; vib.connect(vg); vib._g = vg; vib.start(t0); oscs.push(vib); }
+      I.parts.forEach(function (p) {
+        var o = c.createOscillator(), g = c.createGain();
+        o.type = p[0]; o.frequency.value = f * p[1]; g.gain.value = p[2];
+        if (p[3]) g.gain.setTargetAtTime(0, t0 + .005, p[3]);             // 실로폰의 "딱" 하는 윗소리는 금방 사라진다
+        if (vib) vib._g.connect(o.frequency);
+        o.connect(g); g.connect(out); o.start(t0); oscs.push(o);
+      });
+      env.connect(master);
+      var g = env.gain;
+      g.setValueAtTime(0, t0);
+      g.linearRampToValueAtTime(I.peak, t0 + I.a);
+      if (I.decay) {
+        var tc = I.decay * Math.max(.35, Math.min(1.6, 440 / f));           // 낮은 음일수록 오래 울린다
+        g.setTargetAtTime(0.0001, t0 + I.a, tc);
+        var end = t0 + I.a + tc * 7;
+        oscs.forEach(function (o) { o.stop(end); });
+      } else g.setValueAtTime(I.peak * I.sus, t0 + I.a);
+      return { env: env, oscs: oscs, I: I, dead: false };
+    }
+    function release(v) {
+      if (!v || v.dead || !ctx) return;
+      v.dead = true;
+      var now = ctx.currentTime, rel = set.sus ? Math.max(1.6, v.I.rel) : v.I.rel, g = v.env.gain;
+      if (v.I.decay && set.sus) return;                                     // 울림 켜짐: 피아노·실로폰은 저절로 잦아들게 둔다
+      g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); g.setTargetAtTime(0, now, rel / 4);
+      v.oscs.forEach(function (o) { try { o.stop(now + rel + .05); } catch (e) {} });
+    }
+    function kill(v) {                                                      // 같은 건반을 다시 칠 때 — 앞 소리를 재빨리 끊는다
+      if (!v || !ctx) return;
+      v.dead = true;
+      var now = ctx.currentTime, g = v.env.gain;
+      g.cancelScheduledValues(now); g.setValueAtTime(g.value, now); g.linearRampToValueAtTime(0, now + .015);
+      v.oscs.forEach(function (o) { try { o.stop(now + .03); } catch (e) {} });
+    }
+
+    /* 드럼 — 잡음 + 필터 + 음높이가 떨어지는 발진기 */
+    var DRUMS = ["kick", "snare", "hat", "clap", "tom", "cym"];
+    var DCOL = ["#d9483b", "#e88327", "#d6b21f", "#3f9a4a", "#2f7fc4", "#8a4fa8"];
+    function noiseSrc(c, t0, dur, type, fq, q, peak, tc) {
+      var s = c.createBufferSource(); s.buffer = noise;
+      var fl = c.createBiquadFilter(); fl.type = type; fl.frequency.value = fq; if (q) fl.Q.value = q;
+      var g = c.createGain(); g.gain.setValueAtTime(peak, t0); g.gain.setTargetAtTime(0, t0 + .002, tc);
+      s.connect(fl); fl.connect(g); g.connect(master); s.start(t0); s.stop(t0 + dur);
+      return g;
+    }
+    function tone(c, t0, type, f0, f1, fall, peak, tc, dur) {
+      var o = c.createOscillator(), g = c.createGain(); o.type = type;
+      o.frequency.setValueAtTime(f0, t0); o.frequency.exponentialRampToValueAtTime(f1, t0 + fall);
+      g.gain.setValueAtTime(peak, t0); g.gain.setTargetAtTime(0, t0 + .003, tc);
+      o.connect(g); g.connect(master); o.start(t0); o.stop(t0 + dur);
+    }
+    function drumSound(i, when) {
+      var c = audio(); if (!c) return;
+      var t0 = when || c.currentTime;
+      switch (DRUMS[i]) {
+        case "kick":  tone(c, t0, "sine", 150, 42, .12, 1, .12, .6); noiseSrc(c, t0, .03, "lowpass", 900, 0, .25, .008); break;
+        case "snare": tone(c, t0, "triangle", 220, 160, .05, .45, .05, .25); noiseSrc(c, t0, .3, "highpass", 1200, 0, .6, .06); break;
+        case "hat":   noiseSrc(c, t0, .12, "highpass", 7500, 0, .45, .025); break;
+        case "clap":  [0, .012, .024].forEach(function (d) { noiseSrc(c, t0 + d, .02, "bandpass", 1500, 1.2, .8, .004); });
+                      noiseSrc(c, t0 + .036, .35, "bandpass", 1400, 1, .7, .07); break;
+        case "tom":   tone(c, t0, "sine", 230, 120, .2, .85, .14, .7); break;
+        case "cym":   noiseSrc(c, t0, 1.6, "highpass", 5200, 0, .4, .35); noiseSrc(c, t0, .6, "bandpass", 9000, 2, .25, .15); break;
+      }
+    }
+
+    /* ───────── 누르기 · 떼기 ───────── */
+    var held = {};                                                          // midi → { v, srcs: {src:1} }
+    var log = [], drumLog = [], firstPlay = true, firstDrum = true;
+    function keyEl(m) { return kb.querySelector('[data-m="' + m + '"]'); }
+    /* 출처: "p<손가락>" 마우스·터치, "k<키>" 키보드, "pb" 재생, "demo" 악기 미리 듣기.
+       녹음과 따라 치기는 사람이 친 것만 센다 */
+    function byHand(src) { return /^(p\d|k)/.test(src); }
+    function noteOn(m, src, inst) {
+      if (!audio()) return;
+      var h = held[m];
+      if (h) kill(h.v); else h = held[m] = { srcs: {} };
+      h.srcs[src] = 1;
+      h.v = voice(m, inst || set.inst);
+      var el = keyEl(m); if (el) el.classList.add("on");
+      log.push({ m: m, src: src, at: Date.now() }); if (log.length > 200) log.shift();
+      if (!byHand(src)) return;
+      if (firstPlay) { firstPlay = false; if (window.vapiStat) vapiStat("piano_play"); }
+      if (rec.on) rec.ev.push([Math.round(performance.now() - rec.t0), 1, m, inst || set.inst]);
+      follow(m);
+    }
+    function noteOff(m, src) {
+      var h = held[m]; if (!h) return;
+      delete h.srcs[src];
+      if (Object.keys(h.srcs).length) return;
+      release(h.v); delete held[m];
+      var el = keyEl(m); if (el) el.classList.remove("on");
+      if (rec.on && byHand(src)) rec.ev.push([Math.round(performance.now() - rec.t0), 0, m]);
+    }
+    function allOff(only) {                                                 // only 가 있으면 그 출처만 (예: 재생 "pb")
+      Object.keys(held).forEach(function (m) {
+        var h = held[m];
+        Object.keys(h.srcs).forEach(function (s) { if (!only || s === only) noteOff(+m, s); });
+      });
+      if (!only) keysDown = {};
+    }
+    function drum(i, src) {
+      if (!audio()) return;
+      drumSound(i);
+      drumLog.push({ i: i, src: src || "user", at: Date.now() }); if (drumLog.length > 100) drumLog.shift();
+      if (firstDrum && src !== "pb") { firstDrum = false; if (window.vapiStat) vapiStat("piano_drum"); }
+      if (rec.on) rec.ev.push([Math.round(performance.now() - rec.t0), 2, i]);
+      var b = $("drums").children[i];
+      if (b) { b.classList.add("hit"); clearTimeout(b._t); b._t = setTimeout(function () { b.classList.remove("hit"); }, 110); }
+    }
+
+    /* ───────── 건반 그리기 ───────── */
+    var kb = $("kb");
+    function buildKeys() {
+      var html = "", wi = 0;
+      for (var m = LO; m <= HI; m++) {
+        if (isBlack(m)) continue;
+        html += '<div class="wk" data-m="' + m + '" style="--pc:var(--c' + (m % 12) + ')"><span class="lt"></span><span class="nm"></span></div>';
+      }
+      for (m = LO; m <= HI; m++) {
+        if (!isBlack(m)) continue;
+        wi = 0; for (var x = LO; x < m; x++) if (!isBlack(x)) wi++;             // 이 검은 건반 왼쪽의 흰 건반 수
+        html += '<div class="bk" data-m="' + m + '" style="left:calc(100% / 14 * ' + wi + ')"><span class="lt"></span><span class="nm"></span></div>';
+      }
+      kb.innerHTML = html;
+      paintKeys();
+    }
+    function paintKeys() {
+      var lab = {};
+      [TOP, LOW].forEach(function (map) {
+        Object.keys(map).forEach(function (c) { var m = LO + map[c] + shift * 12; (lab[m] = lab[m] || []).push(codeName(c)); });
+      });
+      Array.prototype.forEach.call(kb.children, function (el) {
+        var m = +el.getAttribute("data-m");
+        el.querySelector(".lt").textContent = (lab[m] || []).join(" ");
+        el.querySelector(".nm").textContent = nm(m) + (set.names === "en" && !isBlack(m) ? Math.floor(m / 12) - 1 : "");
+        el.classList.toggle("on", !!held[m]);
+        el.classList.toggle("hi", m >= 72);
+      });
+      document.body.setAttribute("data-names", set.names);
+      $("octVal").textContent = (shift > 0 ? "+" : "") + shift;
+      paintFollow();
+    }
+
+    /* 마우스·손가락 — 누른 채 옆으로 밀면 건반을 따라 미끄러진다(글리산도). 손가락마다 따로 */
+    var ptr = {};
+    function keyAt(x, y) { var el = document.elementFromPoint(x, y); el = el && el.closest && el.closest("[data-m]"); return el && kb.contains(el) ? +el.getAttribute("data-m") : null; }
+    kb.addEventListener("pointerdown", function (e) {
+      e.preventDefault();
+      try { kb.setPointerCapture(e.pointerId); } catch (x) {}
+      var m = keyAt(e.clientX, e.clientY);
+      ptr[e.pointerId] = m;
+      if (m !== null) noteOn(m, "p" + e.pointerId);
+    });
+    kb.addEventListener("pointermove", function (e) {
+      if (!(e.pointerId in ptr)) return;
+      var m = keyAt(e.clientX, e.clientY), was = ptr[e.pointerId];
+      if (m === was) return;
+      if (was !== null) noteOff(was, "p" + e.pointerId);
+      ptr[e.pointerId] = m;
+      if (m !== null) noteOn(m, "p" + e.pointerId);
+    });
+    function ptrUp(e) {
+      if (!(e.pointerId in ptr)) return;
+      if (ptr[e.pointerId] !== null) noteOff(ptr[e.pointerId], "p" + e.pointerId);
+      delete ptr[e.pointerId];
+    }
+    kb.addEventListener("pointerup", ptrUp); kb.addEventListener("pointercancel", ptrUp); kb.addEventListener("lostpointercapture", ptrUp);
+    kb.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+
+    var keysDown = {};                                                      // code → midi (누르는 사이 옥타브를 바꿔도 제 음을 뗀다)
+    document.addEventListener("keydown", function (e) {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      var tg = e.target, tag = tg && tg.tagName;
+      if (tag === "TEXTAREA" || (tag === "INPUT" && tg.type !== "range")) return;
+      var c = e.code;
+      if (c === "ArrowLeft" || c === "ArrowRight") {
+        if (tag === "INPUT") return;                                       // 슬라이더를 잡고 있으면 슬라이더가 쓴다
+        e.preventDefault(); setShift(shift + (c === "ArrowLeft" ? -1 : 1)); return;
+      }
+      var d = /^(Digit|Numpad)([1-6])$/.exec(c);
+      if (d) { e.preventDefault(); if (!e.repeat) drum(+d[2] - 1); return; }
+      var off = c in TOP ? TOP[c] : c in LOW ? LOW[c] : null;
+      if (off === null) return;
+      e.preventDefault();
+      if (e.repeat || c in keysDown) return;
+      var m = LO + off + shift * 12;
+      keysDown[c] = m;
+      noteOn(m, "k" + c);
+    });
+    document.addEventListener("keyup", function (e) {
+      if (!(e.code in keysDown)) return;
+      noteOff(keysDown[e.code], "k" + e.code); delete keysDown[e.code];
+    });
+    /* 창을 벗어나면 keyup 이 안 온다 — 눌린 채 계속 우는 건반이 남지 않게 */
+    addEventListener("blur", function () { Object.keys(keysDown).forEach(function (c) { noteOff(keysDown[c], "k" + c); }); keysDown = {}; });
+
+    function setShift(s) { s = Math.max(-1, Math.min(1, s)); if (s === shift) return; shift = s; paintKeys(); }
+    $("octDown").addEventListener("click", function () { setShift(shift - 1); });
+    $("octUp").addEventListener("click", function () { setShift(shift + 1); });
+
+    /* ───────── 드럼 패드 ───────── */
+    $("drums").innerHTML = DRUMS.map(function (d, i) {
+      return '<button type="button" data-d="' + i + '" style="border-bottom-color:' + DCOL[i] + '">' + t(d) + "<small>" + (i + 1) + "</small></button>";
+    }).join("");
+    $("drums").addEventListener("pointerdown", function (e) {
+      var b = e.target.closest("[data-d]"); if (!b) return;
+      e.preventDefault(); drum(+b.getAttribute("data-d"));
+    });
+
+    /* ───────── 악기·크기·울림·이름 ───────── */
+    $("inst").innerHTML = ["piano", "organ", "xylo", "chip"].map(function (k) {
+      return '<button type="button" data-i="' + k + '">' + IC[k] + "<span>" + t(k) + "</span></button>";
+    }).join("");
+    function paintSet() {
+      Array.prototype.forEach.call($("inst").children, function (b) { b.classList.toggle("on", b.getAttribute("data-i") === set.inst); });
+      $("vol").value = set.vol; $("volVal").textContent = set.vol;
+      $("susBtn").textContent = set.sus ? t("susOn") : t("susOff"); $("susBtn").classList.toggle("on", set.sus);
+      Array.prototype.forEach.call($("nameSeg").children, function (b) { b.classList.toggle("on", b.getAttribute("data-n") === set.names); });
+    }
+    $("inst").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-i]"); if (!b) return;
+      set.inst = b.getAttribute("data-i"); keep(); paintSet();
+      noteOn(67, "demo"); setTimeout(function () { noteOff(67, "demo"); }, 260);   // 고르면 한 번 들려준다
+    });
+    $("vol").addEventListener("input", function () { set.vol = +this.value; if (master) master.gain.setTargetAtTime(vol(), ctx.currentTime, .02); $("volVal").textContent = set.vol; });
+    $("vol").addEventListener("change", keep);
+    $("susBtn").addEventListener("click", function () { set.sus = !set.sus; keep(); paintSet(); });
+    $("nameSeg").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-n]"); if (!b) return;
+      set.names = b.getAttribute("data-n"); keep(); paintSet(); paintKeys();
+    });
+
+    /* ───────── 박자기 — 앞질러 예약하는 방식. setInterval 만으로는 탭이 바쁠 때 박이 흔들린다 ───────── */
+    var metro = { on: false, timer: 0, next: 0, beat: 0, count: 0, vis: [] };
+    function paintBeats() {
+      $("beats").innerHTML = new Array(set.beats + 1).join("<i></i>");
+      Array.prototype.forEach.call($("beatSeg").children, function (b) { b.classList.toggle("on", +b.getAttribute("data-b") === set.beats); });
+      $("bpm").value = set.bpm; $("bpmVal").textContent = set.bpm;
+    }
+    function click(time, acc) {
+      var o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = "square"; o.frequency.value = acc ? 1760 : 1100;
+      g.gain.setValueAtTime(acc ? .32 : .18, time); g.gain.exponentialRampToValueAtTime(.0005, time + .05);
+      o.connect(g); g.connect(master); o.start(time); o.stop(time + .06);
+    }
+    function tick() {
+      while (metro.next < ctx.currentTime + .12) {
+        (function (b, when) {
+          click(when, b === 0);
+          metro.vis.push(setTimeout(function () { lightBeat(b); }, Math.max(0, (when - ctx.currentTime) * 1000)));
+        })(metro.beat, metro.next);
+        if (metro.vis.length > 16) metro.vis.shift();
+        metro.count++;
+        metro.beat = (metro.beat + 1) % set.beats;
+        metro.next += 60 / set.bpm;
+      }
+    }
+    function lightBeat(b) {
+      Array.prototype.forEach.call($("beats").children, function (el, i) { el.className = i === b ? "on" + (i === 0 ? " acc" : "") : ""; });
+    }
+    function metroStart() {
+      if (metro.on || !audio()) return;
+      metro.on = true; metro.beat = 0; metro.next = ctx.currentTime + .06;
+      metro.timer = setInterval(tick, 25); tick();
+      paintMetro();
+      if (window.vapiStat) vapiStat("piano_metro");
+    }
+    function metroStop() {
+      if (!metro.on) return;
+      metro.on = false; clearInterval(metro.timer);
+      metro.vis.forEach(clearTimeout); metro.vis = [];
+      lightBeat(-1); paintMetro();
+    }
+    function paintMetro() {
+      $("metroBtn").innerHTML = (metro.on ? IC.stop : IC.play) + "<span>" + (metro.on ? t("stop") : t("start")) + "</span>";
+      $("metroBtn").classList.toggle("primary", !metro.on);
+      $("metroBtn").classList.toggle("on", metro.on);
+    }
+    function setBpm(v) { set.bpm = Math.max(60, Math.min(180, Math.round(v))); $("bpm").value = set.bpm; $("bpmVal").textContent = set.bpm; keep(); }
+    $("metroBtn").addEventListener("click", function () { if (metro.on) metroStop(); else metroStart(); });
+    $("bpm").addEventListener("input", function () { setBpm(+this.value); });
+    $("bpmDown").addEventListener("click", function () { setBpm(set.bpm - 5); });
+    $("bpmUp").addEventListener("click", function () { setBpm(set.bpm + 5); });
+    $("beatSeg").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-b]"); if (!b) return;
+      set.beats = +b.getAttribute("data-b"); metro.beat = 0; keep(); paintBeats();
+    });
+
+    /* ───────── 녹음 · 듣기 · 칸 ───────── */
+    var rec = { on: false, t0: 0, ev: [], len: 0, timer: 0 };
+    var pb = { on: false, timers: [], t0: 0, len: 0, tick: 0 };
+    var SLOTS = 3, slots = [];
+    try { slots = JSON.parse(localStorage.getItem("el-piano-rec") || "[]") || []; } catch (e) {}
+    function notes(ev) { return ev.filter(function (x) { return x[1] !== 0; }).length; }
+    function secs(ms) { return Math.round(ms / 100) / 10; }
+
+    function recStart() {
+      stopPlay();
+      rec.on = true; rec.t0 = performance.now(); rec.ev = []; rec.len = 0;
+      clearInterval(rec.timer); rec.timer = setInterval(paintRec, 250);
+      paintRec();
+    }
+    function recStop() {
+      if (!rec.on) return;
+      /* 녹음 중에 누르고 있던 음은 여기서 떼 준다 — 듣기에서 끝없이 울리지 않게 */
+      var now = Math.round(performance.now() - rec.t0), open = {};
+      rec.ev.forEach(function (x) { if (x[1] === 1) open[x[2]] = (open[x[2]] || 0) + 1; else if (x[1] === 0 && open[x[2]]) open[x[2]]--; });
+      Object.keys(open).forEach(function (m) { for (var i = 0; i < open[m]; i++) rec.ev.push([now, 0, +m]); });
+      rec.on = false; rec.len = now; clearInterval(rec.timer);
+      /* 첫 음 앞의 빈 시간은 잘라 낸다 — [녹음] 누르고 한참 뒤에 쳐도 바로 들리게 */
+      if (rec.ev.length) {
+        var first = rec.ev[0][0];
+        rec.ev.forEach(function (x) { x[0] -= first; }); rec.len -= first;
+        if (window.vapiStat) vapiStat("piano_rec");
+      } else rec.len = 0;
+      paintRec();
+    }
+    function play(ev, len, then) {
+      stopPlay(); if (rec.on) recStop();
+      if (!ev.length || !audio()) return;
+      pb.on = true; pb.t0 = performance.now(); pb.len = len;
+      ev.forEach(function (x) {
+        pb.timers.push(setTimeout(function () {
+          if (x[1] === 1) noteOn(x[2], "pb", x[3]);
+          else if (x[1] === 0) noteOff(x[2], "pb");
+          else drum(x[2], "pb");
+        }, x[0]));
+      });
+      pb.timers.push(setTimeout(function () { stopPlay(); if (then) then(); }, len + 400));
+      clearInterval(pb.tick); pb.tick = setInterval(paintRec, 250);
+      paintRec();
+    }
+    function stopPlay() {
+      pb.timers.forEach(clearTimeout); pb.timers = []; clearInterval(pb.tick);
+      var was = pb.on; pb.on = false;
+      allOff("pb");
+      if (was) { paintRec(); paintFollow(); }
+    }
+    function paintRec() {
+      var st = $("recSt"), n = notes(rec.ev);
+      st.className = "recst" + (rec.on ? " rec" : pb.on ? " play" : "");
+      $("recTxt").textContent = rec.on ? fmt(t("recOn"), { s: Math.floor((performance.now() - rec.t0) / 1000), n: n })
+        : pb.on ? fmt(t("playing"), { s: Math.floor((performance.now() - pb.t0) / 1000) })
+        : rec.ev.length ? fmt(t("recHas"), { n: n, s: secs(rec.len) }) : t("recEmpty");
+      $("recBtn").innerHTML = (rec.on ? IC.stop : IC.rec) + "<span>" + (rec.on ? t("recStop") : t("recGo")) + "</span>";
+      $("recBtn").classList.toggle("on", rec.on);
+      $("playBtn").innerHTML = (pb.on ? IC.stop : IC.play) + "<span>" + (pb.on ? t("playStop") : t("play")) + "</span>";
+      $("playBtn").disabled = !pb.on && (rec.on || !rec.ev.length);
+      $("clearBtn").innerHTML = IC.trash + "<span>" + t("clear") + "</span>";
+      $("clearBtn").disabled = rec.on || !rec.ev.length;
+    }
+    function paintSlots() {
+      var h = "";
+      for (var i = 0; i < SLOTS; i++) {
+        var s = slots[i];
+        h += '<div class="slot"><span class="nm"><b>' + fmt(t("slot"), { n: i + 1 }) + "</b>" +
+             (s && s.ev ? fmt(t("recHas"), { n: notes(s.ev), s: secs(s.len) }) : t("slotEmpty")) + "</span>" +
+             '<button class="btn" type="button" data-save="' + i + '">' + t("save") + "</button>" +
+             '<button class="btn" type="button" data-load="' + i + '"' + (s && s.ev ? "" : " disabled") + ">" + t("load") + "</button></div>";
+      }
+      $("slots").innerHTML = h;
+    }
+    $("recBtn").addEventListener("click", function () { if (rec.on) recStop(); else recStart(); });
+    $("playBtn").addEventListener("click", function () { if (pb.on) stopPlay(); else play(rec.ev, rec.len); });
+    $("clearBtn").addEventListener("click", function () { stopPlay(); rec.ev = []; rec.len = 0; paintRec(); });
+    $("slots").addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b) return;
+      if (b.hasAttribute("data-save")) {
+        var i = +b.getAttribute("data-save");
+        if (rec.on) recStop();
+        if (!rec.ev.length) { toast(t("nothing")); return; }
+        if (slots[i] && slots[i].ev && !confirm(fmt(t("saveAsk"), { n: i + 1 }))) return;
+        var keepOld = slots[i];
+        slots[i] = { ev: rec.ev.slice(), len: rec.len, at: Date.now() };
+        try { localStorage.setItem("el-piano-rec", JSON.stringify(slots)); toast(fmt(t("saved"), { n: i + 1 })); }
+        catch (x) { slots[i] = keepOld; toast(t("full")); }
+        paintSlots();
+      } else if (b.hasAttribute("data-load")) {
+        var s = slots[+b.getAttribute("data-load")]; if (!s || !s.ev) return;
+        if (rec.on) recStop();
+        stopPlay();
+        rec.ev = s.ev.map(function (x) { return x.slice(); }); rec.len = s.len;
+        paintRec(); toast(fmt(t("loaded"), { n: +b.getAttribute("data-load") + 1 }));
+      }
+    });
+
+    /* ───────── 노래 따라 치기 ─────────
+     * 음표는 "음이름+옥타브*박" — 박은 [들어 보기]에만 쓴다. | 는 마디 사이 띄우기.
+     * 모두 저작권이 끝난 곡이다: 프랑스·독일·미국 민요, 베토벤(1824).
+     * 환희의 송가는 낮은 솔까지 내려가서 한 옥타브 올려 두 옥타브 안에 넣었다. */
+    var SONGS = [
+      { id: "twinkle", from: "fr", n: "C4 C4 G4 G4 A4 A4 G4*2 | F4 F4 E4 E4 D4 D4 C4*2 | G4 G4 F4 F4 E4 E4 D4*2 | G4 G4 F4 F4 E4 E4 D4*2 | C4 C4 G4 G4 A4 A4 G4*2 | F4 F4 E4 E4 D4 D4 C4*2" },
+      { id: "butterfly", from: "de", n: "G4 E4 E4*2 | F4 D4 D4*2 | C4 D4 E4 F4 | G4 G4 G4*2 | G4 E4 E4*2 | F4 D4 D4*2 | C4 E4 G4 G4 | E4 E4 E4*2" },
+      { id: "plane", from: "us", n: "E4 D4 C4 D4 E4 E4 E4*2 | D4 D4 D4*2 E4 G4 G4*2 | E4 D4 C4 D4 E4 E4 E4*2 | D4 D4 E4 D4 C4*4" },
+      { id: "joy", from: "bee", n: "E5 E5 F5 G5 G5 F5 E5 D5 C5 C5 D5 E5 E5*1.5 D5*.5 D5*2 | E5 E5 F5 G5 G5 F5 E5 D5 C5 C5 D5 E5 D5*1.5 C5*.5 C5*2 | " +
+                                    "D5 D5 E5 C5 D5 E5*.5 F5*.5 E5 C5 D5 E5*.5 F5*.5 E5 D5 C5 D5 G4*2 | E5 E5 F5 G5 G5 F5 E5 D5 C5 C5 D5 E5 D5*1.5 C5*.5 C5*2" }
+    ];
+    var NOTE_I = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+    SONGS.forEach(function (s) {
+      s.seq = [];
+      s.n.split(/\s+/).forEach(function (tok) {
+        if (tok === "|") { if (s.seq.length) s.seq[s.seq.length - 1].bar = true; return; }
+        var r = /^([A-G])(#?)(\d)(?:\*([\d.]+))?$/.exec(tok); if (!r) return;
+        s.seq.push({ m: 12 * (+r[3] + 1) + NOTE_I[r[1]] + (r[2] ? 1 : 0), b: r[4] ? +r[4] : 1 });
+      });
+    });
+    var song = null, pos = 0, wrong = 0;
+    function pickSong(id) {
+      stopPlay();
+      song = SONGS.filter(function (s) { return s.id === id; })[0] || null; pos = 0; wrong = 0;
+      paintSongs(); paintFollow();
+    }
+    function paintSongs() {
+      $("songs").innerHTML = SONGS.map(function (s) {
+        return '<button type="button" data-s="' + s.id + '"' + (song && song.id === s.id ? ' class="on"' : "") + ">" + IC.note +
+               "<span><b>" + t(s.id) + "</b><small>" + t(s.from) + "</small></span></button>";
+      }).join("");
+    }
+    $("songs").addEventListener("click", function (e) { var b = e.target.closest("[data-s]"); if (b) pickSong(b.getAttribute("data-s")); });
+    function paintFollow() {
+      Array.prototype.forEach.call(kb.querySelectorAll(".next"), function (el) { el.classList.remove("next"); });
+      var f = $("follow");
+      if (!song) { f.innerHTML = '<div class="hint">' + t("noSong") + "</div>"; return; }
+      var done = pos >= song.seq.length;
+      f.innerHTML = '<div class="top"><b>' + t(song.id) + '</b><span class="num hint" id="step">' + fmt(t("step"), { i: Math.min(pos + 1, song.seq.length), n: song.seq.length }) + "</span>" +
+        (done ? '<span class="done-msg">' + fmt(t("songDone"), { w: wrong }) + "</span>" : "") + '<span class="sp"></span>' +
+        '<button class="btn" type="button" id="listenBtn">' + (pb.on ? IC.stop : IC.ear) + "<span>" + t("listen") + "</span></button>" +
+        '<button class="btn" type="button" id="againBtn">' + IC.again + "<span>" + t("again") + "</span></button>" +
+        '<button class="btn" type="button" id="quitBtn">' + t("quit") + "</button></div>" +
+        '<div class="chips" id="chips">' + song.seq.map(function (x, i) {
+          return '<span class="' + (i < pos ? "done" : i === pos ? "cur" : "") + (x.bar ? " gap" : "") + (x.m >= 72 ? " hi" : "") + '" style="border-bottom-color:var(--c' + WHITE[Math.min(6, WHITE.filter(function (w) { return w <= x.m % 12; }).length - 1)] + ')">' + nm(x.m) + "</span>";
+        }).join("") + "</div>";
+      if (!done) { var el = keyEl(song.seq[pos].m); if (el) el.classList.add("next"); }
+      var chips = $("chips"), cur = chips.querySelector(".cur");
+      if (cur) chips.scrollTop = Math.max(0, cur.offsetTop - 36);             // 지금 칠 음이 늘 보이게 — 두 줄 중 아랫줄에
+    }
+    $("follow").addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b || !song) return;
+      if (b.id === "listenBtn") {
+        if (pb.on) { stopPlay(); return; }
+        var ev = [], at = 0, beat = 60000 / 100;                          // 들어 보기는 100 BPM 으로
+        song.seq.forEach(function (x) { ev.push([at, 1, x.m, "piano"]); at += x.b * beat; ev.push([at - 40, 0, x.m]); });
+        play(ev, at, paintFollow); paintFollow();
+      } else if (b.id === "againBtn") { pos = 0; wrong = 0; paintFollow(); }
+      else if (b.id === "quitBtn") { song = null; paintSongs(); paintFollow(); }
+    });
+    function follow(m) {
+      if (!song || pos >= song.seq.length) return;
+      if (m === song.seq[pos].m) {
+        pos++;
+        paintFollow();
+        if (pos >= song.seq.length) { toast(t("bravo")); if (window.vapiStat) vapiStat("piano_song_done"); }
+      } else {
+        wrong++;
+        var c = $("chips") && $("chips").children[pos];
+        if (c) { c.classList.add("wrong"); setTimeout(function () { c.classList.remove("wrong"); }, 260); }
+      }
+    }
+
+    var toastTimer = 0;
+    function toast(msg) { var el = $("toast"); el.textContent = msg; el.classList.add("on"); clearTimeout(toastTimer); toastTimer = setTimeout(function () { el.classList.remove("on"); }, 2200); }
+
+    /* 가려지면 소리를 다 끈다 — 뒤에 깔린 창에서 박자기가 계속 똑딱이면 다른 앱을 쓸 수가 없다 */
+    function quiet() { metroStop(); stopPlay(); if (rec.on) recStop(); allOff(); ptr = {}; }
+    if (window.EL_WIN) EL_WIN.onHide(quiet);
+    addEventListener("pagehide", quiet);
+
+    $("langButton").addEventListener("click", function () {
+      try { localStorage.setItem("vapiLang", LANG === "ko" ? "en" : "ko"); } catch (e) {}
+      location.reload();
+    });
+    document.title = t("title"); $("langButton").textContent = t("lang");
+    ["q1", "q2", "q3", "inst", "vol", "sus", "names", "oct", "metro", "drums", "rec", "songs", "keys"].forEach(function (k) {
+      var id = "txt" + k.charAt(0).toUpperCase() + k.slice(1); if ($(id)) $(id).textContent = t(k);
+    });
+    function kbds(s) { return s.split(" ").map(function (x) { return x === "~" ? "~" : "<kbd>" + x + "</kbd>"; }).join(" "); }
+    $("keymap").innerHTML = [["A ~ '", "kWhite"], ["W E T Y U O P", "kBlack"], ["Z ~ M", "kLow"], ["1 ~ 6", "kDrum"]].map(function (r) {
+      return "<span>" + kbds(r[0]) + "</span><span>" + t(r[1]) + "</span>";
+    }).join("");
+    buildKeys(); paintSet(); paintBeats(); paintMetro(); paintRec(); paintSlots(); paintSongs(); paintFollow();
+
+    window.EL_PIANO = {                                                     // 시험용
+      get log() { return log; }, get drums() { return drumLog; },
+      get held() { return Object.keys(held).map(Number); },
+      get metro() { return { on: metro.on, bpm: set.bpm, beats: set.beats, count: metro.count }; },
+      get rec() { return { on: rec.on, playing: pb.on, events: rec.ev.length, notes: notes(rec.ev), len: rec.len }; },
+      get song() { return song ? { id: song.id, pos: pos, len: song.seq.length, wrong: wrong, next: pos < song.seq.length ? song.seq[pos].m : null } : null; },
+      get slots() { return slots; }, get set() { return set; }, get shift() { return shift; },
+      get ctx() { return ctx; },
+      noteOn: noteOn, noteOff: noteOff, drum: drum, pickSong: pickSong, quiet: quiet
+    };
+  })();
+  </script>
+  <script src="/lib/shell.js"></script>
+  <script src="/lib/usage.js" data-page="piano"></script>
+  <i id="el-built" hidden></i>
+</body>
+</html>
