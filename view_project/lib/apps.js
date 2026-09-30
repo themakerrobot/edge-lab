@@ -56,7 +56,8 @@
 
   /* 앱 — 셸 바탕화면·시작 메뉴·상단바가 이 순서와 묶음(cat)대로 보여 준다.
      설명은 한 줄로 — 아이가 타일만 보고 고른다.
-     cat: ai(AI 를 써 보고 가르치기) · dev(만들기 — 블록·파이썬) · tool(도구) · sys(시스템). 묶음마다 색이 다르다. */
+     cat: ai(AI 를 써 보고 가르치기) · dev(만들기 — 블록·파이썬) · tool(도구) · sys(시스템). 묶음마다 색이 다르다.
+     core: 기본 앱 — 앱 가게에서 뺄 수 없다. 나머지는 아이가 앱 가게에서 빼고(el-removed) 다시 넣는다. */
   var CATS = [
     ["ai",   "AI",     "AI"],
     ["dev",  "개발",   "Develop"],
@@ -65,17 +66,17 @@
   ];
 
   var APPS = [
-    { href: "/try",     ic: "eye",    cat: "ai",   ko: "체험하기",   en: "Try it",
+    { href: "/try",     ic: "eye",    cat: "ai", core: true,   ko: "체험하기",   en: "Try it",
       ko_d: "AI 16가지를 눌러 봐요",        en_d: "Try 16 kinds of AI" },
-    { href: "/talk",    ic: "talk",   cat: "ai",   ko: "대화",       en: "Talk",
+    { href: "/talk",    ic: "talk",   cat: "ai", core: true,   ko: "대화",       en: "Talk",
       ko_d: "말하거나 써서 물어봐요",       en_d: "Ask by voice or text" },
-    { href: "/train",   ic: "train",  cat: "ai",   ko: "가르치기",   en: "Train",
+    { href: "/train",   ic: "train",  cat: "ai", core: true,   ko: "가르치기",   en: "Train",
       ko_d: "내가 직접 AI를 가르쳐요",      en_d: "Teach the AI yourself" },
     { href: "/drive",   ic: "car",    cat: "ai",   ko: "자동차 가르치기", en: "Teach a car",
       ko_d: "내 운전을 보고 AI가 배워요",   en_d: "The AI learns from your driving" },
-    { href: "/blocks",  ic: "blocks", cat: "dev",  ko: "블록",       en: "Blocks",
+    { href: "/blocks",  ic: "blocks", cat: "dev", core: true,  ko: "블록",       en: "Blocks",
       ko_d: "블록을 끼워 AI를 움직여요",    en_d: "Snap blocks to run the AI" },
-    { href: "/code",    ic: "code",   cat: "dev",  ko: "파이썬",     en: "Python",
+    { href: "/code",    ic: "code",   cat: "dev", core: true,  ko: "파이썬",     en: "Python",
       ko_d: "themaker 로 한 줄이면 돼요",   en_d: "One line with themaker" },
     { href: "/paint",   ic: "paint",  cat: "tool", ko: "그림판",     en: "Paint",
       ko_d: "그리고 AI 에게 보여 줘요",     en_d: "Draw, then show the AI" },
@@ -89,13 +90,15 @@
       ko_d: "말 → 글자 → 다시 읽기",        en_d: "Speech → text → read aloud" },
     { href: "/story",   ic: "book",   cat: "tool", ko: "이야기 극장", en: "Story theater",
       ko_d: "인물마다 다른 목소리로",       en_d: "A voice for each character" },
-    { href: "/works",   ic: "folder", cat: "sys",  ko: "내 작품",    en: "My work",
+    { href: "/works",   ic: "folder", cat: "sys", core: true,  ko: "내 작품",    en: "My work",
       ko_d: "만든 것을 한곳에서 열어요",    en_d: "Open everything you made" },
-    { href: "/tasks",   ic: "gauge",  cat: "sys",  ko: "AI 작업 관리자", en: "AI task manager",
+    { href: "/tasks",   ic: "gauge",  cat: "sys", core: true,  ko: "AI 작업 관리자", en: "AI task manager",
       ko_d: "어떤 AI 가 어디서 도는지",      en_d: "Which AI runs where" },
     { href: "/board",   ic: "chip",   cat: "sys",  ko: "보드",       en: "Board",
       ko_d: "보드 연결 · 명령 보내 보기",   en_d: "Connect a board, try commands" },
-    { href: "/options", ic: "gear",   cat: "sys",  ko: "설정",       en: "Settings",
+    { href: "/store",   ic: "store",  cat: "sys",  core: true, ko: "앱 가게", en: "App store",
+      ko_d: "앱을 넣고 빼요",               en_d: "Add and remove apps" },
+    { href: "/options", ic: "gear",   cat: "sys", core: true,  ko: "설정",       en: "Settings",
       ko_d: "수업 전 카메라·소리 점검",     en_d: "Check camera and sound" }
   ];
 
@@ -110,6 +113,13 @@
     SERVICE_LIST: SERVICE_LIST,
     APPS: APPS,
     CATS: CATS,
+    /* 앱 가게에서 뺀 앱 — 기본 앱(core)은 빠지지 않는다 */
+    removed: function () {
+      var r = [];
+      try { r = JSON.parse(localStorage.getItem("el-removed") || "[]") || []; } catch (e) {}
+      return r.filter(function (h) { return APPS.some(function (a) { return a.href === h && !a.core; }); });
+    },
+    isRemoved: function (href) { return this.removed().indexOf(href) >= 0; },
     catName: function (c, L) { var x = CATS.filter(function (k) { return k[0] === c; })[0]; return x ? ((L || lang()) === "en" ? x[2] : x[1]) : c; },
     lang: lang,
     /* 화면에 보이는 이름 — 영어 화면이면 en, 없으면 키 그대로 */

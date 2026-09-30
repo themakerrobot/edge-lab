@@ -38,6 +38,7 @@
     "/calc":     { ko: "계산기",     en: "Calculator" },
     "/notes":    { ko: "메모장",     en: "Notes" },
     "/board":    { ko: "보드",       en: "Board" },
+    "/store":    { ko: "앱 가게",    en: "App store" },
     "/recorder": { ko: "녹음기",     en: "Recorder" },
     "/story":    { ko: "이야기 극장", en: "Story theater" },
     "/works":    { ko: "내 작품",    en: "My work" },
