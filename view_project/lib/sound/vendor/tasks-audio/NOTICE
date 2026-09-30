@@ -1,0 +1,9 @@
+MediaPipe Tasks Audio (@mediapipe/tasks-audio) — wasm + JS bundle
+Copyright The MediaPipe Authors (Google LLC). Licensed under the Apache License, Version 2.0 (see LICENSE in this folder).
+https://github.com/google-ai-edge/mediapipe
+
+이 폴더의 파일은 themakerrobot/teach-lab (커밋 74f421a) 의 vendor/tasks-audio/ 에서 바이트 그대로 옮겼다
+(teach-lab 은 npm 패키지 @mediapipe/tasks-audio 에서 audio_bundle.mjs 와 wasm/audio_wasm_*internal.* 를 복사해 두었다).
+고치지 않았다. LICENSE 는 Apache-2.0 원문이다 (패키지에 별도 NOTICE 파일은 없다).
+
+audio_wasm_nosimd_internal.* 는 WebAssembly SIMD 를 못 쓰는 브라우저에서만 불린다.

@@ -141,6 +141,7 @@
     .log div { line-height: 1.5; }
     .log .tm { color: #6f7682; margin-right: 6px; }
     .log .tx { color: #8cc8ff; } .log .rx { color: #b8f0b0; } .log .sys { color: #a7adb8; font-style: italic; } .log .err { color: #f49a8c; }
+    .termsec { min-height: 190px; } .termsec .log { flex: 1 1 auto; }
     .send { display: flex; gap: 6px; }
     .send .inp { flex: 1 1 auto; height: 40px; font-family: Menlo, Consolas, monospace; }
     input[type=file] { display: none; }
@@ -148,7 +149,8 @@
     @media (max-width: 1439px) { .panel.arm { flex-basis: 280px; } .panel.side { flex-basis: 300px; } }
     @media (max-width: 1023px) { .main-container { flex-direction: column; } .panel.arm, .panel.view, .panel.side { flex: 0 0 auto; }
                                  .panel, .panel-body { overflow: visible; } body { overflow: auto; height: auto; }
-                                 .view { height: 360px; flex: 0 0 auto; } .log { height: 40vh; } }
+                                 .panel-body > .view.grow { height: 360px; flex: 0 0 auto; }
+                                 .panel-body > .termsec.grow { flex: 0 0 auto; } .termsec .log { height: 40vh; flex: 0 0 auto; } }
   </style>
   <link rel="stylesheet" href="/lib/ui.css">
   <link rel="stylesheet" href="/lib/shell.css">
@@ -306,11 +308,11 @@
             <div class="hint mono" data-i18n="seq.help" data-i18n-title="seq.helpTitle"></div>
           </div>
 
-          <div class="sec grow" style="min-height:190px">
+          <div class="sec grow termsec">
             <div class="st" data-ic="term"><span data-i18n="term.title"></span>
               <button class="btn sm" type="button" id="btnPos" data-ic="pin" data-i18n="term.pos"></button>
               <button class="btn sm ic" type="button" id="btnClear" data-ic="eraser" data-i18n-title="term.clear" style="margin-left:0"></button></div>
-            <div class="log grow" id="term" style="flex:1 1 auto"></div>
+            <div class="log" id="term"></div>
             <div class="send">
               <input class="inp" id="cmd" type="text" autocomplete="off" spellcheck="false" placeholder="#pos!  #m:90,45,120,90!">
               <button class="btn primary" type="button" id="btnSend" data-ic="send" data-i18n="term.send"></button>

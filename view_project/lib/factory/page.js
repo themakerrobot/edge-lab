@@ -355,6 +355,9 @@
     const tag = $("simTag");
     tag.textContent = on ? t("sim.live") : t("sim.tag"); tag.classList.toggle("live", on);
   }
+  // 안전 시작 체크는 이 컴퓨터에 기억한다 — 끈 선생님이 창을 열 때마다 다시 끄지 않게
+  try { if (localStorage.getItem("el-factory-safe") === "0") $("safeStart").checked = false; } catch (e) {}
+  $("safeStart").onchange = e => { try { localStorage.setItem("el-factory-safe", e.target.checked ? "1" : "0"); } catch (err) {} };
   $("btnBoard").onclick = () => { if (window.EL_WIN) EL_WIN.open("/board"); else location.href = "/board"; };
 
   function onLine(line) {
@@ -576,7 +579,10 @@
       const x = Math.round(tToX(tt)) + .5;
       g.strokeStyle = tt % 5 === 0 ? "#dcd5c6" : "#efeae0"; g.lineWidth = 1;
       g.beginPath(); g.moveTo(x, 0); g.lineTo(x, TH); g.stroke();
-      if (tt % (step * 5) === 0) { g.fillStyle = TC.ink2; g.fillText(tt + "s", x + 2, H - 3); }
+      if (tt % (step * 5) === 0) {
+        const lab = tt + "s", lw = g.measureText(lab).width;
+        g.fillStyle = TC.ink2; g.fillText(lab, x + 2 + lw > W ? x - 2 - lw : x + 2, H - 3);   // 끝 눈금 글자가 잘리지 않게
+      }
     }
     const ex = Math.round(tToX(tl.dur)) + .5;
     g.strokeStyle = TC.blue; g.setLineDash([3, 3]);

@@ -500,6 +500,9 @@
         var lastCat = null;
         A.APPS.forEach(function (a) {
           if (hiddenApp(a.href) && !wins[a.href]) return;
+          /* 작업 표시줄처럼 — 기본 앱(core)과 지금 떠 있는 창만. 앱이 스무 개를 넘자 상단바가 넘쳐
+             오른쪽 앱이 잘렸다. 나머지는 바탕화면 · 시작 메뉴에서 연다 */
+          if (!a.core && !wins[a.href]) return;
           if (lastCat && a.cat !== lastCat) {            // 묶음이 바뀌는 곳에 가는 세로줄
             var sep = document.createElement("span"); sep.className = "os-sep"; sep.style.alignSelf = "center";
             box.appendChild(sep);

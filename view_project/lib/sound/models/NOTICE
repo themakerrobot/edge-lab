@@ -1,0 +1,6 @@
+yamnet.tflite — YAMNet audio event classifier (AudioSet 521 classes), MediaPipe audio_classifier model
+Copyright Google LLC / The TensorFlow Authors. Licensed under the Apache License, Version 2.0 (see LICENSE in this folder).
+https://ai.google.dev/edge/mediapipe/solutions/audio/audio_classifier  (models/research/audioset/yamnet in tensorflow/models)
+
+themakerrobot/teach-lab (커밋 74f421a) 의 models/yamnet.tflite 를 바이트 그대로 옮겼다.
+521개 소리 이름(영어)은 모델 파일 안의 메타데이터 yamnet_label_list.txt 에 들어 있다.

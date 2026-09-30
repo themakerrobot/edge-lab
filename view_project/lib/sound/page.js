@@ -430,8 +430,9 @@ function thumbEl(c, i) {
   const g = cv.getContext('2d'), w = c.samples[i].wave;
   g.fillStyle = c.color;
   const bw = 60 / WAVE_BINS;
+  // 진폭은 제곱근으로 펴서 그린다 — 교실 소리는 대부분 작아서 그대로 그리면 납작하다
   for (let k = 0; k < WAVE_BINS; k++) {
-    const h = Math.max(2, Math.min(1, Math.sqrt(w[k] / 255) * 1.1) * 36);
+    const h = Math.max(2, Math.min(1, Math.sqrt(w[k] / 255) * 1.5) * 36);
     g.fillRect(k * bw + bw * 0.18, (40 - h) / 2, bw * 0.64, h);
   }
   b.appendChild(cv);
@@ -566,7 +567,7 @@ function paintEar(vec, top) {
   $('earNote').textContent = sel ? t('earSample') : t('earCap', { n: SOUND_DIM });
   drawStrip(vec, top3.map(x => x.index));
   $('top3').innerHTML = top3.map((x, k) => {
-    const ko = labelOf(x.name, LANG), en = x.name;
+    const en = (names && names[x.index]) || x.name, ko = labelOf(en, LANG);
     return '<div class="bar top3"><div class="bl"><span><b class="rank">' + (k + 1) + '</b>' + esc(ko) +
       (LANG === 'ko' && ko !== en ? ' <small>' + esc(en) + '</small>' : '') + '</span><span class="num">' + Math.round(x.score * 100) + '%</span></div>' +
       '<div class="bt"><div class="bf" style="width:' + (x.score * 100).toFixed(1) + '%"></div></div></div>';
@@ -597,10 +598,14 @@ function drawStrip(vec, marks) {
   }
   g.fillStyle = css('--pen-red') || '#b4451c';
   g.font = '700 11px system-ui, sans-serif'; g.textAlign = 'center';
-  marks.forEach((i, k) => {
-    const h = Math.sqrt(Math.max(0, vec[i])) * (base - 4), x = i * bw;
-    g.fillRect(x - 0.5, base - h, Math.max(2, bw + 1), h);
-    g.fillText(String(k + 1), Math.min(W - 6, Math.max(6, x)), H - 2);
+  // 1~3등 칸은 빨갛게, 아래에 등수 — 붙어 있는 칸이면 글자가 겹치지 않게 옆으로 민다
+  const lab = marks.map((i, k) => ({ k, x: i * bw, h: Math.sqrt(Math.max(0, vec[i])) * (base - 4) })).sort((p, q) => p.x - q.x);
+  const pos = [];
+  lab.forEach((m, n) => { pos[n] = Math.max(6, m.x, n ? pos[n - 1] + 11 : 6); });
+  for (let n = lab.length - 1; n >= 0; n--) pos[n] = Math.min(pos[n], n < lab.length - 1 ? pos[n + 1] - 11 : W - 6);
+  lab.forEach((m, n) => {
+    g.fillRect(m.x - 0.5, base - m.h, Math.max(2, bw + 1), m.h);
+    g.fillText(String(m.k + 1), pos[n], H - 2);
   });
 }
 
@@ -796,10 +801,10 @@ window.EL_SOUND = {
              training, live, recording: !!rec, micOn: eng.running, earState, threshold };
   },
   names: () => names,
-  // 가짜 예시 넣기 — vecs 는 YAMNet 날것 점수 521개짜리 배열들
-  addSamples(ci, vecs, wave) {
+  // 가짜 예시 넣기 — vecs 는 YAMNet 날것 점수 521개짜리 배열들, waves 는 (있으면) 예시마다 0~1 파형 24칸
+  addSamples(ci, vecs, waves) {
     const c = classes[ci]; if (!c) return 0;
-    vecs.forEach(v => { if (c.samples.length < MAX_PER_CLASS) addSample(c, asVec(v), wave || null); });
+    vecs.forEach((v, n) => { if (c.samples.length < MAX_PER_CLASS) addSample(c, asVec(v), waves ? waves[n] : null); });
     return c.samples.length;
   },
   train,
