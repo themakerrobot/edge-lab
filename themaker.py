@@ -629,7 +629,7 @@ def board_ports():
 
 def board_connect(port=None, baud=115200, eol="lf"):
     """보드 연결. port 를 비우면 보드로 보이는 포트(ESP32·CP210x·CH340 등)가 하나일 때 그것을 연다.
-    속도(baud)와 줄 끝(eol: "lf" · "crlf" · "cr")은 펌웨어에 맞춘다."""
+    속도(baud)와 줄 끝(eol: "lf" · "crlf" · "cr" · "none")은 펌웨어에 맞춘다."""
     if not port:
         ports = board_ports()
         likely = [p for p in ports if p.get("hint")] or ports

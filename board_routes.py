@@ -3,7 +3,7 @@
 
   GET  /board/ports                       연결된 USB 시리얼 포트 목록
   GET  /board/status                      연결 상태 · 마지막 번호(seq)
-  POST /board/connect  {port, baud, eol}  열기 (eol: lf · crlf · cr)
+  POST /board/connect  {port, baud, eol}  열기 (eol: lf · crlf · cr · none)
   POST /board/disconnect                  닫기
   POST /board/send     {text}             한 줄 보내기
   POST /board/ask      {text, timeout, prefix}   보내고 답 한 줄 기다리기 — 없으면 reply: null
