@@ -13,20 +13,6 @@ if exist "%~dp0venv\Scripts\python.exe" (
   set "PY=python"
 )
 
-rem 보드(MCU) 기능은 pyserial 이 필요하다. 예전에 설치한 PC 에는 없을 수 있어 켤 때 한 번 확인하고,
-rem 없으면 설치를 시도한다(인터넷이 필요). 안 되어도 서버는 뜬다 - 보드 앱만 안내를 띄운다.
-"%PY%" -c "import serial" >nul 2>&1
-if errorlevel 1 (
-  echo [setup] pyserial not found - installing for the Board app ...
-  if defined PYTHONPATH (
-    "%PY%" -m pip install --quiet --disable-pip-version-check --target "%~dp0pylib" pyserial==3.5
-  ) else (
-    "%PY%" -m pip install --quiet --disable-pip-version-check pyserial==3.5
-  )
-  "%PY%" -c "import serial" >nul 2>&1
-  if errorlevel 1 (echo [WARN] pyserial install failed - the Board app will not work until: pip install pyserial) else (echo [setup] pyserial installed)
-)
-
 set HF_HUB_OFFLINE=1
 set TRANSFORMERS_OFFLINE=1
 set YOLO_OFFLINE=1

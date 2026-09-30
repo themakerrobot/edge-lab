@@ -129,14 +129,14 @@
     document.documentElement.lang = LANG;
     var I18N = {
       ko: { title: "edge-lab — 보드", lang: "EN", q1: "연결", q2: "주고받기", refresh: "다시 찾기", ports: "포트",
-            noPorts: "보드가 보이지 않아요. USB 케이블을 꽂고 [다시 찾기] 를 눌러요.", noSerial: "보드 기능에 필요한 pyserial 이 없어요. 인터넷에 연결한 채로 edge-lab 을 끄고 다시 켜면 저절로 설치해요. (직접: venv\\Scripts\\python -m pip install pyserial)",
+            noPorts: "보드가 보이지 않아요. USB 케이블을 꽂고 [다시 찾기] 를 눌러요.", noSerial: "보드 기능에 필요한 pyserial 이 설치되어 있지 않아요. (venv\\Scripts\\python -m pip install pyserial)",
             baud: "속도", eol: "줄 끝", match: "속도와 줄 끝은 보드 펌웨어와 같아야 해요.",
             conn: "연결", disc: "끊기", on: "연결됨 · {p} · {b}", off: "연결 안 됨", lost: "연결이 끊겼어요 — 케이블을 확인해 주세요",
             pick: "포트를 먼저 골라요", use: "블록 · 파이썬에서", useHint: "여기서 연결해 두면 블록의 [보드] 블록과 파이썬의 board_send · board_ask · board_read 가 이 연결을 써요.",
             time: "시간", clear: "화면 지우기", ph: "보낼 명령 (한 줄)", send: "보내기", ask: "보내고 답 기다리기",
             none: "(답 없음)", fav: "자주 쓰는 명령", addFav: "+ 지금 명령 넣기", fail: "안 됐어요: " },
       en: { title: "edge-lab — Board", lang: "한", q1: "Connect", q2: "Talk to it", refresh: "Find again", ports: "Ports",
-            noPorts: "No board found. Plug in the USB cable and press [Find again].", noSerial: "pyserial (needed for boards) is missing. Restart edge-lab while online and it installs itself. (Manually: venv\\Scripts\\python -m pip install pyserial)",
+            noPorts: "No board found. Plug in the USB cable and press [Find again].", noSerial: "pyserial (needed for boards) is not installed. (venv\\Scripts\\python -m pip install pyserial)",
             baud: "Speed", eol: "Line end", match: "Speed and line end must match the board firmware.",
             conn: "Connect", disc: "Disconnect", on: "Connected · {p} · {b}", off: "Not connected", lost: "Connection lost — check the cable",
             pick: "Pick a port first", use: "In Blocks · Python", useHint: "Connect here, then the [Board] blocks and Python's board_send · board_ask · board_read use this connection.",
