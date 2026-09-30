@@ -260,7 +260,7 @@ ALLOW_WHILE_LOADING = ("/ready", "/system", "/lib", "/assets", "/fonts", "/block
 # 화면 주소 — 로딩 중에도 열린다. 새 화면을 만들면 여기에 더한다(빠지면 켜진 직후 1~2분은
 # 그 앱이 JSON 503 으로 뜬다 — 셸에 새 앱을 넣으며 한 번 겪었다).
 PAGE_PATHS = ("/", "/home", "/try", "/blocks", "/train", "/options", "/code", "/talk",
-              "/works", "/drive", "/paint", "/typing", "/calc", "/notes", "/recorder", "/story", "/tasks", "/board", "/store", "/factory", "/sound", "/signal", "/diary", "/piano", "/word", "/eye")
+              "/works", "/drive", "/paint", "/typing", "/calc", "/notes", "/recorder", "/story", "/tasks", "/board", "/store", "/sound", "/signal", "/diary", "/piano", "/word", "/eye")
 
 
 @app.middleware("http")
@@ -748,13 +748,6 @@ async def signal_page():
 async def sound_page():
     """소리 가르치기 — 마이크로 소리 종류를 모아 YAMNet 특징으로 브라우저 안에서 학습 (teach-lab 에서 옮김)"""
     with open("view_project/sound.html", encoding="utf-8") as f:
-        return f.read()
-
-
-@app.get("/factory", response_class=HTMLResponse)
-async def factory_page():
-    """로봇 공장 — 로봇 팔 · 컨베이어를 보드(/board/*)로 움직이고 3D 로 본다. 보드가 없으면 시뮬레이션 (factory-lab 에서 옮김)"""
-    with open("view_project/factory.html", encoding="utf-8") as f:
         return f.read()
 
 

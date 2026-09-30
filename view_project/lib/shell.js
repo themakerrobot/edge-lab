@@ -38,7 +38,6 @@
     "/calc":     { ko: "계산기",     en: "Calculator" },
     "/notes":    { ko: "메모장",     en: "Notes" },
     "/board":    { ko: "보드",       en: "Board" },
-    "/factory": { ko: "로봇 공장", en: "Robot factory" },
     "/sound": { ko: "소리 가르치기", en: "Teach sounds" },
     "/signal": { ko: "AI 신호 놀이", en: "AI signals" },
     "/diary": { ko: "일기", en: "Diary" },
