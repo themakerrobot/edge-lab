@@ -86,8 +86,6 @@
       ko_d: "블록을 끼워 AI를 움직여요",    en_d: "Snap blocks to run the AI" },
     { href: "/code",    ic: "code",   cat: "dev", core: true,  ko: "파이썬",     en: "Python",
       ko_d: "themaker 로 한 줄이면 돼요",   en_d: "One line with themaker" },
-    { href: "/factory", ic: "factory", cat: "dev", ko: "로봇 공장", en: "Robot factory",
-      ko_d: "로봇 팔 · 컨베이어 · 3D 공장", en_d: "Robot arm, conveyor, 3D factory" },
     { href: "/paint",   ic: "paint",  cat: "tool", ko: "그림판",     en: "Paint",
       ko_d: "그리고 AI 에게 보여 줘요",     en_d: "Draw, then show the AI" },
     { href: "/typing",  ic: "keys",   cat: "tool", ko: "타자 연습",  en: "Typing",

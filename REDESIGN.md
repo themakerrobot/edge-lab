@@ -767,7 +767,7 @@ openpibo IDE 의 결로 다시 칠했다(코드는 옮기지 않고 값만 참�
 **MIME 고정**: 모듈 스크립트 · 워커를 쓰는 앱이 생겨서 `main.py` 가 `.js`·`.wasm` 등의 MIME 을 못박는다.
 파이썬 mimetypes 는 윈도우 레지스트리를 읽고, 어떤 PC 는 `.js` 가 text/plain 이라 모듈이 거부된다.
 
-### 10.14e 새 앱 일곱 · 상단바
+### 10.14e 새 앱 여섯 · 상단바
 
 | 앱 | 묶음 | 출처 | 요점 |
 |---|---|---|---|
@@ -775,7 +775,6 @@ openpibo IDE 의 결로 다시 칠했다(코드는 옮기지 않고 값만 참�
 | AI 눈 `/eye` | AI | ml-lab `acts/eye` (MIT) | 그림 · 카메라 · 예시 도형으로 작은 CNN, 필터 8개 · 특징 지도, 속이기 시험 · 데이터 늘리기. 가르치기 머리에 링크 |
 | AI 신호 놀이 `/signal` | AI | sense-lab 을 보고 새로 짬 | 서버의 `/object/hand` · `/face/mesh` · `/custom/face` · 내 AI 로 신호판(AI 가 보는 숫자), 규칙(만약 → 말하기 · 소리 · 글자 · 보드), 동작 암호(800ms 유지) |
 | 소리 가르치기 `/sound` | AI | teach-lab (MIT) · YAMNet · MediaPipe Tasks Audio (Apache-2.0) | 1초 조각을 모아 YAMNet 특징 → 순수 JS 신경망. 들은 숫자 521개 · YAMNet 이 아는 이름. 모델 파일은 `lib/sound/models/` (`.gitignore` 예외) |
-| 로봇 공장 `/factory` | 개발 | factory-lab (같은 저작자) · three.js (MIT) | 로봇 팔 4채널 · 컨베이어 · 차단봉, 3D 공장, 타임라인, 순서 프로그램. Web Serial 대신 `/board/*`(115200 · 줄 끝 없음, `#…!`). 보드가 없으면 시뮬레이션 |
 | 피아노 `/piano` | 도구 | kids-lab 을 보고 새로 짬 | 2옥타브 · 악기 4 · 드럼 6 · 메트로놈 · 녹음 · 노래 따라 치기(공유 저작물만) |
 | 일기 `/diary` | 도구 | kids-lab 을 보고 새로 짬 | 달력 · 기분 · 날씨 · 한 일 · 글(`el-diary`), 읽어 주기, 한 달 .txt |
 
