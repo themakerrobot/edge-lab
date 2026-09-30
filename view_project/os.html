@@ -14,7 +14,6 @@
   </script>
   <link rel="stylesheet" href="/lib/tokens.css">
   <link rel="expect" href="#el-built" blocking="render">
-  <script src="/lib/boot.js"></script>
   <style>
     /* 셸 — edge-lab 을 하나의 컴퓨터처럼 보이게 하는 첫 화면.
      *
@@ -553,7 +552,8 @@
           : s.error ? T("aiBad")
           : s.ready ? T("aiOk")
           : T("aiWait") + (s.total ? " " + s.loaded + "/" + s.total : "");
-        c.title = s && s.error ? String(s.error) : "";
+        c.title = !s ? "" : s.error ? String(s.error)
+          : s.ready ? "" : ((LANG === "en" ? s.current_en : s.current_ko) || "");   // 지금 올리는 AI
       }
       function pollAi() {
         fetch("/ready").then(function (r) { return r.json(); }).then(function (r) {

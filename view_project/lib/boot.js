@@ -12,20 +12,13 @@
  *
  * 그림은 전부 인라인 SVG — 파일을 더 받지 않는다.
  *
- * 켜는 화면(launch.html)에서도 쓴다 — 키오스크 창이 서버보다 먼저 뜨면 이 준비 화면이 처음부터 보이고,
- * 서버를 기다리는 것부터 모델 올리기까지 한 화면에서 끝낸다. [시작하기] 를 누를 때 바탕화면("/?booted=1")으로
- * 한 번만 넘어간다 — 전에는 켜는 화면 → 바탕화면 → 준비 화면으로 세 번 바뀌어 깜빡였다.
- *     window.EL_BOOT = { base: "http://localhost:57711", asset: "assets/", onDone: fn, onServer: fn }
+ * 바탕화면(os.html, "/")은 이것을 쓰지 않는다 — 켤 때 준비 화면 → 바탕화면으로 바뀌며 깜빡였다.
+ * 바탕화면은 곧바로 뜨고 상단바의 "AI 준비 중 n/12" 가 진행을 보여 준다. 여기는 창 없이 여는 옛 화면
+ * (/home, /try) 용이다.
  */
 (function () {
   "use strict";
 
-  var CFG = window.EL_BOOT || {}, BASE = CFG.base || "";
-  /* 켜는 화면에서 준비를 마치고 넘어온 것 — 여기서 다시 띄우지 않는다 */
-  if (/[?&]booted=1/.test(location.search)) {
-    try { sessionStorage.setItem("vapi-ready", "1"); history.replaceState(null, "", location.pathname); } catch (e) {}
-    return;
-  }
   /* 같은 세션에서 이미 로딩이 끝났다면(페이지 이동) 아예 그리지 않는다 */
   var already = false;
   try { already = sessionStorage.getItem("vapi-ready") === "1"; } catch (e) {}
@@ -33,9 +26,7 @@
   /* 셸 안의 창이면 그리지 않는다 — 부팅 안내는 셸이 한 번만 보여 준다 (lib/embed.js) */
   if (document.documentElement.classList.contains("el-win")) return;
 
-  /* 덮개는 body 를 다 읽은 뒤(DOMContentLoaded)에야 붙는다. 그 사이에 브라우저가 바탕화면을 한 번 그려서
-     켤 때 셸이 0.5초 번쩍였다(켜는 화면 → 바탕화면 → 준비 화면). 덮개가 붙을 때까지 body 를 숨기고
-     바탕색만 준비 화면과 같게 둔다 — 켜는 화면(launch.html)에서 준비 화면으로 바로 이어진다 */
+  /* 덮개가 붙을 때까지 body 를 숨기고 바탕색만 준비 화면과 같게 둔다 — 화면이 한 번 그려졌다 덮이지 않게 */
   document.documentElement.classList.add("el-booting");
   var pre = document.createElement("style");
   pre.textContent = "html.el-booting{background:#fbf7ef}html.el-booting body>*:not(#boot){visibility:hidden!important}";
@@ -124,7 +115,7 @@
     '<div id="boot">',
     '  <div class="boot-card">',
     '    <div class="boot-brand">',
-    '      <img src="' + (CFG.asset || "/assets/") + 'pibo-prof.png" alt="">',
+    '      <img src="/assets/pibo-prof.png" alt="">',
     '      <span><b>edge-lab</b><i id="bootSub"></i></span>',
     '    </div>',
     '    <div class="boot-slide">',
@@ -201,7 +192,6 @@
     }
     function finish() {
       if (timer) clearInterval(timer);
-      if (CFG.onDone) { CFG.onDone(); return; }   // 켜는 화면: 바탕화면으로 넘어간다(덮개는 넘어갈 때까지 둔다)
       box.classList.add("done");
     }
 
@@ -229,8 +219,7 @@
     }
 
     function poll() {
-      fetch(BASE + "/ready", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (r) {
-        if (CFG.onServer) { CFG.onServer(); CFG.onServer = null; }
+      fetch("/ready", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (r) {
         if (r.ready) { try { sessionStorage.setItem("vapi-ready", "1"); } catch (e) {} }
         if (r.ready && !shown) { finish(); return; }   /* 이미 준비 끝 → 바로 화면 */
         show();
