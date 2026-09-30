@@ -1,0 +1,1511 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>edge-lab — AI 신호 놀이</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+  <link href="/fonts/fonts.css" rel="stylesheet">
+  <script>
+    try { if (localStorage.getItem("vapi-hc") === "1")
+            document.documentElement.classList.add("hc"); } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="/lib/tokens.css">
+  <script src="/lib/embed.js"></script>
+  <link rel="expect" href="#el-built" blocking="render">
+  <style>
+    /* AI 신호 놀이 — 카메라 하나로 AI 가 보는 "숫자"를 신호로 바꾸고, 그 신호로 놀아 본다.
+     *
+     * 1) 신호판: 손가락 개수·손 모양·손 들기·얼굴 거리/방향·표정·내가 만든 AI 를 큰 카드로.
+     *    아래 "AI가 보는 숫자" 칸이 핵심이다 — 신호는 그림이 아니라 좌표·점수에서 나온다.
+     * 2) 규칙 만들기: 만약 [신호]가 [값]이면 → [행동]. 코드 없이 IF→THEN 을 익힌다.
+     *    조건이 "막 맞았을 때" 한 번만(상승 에지), 1.5초 쉬었다가 다시.
+     * 3) 동작 암호: 동작을 차례대로 해서 문을 연다 — 순서(시퀀스)와 "유지 시간" 개념.
+     *
+     * 서버는 사진 한 장씩 받아(/object/hand, /face/mesh, /custom/face, /custom/predict)
+     * 숫자로 돌려준다. 요청은 늘 하나씩만 보낸다 — 교실 노트북에서 줄이 쌓이지 않게.
+     * sense-lab 의 규칙표·순서 놀이 아이디어를 이 서버 API 에 맞게 새로 짰다.
+     */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root { --go: #3a9a55; --go-bg: #e3f1e6; --bad: #c2412a; --warm: #e0a030; --soft: #f4efe4; }
+    html.hc { --go: #237a3b; --go-bg: #d8eedd; --bad: #9e2e19; }
+    body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; color: var(--ink); background: var(--paper);
+           font-family: "Gowun Dodum", "Apple SD Gothic Neo", system-ui, sans-serif; line-height: 1.5;
+           padding: var(--sp-2, 8px); gap: var(--sp-2, 8px); }
+    button, input, select { font-family: inherit; color: var(--ink); }
+    .btn { border: 1.5px solid var(--line-d); background: #fff; font-weight: 600; padding: 7px 13px; border-radius: var(--r); cursor: pointer;
+           font-size: .92rem; min-height: 40px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+    .btn.primary { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; }
+    .btn.go { background: var(--go); border-color: var(--go); color: #fff; }
+    .btn.on { background: var(--cyan-bg); border-color: var(--cyan); color: var(--cyan-d); }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+    .btn.big { min-height: var(--tap, 48px); font-size: 1.02rem; padding: 8px 18px; }
+    .btn svg { width: 18px; height: 18px; flex: 0 0 auto; }
+    .btn:focus-visible, select:focus-visible, input:focus-visible, .tabs button:focus-visible, .mv:focus-visible { outline: 2.5px solid var(--pen-red); outline-offset: 2px; }
+    .xbtn { width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--line); background: #fff; cursor: pointer; display: grid; place-items: center; flex: 0 0 auto; }
+    .xbtn svg { width: 16px; height: 16px; }
+    .xbtn:hover { border-color: var(--bad); color: var(--bad); }
+    select, input[type="text"] { height: 40px; border: 1.5px solid var(--line); border-radius: var(--r); padding: 0 8px; background: #fff; font-size: .95rem; min-width: 0; }
+    .hint { font-size: var(--fs-side, 13px); color: var(--ink-2); }
+    .num { font-family: Menlo, Consolas, monospace; font-size: var(--fs-mono, 13px); }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .off { display: none !important; }
+
+    .panel.cam { flex: 0 0 44%; } .panel.work { flex: 1 1 auto; }
+
+    /* 탭 — 세 놀이 중 하나 */
+    .tabs { display: flex; border: 1.5px solid var(--line-d); border-radius: var(--r); overflow: hidden; }
+    .tabs button { flex: 1; border: 0; background: #fff; min-height: var(--tap, 48px); font-size: 1rem; font-weight: 700; cursor: pointer;
+                   display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 8px; }
+    .tabs button + button { border-left: 1.5px solid var(--line-d); }
+    .tabs button.on { background: var(--pen-blue); color: #fff; }
+    .tabs svg { width: 20px; height: 20px; flex: 0 0 auto; }
+
+    /* 카메라 무대 — 영상과 점 그림을 같은 크기로 겹친다 (거울처럼 좌우를 뒤집어 보여 준다) */
+    .stage { position: relative; min-height: 220px; display: flex; align-items: center; justify-content: center;
+             border-radius: var(--r); background: #2a2620; overflow: hidden; }
+    .frame { position: relative; }
+    .frame video, .frame canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .frame video { transform: scaleX(-1); object-fit: fill; }
+    .frame.numsOnly video { visibility: hidden; }
+    .frame.numsOnly { background: #1d2a30; background-image: linear-gradient(rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px);
+                      background-size: 32px 32px; }
+    .camoff { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+              padding: 18px; text-align: center; color: #f4efe4; background: #2a2620; }
+    .camoff svg.big { width: 64px; height: 64px; opacity: .85; }
+    .camoff p { max-width: 380px; font-size: .98rem; }
+    .camoff .err { color: #ffcf9e; }
+    .status { display: flex; align-items: center; gap: 8px; font-size: var(--fs-side, 13px); color: var(--ink-2); min-height: 22px; }
+    .status .dot { width: 11px; height: 11px; border-radius: 50%; background: #b8ad99; flex: 0 0 auto; }
+    .status.live .dot { background: var(--go); } .status.wait .dot { background: var(--warm); animation: blink 1s ease-in-out infinite; }
+    .status.err .dot { background: var(--bad); }
+    .status .num { margin-left: auto; }
+    .rulesbadge { font-size: var(--fs-side, 13px); padding: 2px 10px; border-radius: 12px; background: var(--soft); color: var(--ink-2); white-space: nowrap; }
+    .rulesbadge.on { background: var(--go-bg); color: #1e5b30; font-weight: 700; }
+    @keyframes blink { 50% { opacity: .35; } }
+
+    /* 1) 신호판 카드 */
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 8px; }
+    .card { border: 1.5px solid var(--line); border-radius: 10px; padding: 8px 10px 10px; background: #fff; display: flex; flex-direction: column; gap: 2px;
+            transition: background .15s, border-color .15s; min-height: 112px; }
+    .card .ct { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: .95rem; color: var(--cyan-d); }
+    .card .ct svg { width: 22px; height: 22px; flex: 0 0 auto; }
+    .card .ct .tg { margin-left: auto; }
+    .card .cv { font-size: 1.9rem; font-weight: 700; line-height: 1.2; color: var(--ink); word-break: keep-all; }
+    .card .cv small { font-size: 1rem; font-weight: 600; margin-left: 2px; }
+    .card .cs { font-size: var(--fs-side, 13px); color: var(--ink-2); }
+    .card.on { border-color: var(--cyan); background: var(--cyan-bg); }
+    .card.hot { border-color: var(--go); background: var(--go-bg); }
+    .card.dim .cv { color: #9a8f7d; font-size: 1.15rem; padding: 6px 0; }
+    .card.mine .ct { color: var(--pen-red); }
+    .card .tg { font-size: .82rem; min-height: 32px; padding: 2px 10px; border-radius: 16px; border: 1.5px solid var(--line); background: #fff; cursor: pointer; font-weight: 600; }
+    .card .tg.on { background: var(--pen-red); border-color: var(--pen-red); color: #fff; }
+    .fingers { display: flex; gap: 14px; align-items: baseline; }
+    .fingers span { font-size: 2.2rem; font-weight: 700; line-height: 1.1; }
+    .fingers em { font-style: normal; font-size: .82rem; color: var(--ink-2); margin-right: 2px; }
+    .meter { height: 8px; border-radius: 4px; background: #ece5d6; overflow: hidden; }
+    .meter i { display: block; height: 100%; background: var(--pen-blue); transition: width .15s; }
+    .mrow { display: grid; grid-template-columns: 64px 1fr 34px; gap: 6px; align-items: center; font-size: var(--fs-side, 13px); }
+
+    /* AI 가 보는 숫자 */
+    .nums { border: 1.5px dashed var(--line); border-radius: 10px; padding: 10px; background: #fffdf8; display: flex; flex-direction: column; gap: 8px; }
+    .nums h3 { font-size: 1rem; color: var(--cyan-d); display: flex; align-items: center; gap: 6px; }
+    .nums h3 svg { width: 20px; height: 20px; }
+    .nums .sub { font-weight: 700; font-size: .9rem; color: var(--ink); margin-top: 2px; }
+    .ptgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 2px 8px; }
+    .ptgrid span { font-family: Menlo, Consolas, monospace; font-size: 12.5px; color: var(--ink-2); white-space: nowrap; }
+    .ptgrid span b { color: var(--pen-red); font-weight: 700; }
+    .ratio { display: grid; grid-template-columns: 42px 1fr 46px 20px; gap: 6px; align-items: center; font-size: var(--fs-side, 13px); }
+    .ratio .tr { position: relative; height: 10px; border-radius: 5px; background: #ece5d6; overflow: visible; }
+    .ratio .tr i { display: block; height: 100%; border-radius: 5px; background: #b8ad99; }
+    .ratio .tr i.ext { background: var(--go); }
+    .ratio .tr u { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--pen-red); }
+    .ratio .ok { color: var(--go); font-weight: 700; } .ratio .no { color: #9a8f7d; }
+    .kv { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; font-size: var(--fs-side, 13px); }
+    .kv dt { color: var(--ink-2); } .kv dd { font-family: Menlo, Consolas, monospace; }
+
+    /* 2) 규칙 */
+    .rules { display: flex; flex-direction: column; gap: 8px; }
+    .rule { border: 1.5px solid var(--line); border-radius: 10px; padding: 8px 10px; background: #fff; display: flex; flex-direction: column; gap: 6px; position: relative; }
+    .rule.true { border-color: var(--cyan); }
+    .rule.fire { animation: fire .7s ease-out; }
+    @keyframes fire { 0% { background: #fff1c8; box-shadow: 0 0 0 4px rgba(224,160,48,.45); } 100% { background: #fff; box-shadow: none; } }
+    .rline { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .rline .kw { font-weight: 700; color: var(--pen-blue); min-width: 38px; }
+    .rline .kw.then { color: var(--pen-red); }
+    .rline .pp { color: var(--ink-2); font-size: .92rem; }
+    .rline select { max-width: 190px; }
+    .rline input[type="text"] { flex: 1 1 140px; }
+    .lamp { width: 16px; height: 16px; border-radius: 50%; background: #ddd5c4; border: 1.5px solid var(--line); flex: 0 0 auto; }
+    .rule.true .lamp { background: var(--go); border-color: var(--go); box-shadow: 0 0 0 3px rgba(58,154,85,.25); }
+    .rtop { display: flex; align-items: center; gap: 8px; }
+    .rtop .rn { font-weight: 700; color: var(--cyan-d); }
+    .rtop .cnt { font-size: var(--fs-side, 13px); color: var(--ink-2); margin-left: auto; }
+    .rhint { font-size: var(--fs-side, 13px); color: var(--pen-red); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .rhint .btn { min-height: 32px; padding: 2px 10px; font-size: .85rem; }
+    .smallbtn { min-height: 34px; padding: 2px 10px; font-size: .88rem; }
+    .log { display: flex; flex-direction: column; gap: 2px; font-size: var(--fs-side, 13px); color: var(--ink-2); padding: 6px 10px; border-radius: var(--r); background: var(--soft); min-height: 30px; }
+    .log b { color: var(--ink); }
+    .empty { text-align: center; padding: 18px 10px; border: 1.5px dashed var(--line); border-radius: 10px; color: var(--ink-2); display: flex; flex-direction: column; gap: 10px; align-items: center; }
+
+    /* 3) 동작 암호 */
+    .pwlist { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .pwlist button.pw { min-height: 40px; padding: 4px 12px; border-radius: 20px; border: 1.5px solid var(--line); background: #fff; cursor: pointer; font-weight: 600; font-size: .92rem; }
+    .pwlist button.pw.on { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; }
+    .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 70px; padding: 8px; border: 1.5px solid var(--line); border-radius: 10px; background: #fff; }
+    .flow .arrow { color: var(--line); font-weight: 700; }
+    .step { position: relative; display: flex; align-items: center; gap: 6px; padding: 6px 6px 10px 10px; border: 2px solid var(--line); border-radius: 10px; background: #fff; overflow: hidden; }
+    .step .si { width: 22px; height: 22px; border-radius: 50%; background: var(--soft); display: grid; place-items: center; font-size: .8rem; font-weight: 700; }
+    .step b { font-size: 1rem; }
+    .step .xbtn { width: 32px; height: 32px; }
+    .step .fill { position: absolute; left: 0; bottom: 0; height: 5px; width: 0; background: var(--go); }
+    .step.cur { border-color: var(--pen-blue); box-shadow: 0 0 0 3px rgba(31,95,122,.18); }
+    .step.done { border-color: var(--go); background: var(--go-bg); }
+    .step.done .si { background: var(--go); color: #fff; }
+    .step.done .fill { width: 100% !important; }
+    .palette { display: flex; flex-direction: column; gap: 6px; }
+    .pgroup { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .pgroup > span { font-size: var(--fs-side, 13px); color: var(--ink-2); min-width: 44px; font-weight: 700; }
+    .mv { min-height: 40px; padding: 4px 12px; border-radius: 20px; border: 1.5px solid var(--line-d); background: #fff; cursor: pointer; font-size: .92rem; font-weight: 600; }
+    .mv:hover { background: var(--hover-bg); }
+    .mv:disabled { opacity: .4; cursor: not-allowed; }
+    .play { border: 2px solid var(--pen-blue); border-radius: 12px; padding: 12px; display: flex; gap: 14px; align-items: center; background: #fff; position: relative; overflow: hidden; }
+    .ring { width: 96px; height: 96px; flex: 0 0 auto; position: relative; }
+    .ring svg { width: 96px; height: 96px; transform: rotate(-90deg); }
+    .ring .lock { position: absolute; inset: 0; display: grid; place-items: center; }
+    .ring .lock svg { width: 40px; height: 40px; transform: none; color: var(--pen-blue); }
+    .play .now { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .play .now small { font-size: var(--fs-side, 13px); color: var(--ink-2); }
+    .play .now b { font-size: 1.9rem; line-height: 1.2; }
+    .play .now .msg { font-size: .95rem; color: var(--pen-red); min-height: 1.4em; }
+    .play.win { border-color: var(--go); background: var(--go-bg); }
+    .play.win .ring .lock svg { color: var(--go); }
+    .confetti { position: absolute; inset: 0; pointer-events: none; }
+    .confetti i { position: absolute; top: -12px; width: 8px; height: 12px; border-radius: 2px; animation: drop 1.6s ease-in forwards; }
+    @keyframes drop { to { transform: translateY(240px) rotate(540deg); opacity: 0; } }
+
+    /* 화면 글자 · 알림 */
+    #bigText { position: fixed; left: 50%; top: 42%; transform: translate(-50%, -50%) scale(.9); z-index: 20; pointer-events: none; opacity: 0;
+               background: rgba(31,95,122,.94); color: #fff; font-weight: 700; font-size: clamp(2.4rem, 8vw, 5.5rem); line-height: 1.15;
+               padding: 18px 40px; border-radius: 18px; text-align: center; max-width: 92vw; word-break: keep-all; transition: opacity .2s, transform .2s; }
+    #bigText.on { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 18px;
+             border-radius: 10px; font-size: .95rem; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 21; max-width: 90vw; }
+    #toast.on { opacity: 1; }
+    @media (prefers-reduced-motion: reduce) {
+      .rule.fire, .confetti i, .status.wait .dot { animation: none; }
+      #bigText { transition: none; }
+    }
+    @media (max-width: 1439px) { .panel.cam { flex-basis: 42%; } }
+    @media (max-width: 1023px) { .main-container { flex-direction: column; } .panel.cam, .panel.work { flex: 0 0 auto; }
+                                 .panel, .panel-body { overflow: visible; } body { overflow: auto; height: auto; }
+                                 .stage { min-height: 300px; } }
+  </style>
+  <link rel="stylesheet" href="/lib/ui.css">
+  <link rel="stylesheet" href="/lib/shell.css">
+</head>
+<body data-density="explore">
+  <div class="titlebar">
+    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요"><img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b></a>
+    <span class="tb-sep"></span><span class="tb-app" id="txtTitle"></span>
+    <div class="h-tools"><button id="langButton" title="한국어 / English">EN</button></div>
+  </div>
+  <div class="shell-body"><div class="workbench"><div class="main-container">
+
+    <div class="panel cam">
+      <div class="panel-head">
+        <span class="q"><span class="qnum">1</span><span class="qtext" id="txtQ1"></span></span>
+        <div class="right"><button class="btn" id="numsBtn" type="button"></button><button class="btn primary" id="camBtn" type="button"></button></div>
+      </div>
+      <div class="panel-body">
+        <div class="tabs" id="tabs" role="tablist">
+          <button type="button" role="tab" data-tab="sig"></button>
+          <button type="button" role="tab" data-tab="rule"></button>
+          <button type="button" role="tab" data-tab="pw"></button>
+        </div>
+        <div class="stage grow" id="stage">
+          <div class="frame" id="frame"><video id="vid" muted playsinline></video><canvas id="ov"></canvas></div>
+          <div class="camoff" id="camOffBox"></div>
+        </div>
+        <div class="status" id="status"><i class="dot"></i><span id="stText"></span><span class="rulesbadge" id="rulesBadge"></span><span class="num" id="stMs"></span></div>
+      </div>
+    </div>
+
+    <div class="panel work">
+      <div class="panel-head">
+        <span class="q"><span class="qnum">2</span><span class="qtext" id="txtQ2"></span></span>
+        <div class="right" id="headTools"></div>
+      </div>
+
+      <!-- 1) 신호판 -->
+      <div class="panel-body" id="paneSig">
+        <div class="hint" id="sigLead"></div>
+        <div class="cards" id="cards"></div>
+        <div class="cards" id="myCards"></div>
+        <div class="nums" id="nums"></div>
+      </div>
+
+      <!-- 2) 규칙 만들기 -->
+      <div class="panel-body off" id="paneRule">
+        <div class="hint" id="ruleLead"></div>
+        <div class="log" id="ruleLog"></div>
+        <div class="rules" id="rules"></div>
+      </div>
+
+      <!-- 3) 동작 암호 -->
+      <div class="panel-body off" id="panePw">
+        <div class="hint" id="pwLead"></div>
+        <div class="pwlist" id="pwList"></div>
+        <div class="row"><input type="text" id="pwName" maxlength="20" style="flex:1 1 160px"><button class="btn" id="pwDel" type="button"></button></div>
+        <div class="flow" id="flow"></div>
+        <div class="play" id="play">
+          <div class="ring"><svg viewBox="0 0 96 96"><circle cx="48" cy="48" r="42" fill="none" stroke="#ece5d6" stroke-width="9"/>
+            <circle id="ringFill" cx="48" cy="48" r="42" fill="none" stroke="var(--go)" stroke-width="9" stroke-linecap="round" stroke-dasharray="263.9" stroke-dashoffset="263.9"/></svg>
+            <div class="lock" id="lockIcon"></div></div>
+          <div class="now"><small id="nowLabel"></small><b id="nowMove"></b><div class="msg" id="pwMsg"></div></div>
+          <button class="btn go big" id="pwGo" type="button"></button>
+          <div class="confetti" id="confetti"></div>
+        </div>
+        <div class="palette" id="palette"></div>
+      </div>
+    </div>
+
+  </div></div></div>
+  <div id="bigText"></div>
+  <div id="toast" role="status"></div>
+
+  <script>
+  (function () {
+    "use strict";
+    var LANG = "ko";
+    try { LANG = localStorage.getItem("vapiLang") === "en" ? "en" : "ko"; } catch (e) {}
+    document.documentElement.lang = LANG;
+
+    var I18N = {
+      ko: {
+        title: "edge-lab — AI 신호 놀이", lang: "EN", q1: "카메라",
+        tabSig: "신호판", tabRule: "규칙 만들기", tabPw: "동작 암호",
+        camOn: "카메라 켜기", camOff: "카메라 끄기", numsOnly: "숫자만 보기", picture: "그림도 보기",
+        camIntro: "카메라를 켜면 AI 가 손과 얼굴을 보고 숫자로 바꿔요. 사진은 이 컴퓨터 밖으로 나가지 않아요.",
+        camDenied: "카메라를 쓰도록 허락되지 않았어요. 주소창 옆 카메라 표시에서 허락해 주세요.",
+        camBusy: "다른 앱이 카메라를 쓰고 있어요. 그 앱의 카메라를 끄고 다시 눌러 주세요.",
+        camNone: "카메라를 찾지 못했어요. 카메라가 꽂혀 있는지 확인해 주세요.",
+        stOff: "카메라가 꺼져 있어요", stStart: "카메라를 켜는 중…", stLoading: "AI 준비 중이에요… 조금만 기다려 주세요",
+        stLive: "AI 가 보고 있어요", stFake: "시험 신호로 움직이는 중", stErr: "AI 가 답하지 못했어요: ",
+        perSec: "{n}번/초", rulesOnN: "규칙 {n}개 켜짐", rulesOffB: "규칙 꺼짐",
+        sigLead: "AI 가 카메라에서 읽어 낸 신호예요. 손과 얼굴을 움직여 보세요.",
+        cFingers: "손가락 개수", cGesture: "손 모양", cHandup: "손 들기", cDist: "얼굴 거리", cDir: "얼굴 방향", cExpr: "표정",
+        noHand: "손이 안 보여요", noFace: "얼굴이 안 보여요", noCam: "카메라를 켜 주세요",
+        handUpV: "들었어요!", handDownV: "내렸어요", upWhy: "손이 이마보다 위", upWhyNoFace: "손이 화면 위쪽",
+        nearV: "가까워요", farV: "멀어요", midV: "알맞아요", distUnknown: "눈이 잘 안 보여요",
+        nearSub: "40cm 보다 가까워요", farSub: "75cm 보다 멀어요", midSub: "40~75cm",
+        smileM: "웃음", mouthM: "입 벌림", exprWait: "표정을 읽는 중…",
+        hands: "손 {n}개", sum: "합 {n}",
+        myAI: "내 AI", myAIHint: "가르치기에서 AI 를 만들면 여기에 나와요.", openTrain: "가르치기 열기",
+        modelOn: "보는 중", modelOff: "보기", modelIdle: "[보기]를 누르면 이 AI 에게 물어봐요", unsure: "잘 모르겠어요", nothing: "없음",
+        numsTitle: "AI 가 보는 숫자", numsLead: "AI 는 그림이 아니라 이런 숫자를 봐요. 위의 신호는 모두 이 숫자로 정해요.",
+        nHandPts: "첫 번째 손의 점 21개 (x, y)", nFinger: "손가락 펴짐 값", nFingerRule: "끝이 손목에서 얼마나 먼지 — 빨간 줄을 넘으면 폈다고 봐요",
+        nFace: "얼굴 숫자", nIris: "홍채 지름", nDistCm: "거리", nDirCode: "방향 코드", nBox: "얼굴 상자", nExpr: "표정 점수 (0~1)",
+        nModel: "내 AI 점수", nNone: "아직 숫자가 없어요 — 카메라를 켜 보세요", nHandUp: "손 높이",
+        fThumb: "엄지", fIndex: "검지", fMiddle: "중지", fRing: "약지", fPinky: "새끼",
+        ruleLead: "만약 [신호]가 [값]이면 → [행동]. 조건이 막 맞았을 때 한 번만 하고, {s}초 쉬었다가 다시 할 수 있어요.",
+        addRule: "규칙 더하기", rulesOn: "규칙 켜짐", rulesOff: "규칙 꺼짐", ruleMax: "규칙은 {n}개까지 만들 수 있어요",
+        ifW: "만약", isW: "이(가)", andW: "이고", orW: "이거나", thenW: "이면 →", addCond: "조건 더하기",
+        delCond: "조건 빼기", delRule: "규칙 지우기", test: "해 보기", ruleN: "규칙 {n}", fireN: "{n}번 했어요",
+        actSay: "말하기", actSound: "소리 내기", actText: "화면 글자", actBoard: "보드에 보내기",
+        phSay: "할 말", phText: "보여 줄 글자", phBoard: "보낼 글 (예: LED ON)",
+        sndBeep: "삑", sndDoremi: "도레미", sndDing: "딩동", sndFanfare: "빰빠밤", sndLow: "뿌우",
+        boardOff: "보드가 연결되어 있지 않아요.", openBoard: "보드 앱 열기", boardFail: "보드에 보내지 못했어요: ",
+        ttsLoading: "목소리 AI 가 아직 준비 중이에요.", ttsFail: "말하지 못했어요: ", ttsBusy: "말하는 중이라 건너뛰었어요",
+        noRules: "아직 규칙이 없어요. 규칙을 더하거나 예시를 넣어 보세요.", example: "예시 넣기",
+        logEmpty: "규칙이 한 일이 여기에 나와요.", needCam: "카메라를 켜야 규칙이 움직여요.",
+        defSay: "브이! 멋져요", defText: "안녕!", defBoard: "LED ON", exSay: "브이! 멋져요", exText: "손을 들었어요!",
+        pwLead: "동작을 차례대로 하면 문이 열려요. 동작마다 {s}초 동안 그대로 멈춰 있어야 해요.",
+        pwNew: "새 암호", pwDel: "이 암호 지우기", pwName: "암호 이름", pwDefault: "암호 {n}", pwMax: "동작은 {n}개까지 넣을 수 있어요",
+        pwEmpty: "아래에서 동작을 눌러 암호를 만들어요", pwStart: "도전!", pwStop: "멈추기", pwAgain: "다시 도전",
+        pwNow: "지금 할 동작 ({a} / {b})", pwReady: "[도전!]을 누르고 첫 동작을 해 보세요", pwHold: "좋아요, 그대로!",
+        pwOk: "문이 열렸어요!", pwOkSub: "암호를 모두 맞혔어요", pwTimeout: "시간이 지났어요. 처음부터 다시!",
+        pwRelease: "같은 동작이 또 나와요 — 손을 한 번 풀었다가 다시!", pwNeed: "동작을 하나 이상 넣어 주세요", pwStart0: "시작!",
+        pwPick: "동작을 눌러 암호에 더해요", pwMore: "다른 신호", pwAdd: "더하기", pwStepOk: "{n}번째 성공!",
+        gHand: "손", gFinger: "손가락", gFace: "얼굴", gMine: "내 AI",
+        pwEx1: "가위바위보 암호",
+        sig_hand: "손", sig_fingers: "손가락 개수", sig_fingersum: "두 손 손가락 합", sig_gesture: "손 모양", sig_handup: "손 높이",
+        sig_face: "얼굴", sig_dist: "얼굴 거리", sig_dir: "얼굴 방향", sig_expr: "표정",
+        v_shown: "보여요", v_hide: "안 보여요",
+        v_f0: "0개 (주먹)", v_f1: "1개", v_f2: "2개", v_f3: "3개", v_f4: "4개", v_f5: "5개 (보)", v_n: "{n}개",
+        g_Closed_Fist: "주먹", g_Open_Palm: "보", g_Victory: "브이", g_Thumb_Up: "엄지척", g_Thumb_Down: "엄지 아래",
+        g_Pointing_Up: "검지 위", g_ILoveYou: "사랑해", g_None: "모르는 모양",
+        v_up: "위로 들었어요", v_down: "내렸어요", v_near: "가까워요", v_mid: "알맞아요", v_far: "멀어요",
+        d_front: "정면", d_left: "왼쪽", d_right: "오른쪽", d_up: "위", d_down: "아래",
+        e_smile: "웃음", e_mouth: "입 벌림", e_plain: "보통",
+        mv_f: "손가락 {n}", mv_up: "손 들기", mv_left: "왼쪽 보기", mv_right: "오른쪽 보기", mv_upL: "위 보기", mv_downL: "아래 보기",
+        mv_smile: "웃기", mv_mouth: "입 벌리기", mv_near: "가까이", mv_far: "멀리",
+        mineP: "내 AI: {t}", loadingModel: "(불러오는 중)"
+      },
+      en: {
+        title: "edge-lab — AI signals", lang: "한", q1: "Camera",
+        tabSig: "Signals", tabRule: "Make rules", tabPw: "Move password",
+        camOn: "Camera on", camOff: "Camera off", numsOnly: "Numbers only", picture: "Show picture",
+        camIntro: "Turn on the camera and the AI turns your hands and face into numbers. Pictures never leave this computer.",
+        camDenied: "The camera is not allowed. Allow it from the camera icon next to the address bar.",
+        camBusy: "Another app is using the camera. Turn it off there and press again.",
+        camNone: "No camera was found. Check that one is plugged in.",
+        stOff: "The camera is off", stStart: "Turning the camera on…", stLoading: "The AI is getting ready… please wait",
+        stLive: "The AI is watching", stFake: "Running on test signals", stErr: "The AI could not answer: ",
+        perSec: "{n}/s", rulesOnN: "{n} rules on", rulesOffB: "Rules off",
+        sigLead: "These are the signals the AI reads from the camera. Move your hands and face.",
+        cFingers: "Fingers", cGesture: "Hand shape", cHandup: "Hand up", cDist: "Face distance", cDir: "Face direction", cExpr: "Expression",
+        noHand: "No hand seen", noFace: "No face seen", noCam: "Turn on the camera",
+        handUpV: "Raised!", handDownV: "Down", upWhy: "hand above forehead", upWhyNoFace: "hand near the top",
+        nearV: "Close", farV: "Far", midV: "Just right", distUnknown: "Eyes not clear",
+        nearSub: "closer than 40 cm", farSub: "farther than 75 cm", midSub: "40–75 cm",
+        smileM: "Smile", mouthM: "Mouth open", exprWait: "Reading your face…",
+        hands: "{n} hands", sum: "sum {n}",
+        myAI: "My AI", myAIHint: "AIs you make in Train show up here.", openTrain: "Open Train",
+        modelOn: "Watching", modelOff: "Watch", modelIdle: "Press [Watch] to ask this AI", unsure: "Not sure", nothing: "none",
+        numsTitle: "Numbers the AI sees", numsLead: "The AI sees numbers like these, not pictures. Every signal above comes from these numbers.",
+        nHandPts: "21 points of the first hand (x, y)", nFinger: "Finger straightness", nFingerRule: "How far the tip is from the wrist — past the red line means straight",
+        nFace: "Face numbers", nIris: "Iris width", nDistCm: "Distance", nDirCode: "Direction code", nBox: "Face box", nExpr: "Expression scores (0–1)",
+        nModel: "My AI scores", nNone: "No numbers yet — turn on the camera", nHandUp: "Hand height",
+        fThumb: "Thumb", fIndex: "Index", fMiddle: "Middle", fRing: "Ring", fPinky: "Pinky",
+        ruleLead: "If [signal] is [value] then → [action]. It happens once when the condition just becomes true, then rests {s} s.",
+        addRule: "Add rule", rulesOn: "Rules on", rulesOff: "Rules off", ruleMax: "You can make up to {n} rules",
+        ifW: "If", isW: "is", andW: "and", orW: "or", thenW: "then →", addCond: "Add condition",
+        delCond: "Remove condition", delRule: "Delete rule", test: "Try", ruleN: "Rule {n}", fireN: "ran {n} times",
+        actSay: "Say", actSound: "Play sound", actText: "Big text", actBoard: "Send to board",
+        phSay: "Words to say", phText: "Text to show", phBoard: "Text to send (e.g. LED ON)",
+        sndBeep: "Beep", sndDoremi: "Do-re-mi", sndDing: "Ding-dong", sndFanfare: "Fanfare", sndLow: "Buzz",
+        boardOff: "No board is connected.", openBoard: "Open Board app", boardFail: "Could not send to the board: ",
+        ttsLoading: "The voice AI is still getting ready.", ttsFail: "Could not speak: ", ttsBusy: "Skipped — still speaking",
+        noRules: "No rules yet. Add one or put in an example.", example: "Add examples",
+        logEmpty: "What the rules did shows up here.", needCam: "Turn on the camera to run the rules.",
+        defSay: "Victory! Nice", defText: "Hello!", defBoard: "LED ON", exSay: "Victory! Nice", exText: "Hand up!",
+        pwLead: "Do the moves in order to open the door. Hold each move still for {s} s.",
+        pwNew: "New password", pwDel: "Delete this password", pwName: "Password name", pwDefault: "Password {n}", pwMax: "Up to {n} moves",
+        pwEmpty: "Press moves below to build a password", pwStart: "Go!", pwStop: "Stop", pwAgain: "Try again",
+        pwNow: "Do this now ({a} / {b})", pwReady: "Press [Go!] and do the first move", pwHold: "Good, hold it!",
+        pwOk: "The door is open!", pwOkSub: "You got the whole password", pwTimeout: "Time is up. Start over!",
+        pwRelease: "Same move again — relax your hand, then do it again!", pwNeed: "Add at least one move", pwStart0: "Start!",
+        pwPick: "Press a move to add it", pwMore: "Other signal", pwAdd: "Add", pwStepOk: "Move {n} done!",
+        gHand: "Hand", gFinger: "Fingers", gFace: "Face", gMine: "My AI",
+        pwEx1: "Rock-paper-scissors",
+        sig_hand: "Hand", sig_fingers: "Fingers", sig_fingersum: "Fingers on both hands", sig_gesture: "Hand shape", sig_handup: "Hand height",
+        sig_face: "Face", sig_dist: "Face distance", sig_dir: "Face direction", sig_expr: "Expression",
+        v_shown: "seen", v_hide: "not seen",
+        v_f0: "0 (fist)", v_f1: "1", v_f2: "2", v_f3: "3", v_f4: "4", v_f5: "5 (open)", v_n: "{n}",
+        g_Closed_Fist: "Fist", g_Open_Palm: "Open palm", g_Victory: "Victory", g_Thumb_Up: "Thumbs up", g_Thumb_Down: "Thumbs down",
+        g_Pointing_Up: "Pointing up", g_ILoveYou: "I love you", g_None: "Unknown shape",
+        v_up: "raised", v_down: "down", v_near: "close", v_mid: "just right", v_far: "far",
+        d_front: "front", d_left: "left", d_right: "right", d_up: "up", d_down: "down",
+        e_smile: "smiling", e_mouth: "mouth open", e_plain: "neutral",
+        mv_f: "{n} fingers", mv_up: "Hand up", mv_left: "Look left", mv_right: "Look right", mv_upL: "Look up", mv_downL: "Look down",
+        mv_smile: "Smile", mv_mouth: "Open mouth", mv_near: "Come close", mv_far: "Move back",
+        mineP: "My AI: {t}", loadingModel: "(loading)"
+      }
+    };
+    function t(k) { return I18N[LANG][k] !== undefined ? I18N[LANG][k] : (I18N.ko[k] !== undefined ? I18N.ko[k] : k); }
+    function tf(k, o) { var s = t(k); for (var x in o) s = s.split("{" + x + "}").join(o[x]); return s; }
+    function $(id) { return document.getElementById(id); }
+    function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+    function now() { return performance.now(); }
+    function stat(k) { if (window.vapiStat) vapiStat(k); }
+    function lsGet(k, d) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }
+    function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+
+    /* ── 설정값 — 신호 기준은 sense-lab 과 같은 값을 쓴다 ── */
+    var NEAR_CM = 40, FAR_CM = 75;
+    var TICK_MS = 280;              // 약 3.5장/초
+    var COOLDOWN_MS = 1500;         // 규칙이 한 번 한 뒤 쉬는 시간
+    var HOLD_MS = 800;              // 암호 동작을 유지해야 하는 시간
+    var STEP_TIMEOUT_MS = 7000;     // 다음 동작을 이만큼 못 하면 처음부터
+    var MAX_RULES = 8, MAX_STEPS = 8;
+    var MODEL_MIN = 0.6;            // 내 AI 가 이 점수보다 낮으면 "잘 모르겠어요"
+    var TH_FINGER = 1.1, TH_THUMB = 1.25;   // 손가락 펴짐 기준 (끝-손목 / 가운데마디-손목)
+    var SMILE_TH = 0.4, MOUTH_TH = 0.4;
+
+    /* ── 아이콘 (인라인 SVG — 인터넷 없이) ── */
+    var SV = function (p, fill) { return '<svg viewBox="0 0 24 24" fill="' + (fill ? "currentColor" : "none") + '" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + p + "</svg>"; };
+    var IC = {
+      cam: SV('<path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.5"/>'),
+      camoff: SV('<path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 3l18 18"/>'),
+      hand: SV('<path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V12M11 11V4a1.5 1.5 0 0 1 3 0v7M14 11V5.5a1.5 1.5 0 0 1 3 0V13M17 9.5a1.5 1.5 0 0 1 3 0V15a7 7 0 0 1-7 7h-1.5a6 6 0 0 1-5-2.7L4 15.5a1.6 1.6 0 0 1 2.6-1.8L8 15.5"/>'),
+      fingers: SV('<path d="M9 11V4.5a1.5 1.5 0 0 1 3 0V11M12 11V3.5a1.5 1.5 0 0 1 3 0V12M15 11.5V6a1.5 1.5 0 0 1 3 0v8a7 7 0 0 1-7 7h-.5A5.5 5.5 0 0 1 5 15.5V12a1.5 1.5 0 0 1 3 0v1"/>'),
+      up: SV('<path d="M12 21V8M6 13l6-6 6 6"/><path d="M5 3h14"/>'),
+      ruler: SV('<rect x="2" y="8" width="20" height="8" rx="1.5"/><path d="M6 8v3M10 8v4M14 8v3M18 8v4"/>'),
+      face: SV('<circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r=".8" fill="currentColor"/><circle cx="15" cy="10" r=".8" fill="currentColor"/><path d="M9 15h6"/>'),
+      compass: SV('<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>'),
+      smile: SV('<circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r=".8" fill="currentColor"/><circle cx="15" cy="10" r=".8" fill="currentColor"/><path d="M8 14a4.5 4.5 0 0 0 8 0"/>'),
+      brain: SV('<path d="M9 4a3 3 0 0 0-3 3 3 3 0 0 0-2 5 3 3 0 0 0 2 5 3 3 0 0 0 3 3h1V4z"/><path d="M15 4a3 3 0 0 1 3 3 3 3 0 0 1 2 5 3 3 0 0 1-2 5 3 3 0 0 1-3 3h-1V4z"/>'),
+      nums: SV('<path d="M4 9h16M4 15h16M10 3L8 21M16 3l-2 18"/>'),
+      rule: SV('<path d="M4 6h9M4 12h6M4 18h9"/><path d="M15 10l3 3-3 3M10 13h8"/>'),
+      lock: SV('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>'),
+      unlock: SV('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/>'),
+      plus: SV('<path d="M12 5v14M5 12h14"/>'),
+      x: SV('<path d="M6 6l12 12M18 6L6 18"/>'),
+      play: SV('<path d="M7 4l13 8-13 8z"/>', true),
+      stop: SV('<rect x="6" y="6" width="12" height="12" rx="2"/>', true),
+      bulb: SV('<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9V16h7v-2.1A6 6 0 0 0 12 3z"/>')
+    };
+
+    /* ================================================================
+       신호 — 무엇을 고를 수 있나 (규칙·암호가 같은 목록을 쓴다)
+       ================================================================ */
+    var GESTURES = ["Closed_Fist", "Open_Palm", "Victory", "Thumb_Up", "Thumb_Down", "Pointing_Up", "ILoveYou", "None"];
+    var BUILTIN = [
+      { id: "hand", vals: ["shown", "hide"] },
+      { id: "fingers", vals: ["0", "1", "2", "3", "4", "5"] },
+      { id: "fingersum", vals: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"] },
+      { id: "gesture", vals: GESTURES },
+      { id: "handup", vals: ["up", "down"] },
+      { id: "face", vals: ["shown", "hide"] },
+      { id: "dist", vals: ["near", "mid", "far"] },
+      { id: "dir", vals: ["front", "left", "right", "up", "down"] },
+      { id: "expr", vals: ["smile", "mouth", "plain"] }
+    ];
+    var MODELS = [];            // /custom/models 결과 [{slug,title,labels,kind}]
+    var modelsLoaded = false;
+    function modelOf(slug) { for (var i = 0; i < MODELS.length; i++) if (MODELS[i].slug === slug) return MODELS[i]; return null; }
+    function sigList() {
+      return BUILTIN.map(function (s) { return { id: s.id, label: t("sig_" + s.id), vals: s.vals }; })
+        .concat(MODELS.map(function (m) { return { id: "m:" + m.slug, label: tf("mineP", { t: m.title || m.slug }), vals: (m.labels || []).slice() }; }));
+    }
+    function sigLabel(id) {
+      if (id.indexOf("m:") === 0) { var m = modelOf(id.slice(2)); return m ? tf("mineP", { t: m.title || m.slug }) : tf("mineP", { t: id.slice(2) }) + " " + t("loadingModel"); }
+      return t("sig_" + id);
+    }
+    function valLabel(sig, v) {
+      if (sig === "hand" || sig === "face") return t("v_" + v);
+      if (sig === "fingers") return t("v_f" + v);
+      if (sig === "fingersum") return tf("v_n", { n: v });
+      if (sig === "gesture") return t("g_" + v);
+      if (sig === "handup" || sig === "dist") return t("v_" + v);
+      if (sig === "dir") return t("d_" + v);
+      if (sig === "expr") return t("e_" + v);
+      return v;                                    // 내 AI 는 아이가 붙인 이름 그대로
+    }
+    /* 암호 칩에 쓰는 짧은 이름 */
+    function moveLabel(c) {
+      if (c.sig === "gesture") return t("g_" + c.val);
+      if (c.sig === "fingers") return tf("mv_f", { n: c.val });
+      if (c.sig === "handup" && c.val === "up") return t("mv_up");
+      if (c.sig === "dir") return t({ left: "mv_left", right: "mv_right", up: "mv_upL", down: "mv_downL" }[c.val] || "d_" + c.val);
+      if (c.sig === "expr" && c.val !== "plain") return t(c.val === "smile" ? "mv_smile" : "mv_mouth");
+      if (c.sig === "dist" && c.val !== "mid") return t(c.val === "near" ? "mv_near" : "mv_far");
+      if (c.sig.indexOf("m:") === 0) return c.val;
+      return sigLabel(c.sig) + " " + valLabel(c.sig, c.val);
+    }
+
+    /* ================================================================
+       손가락 세기 — 21점 좌표만으로 (거리 비율이라 손이 기울어도 된다)
+       ================================================================ */
+    function d2(a, b) { var dx = a[0] - b[0], dy = a[1] - b[1]; return Math.sqrt(dx * dx + dy * dy); }
+    function fingerRatios(p) {
+      // 엄지: 끝(4)~새끼 뿌리(17) 가 엄지 뿌리(2)~17 보다 충분히 멀면 편 것 (접으면 손바닥을 가로지른다)
+      var out = [d2(p[4], p[17]) / (d2(p[2], p[17]) || 1)];
+      // 나머지: 끝이 가운데 마디보다 손목(0)에서 멀면 편 것
+      [[8, 6], [12, 10], [16, 14], [20, 18]].forEach(function (q) { out.push(d2(p[q[0]], p[0]) / (d2(p[q[1]], p[0]) || 1)); });
+      return out;
+    }
+    function parseHand(it) {
+      var p = (it.points || []).map(function (q) { return [+q[0], +q[1]]; });
+      var h = { pts: p, box: it.box || null, gesture: it.gesture_en || "None", score: it.score || 0, fingers: 0, ratios: [], ext: [] };
+      if (p.length >= 21) {
+        h.ratios = fingerRatios(p);
+        h.ext = h.ratios.map(function (r, i) { return r > (i === 0 ? TH_THUMB : TH_FINGER); });
+        h.fingers = h.ext.filter(Boolean).length;
+      }
+      if (!h.box && p.length) {
+        var xs = p.map(function (q) { return q[0]; }), ys = p.map(function (q) { return q[1]; });
+        h.box = [Math.min.apply(0, xs), Math.min.apply(0, ys), Math.max.apply(0, xs), Math.max.apply(0, ys)];
+      }
+      return h;
+    }
+
+    /* ================================================================
+       감지 상태 — 서버 답(또는 시험 신호)을 소스별로 모아 둔다
+       ================================================================ */
+    var RAW = { hands: [], tHand: -1e9, face: null, tFace: -1e9, expr: null, tExpr: -1e9, models: {}, W: 640, H: 480 };
+    var fake = false;               // 시험 신호 모드 — 실제 답을 무시하고, 오래돼도 버리지 않는다
+    var lastMs = {};                // 요청별 걸린 시간 (상태줄에 보인다)
+
+    function applyHand(items) {
+      RAW.hands = (Array.isArray(items) ? items : []).map(parseHand)
+        .sort(function (a, b) { return (b.pts[0] ? b.pts[0][0] : 0) - (a.pts[0] ? a.pts[0][0] : 0); });  // 거울 화면의 왼쪽 손부터
+      RAW.tHand = now();
+    }
+    function applyMesh(items) {
+      var best = null;
+      (Array.isArray(items) ? items : []).forEach(function (f) {
+        var b = f.box || [0, 0, 0, 0], area = (b[2] - b[0]) * (b[3] - b[1]);
+        if (!best || area > best.area) best = { area: area, box: b, cm: +f.distance || 0, dir: String(f.direction_en || ""), word: f.direction || "", iris: f.iris_px };
+      });
+      RAW.face = best; RAW.tFace = now();
+    }
+    function applyExpr(d) {
+      var sc = {};
+      ((d && d.top) || []).forEach(function (c) { sc[c.name] = +c.score || 0; });
+      var smile = Math.max(sc.mouthSmileLeft || 0, sc.mouthSmileRight || 0);
+      RAW.expr = d && d.found ? { top: d.top || [], smile: smile, mouth: sc.jawOpen || 0 } : { none: true };
+      RAW.tExpr = now();
+    }
+    function applyModel(slug, list) {
+      var l = Array.isArray(list) ? list.slice().sort(function (a, b) { return b.score - a.score; }) : [];
+      RAW.models[slug] = { list: l, t: now() };
+    }
+
+    function secondaries() { return [{ k: "expr" }].concat(activeModels().map(function (s) { return { k: "model", slug: s }; })); }
+    function staleOf(src) {
+      if (fake) return 1e12;
+      if (src === "hand") return 1300;
+      if (src === "face") return 2200;
+      return 2500 + secondaries().length * 2 * TICK_MS * 2;   // 돌아가며 묻는 것은 차례가 늦게 온다
+    }
+    function fresh(tm, src) { return now() - tm < staleOf(src); }
+
+    /* 모든 신호를 한 번에 계산 — 규칙·암호·카드가 같은 값을 본다 */
+    function derive() {
+      var S = { active: fake || camLive(), hands: [], face: null, expr: null, models: {} };
+      if (!S.active) return S;
+      if (fresh(RAW.tHand, "hand")) S.hands = RAW.hands;
+      if (fresh(RAW.tFace, "face")) S.face = RAW.face;
+      if (fresh(RAW.tExpr, "expr")) S.expr = RAW.expr;
+      Object.keys(RAW.models).forEach(function (s) { if (fresh(RAW.models[s].t, "model")) S.models[s] = RAW.models[s].list; });
+      // 손 들기: 얼굴이 보이면 "손 윗부분이 이마보다 위, 손목이 얼굴 가운데보다 위", 없으면 화면 위쪽 35%
+      S.hands.forEach(function (h) {
+        var wr = h.pts[0] || [0, RAW.H], top = h.box ? h.box[1] : wr[1];
+        if (S.face && S.face.box) {
+          var fb = S.face.box;
+          h.up = top < fb[1] && wr[1] < (fb[1] + fb[3]) / 2;
+          h.upWhy = "top " + Math.round(top) + " < " + Math.round(fb[1]);
+        } else {
+          h.up = wr[1] < RAW.H * 0.35;
+          h.upWhy = "y " + Math.round(wr[1]) + " < " + Math.round(RAW.H * 0.35);
+        }
+      });
+      return S;
+    }
+    function distClass(cm) { return !cm ? "" : cm < NEAR_CM ? "near" : cm > FAR_CM ? "far" : "mid"; }
+    function modelTop(S, slug) {
+      var l = S.models[slug];
+      if (!l) return null;
+      if (!l.length) return { name: "", score: 0 };
+      return l[0];
+    }
+    /* 조건 하나 판정 */
+    function cond(S, c) {
+      if (!c || !c.sig) return false;
+      if (!S.active) return false;
+      var hs = S.hands, sig = c.sig, v = c.val;
+      switch (sig) {
+        case "hand": return v === "hide" ? !hs.length : hs.length > 0;
+        case "fingers": return hs.some(function (h) { return String(h.fingers) === v; });
+        case "fingersum": return hs.length > 0 && String(hs.reduce(function (n, h) { return n + h.fingers; }, 0)) === v;
+        case "gesture": return hs.some(function (h) { return h.gesture === v; });
+        case "handup": var up = hs.some(function (h) { return h.up; }); return v === "up" ? up : !up;
+        case "face": return v === "hide" ? !S.face : !!S.face;
+        case "dist": return !!S.face && distClass(S.face.cm) === v;
+        case "dir":
+          if (!S.face || !S.face.dir) return false;
+          var dc = S.face.dir;
+          if (v === "front") return dc === "CC";
+          if (v === "left") return dc[0] === "L";
+          if (v === "right") return dc[0] === "R";
+          if (v === "up") return dc[1] === "T";
+          if (v === "down") return dc[1] === "B";
+          return false;
+        case "expr":
+          if (!S.expr || S.expr.none) return false;
+          var sm = S.expr.smile > SMILE_TH, mo = S.expr.mouth > MOUTH_TH;
+          return v === "smile" ? sm : v === "mouth" ? mo : (!sm && !mo);
+        default:
+          if (sig.indexOf("m:") === 0) {
+            var top = modelTop(S, sig.slice(2));
+            return !!top && top.name === v && top.score >= MODEL_MIN;
+          }
+          return false;
+      }
+    }
+    function ruleTrue(S, r) {
+      var a = cond(S, r.a);
+      if (!r.op || !r.b) return a;
+      var b = cond(S, r.b);
+      return r.op === "or" ? (a || b) : (a && b);
+    }
+
+    /* ================================================================
+       카메라 + 서버 묻기 (한 번에 하나씩)
+       ================================================================ */
+    var vid = $("vid"), ov = $("ov"), octx = ov.getContext("2d");
+    var grabCv = document.createElement("canvas"), gctx = grabCv.getContext("2d");
+    var stream = null, camStarting = false, camErr = "", camResume = false;
+    var loopGen = 0, loopOn = false, aiState = "off", aiErr = "", fpsN = 0, fpsT = 0, fps = 0;
+    var numsOnly = false;
+
+    function camLive() { return !!stream; }
+    function camOn() {
+      if (stream || camStarting) return Promise.resolve();
+      if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) { camErr = t("camNone"); paintCam(); return Promise.resolve(); }
+      camStarting = true; camErr = ""; paintCam();
+      return navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false }).then(function (s) {
+        camStarting = false;
+        if (window.EL_WIN && EL_WIN.hidden) { s.getTracks().forEach(function (x) { x.stop(); }); camResume = true; paintCam(); return; }  // 켜는 사이 가려졌다
+        stream = s; vid.srcObject = s;
+        var p = vid.play(); if (p && p.catch) p.catch(function () {});
+        stat("signal_cam_on");
+        paintCam(); startLoop();
+      }).catch(function (e) {
+        camStarting = false;
+        var n = (e && e.name) || "";
+        camErr = n === "NotAllowedError" ? t("camDenied") : n === "NotReadableError" ? t("camBusy") : t("camNone");
+        paintCam();
+      });
+    }
+    function camOff() {
+      stopLoop();
+      if (stream) stream.getTracks().forEach(function (x) { x.stop(); });
+      stream = null; vid.srcObject = null;
+      if (!fake) { RAW.hands = []; RAW.face = null; RAW.expr = null; RAW.models = {}; }
+      aiState = "off";
+      paintCam(); draw();
+    }
+    function fitFrame() {
+      // 무대 안에 영상 비율을 지켜 가장 크게 — CSS 만으로는 가로·세로 둘 다 맞추기 어렵다
+      var st = $("stage"), fr = $("frame");
+      var sw = st.clientWidth, sh = st.clientHeight, ar = RAW.W / RAW.H;
+      var w = sw, h = sw / ar;
+      if (h > sh) { h = sh; w = sh * ar; }
+      fr.style.width = Math.floor(w) + "px"; fr.style.height = Math.floor(h) + "px";
+    }
+    if (window.ResizeObserver) new ResizeObserver(fitFrame).observe($("stage"));
+    window.addEventListener("resize", fitFrame);
+
+    function grab() {
+      var vw = vid.videoWidth, vh = vid.videoHeight;
+      if (!vw || !vh) return Promise.resolve(null);
+      var W = 640, H = Math.round(vh * 640 / vw);
+      if (grabCv.width !== W || grabCv.height !== H) { grabCv.width = W; grabCv.height = H; }
+      if (RAW.W !== W || RAW.H !== H) { RAW.W = W; RAW.H = H; fitFrame(); }
+      gctx.drawImage(vid, 0, 0, W, H);
+      return new Promise(function (res) { grabCv.toBlob(res, "image/jpeg", 0.7); });
+    }
+    function ask(url, blob, key) {
+      var fd = new FormData();
+      fd.append("uploadFile", blob, "frame.jpg");
+      var t0 = now();
+      return fetch(url, { method: "POST", body: fd }).then(function (r) {
+        if (r.status === 503) { var e = new Error("loading"); e.loading = true; throw e; }
+        return r.json();
+      }).then(function (j) {
+        lastMs[key] = j && j.elapsed_ms != null ? j.elapsed_ms : Math.round(now() - t0);
+        if (!j || j.result !== "ok") { aiErr = String((j && j.data) || "?").slice(0, 120); return null; }
+        aiErr = "";
+        return j.data;
+      });
+    }
+    function startLoop() {
+      if (loopOn) return;
+      loopOn = true; aiState = "wait";
+      var gen = ++loopGen, secN = 0;
+      function tick() {
+        if (gen !== loopGen) return;
+        var t0 = now(), wait = TICK_MS;
+        grab().then(function (blob) {
+          if (!blob || gen !== loopGen) return;
+          return ask("/object/hand?lang=" + LANG, blob, "hand").then(function (d) {
+            if (gen !== loopGen) return;
+            if (d && !fake) applyHand(d);
+            // 두 번에 한 번은 얼굴(거리·방향), 나머지는 표정·내 AI 를 돌아가며
+            secN++;
+            var job;
+            if (secN % 2 === 1) job = { k: "mesh" };
+            else { var sec = secondaries(); job = sec[Math.floor(secN / 2) % sec.length]; }
+            var url = job.k === "mesh" ? "/face/mesh?lang=" + LANG : job.k === "expr" ? "/custom/face"
+                    : "/custom/predict?model=" + encodeURIComponent(job.slug) + "&top=0";
+            return ask(url, blob, job.k).then(function (d2) {
+              if (gen !== loopGen || !d2 || fake) return;
+              if (job.k === "mesh") applyMesh(d2);
+              else if (job.k === "expr") applyExpr(d2);
+              else applyModel(job.slug, d2);
+            });
+          }).then(function () {
+            aiState = aiErr ? "err" : "live";
+            fpsN++;
+          });
+        }).catch(function (e) {
+          if (e && e.loading) { aiState = "loading"; wait = 2000; }      // 모델을 올리는 중 — 천천히 다시
+          else { aiState = "err"; aiErr = (e && e.message) || String(e); wait = 1500; }
+        }).then(function () {
+          if (gen !== loopGen) return;
+          draw(); paintStatus();
+          setTimeout(tick, Math.max(30, wait - (now() - t0)));
+        });
+      }
+      tick();
+    }
+    function stopLoop() { loopOn = false; loopGen++; }
+
+    /* ── 점 그림 — 좌표는 보낸 사진(640폭) 기준, 화면은 거울처럼 뒤집는다 ── */
+    var LINKS = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
+    var TIPS = [4, 8, 12, 16, 20];
+    function draw() {
+      var W = RAW.W, H = RAW.H;
+      if (ov.width !== W || ov.height !== H) { ov.width = W; ov.height = H; }
+      octx.clearRect(0, 0, W, H);
+      var S = derive();
+      if (!S.active) return;
+      var mx = function (x) { return W - x; };
+      if (S.face && S.face.box) {
+        var b = S.face.box;
+        octx.lineWidth = 3; octx.strokeStyle = "rgba(224,160,48,.95)";
+        octx.strokeRect(mx(b[2]), b[1], b[2] - b[0], b[3] - b[1]);
+        var lab = (S.face.cm ? S.face.cm + "cm " : "") + t("d_" + dirWord(S.face.dir));
+        label(mx(b[2]), b[1], lab, "rgba(224,160,48,.95)");
+      }
+      S.hands.forEach(function (h) {
+        var p = h.pts;
+        if (p.length < 21) return;
+        octx.lineWidth = 3; octx.strokeStyle = "rgba(95,190,230,.9)";
+        LINKS.forEach(function (l) { octx.beginPath(); octx.moveTo(mx(p[l[0]][0]), p[l[0]][1]); octx.lineTo(mx(p[l[1]][0]), p[l[1]][1]); octx.stroke(); });
+        p.forEach(function (q, i) {
+          var tip = TIPS.indexOf(i);
+          octx.beginPath(); octx.arc(mx(q[0]), q[1], tip >= 0 ? 7 : 4, 0, Math.PI * 2);
+          octx.fillStyle = tip >= 0 ? (h.ext[tip] ? "#3a9a55" : "#c2412a") : "#fff"; octx.fill();
+          octx.lineWidth = 1.5; octx.strokeStyle = "rgba(20,40,50,.8)"; octx.stroke();
+        });
+        if (h.box) label(mx(h.box[2]), h.box[1], h.fingers + " · " + t("g_" + h.gesture) + (h.up ? " ↑" : ""), "rgba(31,95,122,.95)");
+      });
+    }
+    function label(x, y, s, bg) {
+      octx.font = "bold 18px 'Gowun Dodum', sans-serif";
+      var w = octx.measureText(s).width + 12, yy = Math.max(0, y - 26);
+      octx.fillStyle = bg; octx.fillRect(x, yy, w, 24);
+      octx.fillStyle = "#fff"; octx.fillText(s, x + 6, yy + 18);
+    }
+    function dirWord(code) {
+      if (!code || code === "CC") return "front";
+      if (code[0] === "L") return "left"; if (code[0] === "R") return "right";
+      return code[1] === "T" ? "up" : "down";
+    }
+
+    /* ── 카메라 칸 글자 ── */
+    function paintCam() {
+      var on = camLive();
+      $("camBtn").innerHTML = (on || camStarting ? IC.camoff : IC.cam) + "<span>" + esc(on || camStarting ? t("camOff") : t("camOn")) + "</span>";
+      $("camBtn").classList.toggle("primary", !on);
+      $("numsBtn").innerHTML = IC.nums + "<span>" + esc(numsOnly ? t("picture") : t("numsOnly")) + "</span>";
+      $("numsBtn").classList.toggle("on", numsOnly);
+      $("frame").classList.toggle("numsOnly", numsOnly);
+      var box = $("camOffBox");
+      box.classList.toggle("off", on || fake);
+      if (!on && !fake) {
+        box.innerHTML = IC.cam.replace("<svg", '<svg class="big"') + "<p>" + esc(t("camIntro")) + "</p>" +
+          (camErr ? '<p class="err">' + esc(camErr) + "</p>" : "") +
+          '<button class="btn primary big" type="button" id="camBig">' + IC.cam + "<span>" + esc(camStarting ? t("stStart") : t("camOn")) + "</span></button>";
+        $("camBig").disabled = camStarting;
+      }
+      paintStatus(); paintLog();
+    }
+    function paintStatus() {
+      var st = $("status"), s, cls = "";
+      if (fake) { s = t("stFake"); cls = "live"; }
+      else if (!camLive()) { s = camStarting ? t("stStart") : t("stOff"); }
+      else if (aiState === "loading") { s = t("stLoading"); cls = "wait"; }
+      else if (aiState === "err") { s = t("stErr") + aiErr; cls = "err"; }
+      else if (aiState === "live") { s = t("stLive"); cls = "live"; }
+      else { s = t("stLoading"); cls = "wait"; }
+      st.className = "status " + cls;
+      $("stText").textContent = s;
+      var ms = [];
+      if (camLive() && aiState === "live") {
+        if (lastMs.hand != null) ms.push("✋ " + lastMs.hand + "ms");
+        if (lastMs.mesh != null) ms.push("☺ " + lastMs.mesh + "ms");
+        ms.push(tf("perSec", { n: fps.toFixed(1) }));
+      }
+      $("stMs").textContent = ms.join(" · ");
+      var n = rules.length;
+      $("rulesBadge").textContent = rulesOn ? tf("rulesOnN", { n: n }) : t("rulesOffB");
+      $("rulesBadge").classList.toggle("on", rulesOn && n > 0);
+      $("rulesBadge").classList.toggle("off", !n);
+    }
+    setInterval(function () { var t1 = now(); if (fpsT) fps = fpsN * 1000 / (t1 - fpsT); fpsN = 0; fpsT = t1; }, 2000);
+
+    $("camBtn").addEventListener("click", function () { if (camLive() || camStarting) camOff(); else camOn(); });
+    $("camOffBox").addEventListener("click", function (e) { if (e.target.closest("#camBig")) camOn(); });
+    $("numsBtn").addEventListener("click", function () { numsOnly = !numsOnly; paintCam(); });
+
+    /* 가려지면 카메라·묻기를 멈춘다. 켜 두었던 것이면 다시 보일 때 켠다 (lib/embed.js) */
+    function onHidden() { camResume = camLive() || camStarting; if (camLive()) camOff(); stopGame(true); }
+    function onShown() { if (camResume) camOn(); camResume = false; loadModels(); checkBoard(); }
+    if (window.EL_WIN) { EL_WIN.onHide(onHidden); EL_WIN.onShow(onShown); }
+
+    /* ================================================================
+       탭
+       ================================================================ */
+    var TAB = "sig";
+    try { TAB = localStorage.getItem("el-signal-tab") || "sig"; } catch (e) {}
+    if (["sig", "rule", "pw"].indexOf(TAB) < 0) TAB = "sig";
+    function setTab(k) {
+      TAB = k;
+      try { localStorage.setItem("el-signal-tab", k); } catch (e) {}
+      if (k !== "pw") stopGame(true);
+      paintTabs();
+      if (k === "rule") { renderRules(); checkBoard(); }
+      if (k === "pw") renderPw();
+      if (k === "sig") { lastCardsKey = ""; loadModels(); }
+    }
+    function paintTabs() {
+      var ic = { sig: IC.bulb, rule: IC.rule, pw: IC.lock };
+      var name = { sig: t("tabSig"), rule: t("tabRule"), pw: t("tabPw") };
+      Array.prototype.forEach.call($("tabs").children, function (b) {
+        var k = b.getAttribute("data-tab");
+        b.innerHTML = ic[k] + "<span>" + esc(name[k]) + "</span>";
+        b.classList.toggle("on", k === TAB);
+        b.setAttribute("aria-selected", k === TAB ? "true" : "false");
+      });
+      $("txtQ2").textContent = name[TAB];
+      $("paneSig").classList.toggle("off", TAB !== "sig");
+      $("paneRule").classList.toggle("off", TAB !== "rule");
+      $("panePw").classList.toggle("off", TAB !== "pw");
+      var tools = $("headTools");
+      if (TAB === "rule") {
+        tools.innerHTML = '<button class="btn ' + (rulesOn ? "on" : "") + '" id="rulesToggle" type="button">' + (rulesOn ? IC.play : IC.stop) + "<span>" + esc(rulesOn ? t("rulesOn") : t("rulesOff")) + "</span></button>" +
+          '<button class="btn primary" id="addRule" type="button"' + (rules.length >= MAX_RULES ? " disabled" : "") + ">" + IC.plus + "<span>" + esc(t("addRule")) + "</span></button>";
+      } else if (TAB === "pw") {
+        tools.innerHTML = '<button class="btn" id="pwNew" type="button">' + IC.plus + "<span>" + esc(t("pwNew")) + "</span></button>";
+      } else tools.innerHTML = "";
+    }
+    $("tabs").addEventListener("click", function (e) { var b = e.target.closest("[data-tab]"); if (b) setTab(b.getAttribute("data-tab")); });
+    $("headTools").addEventListener("click", function (e) {
+      if (e.target.closest("#rulesToggle")) { rulesOn = !rulesOn; lsSet("el-signal-rules-on", rulesOn); resetEdges(); paintTabs(); paintStatus(); }
+      else if (e.target.closest("#addRule")) addRule();
+      else if (e.target.closest("#pwNew")) newPw();
+    });
+
+    /* ================================================================
+       1) 신호판
+       ================================================================ */
+    var modelOnSet = lsGet("el-signal-models", []);
+    function activeModels() {
+      // 카드에서 [보기]를 켠 것 + 규칙·암호가 쓰는 것만 서버에 묻는다
+      var set = {};
+      modelOnSet.forEach(function (s) { set[s] = 1; });
+      if (rulesOn) rules.forEach(function (r) { [r.a, r.b].forEach(function (c) { if (c && c.sig.indexOf("m:") === 0) set[c.sig.slice(2)] = 1; }); });
+      var pw = curPw();
+      if (pw) pw.steps.forEach(function (c) { if (c.sig.indexOf("m:") === 0) set[c.sig.slice(2)] = 1; });
+      return Object.keys(set).filter(function (s) { return !!modelOf(s); });
+    }
+    var modelsRetry = 0;
+    function loadModels() {
+      fetch("/custom/models").then(function (r) {
+        if (r.status === 503) throw new Error("loading");
+        return r.json();
+      }).then(function (j) {
+        MODELS = j && j.result === "ok" && Array.isArray(j.data) ? j.data : [];
+        modelsLoaded = true; modelsRetry = 0; lastCardsKey = "";
+        if (TAB === "rule") renderRules();
+        if (TAB === "pw") renderPw();
+      }).catch(function () {
+        if (modelsRetry++ < 20) setTimeout(loadModels, 3000);
+      });
+    }
+
+    function card(id, icon, title, valueHtml, sub, cls, extra) {
+      return '<div class="card ' + (cls || "") + '" data-card="' + id + '"><div class="ct">' + icon + "<span>" + esc(title) + "</span>" + (extra || "") + "</div>" +
+        '<div class="cv">' + valueHtml + '</div><div class="cs">' + (sub || "&nbsp;") + "</div></div>";
+    }
+    var lastCardsKey = "", lastNumsKey = "", lastMineKey = "";
+    function paintCards(S) {
+      var html = [], dimMsg = S.active ? null : t("noCam");
+      var hs = S.hands;
+      // 손가락 개수 — 손마다
+      if (dimMsg || !hs.length) html.push(card("fingers", IC.fingers, t("cFingers"), esc(dimMsg || t("noHand")), "", "dim"));
+      else {
+        var sum = hs.reduce(function (n, h) { return n + h.fingers; }, 0);
+        html.push(card("fingers", IC.fingers, t("cFingers"), '<div class="fingers">' + hs.map(function (h, i) {
+          return "<span>" + (hs.length > 1 ? "<em>" + (i + 1) + "</em>" : "") + h.fingers + "</span>"; }).join("") + "</div>",
+          esc(hs.length > 1 ? tf("hands", { n: hs.length }) + " · " + tf("sum", { n: sum }) : valLabel("fingers", String(hs[0].fingers))), "on"));
+      }
+      // 손 모양
+      if (dimMsg || !hs.length) html.push(card("gesture", IC.hand, t("cGesture"), esc(dimMsg || t("noHand")), "", "dim"));
+      else html.push(card("gesture", IC.hand, t("cGesture"), esc(hs.map(function (h) { return t("g_" + h.gesture); }).join(" · ")),
+        esc(hs.map(function (h) { return h.gesture + " " + h.score + "%"; }).join(" · ")), hs.some(function (h) { return h.gesture !== "None"; }) ? "on" : ""));
+      // 손 들기
+      if (dimMsg || !hs.length) html.push(card("handup", IC.up, t("cHandup"), esc(dimMsg || t("noHand")), "", "dim"));
+      else { var up = hs.some(function (h) { return h.up; });
+        html.push(card("handup", IC.up, t("cHandup"), esc(up ? t("handUpV") : t("handDownV")), esc(S.face ? t("upWhy") : t("upWhyNoFace")), up ? "hot" : "on")); }
+      // 얼굴 거리
+      if (dimMsg || !S.face) html.push(card("dist", IC.ruler, t("cDist"), esc(dimMsg || t("noFace")), "", "dim"));
+      else { var dc = distClass(S.face.cm);
+        html.push(card("dist", IC.ruler, t("cDist"), S.face.cm ? S.face.cm + "<small>cm</small>" : esc(t("distUnknown")),
+          esc(dc ? t(dc + "V") + " · " + t(dc + "Sub") : ""), dc === "near" || dc === "far" ? "hot" : "on")); }
+      // 얼굴 방향
+      if (dimMsg || !S.face) html.push(card("dir", IC.compass, t("cDir"), esc(dimMsg || t("noFace")), "", "dim"));
+      else html.push(card("dir", IC.compass, t("cDir"), esc(LANG === "ko" ? (S.face.word || t("d_" + dirWord(S.face.dir))) : dirText(S.face.dir)),
+        esc(S.face.dir || ""), S.face.dir && S.face.dir !== "CC" ? "hot" : "on"));
+      // 표정
+      if (dimMsg || !S.expr) html.push(card("expr", IC.smile, t("cExpr"), esc(dimMsg || (S.face ? t("exprWait") : t("noFace"))), "", "dim"));
+      else if (S.expr.none) html.push(card("expr", IC.smile, t("cExpr"), esc(t("noFace")), "", "dim"));
+      else {
+        var sm = S.expr.smile > SMILE_TH, mo = S.expr.mouth > MOUTH_TH;
+        var word = sm && mo ? t("e_smile") + " · " + t("e_mouth") : sm ? t("e_smile") : mo ? t("e_mouth") : t("e_plain");
+        html.push(card("expr", IC.smile, t("cExpr"), esc(word),
+          '<div class="mrow"><span>' + esc(t("smileM")) + '</span><div class="meter"><i style="width:' + Math.round(S.expr.smile * 100) + '%"></i></div><span class="num">' + S.expr.smile.toFixed(2) + "</span></div>" +
+          '<div class="mrow"><span>' + esc(t("mouthM")) + '</span><div class="meter"><i style="width:' + Math.round(S.expr.mouth * 100) + '%"></i></div><span class="num">' + S.expr.mouth.toFixed(2) + "</span></div>",
+          sm || mo ? "hot" : "on"));
+      }
+      var key = html.join("");
+      if (key !== lastCardsKey) { $("cards").innerHTML = key; lastCardsKey = key; }
+
+      // 내 AI 카드
+      var mine = [];
+      if (!MODELS.length) {
+        mine.push('<div class="card mine dim"><div class="ct">' + IC.brain + "<span>" + esc(t("myAI")) + '</span></div><div class="cs">' + esc(t("myAIHint")) +
+          '</div><div><button class="btn" type="button" data-open="/train">' + esc(t("openTrain")) + "</button></div></div>");
+      } else {
+        var act = activeModels();
+        MODELS.forEach(function (m) {
+          var on = act.indexOf(m.slug) >= 0, pinned = modelOnSet.indexOf(m.slug) >= 0;
+          var tg = '<button class="tg' + (pinned ? " on" : "") + '" type="button" data-model="' + esc(m.slug) + '">' + esc(pinned ? t("modelOn") : t("modelOff")) + "</button>";
+          var top = S.active ? modelTop(S, m.slug) : null;
+          if (!on) mine.push(card("m", IC.brain, m.title || m.slug, esc(t("modelIdle")), esc((m.labels || []).join(" · ")), "mine dim", tg));
+          else if (!top) mine.push(card("m", IC.brain, m.title || m.slug, esc(S.active ? "…" : t("noCam")), esc((m.labels || []).join(" · ")), "mine dim", tg));
+          else if (!top.name) mine.push(card("m", IC.brain, m.title || m.slug, esc(t("nothing")), "", "mine on", tg));
+          else {
+            var sure = top.score >= MODEL_MIN;
+            mine.push(card("m", IC.brain, m.title || m.slug, esc(sure ? top.name : t("unsure")),
+              '<div class="mrow"><span>' + esc(top.name) + '</span><div class="meter"><i style="width:' + Math.round(top.score * 100) + '%"></i></div><span class="num">' + Math.round(top.score * 100) + "%</span></div>",
+              "mine " + (sure ? "hot" : "on"), tg));
+          }
+        });
+      }
+      var mk = mine.join("");
+      if (mk !== lastMineKey) { $("myCards").innerHTML = mk; lastMineKey = mk; }
+    }
+    function dirText(code) {
+      if (!code) return "";
+      var p = [];
+      if (code[0] === "L") p.push(t("d_left")); if (code[0] === "R") p.push(t("d_right"));
+      if (code[1] === "T") p.push(t("d_up")); if (code[1] === "B") p.push(t("d_down"));
+      return p.length ? p.join(" ") : t("d_front");
+    }
+    $("myCards").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-model]");
+      if (b) {
+        var s = b.getAttribute("data-model"), i = modelOnSet.indexOf(s);
+        if (i >= 0) modelOnSet.splice(i, 1); else modelOnSet.push(s);
+        lsSet("el-signal-models", modelOnSet); lastMineKey = "";
+        return;
+      }
+      var o = e.target.closest("[data-open]");
+      if (o) { if (window.EL_WIN) EL_WIN.open(o.getAttribute("data-open")); else location.href = o.getAttribute("data-open"); }
+    });
+
+    /* AI 가 보는 숫자 — 신호가 어디서 나오는지 그대로 보여 준다 */
+    var FNAMES = ["fThumb", "fIndex", "fMiddle", "fRing", "fPinky"];
+    function paintNums(S) {
+      var h = [];
+      h.push("<h3>" + IC.nums + "<span>" + esc(t("numsTitle")) + '</span></h3><div class="hint">' + esc(t("numsLead")) + "</div>");
+      var any = false;
+      var hand = S.hands[0];
+      if (hand && hand.pts.length >= 21) {
+        any = true;
+        h.push('<div class="sub">' + esc(t("nHandPts")) + '</div><div class="ptgrid">' + hand.pts.map(function (q, i) {
+          var tip = TIPS.indexOf(i) >= 0;
+          return "<span>" + (tip ? "<b>" + i + "</b>" : i) + " (" + Math.round(q[0]) + ", " + Math.round(q[1]) + ")</span>"; }).join("") + "</div>");
+        h.push('<div class="sub">' + esc(t("nFinger")) + '</div><div class="hint">' + esc(t("nFingerRule")) + "</div>");
+        hand.ratios.forEach(function (r, i) {
+          var th = i === 0 ? TH_THUMB : TH_FINGER, max = 2;
+          h.push('<div class="ratio"><span>' + esc(t(FNAMES[i])) + '</span><div class="tr"><i class="' + (hand.ext[i] ? "ext" : "") + '" style="width:' + Math.min(100, r / max * 100) +
+            '%"></i><u style="left:' + (th / max * 100) + '%"></u></div><span class="num">' + r.toFixed(2) + "</span><span class=\"" + (hand.ext[i] ? "ok" : "no") + '">' + (hand.ext[i] ? "✓" : "–") + "</span></div>");
+        });
+        h.push('<dl class="kv"><dt>' + esc(t("nHandUp")) + "</dt><dd>" + esc(hand.upWhy || "") + " → " + (hand.up ? "up" : "down") + "</dd></dl>");
+      }
+      if (S.face) {
+        any = true;
+        var f = S.face;
+        h.push('<div class="sub">' + esc(t("nFace")) + '</div><dl class="kv">' +
+          "<dt>" + esc(t("nIris")) + "</dt><dd>" + (f.iris != null ? f.iris + " px" : "–") + "</dd>" +
+          "<dt>" + esc(t("nDistCm")) + "</dt><dd>" + (f.cm || "–") + " cm  (&lt;" + NEAR_CM + " / &gt;" + FAR_CM + ")</dd>" +
+          "<dt>" + esc(t("nDirCode")) + "</dt><dd>" + esc(f.dir || "–") + "</dd>" +
+          "<dt>" + esc(t("nBox")) + "</dt><dd>[" + (f.box || []).map(Math.round).join(", ") + "]</dd></dl>");
+      }
+      if (S.expr && !S.expr.none && S.expr.top.length) {
+        any = true;
+        h.push('<div class="sub">' + esc(t("nExpr")) + '</div><dl class="kv">' + S.expr.top.map(function (c) {
+          return "<dt>" + esc(c.name) + "</dt><dd>" + (+c.score).toFixed(2) + "</dd>"; }).join("") + "</dl>");
+      }
+      Object.keys(S.models).forEach(function (s) {
+        var m = modelOf(s), l = S.models[s];
+        if (!m || !l.length) return;
+        any = true;
+        h.push('<div class="sub">' + esc(t("nModel")) + " · " + esc(m.title || s) + '</div><dl class="kv">' + l.slice(0, 5).map(function (c) {
+          return "<dt>" + esc(c.name) + "</dt><dd>" + (+c.score).toFixed(2) + "</dd>"; }).join("") + "</dl>");
+      });
+      if (!any) h.push('<div class="hint">' + esc(t("nNone")) + "</div>");
+      var key = h.join("");
+      if (key !== lastNumsKey) { $("nums").innerHTML = key; lastNumsKey = key; }
+    }
+
+    /* ================================================================
+       2) 규칙 만들기
+       ================================================================ */
+    var ACTS = ["say", "sound", "text", "board"];
+    var SOUNDS = ["beep", "doremi", "ding", "fanfare", "low"];
+    var rules = lsGet("el-signal-rules", []);
+    if (!Array.isArray(rules)) rules = [];
+    rules = rules.slice(0, MAX_RULES).filter(function (r) { return r && r.a && r.act; });
+    var rulesOn = lsGet("el-signal-rules-on", true) !== false;
+    var edge = [];                  // 규칙마다 {prev, last, n}
+    function resetEdges() { edge = rules.map(function () { return { prev: false, last: -1e9, n: 0 }; }); }
+    resetEdges();
+    function saveRules() { lsSet("el-signal-rules", rules); }
+    function uid() { return Math.random().toString(36).slice(2, 9); }
+    function addRule(tpl) {
+      if (rules.length >= MAX_RULES) { toast(tf("ruleMax", { n: MAX_RULES })); return; }
+      rules.push(tpl || { id: uid(), a: { sig: "gesture", val: "Victory" }, op: "", b: null, act: { type: "say", text: t("defSay"), sound: "beep" } });
+      edge.push({ prev: false, last: -1e9, n: 0 });
+      saveRules(); renderRules(); paintTabs(); paintStatus();
+      stat("signal_rule_add");
+    }
+    function sigOptions(cur) {
+      var list = sigList(), has = false, o = "";
+      list.forEach(function (s) { if (s.id === cur) has = true; o += '<option value="' + esc(s.id) + '"' + (s.id === cur ? " selected" : "") + ">" + esc(s.label) + "</option>"; });
+      if (!has && cur) o += '<option value="' + esc(cur) + '" selected>' + esc(sigLabel(cur)) + "</option>";   // 아직 목록이 안 온 내 AI
+      return o;
+    }
+    function valsOf(sig) {
+      var s = sigList().filter(function (x) { return x.id === sig; })[0];
+      return s ? s.vals : [];
+    }
+    function valOptions(sig, cur) {
+      var vals = valsOf(sig), o = "", has = false;
+      vals.forEach(function (v) { if (v === cur) has = true; o += '<option value="' + esc(v) + '"' + (v === cur ? " selected" : "") + ">" + esc(valLabel(sig, v)) + "</option>"; });
+      if (!has && cur) o += '<option value="' + esc(cur) + '" selected>' + esc(valLabel(sig, cur)) + "</option>";
+      return o;
+    }
+    var boardOk = null;             // 마지막으로 본 보드 연결 상태 (null=모름)
+    function checkBoard() {
+      return fetch("/board/status").then(function (r) { return r.json(); }).then(function (j) {
+        boardOk = !!(j && j.data && j.data.connected);
+      }).catch(function () { boardOk = false; }).then(function () { if (TAB === "rule") paintBoardHints(); });
+    }
+    function paintBoardHints() {
+      Array.prototype.forEach.call(document.querySelectorAll("#rules .rule"), function (el) {
+        var r = rules[+el.getAttribute("data-i")], hint = el.querySelector(".rhint");
+        if (hint) hint.classList.toggle("off", !(r && r.act.type === "board" && boardOk === false));
+      });
+    }
+    function renderRules() {
+      var box = $("rules");
+      if (!rules.length) {
+        box.innerHTML = '<div class="empty"><div>' + esc(t("noRules")) + '</div><div class="row" style="justify-content:center"><button class="btn primary big" type="button" data-act="add">' + IC.plus + "<span>" + esc(t("addRule")) +
+          '</span></button><button class="btn big" type="button" data-act="example">' + esc(t("example")) + "</button></div></div>";
+      } else {
+        box.innerHTML = rules.map(function (r, i) {
+          var e = edge[i] || { n: 0 };
+          var line2 = r.op && r.b
+            ? '<div class="rline"><select data-f="op" aria-label="and/or"><option value="and"' + (r.op === "and" ? " selected" : "") + ">" + esc(t("andW")) + '</option><option value="or"' + (r.op === "or" ? " selected" : "") + ">" + esc(t("orW")) + "</option></select>" +
+              '<select data-f="b.sig">' + sigOptions(r.b.sig) + '</select><span class="pp">' + esc(t("isW")) + '</span><select data-f="b.val">' + valOptions(r.b.sig, r.b.val) + "</select>" +
+              '<button class="xbtn" type="button" data-act="delb" title="' + esc(t("delCond")) + '" aria-label="' + esc(t("delCond")) + '">' + IC.x + "</button></div>"
+            : "";
+          var param;
+          if (r.act.type === "sound") param = '<select data-f="act.sound">' + SOUNDS.map(function (s) { return '<option value="' + s + '"' + (r.act.sound === s ? " selected" : "") + ">" + esc(t("snd" + s[0].toUpperCase() + s.slice(1))) + "</option>"; }).join("") + "</select>";
+          else param = '<input type="text" maxlength="40" data-f="act.text" value="' + esc(r.act.text || "") + '" placeholder="' + esc(t(r.act.type === "say" ? "phSay" : r.act.type === "text" ? "phText" : "phBoard")) + '">';
+          return '<div class="rule" data-i="' + i + '">' +
+            '<div class="rtop"><i class="lamp"></i><span class="rn">' + esc(tf("ruleN", { n: i + 1 })) + '</span><span class="cnt">' + esc(tf("fireN", { n: e.n })) + "</span>" +
+            '<button class="xbtn" type="button" data-act="del" title="' + esc(t("delRule")) + '" aria-label="' + esc(t("delRule")) + '">' + IC.x + "</button></div>" +
+            '<div class="rline"><span class="kw">' + esc(t("ifW")) + '</span><select data-f="a.sig">' + sigOptions(r.a.sig) + '</select><span class="pp">' + esc(t("isW")) + '</span><select data-f="a.val">' + valOptions(r.a.sig, r.a.val) + "</select>" +
+            (r.op ? "" : '<button class="btn smallbtn" type="button" data-act="addb">' + IC.plus + "<span>" + esc(t("addCond")) + "</span></button>") + "</div>" +
+            line2 +
+            '<div class="rline"><span class="kw then">' + esc(t("thenW")) + '</span><select data-f="act.type">' + ACTS.map(function (a) {
+              return '<option value="' + a + '"' + (r.act.type === a ? " selected" : "") + ">" + esc(t("act" + a[0].toUpperCase() + a.slice(1))) + "</option>"; }).join("") + "</select>" + param +
+            '<button class="btn smallbtn" type="button" data-act="test">' + IC.play + "<span>" + esc(t("test")) + "</span></button></div>" +
+            '<div class="rhint off">' + esc(t("boardOff")) + ' <button class="btn" type="button" data-act="openBoard">' + esc(t("openBoard")) + "</button></div>" +
+            "</div>";
+        }).join("");
+      }
+      paintLog(); paintBoardHints();
+    }
+    function ruleAt(el) { var r = el.closest(".rule"); return r ? +r.getAttribute("data-i") : -1; }
+    $("rules").addEventListener("change", function (e) {
+      var f = e.target.getAttribute("data-f"), i = ruleAt(e.target);
+      if (!f || i < 0) return;
+      var r = rules[i], v = e.target.value;
+      if (f === "a.sig" || f === "b.sig") { var c = f[0] === "a" ? r.a : r.b; c.sig = v; c.val = valsOf(v)[0] || ""; renderRules(); }
+      else if (f === "a.val") r.a.val = v;
+      else if (f === "b.val") r.b.val = v;
+      else if (f === "op") r.op = v;
+      else if (f === "act.type") {
+        r.act.type = v;
+        if (v !== "sound" && !r.act.text) r.act.text = t(v === "say" ? "defSay" : v === "text" ? "defText" : "defBoard");
+        if (v === "board") checkBoard();
+        renderRules();
+      } else if (f === "act.sound") { r.act.sound = v; playSound(v); }
+      saveRules();
+    });
+    $("rules").addEventListener("input", function (e) {
+      if (e.target.getAttribute("data-f") !== "act.text") return;
+      var i = ruleAt(e.target); if (i < 0) return;
+      rules[i].act.text = e.target.value; saveRules();       // 다시 그리지 않는다 — 글쓰기 중 초점을 잃지 않게
+    });
+    $("rules").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-act]"); if (!b) return;
+      var act = b.getAttribute("data-act"), i = ruleAt(b);
+      if (act === "add") addRule();
+      else if (act === "example") {
+        addRule({ id: uid(), a: { sig: "gesture", val: "Victory" }, op: "", b: null, act: { type: "say", text: t("exSay"), sound: "beep" } });
+        addRule({ id: uid(), a: { sig: "fingers", val: "5" }, op: "", b: null, act: { type: "sound", text: "", sound: "doremi" } });
+        addRule({ id: uid(), a: { sig: "handup", val: "up" }, op: "", b: null, act: { type: "text", text: t("exText"), sound: "beep" } });
+      }
+      else if (act === "del") { rules.splice(i, 1); edge.splice(i, 1); saveRules(); renderRules(); paintTabs(); paintStatus(); }
+      else if (act === "addb") { rules[i].op = "and"; rules[i].b = { sig: "face", val: "shown" }; saveRules(); renderRules(); }
+      else if (act === "delb") { rules[i].op = ""; rules[i].b = null; saveRules(); renderRules(); }
+      else if (act === "test") doAction(rules[i], i);
+      else if (act === "openBoard") { if (window.EL_WIN) EL_WIN.open("/board"); else location.href = "/board"; }
+    });
+
+    /* 규칙 판정 — 상승 에지(거짓→참)에서만, 쉬는 시간이 지났을 때만 */
+    function evalRules(S) {
+      var run = rulesOn && S.active && !game.playing;
+      var els = document.querySelectorAll("#rules .rule");
+      rules.forEach(function (r, i) {
+        var e = edge[i] || (edge[i] = { prev: false, last: -1e9, n: 0 });
+        var cur = run && ruleTrue(S, r);
+        if (cur && !e.prev && now() - e.last >= COOLDOWN_MS) {
+          e.last = now(); e.n++;
+          doAction(r, i);
+          stat("signal_rule_fire");
+          var el = els[i];
+          if (el) { el.classList.remove("fire"); void el.offsetWidth; el.classList.add("fire"); var c = el.querySelector(".cnt"); if (c) c.textContent = tf("fireN", { n: e.n }); }
+        }
+        e.prev = cur;
+        if (els[i]) els[i].classList.toggle("true", !!cur);
+      });
+    }
+    var logItems = [];
+    function logPush(s) { logItems.unshift(s); logItems = logItems.slice(0, 3); paintLog(); }
+    function paintLog() {
+      var el = $("ruleLog");
+      if (logItems.length) el.innerHTML = logItems.map(function (s, i) { return i ? "<span>" + esc(s) + "</span>" : "<b>" + esc(s) + "</b>"; }).join("");
+      else el.textContent = camLive() || fake ? t("logEmpty") : t("needCam");
+    }
+    function condText(c) { return sigLabel(c.sig) + " " + valLabel(c.sig, c.val); }
+    function doAction(r, i) {
+      var what = condText(r.a) + (r.op && r.b ? " " + (r.op === "or" ? t("orW") : t("andW")) + " " + condText(r.b) : "");
+      var a = r.act, detail;
+      if (a.type === "say") { detail = t("actSay") + ": " + (a.text || ""); say(a.text || t("defSay")); }
+      else if (a.type === "sound") { detail = t("actSound") + ": " + t("snd" + a.sound[0].toUpperCase() + a.sound.slice(1)); playSound(a.sound); }
+      else if (a.type === "text") { detail = t("actText") + ": " + (a.text || ""); bigText(a.text || t("defText")); }
+      else { detail = t("actBoard") + ": " + (a.text || ""); boardSend(a.text || t("defBoard")); }
+      logPush(tf("ruleN", { n: i + 1 }) + " · " + what + " → " + detail);
+      EL_SIGNAL.fired.push({ rule: i, type: a.type, text: a.text || "", sound: a.sound || "", at: Date.now() });
+    }
+
+    /* ── 행동들 ── */
+    var speaking = 0;               // 말하는 중인 차례 번호 (0=조용)
+    function voice() { try { return localStorage.getItem("vapi-voice") || "F1"; } catch (e) { return "F1"; } }
+    function say(text) {
+      if (speaking) { toast(t("ttsBusy")); return; }
+      var my = speaking = Date.now();
+      var done = function () { if (speaking === my) speaking = 0; };
+      fetch("/speech/tts", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: text, voice: voice(), lang: LANG, speed: 1.05 }) }).then(function (r) {
+        if (r.status === 503) throw new Error(t("ttsLoading"));
+        if (!r.ok || (r.headers.get("Content-Type") || "").indexOf("audio") < 0) return r.json().then(function (j) { throw new Error(t("ttsFail") + ((j && j.data) || r.status)); });
+        return r.blob();
+      }).then(function (blob) {
+        var au = new Audio(URL.createObjectURL(blob));
+        au.onended = au.onerror = done;
+        var p = au.play(); if (p && p.catch) p.catch(done);
+        setTimeout(done, 8000);          // 소리가 끝났다는 알림이 안 와도 풀어 준다
+      }).catch(function (e) { done(); toast((e && e.message) || String(e)); });
+    }
+    function boardSend(text) {
+      fetch("/board/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: text }) })
+        .then(function (r) { return r.json(); }).then(function (j) {
+          if (j && j.result === "ok") { boardOk = true; paintBoardHints(); return; }
+          boardOk = false; paintBoardHints();
+          toast(t("boardOff") + " " + t("openBoard") + " →");
+        }).catch(function (e) { toast(t("boardFail") + ((e && e.message) || e)); });
+    }
+    var bigTimer = 0;
+    function bigText(s) {
+      var el = $("bigText");
+      el.textContent = s; el.classList.add("on");
+      clearTimeout(bigTimer); bigTimer = setTimeout(function () { el.classList.remove("on"); }, 1800);
+    }
+    var toastTimer = 0;
+    function toast(s) {
+      var el = $("toast"); el.textContent = s; el.classList.add("on");
+      clearTimeout(toastTimer); toastTimer = setTimeout(function () { el.classList.remove("on"); }, 2600);
+    }
+    /* 소리 — Web Audio 로 바로 만든다 (파일 없이) */
+    var AC = null;
+    function audio() {
+      if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
+      if (AC.state === "suspended") AC.resume();
+      return AC;
+    }
+    document.addEventListener("pointerdown", function () { audio(); }, { once: true });
+    var NOTES = {
+      beep: [[880, 0, .15]], doremi: [[523, 0, .18], [587, .2, .18], [659, .4, .28]], ding: [[988, 0, .25], [784, .28, .45]],
+      fanfare: [[523, 0, .12], [659, .14, .12], [784, .28, .12], [1047, .42, .45]], low: [[196, 0, .45, "sawtooth"]],
+      step: [[784, 0, .1], [1175, .1, .16]], fail: [[330, 0, .18, "triangle"], [247, .2, .3, "triangle"]]
+    };
+    function playSound(name) {
+      var ac = audio(); if (!ac) return;
+      var t0 = ac.currentTime + 0.02;
+      (NOTES[name] || NOTES.beep).forEach(function (n) {
+        var o = ac.createOscillator(), g = ac.createGain();
+        o.type = n[3] || "sine"; o.frequency.value = n[0];
+        g.gain.setValueAtTime(0.0001, t0 + n[1]);
+        g.gain.exponentialRampToValueAtTime(0.25, t0 + n[1] + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + n[1] + n[2]);
+        o.connect(g); g.connect(ac.destination);
+        o.start(t0 + n[1]); o.stop(t0 + n[1] + n[2] + 0.05);
+      });
+      EL_SIGNAL.sounds.push(name);
+    }
+
+    /* ================================================================
+       3) 동작 암호
+       ================================================================ */
+    var pws = lsGet("el-signal-passwords", null);
+    if (!Array.isArray(pws) || !pws.length) {
+      pws = [{ id: uid(), name: t("pwEx1"), steps: [{ sig: "gesture", val: "Closed_Fist" }, { sig: "gesture", val: "Open_Palm" }, { sig: "gesture", val: "Victory" }] }];
+    }
+    var pwCur = lsGet("el-signal-pw-cur", pws[0].id);
+    if (!pws.some(function (x) { return x.id === pwCur; })) pwCur = pws[0].id;
+    function curPw() { for (var i = 0; i < pws.length; i++) if (pws[i].id === pwCur) return pws[i]; return pws[0] || null; }
+    function savePws() { lsSet("el-signal-passwords", pws); lsSet("el-signal-pw-cur", pwCur); }
+    var game = { playing: false, pos: 0, hold: 0, stepAt: 0, release: false, win: false, msg: "" };
+
+    function newPw() {
+      var p = { id: uid(), name: tf("pwDefault", { n: pws.length + 1 }), steps: [] };
+      pws.push(p); pwCur = p.id; stopGame(true); savePws(); renderPw();
+      $("pwName").focus(); $("pwName").select();
+    }
+    function palette() {
+      var g = [
+        ["gHand", [["gesture", "Closed_Fist"], ["gesture", "Open_Palm"], ["gesture", "Victory"], ["gesture", "Thumb_Up"], ["gesture", "Pointing_Up"], ["gesture", "ILoveYou"], ["handup", "up"]]],
+        ["gFinger", [["fingers", "1"], ["fingers", "2"], ["fingers", "3"], ["fingers", "4"], ["fingers", "5"]]],
+        ["gFace", [["dir", "left"], ["dir", "right"], ["dir", "up"], ["dir", "down"], ["expr", "smile"], ["expr", "mouth"], ["dist", "near"], ["dist", "far"]]]
+      ];
+      MODELS.forEach(function (m) { g.push([m.title || m.slug, (m.labels || []).map(function (l) { return ["m:" + m.slug, l]; })]); });
+      return g;
+    }
+    function renderPw() {
+      var p = curPw();
+      $("pwList").innerHTML = pws.map(function (x) {
+        return '<button class="pw' + (p && x.id === p.id ? " on" : "") + '" type="button" data-pw="' + esc(x.id) + '">' + IC.lock.replace("<svg", '<svg style="width:15px;height:15px;vertical-align:-2px;margin-right:4px"') + esc(x.name || "?") + "</button>";
+      }).join("");
+      $("pwName").value = p ? p.name : "";
+      $("pwName").placeholder = t("pwName");
+      $("pwDel").innerHTML = IC.x + "<span>" + esc(t("pwDel")) + "</span>";
+      $("pwDel").disabled = pws.length <= 1;
+      var steps = p ? p.steps : [];
+      $("flow").innerHTML = steps.length ? steps.map(function (c, i) {
+        return (i ? '<span class="arrow">→</span>' : "") + '<div class="step" data-s="' + i + '"><span class="si">' + (i + 1) + "</span><b>" + esc(moveLabel(c)) + "</b>" +
+          '<button class="xbtn" type="button" data-del="' + i + '" aria-label="' + esc(t("delCond")) + '"' + (game.playing ? " disabled" : "") + ">" + IC.x + '</button><i class="fill"></i></div>';
+      }).join("") : '<span class="hint">' + esc(t("pwEmpty")) + "</span>";
+      var full = steps.length >= MAX_STEPS;
+      $("palette").innerHTML = '<div class="hint">' + esc(full ? tf("pwMax", { n: MAX_STEPS }) : t("pwPick")) + "</div>" + palette().map(function (gr) {
+        return '<div class="pgroup"><span>' + esc(I18N.ko[gr[0]] ? t(gr[0]) : gr[0]) + "</span>" + gr[1].map(function (m) {
+          return '<button class="mv" type="button" data-mv="' + esc(m[0]) + "|" + esc(m[1]) + '"' + (full || game.playing ? " disabled" : "") + ">" + esc(moveLabel({ sig: m[0], val: m[1] })) + "</button>";
+        }).join("") + "</div>";
+      }).join("") +
+        '<div class="pgroup"><span>' + esc(t("pwMore")) + '</span><select id="pwSig">' + sigOptions("hand") + '</select><select id="pwVal">' + valOptions("hand", "shown") + "</select>" +
+        '<button class="btn" type="button" id="pwAddMore"' + (full || game.playing ? " disabled" : "") + ">" + IC.plus + "<span>" + esc(t("pwAdd")) + "</span></button></div>";
+      paintGame();
+    }
+    $("pwList").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-pw]"); if (!b) return;
+      pwCur = b.getAttribute("data-pw"); stopGame(true); savePws(); renderPw();
+    });
+    $("pwName").addEventListener("input", function () {
+      var p = curPw(); if (!p) return;
+      p.name = this.value; savePws();
+      var b = $("pwList").querySelector(".pw.on"); if (b) b.lastChild.textContent = p.name || "?";
+    });
+    $("pwDel").addEventListener("click", function () {
+      if (pws.length <= 1) return;
+      pws = pws.filter(function (x) { return x.id !== pwCur; }); pwCur = pws[0].id; stopGame(true); savePws(); renderPw();
+    });
+    function addStep(c) {
+      var p = curPw(); if (!p || p.steps.length >= MAX_STEPS || game.playing) return;
+      p.steps.push(c); savePws(); game.win = false; renderPw();
+    }
+    $("palette").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-mv]");
+      if (b) { var v = b.getAttribute("data-mv"), k = v.indexOf("|"); addStep({ sig: v.slice(0, k), val: v.slice(k + 1) }); return; }
+      if (e.target.closest("#pwAddMore")) addStep({ sig: $("pwSig").value, val: $("pwVal").value });
+    });
+    $("palette").addEventListener("change", function (e) { if (e.target.id === "pwSig") $("pwVal").innerHTML = valOptions(e.target.value, ""); });
+    $("flow").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-del]"); if (!b || game.playing) return;
+      var p = curPw(); p.steps.splice(+b.getAttribute("data-del"), 1); savePws(); game.win = false; renderPw();
+    });
+    $("pwGo").addEventListener("click", function () { if (game.playing) stopGame(); else startGame(); });
+
+    function startGame() {
+      var p = curPw();
+      if (!p || !p.steps.length) { toast(t("pwNeed")); return; }
+      if (!camLive() && !fake) camOn();               // [도전!] 을 눌렀으니 카메라를 켠다 — 누른 사람이 원한 것
+      game = { playing: true, pos: 0, hold: 0, stepAt: now(), release: false, win: false, msg: t("pwStart0") };
+      renderPw();
+    }
+    function stopGame(quiet) {
+      if (!game.playing && quiet) return;
+      game.playing = false; game.hold = 0;
+      if (!quiet) game.msg = "";
+      if (TAB === "pw") renderPw();
+    }
+    function same(a, b) { return a && b && a.sig === b.sig && a.val === b.val; }
+    function gameTick(S) {
+      if (!game.playing) return;
+      var p = curPw(), steps = p ? p.steps : [];
+      if (!steps.length) { stopGame(true); return; }
+      var st = steps[game.pos], ok = cond(S, st), tm = now();
+      if (game.release) { if (!ok) { game.release = false; game.msg = ""; } ok = false; }   // 같은 동작이 이어지면 한 번 풀어야 센다
+      if (ok) {
+        if (!game.hold) { game.hold = tm; game.msg = t("pwHold"); }
+        if (tm - game.hold >= HOLD_MS) {
+          game.pos++; game.hold = 0; game.stepAt = tm;
+          if (game.pos >= steps.length) { win(); return; }
+          game.msg = tf("pwStepOk", { n: game.pos });
+          game.release = same(steps[game.pos], st);
+          if (game.release) game.msg = t("pwRelease");
+          playSound("step");
+        }
+      } else {
+        if (game.hold) game.msg = "";
+        game.hold = 0;
+        if (game.pos > 0 && tm - game.stepAt > STEP_TIMEOUT_MS) {       // 오래 못 하면 처음부터
+          game.pos = 0; game.stepAt = tm; game.release = false; game.msg = t("pwTimeout");
+          playSound("fail");
+        }
+      }
+      paintGame();
+    }
+    function win() {
+      game.playing = false; game.win = true; game.msg = t("pwOkSub");
+      playSound("fanfare"); stat("signal_password_ok");
+      EL_SIGNAL.wins++;
+      var cf = $("confetti"), cols = ["#3a9a55", "#e0a030", "#1f5f7a", "#b4451c", "#6fb7d8"], h = "";
+      var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (!reduce) for (var i = 0; i < 36; i++) h += '<i style="left:' + (Math.random() * 100).toFixed(1) + "%;background:" + cols[i % 5] + ";animation-delay:" + (Math.random() * .5).toFixed(2) + 's"></i>';
+      cf.innerHTML = h; setTimeout(function () { cf.innerHTML = ""; }, 2400);
+      renderPw();
+    }
+    function paintGame() {
+      var p = curPw(), steps = p ? p.steps : [], pl = $("play");
+      pl.classList.toggle("win", game.win);
+      $("lockIcon").innerHTML = game.win ? IC.unlock : IC.lock;
+      var prog = 0;
+      if (game.win) { $("nowLabel").textContent = ""; $("nowMove").textContent = t("pwOk"); prog = 1; }
+      else if (game.playing) {
+        $("nowLabel").textContent = tf("pwNow", { a: game.pos + 1, b: steps.length });
+        $("nowMove").textContent = moveLabel(steps[game.pos]);
+        prog = game.hold ? Math.min(1, (now() - game.hold) / HOLD_MS) : 0;
+      } else { $("nowLabel").textContent = ""; $("nowMove").textContent = steps.length ? moveLabel(steps[0]) + (steps.length > 1 ? " → …" : "") : "—"; }
+      $("pwMsg").textContent = game.playing || game.win ? game.msg : (steps.length ? t("pwReady") : t("pwNeed"));
+      $("ringFill").setAttribute("stroke-dashoffset", (263.9 * (1 - prog)).toFixed(1));
+      $("pwGo").innerHTML = (game.playing ? IC.stop : IC.play) + "<span>" + esc(game.playing ? t("pwStop") : game.win ? t("pwAgain") : t("pwStart")) + "</span>";
+      $("pwGo").classList.toggle("go", !game.playing);
+      $("pwGo").disabled = !steps.length;
+      Array.prototype.forEach.call(document.querySelectorAll("#flow .step"), function (el) {
+        var i = +el.getAttribute("data-s");
+        el.classList.toggle("done", game.win || (game.playing && i < game.pos));
+        el.classList.toggle("cur", game.playing && i === game.pos);
+        el.querySelector(".fill").style.width = game.playing && i === game.pos ? (prog * 100) + "%" : "0";
+      });
+    }
+
+    /* ================================================================
+       판정 고리 — 0.1초마다 (카드·규칙·암호가 같은 신호를 본다)
+       ================================================================ */
+    var lastPaint = 0;
+    setInterval(function () {
+      if (window.EL_WIN && EL_WIN.hidden) return;
+      var S = derive();
+      evalRules(S);
+      gameTick(S);
+      if (TAB === "sig" && now() - lastPaint > 200) { lastPaint = now(); paintCards(S); paintNums(S); }
+    }, 100);
+
+    /* ================================================================
+       시험 고리 — 진짜 AI 없이 신호를 넣어 본다 (자동 시험·수업 시연용)
+       ================================================================ */
+    function makeHand(n, o) {
+      // n 개 손가락을 편 가짜 손 21점 (위를 향한 손). o: {x, y, s(크기), gesture, score}
+      o = o || {};
+      var cx = o.x != null ? o.x : 320, cy = o.y != null ? o.y : 260, s = o.s || 1;
+      var ext = [n >= 5, n >= 1, n >= 2, n >= 3, n >= 4];
+      var P = function (dx, dy) { return [Math.round(cx + dx * s), Math.round(cy + dy * s)]; };
+      var pts = [P(0, 100)];
+      pts.push(P(-40, 70), P(-60, 45));
+      pts.push(ext[0] ? P(-85, 25) : P(-35, 40), ext[0] ? P(-110, 10) : P(-5, 35));
+      [-30, -10, 10, 30].forEach(function (dx, k) {
+        var e = ext[k + 1];
+        pts.push(P(dx, 0), P(dx, -40), e ? P(dx, -65) : P(dx, -20), e ? P(dx, -85) : P(dx, 5));
+      });
+      return { gesture: o.gesture || "None", gesture_en: o.gesture || "None", score: o.score != null ? o.score : 90, hand: "Right", box: null, points: pts };
+    }
+    window.EL_SIGNAL = {
+      fired: [], sounds: [], wins: 0,
+      /* det: {hand:[서버 손 항목], mesh:[서버 얼굴 항목], face:{found,top}, custom:{slug:[{name,score}]}, frame:{w,h}} */
+      inject: function (det) {
+        fake = true;
+        det = det || {};
+        if (det.frame) { RAW.W = det.frame.w || 640; RAW.H = det.frame.h || 480; fitFrame(); }
+        if ("hand" in det) applyHand(det.hand);
+        if ("mesh" in det) applyMesh(det.mesh);
+        if ("face" in det) applyExpr(det.face);
+        if (det.custom) Object.keys(det.custom).forEach(function (s) { applyModel(s, det.custom[s]); });
+        paintCam(); draw();
+      },
+      live: function () { fake = false; RAW.hands = []; RAW.face = null; RAW.expr = null; RAW.models = {}; paintCam(); draw(); },
+      makeHand: makeHand,
+      state: function () {
+        var S = derive();
+        return { active: S.active, fingers: S.hands.map(function (h) { return h.fingers; }), gestures: S.hands.map(function (h) { return h.gesture; }),
+                 up: S.hands.some(function (h) { return h.up; }), face: !!S.face, cm: S.face ? S.face.cm : 0, dir: S.face ? S.face.dir : "",
+                 expr: S.expr, models: S.models };
+      },
+      cond: function (sig, val) { return cond(derive(), { sig: sig, val: val }); },
+      rules: function () { return JSON.parse(JSON.stringify(rules)); },
+      setRules: function (arr) { rules = (arr || []).slice(0, MAX_RULES); resetEdges(); saveRules(); renderRules(); paintTabs(); paintStatus(); },
+      passwords: function () { return JSON.parse(JSON.stringify(pws)); },
+      game: function () { return { playing: game.playing, pos: game.pos, win: game.win, msg: game.msg }; },
+      camera: function () { return camLive(); },
+      camOn: camOn, camOff: camOff, tab: setTab,
+      hide: onHidden, show: onShown,           // 셸이 창을 가리고 보일 때와 같은 일
+      board: function () { return boardOk; }
+    };
+
+    /* ── 글자 ── */
+    function paintText() {
+      document.title = t("title"); $("langButton").textContent = t("lang");
+      $("txtQ1").textContent = t("q1");
+      $("sigLead").textContent = t("sigLead");
+      $("ruleLead").textContent = tf("ruleLead", { s: COOLDOWN_MS / 1000 });
+      $("pwLead").textContent = tf("pwLead", { s: HOLD_MS / 1000 });
+      if (window.navRepaint) window.navRepaint();
+    }
+    $("langButton").addEventListener("click", function () {
+      try { localStorage.setItem("vapiLang", LANG === "ko" ? "en" : "ko"); } catch (e) {}
+      location.reload();
+    });
+
+    paintText(); paintTabs(); paintCam(); fitFrame();
+    renderRules(); renderPw();
+    paintCards(derive()); paintNums(derive());
+    loadModels(); checkBoard();
+  })();
+  </script>
+  <script src="/lib/shell.js"></script>
+  <script src="/lib/usage.js" data-page="signal"></script>
+  <i id="el-built" hidden></i>
+</body>
+</html>

@@ -24,12 +24,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// 흐름: ① 종류 만들고 꾹 눌러 소리 모으기 → ② 배우기(TF.js, 1초 남짓) → ③ 실시간으로 해 보기
+// 흐름: ① 종류 만들고 꾹 눌러 소리 모으기 → ② 배우기(순수 JS, 1초 안쪽) → ③ 실시간으로 해 보기
 // 마이크는 모으는 동안과 "해 보기" 를 켠 동안에만 연다. 소리는 이 컴퓨터 밖으로 나가지 않는다.
 
 import { createSoundEngine, preloadSound, labelNames, SOUND_DIM, WAVE_BINS } from './engine.js';
-import { trainModel } from './trainer.js';
-import { serialize, deserialize, predict, bytesToB64, b64ToBytes } from './classifier.js';
+import { trainModel } from './mlp.js';
+import { deserialize, predict, bytesToB64, b64ToBytes } from './classifier.js';
 import { applySoundTransform, SOUND_TRANSFORM } from './features.js';
 import { labelOf } from './labels.js';
 
@@ -70,7 +70,7 @@ const I18N = {
     afterTrain: '배운 뒤에 대답해요', unsure: '잘 모르겠어요', waiting: '듣는 중…',
     thr: '이만큼은 확실해야 대답해요', thrV: '{p}%',
     earT: 'AI 귀에 들린 숫자', earCap: '소리 1초 → 숫자 {n}개. 막대 하나가 숫자 하나예요. 이 숫자로 배워요.',
-    earOff: '마이크를 켜면 보여요', earLoading: 'AI 귀 준비 중…', earSample: '고른 예시를 AI 는 이렇게 들었어요',
+    earOff: '마이크를 켜면 보여요', earLast: '마지막으로 들은 1초예요. 마이크는 꺼져 있어요.', earLoading: 'AI 귀 준비 중…', earSample: '고른 예시를 AI 는 이렇게 들었어요',
     topT: 'AI 가 원래 아는 이름 (1~3등)', topHint: 'YAMNet 은 소리 521가지를 이미 알아요. 내가 가르친 이름은 이 숫자들 위에 새로 배운 거예요.',
     notified: '소리 가르치기 · 다 배웠어요 ({p}%)',
   },
@@ -106,7 +106,7 @@ const I18N = {
     afterTrain: 'It answers after training', unsure: 'Not sure', waiting: 'Listening…',
     thr: 'Answer only when this sure', thrV: '{p}%',
     earT: 'Numbers the AI hears', earCap: '1 s of sound → {n} numbers. Each bar is one number. These are what it learns from.',
-    earOff: 'Shows up when the mic is on', earLoading: 'Getting the AI ears ready…', earSample: 'How the AI heard the chosen example',
+    earOff: 'Shows up when the mic is on', earLast: 'The last second it heard. The mic is off now.', earLoading: 'Getting the AI ears ready…', earSample: 'How the AI heard the chosen example',
     topT: 'Names the AI already knows (top 3)', topHint: 'YAMNet already knows 521 sounds. Your names are learned on top of these numbers.',
     notified: 'Teach sounds · done ({p}%)',
   },
@@ -270,15 +270,17 @@ function onHear(latest) {
   lastEar = latest;
   sel = null; paintSel();
   paintEar(latest.vec, latest.top);
-  if (rec) {
+  // 누르기 전 소리가 창(0.975초)에 너무 많이 섞인 조각은 건너뛴다 — "해 보기" 로 마이크가 이미 켜져 있을 때
+  if (rec && performance.now() - rec.t0 > 700) {
     const c = byId(rec.cid);
     if (c && c.samples.length < MAX_PER_CLASS) {
       addSample(c, latest.vec, latest.wave);
       rec.got++;
+      if (rec.got === 1) paintRec();
     } else if (c) { toast(t('full', { n: MAX_PER_CLASS })); endRec(); }
     if (rec && !rec.held) endRec();          // 짧게 톡 누르면 첫 조각(1초) 하나만 받고 끝낸다
   }
-  if (live || !rec) paintAnswer(latest.vec);
+  if (live) paintAnswer(latest.vec);
 }
 
 // 소리 크기 — 녹음 단추 테두리와 "귀" 크기 막대. 마이크가 켜진 동안만 돈다
@@ -321,7 +323,7 @@ function startRec(cid) {
   const c = byId(cid);
   if (!c) return;
   if (c.samples.length >= MAX_PER_CLASS) { toast(t('full', { n: MAX_PER_CLASS })); return; }
-  rec = { cid, held: true, got: 0 };
+  rec = { cid, held: true, got: 0, t0: performance.now() };
   paintRec(); syncMic();
   if (window.vapiStat) vapiStat('sound_rec');
 }
@@ -358,9 +360,9 @@ async function train() {
       $('prgFill').style.width = pct + '%'; $('prgPct').textContent = pct + '%';
       drawChart();
     });
-    const { json, bin } = await serialize(r.model, classes.map(c => c.name), SOUND_DIM);
+    const { json, bin } = r;
+    json.classes = classes.map(c => c.name);
     json.featureTransform = SOUND_TRANSFORM;
-    r.model.dispose();
     model = { json, bin, classIds: classes.map(c => c.id), acc: r.accuracy, confusion: r.confusion, history: hist,
               ms: Math.round(performance.now() - t0), n: X.length, sig: sampleSig() };
     clf = deserialize(json, bin);
@@ -461,7 +463,7 @@ function paintTrain() {
   $('trainBtn').innerHTML = IC.learn + '<span>' + esc(model ? t('trainAgain') : t('train')) + '</span>';
   $('trainBtn').disabled = training || !!why;
   $('trainWhy').textContent = training ? '' : why;
-  document.querySelectorAll('.recb').forEach(b => { if (training) b.disabled = true; });
+  paintRec();
   $('addCls').disabled = classes.length >= MAX_CLS || training;
   // 알림: 적은 예시·배경 소리·쏠림
   const warns = [];
@@ -519,19 +521,17 @@ function drawChart() {
 function paintLive() {
   $('liveBtn').innerHTML = (live ? IC.stop : IC.ear) + '<span>' + esc(live ? t('liveStop') : t('live')) + '</span>';
   $('liveBtn').classList.toggle('on', live);
-  if (!live && !lastAnswerShown) paintAnswer(null);
 }
-let lastAnswerShown = false;
 function paintAnswer(vec) {
   const ans = $('answer'), bars = $('probs');
   const fits = modelFits();
   if (!fits) {
     ans.className = 'answer idle'; ans.innerHTML = '<span>' + esc(model ? t('changed') : t('afterTrain')) + '</span>';
-    bars.innerHTML = ''; lastAnswerShown = false; return;
+    bars.innerHTML = ''; return;
   }
   if (!vec) {
     ans.className = 'answer idle'; ans.innerHTML = '<span>' + esc(live ? t('waiting') : t('liveIdle')) + '</span>';
-    bars.innerHTML = classes.map(c => probRow(c, 0, false)).join(''); lastAnswerShown = false; return;
+    bars.innerHTML = classes.map(c => probRow(c, 0, false)).join(''); return;
   }
   const P = predict(clf, applySoundTransform(vec, SOUND_TRANSFORM));
   let best = 0;
@@ -542,7 +542,6 @@ function paintAnswer(vec) {
   ans.innerHTML = sure ? '<i></i><b>' + esc(c.name) + '</b><span class="num">' + Math.round(P[best] * 100) + '%</span>'
                        : '<i></i><b>' + esc(t('unsure')) + '</b><span class="num">' + Math.round(P[best] * 100) + '%</span>';
   bars.innerHTML = classes.map((cc, k) => probRow(cc, P[k], k === best && sure)).join('');
-  lastAnswerShown = true;
   return { label: sure ? c.name : null, best, probs: Array.from(P) };
 }
 function probRow(c, p, top) {
@@ -575,6 +574,8 @@ function paintEar(vec, top) {
 }
 function paintEarIdle() {
   if (sel) return;
+  // 마이크를 꺼도 마지막으로 들은 조각은 남겨 둔다 — 멈춰 놓고 막대를 천천히 들여다볼 수 있게
+  if (lastEar && earState === 'ready') { paintEar(lastEar.vec, lastEar.top); $('earNote').textContent = t('earLast'); return; }
   $('earNote').textContent = earState === 'loading' ? t('earLoading') : earState === 'fail' ? t('earFail') : t('earOff');
   drawStrip(null, []);
   $('top3').innerHTML = '';
@@ -622,6 +623,7 @@ function paintText() {
   $('tipsT').textContent = t('tipsT');
   $('tips').innerHTML = ['tip1', 'tip2', 'tip3'].map(k => '<li>' + esc(t(k)) + '</li>').join('');
   $('thrT').textContent = t('thr');
+  $('fillT').textContent = t('recWait');
   $('earT').textContent = t('earT'); $('topT').textContent = t('topT'); $('topHint').textContent = t('topHint');
   if (window.navRepaint) window.navRepaint();
 }
@@ -731,7 +733,6 @@ $('addCls').addEventListener('click', () => addClass(false));
 $('trainBtn').addEventListener('click', () => { train(); });
 $('liveBtn').addEventListener('click', () => {
   live = !live;
-  if (!live) lastEar = null;
   syncMic(); paintLive(); paintAnswer(null);
   if (live && window.vapiStat) vapiStat('sound_live');
 });
@@ -760,7 +761,7 @@ $('impFile').addEventListener('change', e => {
 new ResizeObserver(() => {
   drawChart();
   if (sel) { const c = byId(sel.cid); if (c && c.samples[sel.i]) drawStrip(c.samples[sel.i].vec, topOf(c.samples[sel.i].vec, 3).map(x => x.index)); }
-  else if (eng.running && lastEar) drawStrip(lastEar.vec, lastEar.top.slice(0, 3).map(x => x.index));
+  else if (lastEar) drawStrip(lastEar.vec, lastEar.top.slice(0, 3).map(x => x.index));
 }).observe(document.body);
 
 /* 가려지면 마이크를 닫는다 — 셸에 "마이크 사용 중" 이 남지 않게. 해 보기를 켜 둔 채였으면 돌아올 때 다시 켠다.
