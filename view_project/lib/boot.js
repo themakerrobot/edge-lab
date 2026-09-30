@@ -75,6 +75,7 @@
     "  padding:20px;background:#fbf7ef;",
     "  background-image:radial-gradient(rgba(31,95,122,.07) 1px,transparent 1px);background-size:22px 22px;}",
     "#boot.done{display:none;}",
+    "#boot.bye{opacity:0;transition:opacity .25s ease-out;}",
     ".boot-card{width:min(880px,100%);background:#fff;border:2px solid #4a3f2e;border-radius:4px;",
     "  box-shadow:0 2px 0 rgba(44,74,124,.2);padding:28px 32px 24px;display:flex;flex-direction:column;gap:20px;}",
     ".boot-brand{display:flex;align-items:center;gap:12px;}",
@@ -171,6 +172,10 @@
   function boot() {
     var box = $("boot");
     var idx = 0, ready = false, timer = null, shown = false;
+    /* 첫 대답으로 카드를 띄울지(또는 곧장 바탕화면인지) 정해지면 풀린다 — 셸(os.html)은 이것을 기다렸다가
+       화면을 보인다. 안 기다리면 빈 배경이 먼저 보이고 카드가 뒤늦게 툭 나타난다 */
+    var decided;
+    window.EL_BOOT_DECIDED = new Promise(function (ok) { decided = ok; });
 
     function paint() {
       var sl = SLIDES[idx];
@@ -192,8 +197,11 @@
     }
     function finish() {
       if (timer) clearInterval(timer);
-      box.classList.add("done");
       document.documentElement.classList.remove("el-booting");  // 이제 바탕화면을 보인다
+      decided();
+      if (!shown) { box.classList.add("done"); return; }         // 카드를 한 번도 안 보였으면 그냥 끝
+      box.classList.add("bye");                                  // 카드는 서서히 사라지고 뒤의 바탕화면이 드러난다
+      setTimeout(function () { box.classList.add("done"); box.classList.remove("bye"); }, 260);
     }
 
     /* 로딩이 끝난 뒤 다시 들어온 경우에는 안내를 띄우지 않는다.
@@ -202,6 +210,7 @@
       if (shown) return;
       shown = true;
       box.classList.remove("done");
+      setTimeout(decided, 0);                                    // 아래에서 글자를 다 채운 뒤
       $("bootSub").textContent = T("sub");
       $("bootSkip").textContent = T("skip");
       $("bootStart").textContent = T("wait");

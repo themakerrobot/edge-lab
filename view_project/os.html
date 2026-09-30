@@ -26,10 +26,10 @@
     } catch (e) {}
   </script>
   <style>
-    /* 검은 막 — 스크립트가 멈춰도 3초 뒤에는 걷힌다(animation) */
+    /* 검은 막 — 스크립트가 멈춰도 8초 뒤에는 걷힌다(animation) */
     html.el-app::before { content: ""; position: fixed; inset: 0; z-index: 2147483647; pointer-events: none;
                           background: #000; opacity: 0; transition: opacity .45s ease-out; }
-    html.el-app.el-dark::before { opacity: 1; animation: el-undark 0s 3s forwards; }
+    html.el-app.el-dark::before { opacity: 1; animation: el-undark 0s 8s forwards; }
     @keyframes el-undark { to { opacity: 0; } }
   </style>
   <link rel="stylesheet" href="/lib/tokens.css">
@@ -56,10 +56,11 @@
       font-size: var(--fs-body); line-height: 1.5;
     }
     /* 첫 화면 — 내용(body)은 준비될 때까지 투명, 배경은 html 이 바로 그린다.
-       스크립트가 멈춰도 3초 뒤에는 보이게(animation) — 빈 화면에 갇히지 않는다 */
-    html.el-wait body { opacity: 0; animation: el-show 0s 3s forwards; }
+       스크립트가 멈춰도 8초 뒤에는 보이게(animation) — 빈 화면에 갇히지 않는다 */
+    html.el-wait body { opacity: 0; animation: el-show 0s 8s forwards; }
     @keyframes el-show { to { opacity: 1; } }
     html.el-shown body { transition: opacity .15s ease-out; }
+    html.el-app.el-shown body { transition: none; }   /* 키오스크로 켰을 때는 검은 막 하나만 걷힌다 */
     /* html.el-booting 도 같이 — 준비 화면(lib/boot.js)이 떠 있는 동안에도 배경이 바뀌지 않게.
        boot.js 의 같은 선택자보다 뒤에 오므로 이것이 이긴다 */
     html, html.el-booting {
@@ -890,17 +891,22 @@
          화면에 쓰인 글꼴을 받은 뒤에 보인다 — 대체 글꼴로 그렸다가 Gowun 으로 다시 그려지는 것을 보이지 않게.
          칸의 내용은 기억해 둔 값(DESK_KEY)으로 이미 그려져 있어 서버를 기다리지 않는다.
          기억한 값이 없는 첫 실행만 첫 자료를 기다린다 — 준비 화면이 떠 있으면 바탕화면은 가려져 있으니 기다리지 않는다.
-         어느 쪽이든 1.5초를 넘기지 않는다. */
+         최대 1.5초(키오스크로 켰을 때는 검은 화면이라 6초). */
       (function () {
         var first = !desk.models && !desk.sys && !document.documentElement.classList.contains("el-booting");
         var parsed = new Promise(function (ok) {
           if (document.readyState !== "loading") ok(); else document.addEventListener("DOMContentLoaded", ok);
         });
-        var ready = parsed.then(function () { return first ? Promise.all(firstData) : null; }).then(function () {
-          void document.body.offsetWidth;         // 배치를 한 번 해야 이 화면에 쓰인 글꼴을 받기 시작한다
+        var ready = parsed.then(function () {
+          // 준비 화면이 떠 있으면 첫 대답으로 카드를 띄울지 정해질 때까지 — 카드가 뒤늦게 툭 나타나지 않게
+          return Promise.all([first ? Promise.all(firstData) : null, window.EL_BOOT_DECIDED || null]);
+        }).then(function () {
+          void document.body.offsetWidth;         // 배치를 한 번 해야 이 화면(카드 포함)에 쓰인 글꼴을 받기 시작한다
           return document.fonts ? document.fonts.ready : null;
         });
-        Promise.race([ready, new Promise(function (ok) { setTimeout(ok, 1500); })]).then(function () {
+        // 키오스크로 켰을 때는 검은 화면이라 조금 더 기다려도 된다(최대 6초). 보통은 1.5초
+        var cap = document.documentElement.classList.contains("el-app") ? 6000 : 1500;
+        Promise.race([ready, new Promise(function (ok) { setTimeout(ok, cap); })]).then(function () {
           var h = document.documentElement;
           h.classList.add("el-shown");
           h.classList.remove("el-wait", "el-dark");       // 검은 막(키오스크로 켰을 때)도 같이 걷힌다
