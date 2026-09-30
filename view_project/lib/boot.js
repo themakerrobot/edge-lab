@@ -22,6 +22,14 @@
   /* 셸 안의 창이면 그리지 않는다 — 부팅 안내는 셸이 한 번만 보여 준다 (lib/embed.js) */
   if (document.documentElement.classList.contains("el-win")) return;
 
+  /* 덮개는 body 를 다 읽은 뒤(DOMContentLoaded)에야 붙는다. 그 사이에 브라우저가 바탕화면을 한 번 그려서
+     켤 때 셸이 0.5초 번쩍였다(켜는 화면 → 바탕화면 → 준비 화면). 덮개가 붙을 때까지 body 를 숨기고
+     바탕색만 준비 화면과 같게 둔다 — 켜는 화면(launch.html)에서 준비 화면으로 바로 이어진다 */
+  document.documentElement.classList.add("el-booting");
+  var pre = document.createElement("style");
+  pre.textContent = "html.el-booting{background:#fbf7ef}html.el-booting body>*{visibility:hidden!important}";
+  document.head.appendChild(pre);
+
   var LANG = "ko";
   try { LANG = localStorage.getItem("vapiLang") === "en" ? "en" : "ko"; } catch (e) {}
 
@@ -151,6 +159,7 @@
     var wrap = document.createElement("div");
     wrap.innerHTML = HTML;
     document.body.insertBefore(wrap.firstElementChild, document.body.firstChild);
+    document.documentElement.classList.remove("el-booting");   // 이제 덮개가 앞을 가린다
     boot();
   }
 
