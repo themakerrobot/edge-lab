@@ -74,6 +74,8 @@
       ko_d: "내가 직접 AI를 가르쳐요",      en_d: "Teach the AI yourself" },
     { href: "/drive",   ic: "car",    cat: "ai",   ko: "자동차 가르치기", en: "Teach a car",
       ko_d: "내 운전을 보고 AI가 배워요",   en_d: "The AI learns from your driving" },
+    { href: "/eye",  ic: "scan",  cat: "ai", ko: "AI 눈", en: "AI eye",
+      ko_d: "AI 속을 들여다보고 속여 봐요", en_d: "Look inside an AI and fool it" },
     { href: "/blocks",  ic: "blocks", cat: "dev", core: true,  ko: "블록",       en: "Blocks",
       ko_d: "블록을 끼워 AI를 움직여요",    en_d: "Snap blocks to run the AI" },
     { href: "/code",    ic: "code",   cat: "dev", core: true,  ko: "파이썬",     en: "Python",

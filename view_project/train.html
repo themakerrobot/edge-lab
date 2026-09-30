@@ -286,6 +286,7 @@
       <div class="panel-head">
         <span class="q"><span class="qnum">1</span><span class="qtext" id="txtQ1">무엇과 무엇을 구별할지 정해요</span></span>
         <span class="right" style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+          <button class="btn sm" id="eyeLink" type="button" title="AI 눈"></button>
           <button class="btn sm" id="addClassBtn">+ <span id="txtAddClass">클래스 추가</span></button>
           <button class="btn sm danger" id="resetBtn"><span id="txtReset">전체 지우기</span></button>
         </span>
@@ -533,7 +534,7 @@
       chkImbalance: "사진 수가 많이 달라요 (%1). 적은 클래스가 불리해질 수 있어요.",
       chkDup: "%1 에 거의 똑같은 사진이 많아요. 다양한 각도·배경으로 찍으면 더 잘 배워요.",
       chkOverfit: "반복이 많을수록 시험 점수가 떨어지면 '외우기'가 시작된 거예요. 곡선을 확인해 보세요.",
-      addClass: "클래스 추가", reset: "전체 지우기", targetClass: "모을 클래스",
+      addClass: "클래스 추가", reset: "전체 지우기", eyeLink: "AI 눈 들여다보기 →", targetClass: "모을 클래스",
       holdShot: "연속 촬영 (누르고 있기)", oneShot: "한 장 찍기", shotGap: "촬영 간격(ms)",
       camOff: "웹캠 끄기", camOn: "웹캠 켜기",
       epochs: "반복 학습 횟수", train: "학습 시작", training: "학습 중...",
@@ -628,7 +629,7 @@
       chkImbalance: "Class sizes differ a lot (%1). Small classes may lose out.",
       chkDup: "%1 has many near-identical photos. Vary angle and background to learn better.",
       chkOverfit: "If test accuracy drops as epochs grow, the AI started memorizing. Check the curve.",
-      addClass: "Add class", reset: "Clear all", targetClass: "Collect into",
+      addClass: "Add class", reset: "Clear all", eyeLink: "Look inside (AI eye) →", targetClass: "Collect into",
       holdShot: "Burst capture (hold)", oneShot: "Take one", shotGap: "Interval (ms)",
       camOff: "Webcam off", camOn: "Webcam on",
       epochs: "Epochs", train: "Start training", training: "Training...",
@@ -1819,6 +1820,11 @@
   }
   loadSaved();
 
+  /* AI 눈 — 같은 "가르치기" 를 작은 CNN 으로, 속을 들여다보며 한다 (/eye). 가르치기의 짝 앱이라 여기서 바로 건너간다 */
+  document.getElementById("eyeLink").addEventListener("click", () => {
+    if (window.EL_WIN) EL_WIN.open("/eye"); else location.href = "/eye";
+  });
+
   /* ---------------- 작품 저장 / 이어서 하기 ---------------- */
   async function buildProjectZip() {
     const zip = new JSZip();
@@ -2038,7 +2044,7 @@
     set("txtQ1Hint", t("q1hint")); set("txtQ2Hint", t("q2hint"));
     html("txtQ2Guide", t("q2guide")); set("txtQ2Upload", t("q2upload"));
     set("txtQ4Hint", t("q4hint"));
-    set("txtAddClass", t("addClass")); set("txtReset", t("reset"));
+    set("txtAddClass", t("addClass")); set("txtReset", t("reset")); set("eyeLink", t("eyeLink"));
     set("txtTargetClass", t("targetClass"));
     set("txtHoldShot", t("holdShot")); set("txtOneShot", t("oneShot"));
     set("txtShotGap", t("shotGap")); set("txtCamToggle", t(stream ? "camOff" : "camOn"));

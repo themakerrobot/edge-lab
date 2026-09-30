@@ -260,7 +260,7 @@ ALLOW_WHILE_LOADING = ("/ready", "/system", "/lib", "/assets", "/fonts", "/block
 # 화면 주소 — 로딩 중에도 열린다. 새 화면을 만들면 여기에 더한다(빠지면 켜진 직후 1~2분은
 # 그 앱이 JSON 503 으로 뜬다 — 셸에 새 앱을 넣으며 한 번 겪었다).
 PAGE_PATHS = ("/", "/home", "/try", "/blocks", "/train", "/options", "/code", "/talk",
-              "/works", "/drive", "/paint", "/typing", "/calc", "/notes", "/recorder", "/story", "/tasks", "/board", "/store")
+              "/works", "/drive", "/paint", "/typing", "/calc", "/notes", "/recorder", "/story", "/tasks", "/board", "/store", "/eye")
 
 
 @app.middleware("http")
@@ -706,6 +706,13 @@ async def calc_page():
 async def notes_page():
     """메모장 — 짧은 글을 여러 장 적어 둔다 (이 컴퓨터에만)."""
     with open("view_project/notes.html", encoding="utf-8") as f:
+        return f.read()
+
+
+@app.get("/eye", response_class=HTMLResponse)
+async def eye_page():
+    """AI 눈 — 그림·카메라로 작은 CNN 을 가르치고 속을 들여다본다 (브라우저 안에서 학습)"""
+    with open("view_project/eye.html", encoding="utf-8") as f:
         return f.read()
 
 
