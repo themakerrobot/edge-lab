@@ -23,6 +23,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+# 정적 파일의 MIME 을 못박는다. 파이썬 mimetypes 는 윈도우 레지스트리(HKCR\.js 의 Content Type)를 읽는데,
+# 어떤 PC 는 .js 가 text/plain 으로 적혀 있다. 그러면 모듈 스크립트·워커(문장 · AI 눈 · 소리 가르치기)를
+# 브라우저가 거부한다(strict MIME). .wasm 도 application/wasm 이어야 스트리밍 컴파일이 된다.
+import mimetypes  # noqa: E402
+for _ext, _type in ((".js", "text/javascript"), (".mjs", "text/javascript"), (".wasm", "application/wasm"),
+                    (".tflite", "application/octet-stream"), (".task", "application/octet-stream"),
+                    (".json", "application/json"), (".css", "text/css"), (".svg", "image/svg+xml"),
+                    (".woff2", "font/woff2")):
+    mimetypes.add_type(_type, _ext)
+
 import prompts as P
 
 # 학생 PC 마다 따로 도는 구조라 바깥에서 들어올 일이 없다. 0.0.0.0 으로 열면
