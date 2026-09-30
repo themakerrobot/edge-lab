@@ -50,7 +50,7 @@
   };
   function T(k) { var L = UI[A.lang()] || UI.ko; return L[k] !== undefined ? L[k] : UI.ko[k]; }
   function en() { return A.lang() === "en"; }
-  function hiddenApp(h) { return (S.hidden || []).indexOf(h) >= 0 && !S.teacher; }
+  function hiddenApp(h) { return ((S.hidden || []).indexOf(h) >= 0 && !S.teacher) || APPS.isRemoved(h); }
 
   var SET_IC = {
     hc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16Z" fill="currentColor"/></svg>',

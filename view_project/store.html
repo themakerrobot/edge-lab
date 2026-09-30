@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>edge-lab — 앱 가게</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+  <link href="/fonts/fonts.css" rel="stylesheet">
+  <script>
+    try { if (localStorage.getItem("vapi-hc") === "1")
+            document.documentElement.classList.add("hc"); } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="/lib/tokens.css">
+  <script src="/lib/embed.js"></script>
+  <link rel="expect" href="#el-built" blocking="render">
+  <style>
+    /* 앱 가게 — 바탕화면에 둘 앱을 아이가 고른다.
+     *
+     * 앱은 전부 이 프로그램 안에 이미 들어 있다(인터넷에서 받지 않는다). 여기서 하는 "넣기 · 빼기" 는
+     * 바탕화면 · 시작 메뉴 · 상단바에 보이게 하느냐다 — localStorage "el-removed" 에 뺀 앱을 적고,
+     * 셸(os.html)이 storage 이벤트로 바로 다시 그린다. 기본 앱(apps.js 의 core)은 뺄 수 없다.
+     * 빼도 그 앱에서 만든 것(메모 · 일기 · 작품)은 지우지 않는다.
+     * 선생님의 "수업 중 쉬기" 와는 따로다 — 그건 반 전체, 이건 이 컴퓨터를 쓰는 아이의 선택.
+     */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; color: var(--ink); background: var(--paper);
+           font-family: "Gowun Dodum", "Apple SD Gothic Neo", system-ui, sans-serif; line-height: 1.5;
+           padding: var(--sp-2, 8px); gap: var(--sp-2, 8px); }
+    button, input { font-family: inherit; color: var(--ink); }
+    .top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .find { flex: 1 1 260px; max-width: 420px; height: 40px; border: 1.5px solid var(--line); border-radius: 20px; padding: 0 16px; background: #fff; font-size: .98rem; }
+    .seg { display: inline-flex; border: 1.5px solid var(--line-d); border-radius: 20px; overflow: hidden; }
+    .seg button { border: 0; background: #fff; padding: 0 14px; height: 36px; font-size: .9rem; font-weight: 600; cursor: pointer; }
+    .seg button + button { border-left: 1.5px solid var(--line-d); }
+    .seg button.on { background: var(--pen-blue); color: #fff; }
+    .count { font-size: var(--fs-side, 13px); color: var(--ink-2); margin-left: auto; }
+    .sec h2 { font-size: 15px; color: var(--cyan-d); margin: 6px 2px 8px; display: flex; align-items: center; gap: 8px; }
+    .sec h2::after { content: ""; flex: 1; height: 1px; background: var(--line); opacity: .5; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 10px; }
+    .card { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border: 1.5px solid var(--line); border-radius: 14px; background: #fff; }
+    .card.off { background: #f7f3ea; }
+    .card .g { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; color: #fff; flex: 0 0 auto; background: var(--cyan); }
+    .card .g svg { width: 28px; height: 28px; }
+    .card.c-dev .g { background: #5d4f9e; } .card.c-tool .g { background: #d07a3e; } .card.c-sys .g { background: #5b6b76; }
+    .card.off .g { filter: grayscale(.6); opacity: .7; }
+    .card .t { flex: 1; min-width: 0; }
+    .card .t b { display: block; font-size: var(--fs-name, 16px); }
+    .card .t small { display: block; font-size: var(--fs-side, 13px); color: var(--ink-2); }
+    .card .act { flex: 0 0 auto; }
+    .pill { height: 36px; min-width: 76px; padding: 0 14px; border-radius: 18px; border: 1.5px solid var(--line-d); background: #fff; font-size: .9rem; font-weight: 700; cursor: pointer; }
+    .pill.add { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; }
+    .pill.rm { color: var(--pen-red); border-color: var(--pen-red); }
+    .pill.open { border-color: var(--cyan); color: var(--cyan-d); }
+    .core { font-size: 12px; color: var(--ink-2); border: 1px dashed var(--line); border-radius: 10px; padding: 2px 8px; white-space: nowrap; }
+    .note { font-size: var(--fs-side, 13px); color: var(--ink-2); }
+    .none { padding: 20px 4px; color: var(--ink-2); }
+  </style>
+  <link rel="stylesheet" href="/lib/ui.css">
+  <link rel="stylesheet" href="/lib/shell.css">
+</head>
+<body data-density="explore">
+  <div class="titlebar">
+    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요"><img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b></a>
+    <span class="tb-sep"></span><span class="tb-app" id="txtTitle"></span>
+    <div class="h-tools"><button id="langButton" title="한국어 / English">EN</button></div>
+  </div>
+  <div class="shell-body"><div class="workbench"><div class="main-container">
+    <div class="panel">
+      <div class="panel-head"><span class="q"><span class="qnum">1</span><span class="qtext" id="txtQ1"></span></span></div>
+      <div class="panel-body">
+        <div class="top">
+          <input class="find" id="find" type="search" autocomplete="off">
+          <div class="seg" id="show"><button type="button" data-v="all" class="on"></button><button type="button" data-v="in"></button><button type="button" data-v="out"></button></div>
+          <span class="count" id="count"></span>
+        </div>
+        <div class="note" id="note"></div>
+        <div class="grow" id="list" style="display:flex;flex-direction:column;gap:14px"></div>
+      </div>
+    </div>
+  </div></div></div>
+
+  <script src="/lib/icons.js"></script>
+  <script src="/lib/apps.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var LANG = "ko";
+    try { LANG = localStorage.getItem("vapiLang") === "en" ? "en" : "ko"; } catch (e) {}
+    document.documentElement.lang = LANG;
+    var I18N = {
+      ko: { title: "edge-lab — 앱 가게", lang: "EN", q1: "앱 가게", find: "앱 찾기", all: "모두", in: "넣은 앱", out: "뺀 앱",
+            count: "앱 {n}개 중 {i}개가 바탕화면에 있어요", add: "넣기", rm: "빼기", open: "열기", core: "기본 앱",
+            note: "여기 있는 앱은 모두 이 컴퓨터 안에 있어요. 빼도 그 앱에서 만든 것(메모 · 일기 · 작품)은 지워지지 않아요.",
+            none: "찾는 앱이 없어요.", added: "‘{a}’ 을(를) 바탕화면에 넣었어요." },
+      en: { title: "edge-lab — App store", lang: "한", q1: "App store", find: "Find an app", all: "All", in: "On desk", out: "Removed",
+            count: "{i} of {n} apps are on the desk", add: "Add", rm: "Remove", open: "Open", core: "Built-in",
+            note: "Every app here is already on this computer. Removing one keeps what you made with it (notes, diary, projects).",
+            none: "No app found.", added: "‘{a}’ is on the desk now." }
+    };
+    function t(k) { return I18N[LANG][k] !== undefined ? I18N[LANG][k] : I18N.ko[k]; }
+    function $(id) { return document.getElementById(id); }
+    function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+    var A = window.EL_APPS, show = "all";
+
+    function removed() { return A.removed(); }
+    function setRemoved(list) { try { localStorage.setItem("el-removed", JSON.stringify(list)); } catch (e) {} }
+
+    function paint() {
+      var q = $("find").value.trim().toLowerCase(), out = removed(), h = "", shown = 0;
+      A.CATS.forEach(function (c) {
+        var list = A.APPS.filter(function (a) {
+          if (a.cat !== c[0]) return false;
+          var off = out.indexOf(a.href) >= 0;
+          if (show === "in" && off) return false;
+          if (show === "out" && !off) return false;
+          return !q || (a.ko + " " + a.en + " " + a.ko_d + " " + a.en_d).toLowerCase().indexOf(q) >= 0;
+        });
+        if (!list.length) return;
+        shown += list.length;
+        h += '<div class="sec"><h2>' + esc(A.catName(c[0], LANG)) + '</h2><div class="cards">' + list.map(function (a) {
+          var off = out.indexOf(a.href) >= 0, name = LANG === "en" ? a.en : a.ko, desc = LANG === "en" ? a.en_d : a.ko_d;
+          var act = a.core ? '<span class="core">' + esc(t("core")) + "</span>"
+            : off ? '<button class="pill add" type="button" data-add="' + a.href + '">' + esc(t("add")) + "</button>"
+            : '<button class="pill rm" type="button" data-rm="' + a.href + '">' + esc(t("rm")) + "</button>";
+          if (!off && a.href !== "/store") act = '<button class="pill open" type="button" data-open="' + a.href + '">' + esc(t("open")) + "</button> " + act;
+          return '<div class="card c-' + a.cat + (off ? " off" : "") + '"><span class="g">' + elIcon(a.ic) + '</span><span class="t"><b>' + esc(name) +
+                 "</b><small>" + esc(desc) + '</small></span><span class="act">' + act + "</span></div>";
+        }).join("") + "</div></div>";
+      });
+      $("list").innerHTML = h || '<div class="none">' + esc(t("none")) + "</div>";
+      $("count").textContent = t("count").replace("{n}", A.APPS.length).replace("{i}", A.APPS.length - out.length);
+    }
+    $("list").addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b) return;
+      var out = removed(), h;
+      if ((h = b.getAttribute("data-rm"))) { if (out.indexOf(h) < 0) out.push(h); setRemoved(out); if (window.vapiStat) vapiStat("store_remove"); }
+      else if ((h = b.getAttribute("data-add"))) {
+        setRemoved(out.filter(function (x) { return x !== h; }));
+        var a = A.APPS.filter(function (x) { return x.href === h; })[0];
+        if (window.EL_WIN && a) EL_WIN.notify(t("added").replace("{a}", LANG === "en" ? a.en : a.ko), { actions: [{ label: t("open"), href: h }] });
+        if (window.vapiStat) vapiStat("store_add");
+      }
+      else if ((h = b.getAttribute("data-open"))) { if (window.EL_WIN) EL_WIN.open(h); else location.href = h; return; }
+      paint();
+    });
+    $("show").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-v]"); if (!b) return;
+      show = b.getAttribute("data-v");
+      Array.prototype.forEach.call(this.children, function (x) { x.classList.toggle("on", x === b); });
+      paint();
+    });
+    $("find").addEventListener("input", paint);
+    window.addEventListener("storage", function (e) { if (e.key === "el-removed") paint(); });
+
+    $("langButton").addEventListener("click", function () {
+      try { localStorage.setItem("vapiLang", LANG === "ko" ? "en" : "ko"); } catch (e) {}
+      location.reload();
+    });
+    document.title = t("title"); $("langButton").textContent = t("lang");
+    $("txtQ1").textContent = t("q1"); $("find").placeholder = t("find"); $("note").textContent = t("note");
+    var sb = $("show").children; sb[0].textContent = t("all"); sb[1].textContent = t("in"); sb[2].textContent = t("out");
+    paint();
+  })();
+  </script>
+  <script src="/lib/shell.js"></script>
+  <script src="/lib/usage.js" data-page="store"></script>
+  <i id="el-built" hidden></i>
+</body>
+</html>
