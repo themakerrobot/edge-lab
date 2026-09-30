@@ -589,6 +589,94 @@ def detect(model_path, image, conf=0.3):
     return (j.get("data") or {}).get("object", [])
 
 
+
+# ================================================================= 보드 (MCU)
+# 포트는 서버가 연다(보드 앱에서 연결해 두면 여기서는 바로 쓴다). 펌웨어와는 글자 한 줄씩 주고받는다.
+# 블록 코딩의 "보드" 블록과 이름이 같다 — 블록 → 파이썬으로 옮겨도 그대로 돈다.
+# 답이 없으면 None 이 아니라 빈 글자("")를 돌려준다: 블록과 같게, 그리고 `if board_ask(..) == "OK"` 가 바로 되게.
+
+_board_seq = None          # board_read 가 어디까지 읽었는지 (이 프로그램 안에서)
+
+
+def _post_json(url, body, timeout=30):
+    req = urllib.request.Request(SERVER + url, data=json.dumps(body).encode("utf-8"),
+                                 headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            j = json.loads(r.read().decode("utf-8"))
+    except urllib.error.URLError as ex:
+        raise TheMakerError(
+            "엣지 랩 서버에 연결할 수 없어요. run.bat 이 켜져 있는지 확인하세요. (%s)" % ex)
+    if j.get("result") != "ok":
+        raise TheMakerError(str(j.get("data")))
+    return j.get("data")
+
+
+def _board_cursor():
+    global _board_seq
+    if _board_seq is None:
+        _board_seq = int((_get("/board/status").get("data") or {}).get("seq", 0))
+    return _board_seq
+
+
+def board_ports():
+    """연결된 시리얼 포트 목록 — [{"device": "COM3", "description": ..., "hint": ...}, ...]"""
+    j = _get("/board/ports")
+    if j.get("result") != "ok":
+        raise TheMakerError(str(j.get("data")))
+    return j.get("data") or []
+
+
+def board_connect(port=None, baud=115200, eol="lf"):
+    """보드 연결. port 를 비우면 보드로 보이는 포트(ESP32·CP210x·CH340 등)가 하나일 때 그것을 연다.
+    속도(baud)와 줄 끝(eol: "lf" · "crlf" · "cr")은 펌웨어에 맞춘다."""
+    if not port:
+        ports = board_ports()
+        likely = [p for p in ports if p.get("hint")] or ports
+        if len(likely) != 1:
+            raise TheMakerError("포트를 골라 주세요: %s" % ", ".join(p["device"] for p in ports) if ports
+                                else "보드가 보이지 않아요. USB 케이블을 확인해 주세요.")
+        port = likely[0]["device"]
+    _post_json("/board/connect", {"port": port, "baud": int(baud), "eol": eol})
+    return port
+
+
+def board_disconnect():
+    _post_json("/board/disconnect", {})
+
+
+def board_connected():
+    """보드가 연결되어 있으면 True"""
+    return bool((_get("/board/status").get("data") or {}).get("connected"))
+
+
+def board_send(text):
+    """보드에 글자 한 줄을 보낸다 (답은 기다리지 않는다)."""
+    global _board_seq
+    _board_cursor()
+    _post_json("/board/send", {"text": str(text)})
+
+
+def board_ask(text, timeout=1.0, prefix=""):
+    """보드에 한 줄 보내고, 그 뒤 처음 들어온 줄을 답으로 돌려준다. timeout 초 안에 없으면 "".
+    보드가 센서 값을 계속 보내는 중이면 prefix 로 답의 머리말(예: "OK")을 정해 골라 받는다."""
+    global _board_seq
+    _board_cursor()
+    d = _post_json("/board/ask", {"text": str(text), "timeout": float(timeout), "prefix": prefix},
+                   timeout=float(timeout) + 10)
+    _board_seq = max(_board_seq, int(d.get("seq", 0)))       # 답으로 받은 줄은 board_read 가 다시 주지 않는다
+    return d.get("reply") or ""
+
+
+def board_read(timeout=1.0, prefix=""):
+    """보드가 보낸 줄을 하나 읽는다 (이 프로그램이 시작한 뒤의 것부터 차례로). timeout 초 안에 없으면 ""."""
+    global _board_seq
+    d = _post_json("/board/read", {"after": _board_cursor(), "timeout": float(timeout), "prefix": prefix},
+                   timeout=float(timeout) + 10)
+    _board_seq = int(d.get("seq", _board_seq))
+    return d.get("line") or ""
+
+
 __all__ = [
     # 기본
     "camera", "load", "save", "show", "draw", "my_models", "models", "models_folder",
@@ -609,6 +697,9 @@ __all__ = [
     "play_note", "beep", "play_melody", "play_hz", "speaker",
     # 사진 없이 대화 · 내 자료에서 찾아 답하기
     "chat", "db_add", "db_list", "db_find", "db_delete",
+    # 보드(MCU) — 글자 한 줄 명령
+    "board_connect", "board_disconnect", "board_ports", "board_connected",
+    "board_send", "board_ask", "board_read",
     # 설정
     "language",
     "SERVER", "TheMakerError",

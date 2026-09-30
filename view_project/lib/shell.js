@@ -36,6 +36,8 @@
     "/paint":    { ko: "그림판",     en: "Paint" },
     "/typing":   { ko: "타자 연습",  en: "Typing" },
     "/calc":     { ko: "계산기",     en: "Calculator" },
+    "/notes":    { ko: "메모장",     en: "Notes" },
+    "/board":    { ko: "보드",       en: "Board" },
     "/recorder": { ko: "녹음기",     en: "Recorder" },
     "/story":    { ko: "이야기 극장", en: "Story theater" },
     "/works":    { ko: "내 작품",    en: "My work" },

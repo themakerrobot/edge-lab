@@ -248,6 +248,7 @@
     <div class="os-tray">
       <span class="os-chip os-use" id="osCam" hidden></span>
       <span class="os-chip os-use" id="osMic" hidden></span>
+      <button class="os-chip" id="osBoard" type="button" hidden></button>
       <button class="os-chip os-bell" id="osBell" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4S6 14 6 9Z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg><b id="osBellN" hidden></b></button>
       <span class="os-chip os-ai wait" id="osAi"><span class="os-dot"></span><span class="lbl"></span></span>
       <a class="os-chip" id="osDocs" href="/docs" target="_blank">API</a>
@@ -313,7 +314,7 @@
           work: { face: "얼굴", vlm: "말 · 사진 설명", vision: "사진 바꾸기", code: "글자 · QR" },
           idle: "쉬는 중",
           aiOk: "AI 준비", aiWait: "AI 준비 중", aiBad: "AI 문제",
-          cam: "카메라", mic: "마이크", close: "닫기", langBtn: "EN", docs: "API 문서 (선생님용)",
+          cam: "카메라", mic: "마이크", boardOn: "보드 연결됨 — 누르면 보드 앱", boardLost: "보드 연결이 끊겼어요. USB 케이블을 확인해 주세요.", boardOpen: "보드 앱", close: "닫기", langBtn: "EN", docs: "API 문서 (선생님용)",
           start: "바탕화면", fullTitle: "창이 너무 많아요",
           fullText: "{max}개까지 켜 둘 수 있어요. 하나를 닫으면 ‘{app}’ 창을 열게요.", cancel: "그만두기",
           notes: "알림", noteNone: "새 알림이 없어요", noteClear: "모두 지우기", now: "방금", ago: "{n}분 전",
@@ -328,7 +329,7 @@
           work: { face: "Faces", vlm: "Talk · describe", vision: "Photo effects", code: "Text · QR" },
           idle: "idle",
           aiOk: "AI ready", aiWait: "AI loading", aiBad: "AI problem",
-          cam: "Camera", mic: "Mic", close: "Close", langBtn: "한", docs: "API docs (for teachers)",
+          cam: "Camera", mic: "Mic", boardOn: "Board connected — open the Board app", boardLost: "The board was disconnected. Check the USB cable.", boardOpen: "Board app", close: "Close", langBtn: "한", docs: "API docs (for teachers)",
           start: "Desktop", fullTitle: "Too many windows",
           fullText: "Up to {max} can stay open. Close one and ‘{app}’ will open.", cancel: "Cancel",
           notes: "Notifications", noteNone: "Nothing new", noteClear: "Clear all", now: "just now", ago: "{n} min ago",
@@ -556,6 +557,19 @@
           setTimeout(pollAi, r.ready || r.error ? 30000 : 1500);
         }).catch(function () { aiState = null; paintAi(); setTimeout(pollAi, 3000); });
       }
+
+      /* 보드 — 연결돼 있을 때만 칩이 보인다. 쓰다가 끊기면(케이블이 빠짐) 알린다. 4초마다 가볍게 묻는다 */
+      var boardWas = false, CHIP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="6.5" y="6.5" width="11" height="11" rx="1.5"/><path d="M9 3v3.5M15 3v3.5M9 17.5V21M15 17.5V21M3 9h3.5M3 15h3.5M17.5 9H21M17.5 15H21"/></svg>';
+      function pollBoard() {
+        fetch("/board/status").then(function (r) { return r.json(); }).then(function (j) {
+          var d = (j && j.data) || {}, c = $("osBoard");
+          c.hidden = !d.connected;
+          if (d.connected) { c.innerHTML = CHIP + esc(d.port || ""); c.title = T("boardOn"); }
+          if (boardWas && !d.connected && d.lost) notify(null, T("boardLost"), [{ label: T("boardOpen"), href: "/board" }], true);
+          boardWas = !!d.connected;
+        }).catch(function () {}).then(function () { setTimeout(pollBoard, 4000); });
+      }
+      $("osBoard").addEventListener("click", function () { open("/board"); });
 
       function paintClock() {
         var n = new Date();
@@ -785,7 +799,7 @@
 
       paintBar(); paintUse(); paintAi(); paintClock(); paintDesk(); paintBell();
       setInterval(paintClock, 15000);
-      pollAi();
+      pollAi(); pollBoard();
       loadDesk();
 
       /* 다른 셸 파일(lib/os-quick.js · os-start.js · os-teacher.js)이 쓰는 것 */

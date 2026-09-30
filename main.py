@@ -7,6 +7,12 @@ import time
 import uuid
 from contextlib import asynccontextmanager
 
+# 무거운 import(cv2 · mediapipe · fastapi …) 전에 키오스크 창부터 띄운다 — 켜는 동안 까만 창만 보이지 않게.
+# 창은 launch.html(서버 없이 열리는 파일)로 시작해 서버가 대답하면 "/" 로 넘어간다 (appwin.py).
+if __name__ == "__main__":
+    import appwin
+    appwin.early(int(os.environ.get("VAPI_PORT", "57711")))
+
 
 import cv2
 import asyncio
@@ -24,81 +30,33 @@ import prompts as P
 # 일부러 밖에서 붙여야 할 때만 VAPI_HOST=0.0.0.0 으로 띄운다.
 HOST = os.environ.get("VAPI_HOST", "127.0.0.1")
 PORT = int(os.environ.get("VAPI_PORT", "57711"))
-from paths import TMP_DIR, APPWIN_DIR, APPDATA_DIR   # noqa: E402  (폴더 규칙은 paths.py 한 곳에)
+from paths import TMP_DIR, APPDATA_DIR   # noqa: E402  (폴더 규칙은 paths.py 한 곳에)
 IMAGE_DIR = TMP_DIR + os.sep
 
 eng = None
 
 
-# Chrome / Edge 를 앱 모드(--app)로 열기 위한 후보 경로.
-# 주소창·탭·북마크가 없는 전용 창으로 떠서 프로그램처럼 보인다.
-_APP_BROWSERS = [
-    r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-    r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
-    os.path.expandvars(r"%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe"),
-    r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
-    r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
-]
-
-
-def _find_app_browser():
-    for p in _APP_BROWSERS:
-        if p and os.path.exists(p):
-            return p
-    return None
-
-
-_APP_PROC = None   # 앱 창(--app) 프로세스 — [끄기] 때 같이 닫는다
 _SERVER = None     # uvicorn 서버 — [끄기] 가 멈춘다
 
 
 def open_browser():
-    """서버가 뜨자마자 화면을 연다 — 모델 로딩은 뒤에서 계속되고,
-    화면은 부팅(로딩) 안내를 보여준다.
+    """서버가 뜨자마자 화면을 연다 — 모델 로딩은 뒤에서 계속되고, 화면은 부팅(로딩) 안내를 보여준다.
 
-    Chrome/Edge 가 있으면 앱 모드(--app)로 전용 창을 띄우고, 없으면 기본 브라우저로 연다.
-    끄고 싶으면 VAPI_NO_BROWSER=1, 앱 모드만 끄려면 VAPI_NO_APPMODE=1 로 실행한다.
-    기본은 전체 화면(키오스크)이다 — 컴퓨터 전체를 edge-lab 이 차지한다. 빠져나가는 길은 셸의
-    [끄기] 다. 창으로 띄우려면(개발·선생님 PC) VAPI_NO_KIOSK=1."""
+    보통은 main.py 맨 위에서 appwin.early() 가 이미 창을 띄워 두었다(launch.html → "/").
+    그러지 못했을 때(다른 방법으로 실행 · launch.html 없음)만 여기서 띄운다.
+    Chrome/Edge 가 없으면 기본 브라우저로 연다. 창 옵션(키오스크 등)은 appwin.py 에."""
     if os.environ.get("VAPI_NO_BROWSER"):
         return
-    import subprocess
     import threading
     import webbrowser
+    import appwin
 
     url = f"http://localhost:{PORT}"
 
     def _open():
-        global _APP_PROC
         time.sleep(1.0)  # uvicorn 소켓 바인딩 여유
-        exe = None if os.environ.get("VAPI_NO_APPMODE") else _find_app_browser()
-        if exe:
-            try:
-                # 전용 프로필을 쓰면 이미 열려 있는 브라우저 창과 섞이지 않는다.
-                profile = APPWIN_DIR
-                args = [exe, f"--app={url}",
-                        f"--user-data-dir={profile}",
-                        "--window-size=1400,900",
-                        "--no-first-run", "--no-default-browser-check"]
-                # 화면 확대: VAPI_ZOOM=1.25 처럼 지정하면 처음부터 그 배율로 뜬다.
-                # (미지정 시 브라우저 기본 — Ctrl + '+' 로 맞춘 배율도 프로필에 저장되어 유지된다)
-                zoom = os.environ.get("VAPI_ZOOM", "").strip()
-                if zoom:
-                    args.append(f"--force-device-scale-factor={zoom}")
-                # 키오스크(기본): 주소줄·창 틀 없이 화면 전체. 셸의 [끄기] 가 빠져나가는 길이다.
-                # Chrome 은 --kiosk. Edge 의 --kiosk 는 InPrivate 로 돌아(Microsoft 문서의 키오스크 모드)
-                # 끌 때 localStorage(언어·블록 임시 저장·바탕화면 설정)가 지워질 수 있어서,
-                # Edge 에서는 --start-fullscreen 으로 대신한다 (F11 로 빠져나갈 수 있다). 둘 다 실기기 확인 필요.
-                if not os.environ.get("VAPI_NO_KIOSK"):
-                    edge = os.path.basename(exe).lower() == "msedge.exe"
-                    args.append("--start-fullscreen" if edge else "--kiosk")
-                # [끄기] 가 창을 강제로 닫으므로 다음 실행 때 "복원할까요" 풍선이 뜨지 않게
-                args.append("--hide-crash-restore-bubble")
-                _APP_PROC = subprocess.Popen(args)
-                print("[browser] 앱 창으로 실행:", os.path.basename(exe))
-                return
-            except Exception as ex:
-                print("[browser] 앱 모드 실패:", ex, "→ 기본 브라우저로 엽니다")
+        if appwin.launch(url):
+            return
         try:
             webbrowser.open(url)
         except Exception as ex:
@@ -206,8 +164,8 @@ async def lifespan(app: FastAPI):
 DESCRIPTION = """\
 **교실 PC 안에서 도는 AI 서버입니다.**
 
-셸(바탕화면)과 앱들(체험하기 · 블록 · 파이썬 · 가르치기 · 대화 · 사진 스튜디오 · 녹음기 · 이야기 극장 ·
-내 작품 · AI 작업 관리자 · 설정)이 전부 여기를
+셸(바탕화면)과 앱들(체험하기 · 대화 · 가르치기 · 자동차 가르치기 · 블록 · 파이썬 · 그림판 · 타자 연습 ·
+계산기 · 메모장 · 녹음기 · 이야기 극장 · 내 작품 · AI 작업 관리자 · 보드 · 설정)이 전부 여기를
 부릅니다. 블록 코딩과 `themaker` 파이썬 모듈도 같은 API 를 씁니다.
 
 **인터넷에 연결하지 않습니다.** 모델이 전부 이 PC 안에 있고, 웹캠으로 찍은 사진도
@@ -240,6 +198,7 @@ TAGS = [
     {"name": "chat", "description": "대화 — 주고받는 이야기와, 넣어 둔 자료 안에서 찾아 답하기"},
     {"name": "speech", "description": "소리 — 읽어주기(TTS) · 받아쓰기(STT) · 목소리 고르기"},
     {"name": "works", "description": "내 작품 — 이름 바꾸기 · 휴지통(지운 작품 되살리기, 30일)"},
+    {"name": "board", "description": "보드(MCU) — 시리얼 포트 연결 · 글자 한 줄 보내기 · 보내고 답 받기 · 받은 줄 읽기"},
     {"name": "stats", "description": "사용 기록 — 수업에서 무엇을 얼마나 썼는지, 다음 반 전 초기화"},
     {"name": "system", "description": "시스템 — 준비 상태, 장치 배정, AI 작업 관리자, 작업폴더 열기·바꾸기, 점검, 끄기"},
 ]
@@ -287,11 +246,11 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True,
 # "/blocks/" 처럼 빗금까지 적은 것은 페이지 주소 "/blocks" 와 구분하기 위해서다.
 ALLOW_WHILE_LOADING = ("/ready", "/system", "/lib", "/assets", "/fonts", "/blockly",
                        "/docs", "/openapi.json", "/favicon", "/stats", "/custom", "/pycode",
-                       "/blocks/", "/speech", "/chat/db", "/works/")
+                       "/blocks/", "/speech", "/chat/db", "/works/", "/board/")
 # 화면 주소 — 로딩 중에도 열린다. 새 화면을 만들면 여기에 더한다(빠지면 켜진 직후 1~2분은
 # 그 앱이 JSON 503 으로 뜬다 — 셸에 새 앱을 넣으며 한 번 겪었다).
 PAGE_PATHS = ("/", "/home", "/try", "/blocks", "/train", "/options", "/code", "/talk",
-              "/works", "/drive", "/paint", "/typing", "/calc", "/recorder", "/story", "/tasks")
+              "/works", "/drive", "/paint", "/typing", "/calc", "/notes", "/recorder", "/story", "/tasks", "/board")
 
 
 @app.middleware("http")
@@ -355,6 +314,9 @@ app.include_router(db_routes.router)
 
 import speech_routes  # noqa: E402  (음성 인식: /speech/stt — 첫 요청 때 지연 로딩)
 app.include_router(speech_routes.router)
+
+import board_routes  # noqa: E402  (보드(MCU) 시리얼: /board/* — 포트는 서버가 연다)
+app.include_router(board_routes.router)
 
 
 # ---------------------------------------------------------------- 공통
@@ -730,6 +692,20 @@ async def calc_page():
         return f.read()
 
 
+@app.get("/notes", response_class=HTMLResponse)
+async def notes_page():
+    """메모장 — 짧은 글을 여러 장 적어 둔다 (이 컴퓨터에만)."""
+    with open("view_project/notes.html", encoding="utf-8") as f:
+        return f.read()
+
+
+@app.get("/board", response_class=HTMLResponse)
+async def board_page():
+    """보드 — 시리얼 포트를 고르고 연결, 명령을 보내고 답을 본다."""
+    with open("view_project/board.html", encoding="utf-8") as f:
+        return f.read()
+
+
 @app.get("/recorder", response_class=HTMLResponse)
 async def recorder_page():
     """녹음기 — 말 → 글자(/speech/stt) → 다시 읽기(/speech/tts)."""
@@ -1066,12 +1042,13 @@ async def shutdown(request: Request):
             code_routes.stop_all()              # 돌던 파이썬 프로그램도 — 카메라를 쥔 채 남지 않게
         except Exception:
             pass
-        p = _APP_PROC
-        if p is not None and p.poll() is None:
-            try:
-                p.terminate()
-            except Exception:
-                pass
+        try:
+            from board import BOARD
+            BOARD.disconnect(quiet=True)        # 시리얼 포트를 놓는다 — 다음에 켤 때 "사용 중" 이 되지 않게
+        except Exception:
+            pass
+        import appwin
+        appwin.close()
         if _SERVER is not None:
             _SERVER.should_exit = True
         else:

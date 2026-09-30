@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>edge-lab — 메모장</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+  <link href="/fonts/fonts.css" rel="stylesheet">
+  <script>
+    try { if (localStorage.getItem("vapi-hc") === "1")
+            document.documentElement.classList.add("hc"); } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="/lib/tokens.css">
+  <script src="/lib/embed.js"></script>
+  <link rel="expect" href="#el-built" blocking="render">
+  <style>
+    /* 메모장 — 짧은 글을 여러 장 적어 둔다. 쓰는 대로 저절로 남는다(이 컴퓨터의 localStorage).
+     * 첫 줄이 제목이 된다. 파일로 받기(.txt)와 파일 열기를 둔다 — 다른 곳으로 옮길 때.
+     * 무엇을 더하지 않는 게 이 앱의 일이다: 서식·그림 없이 글자만.
+     */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; color: var(--ink); background: var(--paper);
+           font-family: "Gowun Dodum", "Apple SD Gothic Neo", system-ui, sans-serif; line-height: 1.5;
+           padding: var(--sp-2, 8px); gap: var(--sp-2, 8px); }
+    button, input, textarea { font-family: inherit; color: var(--ink); }
+    .panel.list { flex: 0 0 280px; } .panel.edit { flex: 1 1 auto; }
+    .btn { border: 1.5px solid var(--line-d); background: #fff; font-weight: 600; padding: 4px 12px; border-radius: var(--r); cursor: pointer;
+           font-size: .9rem; min-height: 32px; display: inline-flex; align-items: center; gap: 5px; }
+    .btn.primary { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; }
+    .btn.danger { color: var(--pen-red); border-color: var(--pen-red); }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+    .find { height: 38px; border: 1.5px solid var(--line); border-radius: var(--r); padding: 0 10px; background: #fff; font-size: .95rem; }
+    .items { display: flex; flex-direction: column; gap: 4px; }
+    .item { text-align: left; border: 1.5px solid transparent; border-radius: var(--r); background: transparent; padding: 7px 10px; cursor: pointer; }
+    .item b { display: block; font-size: .98rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .item small { display: block; font-size: var(--fs-side, 13px); color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .item:hover { background: var(--hover-bg); }
+    .item.on { border-color: var(--cyan); background: var(--cyan-bg); }
+    .none { font-size: var(--fs-side, 13px); color: var(--ink-2); padding: 10px 4px; }
+    textarea { width: 100%; resize: none; border: 1.5px solid var(--line); border-radius: var(--r); padding: 14px 16px; background: #fff;
+               line-height: 1.75; outline: none; }
+    textarea:focus { border-color: var(--cyan); }
+    .meta { display: flex; gap: 12px; font-size: var(--fs-side, 13px); color: var(--ink-2); }
+    .meta .sp { flex: 1; }
+    .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    @media (max-width: 1023px) { .main-container { flex-direction: column; } .panel.list, .panel.edit { flex: 0 0 auto; }
+                                 .panel, .panel-body { overflow: visible; } body { overflow: auto; height: auto; } textarea { height: 60vh; } }
+  </style>
+  <link rel="stylesheet" href="/lib/ui.css">
+  <link rel="stylesheet" href="/lib/shell.css">
+</head>
+<body data-density="explore">
+  <div class="titlebar">
+    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요"><img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b></a>
+    <span class="tb-sep"></span><span class="tb-app" id="txtTitle"></span>
+    <div class="h-tools"><button id="langButton" title="한국어 / English">EN</button></div>
+  </div>
+  <div class="shell-body"><div class="workbench"><div class="main-container">
+    <div class="panel list">
+      <div class="panel-head"><span class="q"><span class="qnum">1</span><span class="qtext" id="txtQ1"></span></span>
+        <button class="btn primary" type="button" id="newBtn" style="margin-left:auto"></button></div>
+      <div class="panel-body">
+        <input class="find" id="find" type="search" autocomplete="off">
+        <div class="items" id="items"></div>
+      </div>
+    </div>
+    <div class="panel edit">
+      <div class="panel-head"><span class="q"><span class="qnum">2</span><span class="qtext" id="txtQ2"></span></span>
+        <div class="row" style="margin-left:auto">
+          <button class="btn" type="button" id="smaller">가-</button>
+          <button class="btn" type="button" id="bigger">가+</button>
+          <button class="btn" type="button" id="openBtn"></button>
+          <button class="btn" type="button" id="saveBtn"></button>
+          <button class="btn danger" type="button" id="delBtn"></button>
+          <input type="file" id="file" accept=".txt,text/plain" hidden>
+        </div>
+      </div>
+      <div class="panel-body">
+        <textarea class="grow" id="text" spellcheck="false"></textarea>
+        <div class="meta"><span id="count"></span><span class="sp"></span><span id="saved"></span></div>
+      </div>
+    </div>
+  </div></div></div>
+
+  <script src="/lib/icons.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var LANG = "ko";
+    try { LANG = localStorage.getItem("vapiLang") === "en" ? "en" : "ko"; } catch (e) {}
+    document.documentElement.lang = LANG;
+    var I18N = {
+      ko: { title: "edge-lab — 메모장", lang: "EN", q1: "메모", q2: "쓰기", nw: "+ 새 메모", find: "메모 찾기",
+            none: "메모가 없어요. [+ 새 메모] 를 눌러요.", noHit: "찾는 메모가 없어요.", untitled: "(빈 메모)",
+            ph: "여기에 써요. 첫 줄이 제목이 돼요.", open: "파일 열기", save: "파일로 받기", del: "지우기",
+            delAsk: "이 메모를 지울까요?", chars: "{n}자", lines: "{n}줄", saved: "저장됨 {t}", saving: "저장하는 중…", full: "저장 공간이 모자라요 — 오래된 메모를 지워 주세요",
+            file: "메모" },
+      en: { title: "edge-lab — Notes", lang: "한", q1: "Notes", q2: "Write", nw: "+ New", find: "Find a note",
+            none: "No notes yet. Press [+ New].", noHit: "No matching notes.", untitled: "(empty note)",
+            ph: "Write here. The first line becomes the title.", open: "Open file", save: "Download", del: "Delete",
+            delAsk: "Delete this note?", chars: "{n} chars", lines: "{n} lines", saved: "Saved {t}", saving: "Saving…", full: "Out of space — delete some old notes",
+            file: "note" }
+    };
+    function t(k) { return I18N[LANG][k] !== undefined ? I18N[LANG][k] : I18N.ko[k]; }
+    function $(id) { return document.getElementById(id); }
+    function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+    var KEY = "el-notes";
+
+    var notes = [], cur = null, timer = 0, size = 18;
+    try { notes = JSON.parse(localStorage.getItem(KEY) || "[]") || []; } catch (e) {}
+    try { size = +localStorage.getItem("el-notes-size") || 18; } catch (e) {}
+
+    function title(n) { var l = (n.text || "").split("\n").map(function (x) { return x.trim(); }).filter(Boolean); return l[0] || t("untitled"); }
+    function when(ts) {
+      var d = new Date(ts), now = new Date(), p = function (x) { return String(x).padStart(2, "0"); };
+      return d.toDateString() === now.toDateString() ? p(d.getHours()) + ":" + p(d.getMinutes()) : (d.getMonth() + 1) + "/" + d.getDate();
+    }
+    function store() {
+      try { localStorage.setItem(KEY, JSON.stringify(notes)); $("saved").textContent = t("saved").replace("{t}", when(Date.now())); }
+      catch (e) { $("saved").textContent = t("full"); }
+    }
+    function find(id) { return notes.filter(function (n) { return n.id === id; })[0] || null; }
+
+    function paintList() {
+      var q = $("find").value.trim().toLowerCase();
+      var list = notes.slice().sort(function (a, b) { return b.at - a.at; })
+        .filter(function (n) { return !q || n.text.toLowerCase().indexOf(q) >= 0; });
+      $("items").innerHTML = list.length ? list.map(function (n) {
+        var second = (n.text || "").split("\n").map(function (x) { return x.trim(); }).filter(Boolean)[1] || "";
+        return '<button class="item' + (cur && n.id === cur.id ? " on" : "") + '" type="button" data-id="' + n.id + '"><b>' + esc(title(n)) +
+               "</b><small>" + esc(when(n.at) + (second ? " · " + second : "")) + "</small></button>";
+      }).join("") : '<div class="none">' + esc(notes.length ? t("noHit") : t("none")) + "</div>";
+    }
+    function paintMeta() {
+      var v = $("text").value;
+      $("count").textContent = t("chars").replace("{n}", v.length) + " · " + t("lines").replace("{n}", v ? v.split("\n").length : 0);
+      $("delBtn").disabled = !cur;
+    }
+    function select(n) {
+      cur = n;
+      $("text").value = n ? n.text : "";
+      $("text").disabled = !n;
+      paintList(); paintMeta();
+      if (n) $("text").focus();
+    }
+    function create(text) {
+      var n = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), text: text || "", at: Date.now() };
+      notes.push(n); store(); select(n);
+      if (window.vapiStat) vapiStat("notes_new");
+      return n;
+    }
+
+    $("text").addEventListener("input", function () {
+      if (!cur) return;
+      cur.text = this.value; cur.at = Date.now();
+      $("saved").textContent = t("saving");
+      clearTimeout(timer); timer = setTimeout(function () { store(); paintList(); }, 400);
+      paintMeta();
+    });
+    $("items").addEventListener("click", function (e) { var b = e.target.closest("[data-id]"); if (b) select(find(b.getAttribute("data-id"))); });
+    $("newBtn").addEventListener("click", function () { create(""); });
+    $("find").addEventListener("input", paintList);
+    $("delBtn").addEventListener("click", function () {
+      if (!cur || (cur.text.trim() && !confirm(t("delAsk")))) return;
+      notes = notes.filter(function (n) { return n.id !== cur.id; }); store();
+      var next = notes.slice().sort(function (a, b) { return b.at - a.at; })[0] || null;
+      select(next);
+    });
+    $("saveBtn").addEventListener("click", function () {
+      if (!cur) return;
+      var name = title(cur).replace(/[\\/:*?"<>|]/g, "").slice(0, 30) || t("file");
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob(["﻿" + cur.text.replace(/\n/g, "\r\n")], { type: "text/plain;charset=utf-8" }));   // 윈도우 메모장이 한글을 바로 읽게 BOM · CRLF
+      a.download = name + ".txt";
+      document.body.appendChild(a); a.click(); a.remove();
+    });
+    $("openBtn").addEventListener("click", function () { $("file").click(); });
+    $("file").addEventListener("change", function () {
+      var f = this.files[0]; this.value = "";
+      if (!f) return;
+      f.text().then(function (s) { create(s.replace(/^﻿/, "").replace(/\r\n/g, "\n")); });
+    });
+    function setSize(n) {
+      size = Math.max(14, Math.min(32, n)); $("text").style.fontSize = size + "px";
+      try { localStorage.setItem("el-notes-size", size); } catch (e) {}
+    }
+    $("smaller").addEventListener("click", function () { setSize(size - 2); });
+    $("bigger").addEventListener("click", function () { setSize(size + 2); });
+    document.addEventListener("keydown", function (e) {
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === "s") { e.preventDefault(); clearTimeout(timer); store(); paintList(); }
+    });
+    /* 가려지거나 꺼지기 전에 바로 남긴다 — 0.4초 기다리는 사이에 잃지 않게 */
+    if (window.EL_WIN) EL_WIN.onHide(function () { clearTimeout(timer); if (cur) { store(); paintList(); } });
+    addEventListener("pagehide", function () { clearTimeout(timer); if (cur) store(); });
+
+    $("langButton").addEventListener("click", function () {
+      try { localStorage.setItem("vapiLang", LANG === "ko" ? "en" : "ko"); } catch (e) {}
+      location.reload();
+    });
+    document.title = t("title"); $("langButton").textContent = t("lang");
+    $("txtQ1").textContent = t("q1"); $("txtQ2").textContent = t("q2"); $("newBtn").textContent = t("nw");
+    $("find").placeholder = t("find"); $("text").placeholder = t("ph");
+    $("openBtn").textContent = t("open"); $("saveBtn").textContent = t("save"); $("delBtn").textContent = t("del");
+    setSize(size);
+    select(notes.slice().sort(function (a, b) { return b.at - a.at; })[0] || null);
+    if (!notes.length) $("text").disabled = true;
+    window.EL_NOTES = { get notes() { return notes; } };     // 시험용
+  })();
+  </script>
+  <script src="/lib/shell.js"></script>
+  <script src="/lib/usage.js" data-page="notes"></script>
+  <i id="el-built" hidden></i>
+</body>
+</html>

@@ -90,7 +90,7 @@ if exist "%TOOLS%launcher.py" if exist edge-lab.ico (
 
 echo.
 echo === [6/8] copy sources and models ===
-for %%F in (main.py engines.py prompts.py paths.py hub.py mp_routes.py train_routes.py stats_routes.py code_routes.py speech_routes.py db_routes.py folderpick.py sysinfo.py themaker.py README.md) do (
+for %%F in (main.py engines.py prompts.py paths.py hub.py mp_routes.py train_routes.py stats_routes.py code_routes.py speech_routes.py db_routes.py folderpick.py sysinfo.py themaker.py trash.py works_routes.py board.py board_routes.py appwin.py README.md) do (
   copy /y %%F %BUILD%\ >nul
   if errorlevel 1 (echo [ERROR] copy failed: %%F & exit /b 1)
 )
@@ -134,11 +134,11 @@ REM bundle launcher (ASCII only, CRLF via echo)
 
 echo.
 echo === [7/8] verify bundled python ===
-for %%F in (main.py engines.py prompts.py paths.py hub.py mp_routes.py train_routes.py stats_routes.py code_routes.py speech_routes.py db_routes.py folderpick.py sysinfo.py themaker.py trash.py works_routes.py check.py smoke_test.py run.bat bundle_check.bat) do (
+for %%F in (main.py engines.py prompts.py paths.py hub.py mp_routes.py train_routes.py stats_routes.py code_routes.py speech_routes.py db_routes.py folderpick.py sysinfo.py themaker.py trash.py works_routes.py board.py board_routes.py appwin.py check.py smoke_test.py run.bat bundle_check.bat) do (
   if not exist %BUILD%\%%F (echo [ERROR] missing in bundle: %%F & exit /b 1)
 )
 REM 화면 열셋 — os.html 이 셸(/)이다. 빠지면 첫 화면부터 안 뜬다. home.html 은 창 없이 쓰는 옛 런처(/home).
-for %%F in (view_project\os.html view_project\home.html view_project\index.html view_project\blocks.html view_project\train.html view_project\options.html view_project\code.html view_project\talk.html view_project\works.html view_project\drive.html view_project\paint.html view_project\typing.html view_project\calc.html view_project\recorder.html view_project\story.html view_project\tasks.html) do (
+for %%F in (view_project\os.html view_project\home.html view_project\index.html view_project\blocks.html view_project\train.html view_project\options.html view_project\code.html view_project\talk.html view_project\works.html view_project\drive.html view_project\paint.html view_project\typing.html view_project\calc.html view_project\notes.html view_project\board.html view_project\launch.html view_project\recorder.html view_project\story.html view_project\tasks.html) do (
   if not exist %BUILD%\%%F (echo [ERROR] missing in bundle: %%F & exit /b 1)
 )
 REM 일곱 화면이 함께 쓰는 공용 파일. tokens.css 는 색·치수에 화면 전환까지 갖고 있고,
