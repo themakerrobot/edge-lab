@@ -137,13 +137,23 @@
     #desk { position: absolute; inset: 0; overflow-y: auto; padding: 26px 28px 30px;
             display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 28px; align-content: start; }
     #desk[hidden] { display: none; }
-    .d-hero { grid-column: 1 / -1; display: flex; align-items: flex-end; gap: 18px; }
+    .d-hero { grid-column: 1 / -1; display: flex; align-items: flex-end; gap: 18px; position: relative; }
+    /* 파이보 말풍선 — 누르면 인사한다 */
+    .d-say { position: absolute; right: 86px; bottom: 44px; max-width: min(320px, 60%); z-index: 2; pointer-events: none;
+             background: #fff; color: var(--ink); border: 1.5px solid rgba(74,63,46,.16); border-radius: 16px 16px 4px 16px;
+             padding: 9px 14px; font-size: 15px; line-height: 1.45; box-shadow: 0 8px 22px rgba(44,74,124,.14);
+             opacity: 0; transform: translateY(6px) scale(.96); transform-origin: 100% 100%;
+             transition: opacity .18s ease-out, transform .18s ease-out; }
+    .d-say.on { opacity: 1; transform: none; }
     .d-hero .t { font-family: "Gowun Batang", serif; font-size: 56px; font-weight: 700; line-height: 1;
                  letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
     .d-hero .d { font-size: 15px; color: var(--ink-2); padding-bottom: 6px; }
     .d-hero .d b { display: block; font-family: "Gowun Batang", serif; font-size: 19px; color: var(--ink); margin-top: 3px; }
     .d-hero img { height: 72px; margin-left: auto; }
-    .d-icons { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; align-content: start; }
+    /* 칸 수(--cols)는 fitCols() 가 정한다 — 화면에 들어가는 칸 수와 가장 긴 묶음의 아이콘 수 중 작은 쪽.
+       auto-fill 로 두면 넓은 화면에서 빈 칸이 남아 아이콘이 왼쪽으로 쏠렸다(묶음 제목 줄이 모든 칸을 가로질러 auto-fit 도 안 접힌다) */
+    .d-icons { --ic-min: 150px; display: grid; grid-template-columns: repeat(var(--cols, auto-fill), minmax(var(--ic-min), 1fr));
+               gap: 12px; align-content: start; }
     .d-ic { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 10px 14px;
             border-radius: 18px; text-align: center; }
     .d-ic:hover { background: rgba(255,255,255,.6); }
@@ -203,7 +213,9 @@
        윈도우의 "애니메이션 효과" 를 끈 PC 에서는 멈춘다 — 맨 아래 prefers-reduced-motion. ── */
     /* 파이보 — 가볍게 숨 쉬듯 떠 있다가 가끔 몸을 흔든다. 누르면 폴짝 */
     .d-pibo { cursor: pointer; transform-origin: 50% 90%; animation: pibo-idle 6s ease-in-out infinite; }
+    .d-pibo.talk { animation: pibo-talk .32s ease-in-out infinite alternate; }   /* 말하는 동안 까딱 */
     .d-pibo.hop { animation: pibo-hop .6s ease-out; }
+    @keyframes pibo-talk { from { transform: translateY(0) rotate(-2deg); } to { transform: translateY(-3px) rotate(2deg); } }
     @keyframes pibo-idle {
       0%, 100% { transform: translateY(0) rotate(0); }
       20% { transform: translateY(-4px) rotate(0); }
@@ -271,9 +283,9 @@
     /* 움직임 줄이기(윈도우 설정 → 접근성 → 시각 효과 → 애니메이션 효과 끄기) — 위의 움직임을 모두 멈춘다.
        켤 때의 검은 막(html::before)은 그대로 둔다 — 그것까지 끄면 검정 → 화면으로 튄다 */
     @media (prefers-reduced-motion: reduce) {
-      .d-pibo, .d-pibo.hop, .d-ic:hover .g > svg, #desk:not([hidden]), .win.on, .toast,
+      .d-pibo, .d-pibo.hop, .d-pibo.talk, .d-ic:hover .g > svg, #desk:not([hidden]), .win.on, .toast,
       #osStartMenu:not([hidden]), #osQuick:not([hidden]), #osNote:not([hidden]) { animation: none; }
-      .d-ic .g, .os-start img, .os-app svg, .w, .w-row .i { transition: none; }
+      .d-ic .g, .os-start img, .os-app svg, .w, .w-row .i, .d-say { transition: none; }
       .d-ic:hover .g, .os-start:hover img, .os-app:hover svg, .w:hover, .w-row:hover .i { transform: none; }
     }
     @media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
@@ -325,7 +337,7 @@
       .os-ai .lbl { display: none; }
       #desk { padding: 18px 16px 24px; }
       .d-hero .t { font-size: 44px; }
-      .d-icons { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+      .d-icons { --ic-min: 120px; }
     }
   </style>
 </head>
@@ -354,6 +366,7 @@
       <div class="d-hero">
         <span class="t" id="dTime"></span>
         <span class="d"><span id="dDate"></span><b id="dHello"></b></span>
+        <span class="d-say" id="dSay" aria-live="polite"></span>
         <img class="d-pibo" id="dPibo" src="/assets/pibo-hello.png" alt="">
       </div>
       <div class="d-icons" id="dIcons"></div>
@@ -398,6 +411,11 @@
       var UI = {
         ko: {
           hello: "무엇을 해 볼까요?", helloName: "{n}, 무엇을 해 볼까요?", pins: "바탕화면에 둔 것",
+          pibo: { hi: "안녕하세요! 나는 파이보예요.", hiName: "{n}, 안녕하세요! 나는 파이보예요.",
+                  wait: "AI 를 준비하는 중이에요. 조금만 기다려 줘요.",
+                  time: ["좋은 아침이에요!", "점심은 맛있게 먹었어요?", "오후에도 힘내요!", "늦게까지 열심히네요!"],
+                  more: ["오늘은 무엇을 만들어 볼까요?", "내가 직접 AI 를 가르쳐 볼래요?", "블록으로 나만의 프로그램을 만들어 봐요.",
+                         "궁금한 건 대화에서 물어봐요.", "간지러워요! 헤헤.", "자동차 가르치기도 재미있어요."] },
           days: ["일", "월", "화", "수", "목", "금", "토"], date: "{m}월 {d}일 {w}요일",
           mine: "내가 가르친 AI", mineGo: "가르치기에서 보기", mineNone: "아직 없어요. 가르치기에서 만들어 보세요.",
           pc: "이 컴퓨터", pcSub: "AI 를 돌리는 곳", mem: "메모리 {u} / {t} GB",
@@ -413,6 +431,11 @@
         },
         en: {
           hello: "What shall we do?", helloName: "{n}, what shall we do?", pins: "Pinned",
+          pibo: { hi: "Hello! I'm Pibo.", hiName: "Hello, {n}! I'm Pibo.",
+                  wait: "I'm getting the AI ready. Please wait a moment.",
+                  time: ["Good morning!", "Did you have a nice lunch?", "Keep going this afternoon!", "Working late? Nice!"],
+                  more: ["What shall we make today?", "Want to train your own AI?", "Make your own program with blocks.",
+                         "Ask me anything in Talk.", "That tickles! Hehe.", "Teaching the car is fun too."] },
           days: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], date: "{w}, {mo} {d}",
           mine: "AI I trained", mineGo: "Open in Train", mineNone: "None yet. Make one in Train.",
           pc: "This computer", pcSub: "Where the AI runs", mem: "Memory {u} / {t} GB",
@@ -894,8 +917,24 @@
                 '<div class="mem-t">' + esc(fill(T("mem"), { u: sys.mem.used_gb, t: sys.mem.total_gb })) + "</div>";
         }
         $("wPc").innerHTML = pc;
+        fitCols();
         if (window.EL_WIDGETS) window.EL_WIDGETS.paint();
       }
+
+      /* 앱 아이콘 칸 수 — 화면에 들어가는 만큼, 단 가장 긴 묶음보다 많지 않게. 그래야 빈 칸 없이 폭을 채운다 */
+      function fitCols() {
+        var box = $("dIcons");
+        if (!box || !box.clientWidth) return;                     // 창이 떠 있어 바탕화면이 숨었다 — 돌아오면 다시
+        var most = 0, run = 0;
+        Array.prototype.forEach.call(box.children, function (el) {
+          if (el.classList.contains("d-cat")) run = 0; else most = Math.max(most, ++run);
+        });
+        var min = parseFloat(getComputedStyle(box).getPropertyValue("--ic-min")) || 150, gap = 12;
+        var fit = Math.max(1, Math.floor((box.clientWidth + gap) / (min + gap)));
+        box.style.setProperty("--cols", String(Math.max(1, Math.min(fit, most || fit))));
+      }
+      if (window.ResizeObserver) new ResizeObserver(fitCols).observe($("dIcons"));
+      else window.addEventListener("resize", fitCols);
 
       /* 내 작품 창에서 바탕화면에 두거나 빼면 바로 다시 그린다 (같은 출처라 storage 이벤트가 온다) */
       window.addEventListener("storage", function (e) {
@@ -972,11 +1011,54 @@
         });
       })();
 
-      /* 파이보를 누르면 폴짝 — 누를 때마다 처음부터 */
+      /* 파이보를 누르면 폴짝 뛰고 인사한다 — 말풍선은 바로, 목소리는 이 컴퓨터의 TTS(/speech/tts)로.
+         TTS 는 처음 부를 때 모델을 올리느라 몇 초 걸릴 수 있어 글자를 먼저 보인다. 안 되면 말풍선만.
+         또 누르면 하던 말을 끊고 새로 말한다. */
       (function () {
-        var pb = $("dPibo");
-        if (!pb) return;
-        pb.addEventListener("click", function () { pb.classList.remove("hop"); void pb.offsetWidth; pb.classList.add("hop"); });
+        var pb = $("dPibo"), say = $("dSay");
+        if (!pb || !say) return;
+        var n = 0, last = "", au = null, ctl = null, hideT = null;
+        function line() {
+          var P = T("pibo");
+          if (!n++) return who ? fill(P.hiName, { n: who }) : P.hi;          // 처음에는 이름을 불러 인사
+          if (aiState && !aiState.ready && !aiState.error) return P.wait;
+          var h = new Date().getHours();
+          var pool = [P.time[h >= 5 && h < 11 ? 0 : h >= 11 && h < 14 ? 1 : h >= 14 && h < 18 ? 2 : 3]].concat(P.more);
+          var pick;
+          do { pick = pool[Math.floor(Math.random() * pool.length)]; } while (pick === last && pool.length > 1);
+          return pick;
+        }
+        function hide(ms) {
+          clearTimeout(hideT);
+          hideT = setTimeout(function () { say.classList.remove("on"); pb.classList.remove("talk"); }, ms);
+        }
+        function stop() {
+          if (ctl) { try { ctl.abort(); } catch (e) {} ctl = null; }
+          if (au) { au.pause(); au = null; }
+          pb.classList.remove("talk");
+        }
+        pb.addEventListener("click", function () {
+          pb.classList.remove("hop"); void pb.offsetWidth; pb.classList.add("hop");
+          stop();
+          var text = last = line();
+          say.textContent = text;
+          say.classList.add("on");
+          hide(Math.max(2600, text.length * 140));                        // 목소리가 안 나와도 읽을 만큼
+          var voice = "F1";
+          try { voice = localStorage.getItem("vapi-voice") || "F1"; } catch (e) {}
+          ctl = window.AbortController ? new AbortController() : null;
+          fetch("/speech/tts", { method: "POST", headers: { "Content-Type": "application/json" }, signal: ctl ? ctl.signal : undefined,
+            body: JSON.stringify({ text: text, voice: voice, lang: LANG }) })
+            .then(function (r) {
+              if (!r.ok || (r.headers.get("Content-Type") || "").indexOf("audio") < 0) throw new Error("tts");
+              return r.blob();
+            }).then(function (b) {
+              if (say.textContent !== text) return;                          // 그사이 또 눌렀다
+              var a = au = new Audio(URL.createObjectURL(b));
+              a.onended = function () { URL.revokeObjectURL(a.src); if (au === a) { au = null; pb.classList.remove("talk"); hide(1200); } };
+              return a.play().then(function () { clearTimeout(hideT); pb.classList.add("talk"); });
+            }).catch(function () {});                                        // 목소리가 없으면 말풍선만
+        });
         pb.addEventListener("animationend", function (e) { if (e.animationName === "pibo-hop") pb.classList.remove("hop"); });
       })();
 
