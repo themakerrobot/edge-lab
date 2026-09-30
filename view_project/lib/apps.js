@@ -76,6 +76,8 @@
       ko_d: "내 운전을 보고 AI가 배워요",   en_d: "The AI learns from your driving" },
     { href: "/eye",  ic: "scan",  cat: "ai", ko: "AI 눈", en: "AI eye",
       ko_d: "AI 속을 들여다보고 속여 봐요", en_d: "Look inside an AI and fool it" },
+    { href: "/word", ic: "word",  cat: "ai", ko: "문장", en: "Words",
+      ko_d: "나만의 작은 언어모델을 만들어요", en_d: "Build your own tiny language model" },
     { href: "/blocks",  ic: "blocks", cat: "dev", core: true,  ko: "블록",       en: "Blocks",
       ko_d: "블록을 끼워 AI를 움직여요",    en_d: "Snap blocks to run the AI" },
     { href: "/code",    ic: "code",   cat: "dev", core: true,  ko: "파이썬",     en: "Python",
