@@ -2,14 +2,12 @@
 # edge-lab : Google Fonts 로컬화 (셋업 시 1회, 인터넷 필요)
 # css2 스타일시트를 받아 모든 woff2 서브셋을 view_project/fonts/ 에 저장하고
 # url()을 로컬 경로(/fonts/...)로 재작성한 fonts.css 를 생성한다.
-# display=block: 글꼴이 이 PC(localhost)에서 바로 오므로, swap 처럼 대체 글꼴로 먼저 그렸다가
-# 글자를 전부 다시 그리지(화면이 한 번 깜빡임) 않고 글꼴이 온 뒤에 한 번만 그린다.
 import re
 import urllib.request
 from pathlib import Path
 
 CSS_URL = ("https://fonts.googleapis.com/css2"
-           "?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=block")
+           "?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap")
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/120.0 Safari/537.36")  # woff2 응답 유도
 OUT = Path("view_project/fonts")
