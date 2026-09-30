@@ -23,6 +23,9 @@ powershell -ExecutionPolicy Bypass -File setup_deploy.ps1
 ```
 한 줄로 venv 만들기 → 패키지 설치 → 모델 내려받기 → 글꼴 → 점검까지 끝난다.
 
+탐색기에서는 **`setup.bat` 을 더블클릭**하면 같은 일을 한다(`.ps1` 을 직접 더블클릭하면 메모장으로 열린다).
+이미 설치한 PC 에서 다시 돌려도 venv · 받은 모델은 그대로 두고 빠진 패키지(예: pyserial)만 채운다.
+
 저장소를 private 으로 돌리면 Read 권한 토큰이 필요하다 — `-Token hf_xxxx` 인자나
 `HF_TOKEN` 환경변수로 준다(스크립트에 토큰을 심지 않는다). 미리 `hf auth login` 을
 해 둔 기기라면 그대로 된다.
