@@ -198,6 +198,53 @@
     .mem i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #1f5f7a, #3d8fb0); border-radius: 4px; }
     .mem-t { font-size: 12px; color: var(--ink-2); margin-top: 5px; }
 
+    /* ── 움직임 — transform · opacity 만 쓴다(가볍고, 다시 그리기가 없어 깜빡이지 않는다).
+       늘 움직이는 것은 파이보 하나뿐이고, 나머지는 손을 댈 때만 움직인다(수업 방해 X).
+       윈도우의 "애니메이션 효과" 를 끈 PC 에서는 멈춘다 — 맨 아래 prefers-reduced-motion. ── */
+    /* 파이보 — 가볍게 숨 쉬듯 떠 있다가 가끔 몸을 흔든다. 누르면 폴짝 */
+    .d-pibo { cursor: pointer; transform-origin: 50% 90%; animation: pibo-idle 6s ease-in-out infinite; }
+    .d-pibo.hop { animation: pibo-hop .6s ease-out; }
+    @keyframes pibo-idle {
+      0%, 100% { transform: translateY(0) rotate(0); }
+      20% { transform: translateY(-4px) rotate(0); }
+      40% { transform: translateY(0) rotate(0); }
+      55% { transform: translateY(-2px) rotate(-5deg); }
+      62% { transform: translateY(-2px) rotate(4deg); }
+      69% { transform: translateY(-1px) rotate(-3deg); }
+      76% { transform: translateY(0) rotate(0); }
+    }
+    @keyframes pibo-hop {
+      0% { transform: translateY(0) scale(1); }
+      30% { transform: translateY(-16px) rotate(-6deg); }
+      55% { transform: translateY(0) scale(1.05, .95); }
+      75% { transform: translateY(-5px) rotate(3deg); }
+      100% { transform: translateY(0) scale(1); }
+    }
+    /* 앱 아이콘 — 올리면 살짝 떠오르고 그림이 까딱, 누르면 쏙 */
+    .d-ic .g { transition: transform .2s cubic-bezier(.3, 1.6, .5, 1); }
+    .d-ic:hover .g { transform: translateY(-4px); }
+    .d-ic:hover .g > svg { animation: ic-wiggle .5s ease-in-out; }
+    .d-ic:active .g { transform: translateY(-1px) scale(.92); transition-duration: .08s; }
+    @keyframes ic-wiggle {
+      25% { transform: rotate(-10deg); }
+      50% { transform: rotate(8deg); }
+      75% { transform: rotate(-4deg); }
+    }
+    /* 상단바 — 시작 단추의 파이보와 앱 그림 */
+    .os-start img { transition: transform .25s cubic-bezier(.3, 1.6, .5, 1); }
+    .os-start:hover img { transform: rotate(-12deg) scale(1.08); }
+    .os-app svg { transition: transform .18s ease-out; }
+    .os-app:hover svg { transform: translateY(-2px); }
+    .os-app:active svg { transform: scale(.88); }
+    /* 위젯 — 올리면 살짝 뜬다 */
+    .w { transition: transform .2s ease-out, box-shadow .2s ease-out; }
+    .w:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(44,74,124,.12); }
+    .w-row .i { transition: transform .18s cubic-bezier(.3, 1.6, .5, 1); }
+    .w-row:hover .i { transform: scale(1.12); }
+    /* 바탕화면으로 돌아올 때 · 창이 열릴 때 — 아래에서 살짝 떠오르며 */
+    #desk:not([hidden]) { animation: rise-in .22s ease-out; }
+    @keyframes rise-in { from { opacity: 0; transform: translateY(8px); } }
+
     /* ── 창 — 하나만 보이고, 뒤로 간 것도 살아 있다 ── */
     #wins { position: absolute; inset: 0; pointer-events: none; }
     .win { position: absolute; inset: 6px; border-radius: 10px; overflow: hidden; background: var(--paper);
@@ -205,7 +252,7 @@
            visibility: hidden; pointer-events: none; }
     /* display:none 이 아니라 visibility — 크기가 남아 있어야 블록 작업판처럼 제 크기를
        재는 것들이 돌아왔을 때 멀쩡하다 */
-    .win.on { visibility: visible; pointer-events: auto; }
+    .win.on { visibility: visible; pointer-events: auto; animation: rise-in .2s ease-out; }
     .win iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: var(--paper); }
 
     /* ── 알림 — 토스트(잠깐 뜨는 것)와 목록(상단바 종) ── */
@@ -217,6 +264,18 @@
     .toast { box-shadow: 0 14px 34px rgba(44,74,124,.24); pointer-events: auto; cursor: pointer;
              animation: toastIn .18s ease-out; }
     @keyframes toastIn { from { opacity: 0; transform: translateY(-6px); } }
+    /* 시작 메뉴 · 빠른 설정 · 알림 목록 — 열릴 때 위에서 톡 */
+    #osStartMenu:not([hidden]) { animation: panel-in .16s ease-out; transform-origin: 0 0; }
+    #osQuick:not([hidden]), #osNote:not([hidden]) { animation: panel-in .16s ease-out; transform-origin: 100% 0; }
+    @keyframes panel-in { from { opacity: 0; transform: translateY(-6px) scale(.98); } }
+    /* 움직임 줄이기(윈도우 설정 → 접근성 → 시각 효과 → 애니메이션 효과 끄기) — 위의 움직임을 모두 멈춘다.
+       켤 때의 검은 막(html::before)은 그대로 둔다 — 그것까지 끄면 검정 → 화면으로 튄다 */
+    @media (prefers-reduced-motion: reduce) {
+      .d-pibo, .d-pibo.hop, .d-ic:hover .g > svg, #desk:not([hidden]), .win.on, .toast,
+      #osStartMenu:not([hidden]), #osQuick:not([hidden]), #osNote:not([hidden]) { animation: none; }
+      .d-ic .g, .os-start img, .os-app svg, .w, .w-row .i { transition: none; }
+      .d-ic:hover .g, .os-start:hover img, .os-app:hover svg, .w:hover, .w-row:hover .i { transform: none; }
+    }
     @media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
     .toast .i, .note .i { grid-row: 1 / 4; width: 34px; height: 34px; border-radius: 11px; background: var(--cyan); color: #fff;
                           display: grid; place-items: center; }
@@ -295,7 +354,7 @@
       <div class="d-hero">
         <span class="t" id="dTime"></span>
         <span class="d"><span id="dDate"></span><b id="dHello"></b></span>
-        <img src="/assets/pibo-hello.png" alt="">
+        <img class="d-pibo" id="dPibo" src="/assets/pibo-hello.png" alt="">
       </div>
       <div class="d-icons" id="dIcons"></div>
       <div class="d-side">
@@ -911,6 +970,14 @@
           h.classList.add("el-shown");
           h.classList.remove("el-wait", "el-dark");       // 검은 막(키오스크로 켰을 때)도 같이 걷힌다
         });
+      })();
+
+      /* 파이보를 누르면 폴짝 — 누를 때마다 처음부터 */
+      (function () {
+        var pb = $("dPibo");
+        if (!pb) return;
+        pb.addEventListener("click", function () { pb.classList.remove("hop"); void pb.offsetWidth; pb.classList.add("hop"); });
+        pb.addEventListener("animationend", function (e) { if (e.animationName === "pibo-hop") pb.classList.remove("hop"); });
       })();
 
       /* /?open=/blocks 처럼 들어오면 그 앱을 바로 연다 */
