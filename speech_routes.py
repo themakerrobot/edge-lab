@@ -32,7 +32,9 @@ router = APIRouter()
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 STT_DIR = os.path.join(ROOT, "models", "stt")
-TTS_DIR = os.path.join(ROOT, "models", "tts")
+# 읽어 주기 모델 폴더. VAPI_TTS=tts-int8 처럼 주면 models/ 아래 다른 폴더를 쓴다(int8 양자화판 등).
+# 어느 쪽이 빠른지는 tools\tts_bench.py 로 그 PC 에서 잰다.
+TTS_DIR = os.path.join(ROOT, "models", os.environ.get("VAPI_TTS", "").strip() or "tts")
 TARGET_SR = 16000                       # Whisper 입력 샘플레이트
 
 _pipe = None
@@ -208,7 +210,10 @@ class _Supertonic:
 
     def __init__(self, root):
         import onnxruntime as ort
+        # onnx/ 아래에 두는 것이 원래 구성이다. 양자화판처럼 폴더 바로 아래에 .onnx 가 있어도 연다
         d = os.path.join(root, "onnx")
+        if not os.path.isfile(os.path.join(d, "vector_estimator.onnx")):
+            d = root
         opt = ort.SessionOptions()
         prov = ["CPUExecutionProvider"]
         load = lambda n: ort.InferenceSession(os.path.join(d, n), sess_options=opt,
@@ -217,9 +222,12 @@ class _Supertonic:
         self.enc = load("text_encoder.onnx")
         self.est = load("vector_estimator.onnx")
         self.voc = load("vocoder.onnx")
-        with open(os.path.join(d, "tts.json"), encoding="utf-8") as f:
+        # 설정 · 글자표는 양자화판에 없을 수 있다 — 없으면 원래 모델(models/tts/onnx) 것을 쓴다
+        cfg_of = lambda n: (os.path.join(d, n) if os.path.isfile(os.path.join(d, n))
+                            else os.path.join(os.path.dirname(root), "tts", "onnx", n))
+        with open(cfg_of("tts.json"), encoding="utf-8") as f:
             cfg = json.load(f)
-        with open(os.path.join(d, "unicode_indexer.json"), encoding="utf-8") as f:
+        with open(cfg_of("unicode_indexer.json"), encoding="utf-8") as f:
             self.indexer = json.load(f)
         self.sr = int(cfg["ae"]["sample_rate"])
         self.base_chunk = int(cfg["ae"]["base_chunk_size"])
@@ -227,6 +235,8 @@ class _Supertonic:
         self.ldim = int(cfg["ttl"]["latent_dim"])
         self.styles = {}
         self.style_dir = os.path.join(root, "voice_styles")
+        if not os.path.isdir(self.style_dir):               # 목소리 파일은 원래 모델 것을 같이 쓴다
+            self.style_dir = os.path.join(os.path.dirname(root), "tts", "voice_styles")
 
     # ---- 목소리 ----
     def style(self, name):
@@ -303,12 +313,13 @@ def _load_tts():
     with _tts_lock:
         if _tts is not None or _tts_err:
             return _tts
-        if not os.path.isdir(os.path.join(TTS_DIR, "onnx")):
-            _tts_err = "models/tts/onnx 폴더가 없어요. setup 으로 모델을 받아 주세요."
+        if not (os.path.isdir(os.path.join(TTS_DIR, "onnx"))
+                or os.path.isfile(os.path.join(TTS_DIR, "vector_estimator.onnx"))):
+            _tts_err = "%s 에 TTS 모델이 없어요. setup 으로 모델을 받아 주세요." % TTS_DIR
             return None
         try:
             _tts = _Supertonic(TTS_DIR)
-            print("[tts] supertonic loaded (CPU, %dHz)" % _tts.sr)
+            print("[tts] supertonic loaded (%s, CPU, %dHz)" % (os.path.basename(TTS_DIR), _tts.sr))
         except ImportError as ex:
             _tts_err = "onnxruntime 이 필요해요: %s" % ex
         except Exception as ex:
