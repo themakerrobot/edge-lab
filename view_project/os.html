@@ -567,7 +567,9 @@
         return fetch("/ready").then(function (r) { return r.json(); }).then(function (r) {
           if (r.ready && aiWasLoading) notify(null, T("aiReady"), [], true);   // 켜 둔 채 기다린 사람에게
           aiWasLoading = !r.ready && !r.error;
+          var wasReady = !!(aiState && aiState.ready);
           aiState = r; paintAi();
+          if (r.ready && !wasReady) loadDesk();     // 준비가 끝난 값(장치 배정)으로 이 컴퓨터 칸을 다시
           setTimeout(pollAi, r.ready || r.error ? 30000 : 1500);
         }).catch(function () { aiState = null; paintAi(); setTimeout(pollAi, 3000); });
       }
@@ -697,6 +699,22 @@
 
       /* ─────────────── 바탕화면 ─────────────── */
       var who = "", models = null, sys = null;
+      /* 지난번에 받은 이름 · 내가 가르친 AI · 이 컴퓨터를 기억해 두고 첫 화면을 그것으로 바로 그린다.
+         켤 때는 모델을 올리느라 서버가 바빠 대답이 늦다 — 기다렸다 채우면 보인 뒤에 칸이 바뀌어 깜빡였다.
+         서버 값은 온 뒤에 달라졌을 때만 다시 그린다. */
+      var DESK_KEY = "el-desk-cache", desk = {};
+      try { desk = JSON.parse(localStorage.getItem(DESK_KEY) || "{}") || {}; } catch (e) { desk = {}; }
+      if (typeof desk.who === "string") who = desk.who;
+      if (desk.models) models = desk.models;
+      if (desk.sys) sys = desk.sys;
+      /* 달라졌으면 기억하고 true */
+      function remember(k, v) {
+        var a = JSON.stringify(v);
+        if (JSON.stringify(desk[k]) === a) return false;
+        desk[k] = v;
+        try { localStorage.setItem(DESK_KEY, JSON.stringify(desk)); } catch (e) {}
+        return true;
+      }
 
       function paintDesk() {
         $("dHello").textContent = who ? fill(T("helloName"), { n: who }) : T("hello");
@@ -807,17 +825,19 @@
       function loadDesk() {
         return Promise.all([
           fetch("/custom/models").then(function (r) { return r.json(); }).then(function (j) {
-            if (j && j.result === "ok") { models = j.data || []; paintDesk(); }
+            if (j && j.result === "ok") { models = j.data || []; if (remember("models", models)) paintDesk(); }
           }).catch(function () {}),
           fetch("/system").then(function (r) { return r.json(); }).then(function (j) {
-            sys = j; paintDesk();
+            /* 모델을 올리는 동안의 장치 배정은 반쯤 찬 값이다 — 기억한 값을 두고, 준비가 끝나면(pollAi) 다시 받는다 */
+            if (desk.sys && !(aiState && aiState.ready)) return;
+            sys = j; if (remember("sys", j)) paintDesk();
           }).catch(function () {})
         ]);
       }
       var whoLoaded = fetch("/system/workdir").then(function (r) { return r.json(); }).then(function (j) {
         var d = j && j.data;
         who = d && !d.name_is_default ? String(d.name || "").trim() : "";   // 윈도우 로그인 이름은 인사에 쓰지 않는다
-        paintDesk();
+        if (remember("who", who)) paintDesk();
       }).catch(function () {});
 
       paintBar(); paintUse(); paintAi(); paintClock(); paintDesk(); paintBell();
@@ -837,20 +857,20 @@
         resume: function () { if (active && wins[active]) post(wins[active], "show"); },
         repaint: function () { paintBar(); paintDesk(); },
         who: function () { return who; },
-        setWho: function (n) { who = n; paintDesk(); },
+        setWho: function (n) { who = n; remember("who", n); paintDesk(); },
         appName: appName, icon: icon, esc: esc, fill: fill
       };
 
-      /* 첫 화면 — 한 번에 보인다.
-         전에는 바로 그렸더니 (1) 대체 글꼴로 그렸다가 Gowun 글꼴이 오면 글자가 전부 다시 그려지고
-         (2) 이름·내가 가르친 AI·이 컴퓨터·AI 준비 칸이 대답이 올 때마다 따로 채워져 켤 때 깜빡였다.
-         이제 스크립트가 다 돌고(DOMContentLoaded) · 첫 자료가 오고 · 쓰인 글꼴을 다 받은 뒤에 보인다.
-         서버가 느리면 1.5초에서 그냥 보인다(그 뒤에 오는 자료는 제자리에 채워진다). */
+      /* 첫 화면 — 한 번에 보인다. 배경(html)은 바로 그리고, 내용(body)은 스크립트가 다 돌고(DOMContentLoaded)
+         화면에 쓰인 글꼴을 받은 뒤에 보인다 — 대체 글꼴로 그렸다가 Gowun 으로 다시 그려지는 것을 보이지 않게.
+         칸의 내용은 기억해 둔 값(DESK_KEY)으로 이미 그려져 있어 서버를 기다리지 않는다.
+         기억한 값이 없는 첫 실행만 첫 자료를 기다린다. 어느 쪽이든 1.5초를 넘기지 않는다. */
       (function () {
+        var first = !desk.models && !desk.sys;
         var parsed = new Promise(function (ok) {
           if (document.readyState !== "loading") ok(); else document.addEventListener("DOMContentLoaded", ok);
         });
-        var ready = parsed.then(function () { return Promise.all(firstData); }).then(function () {
+        var ready = parsed.then(function () { return first ? Promise.all(firstData) : null; }).then(function () {
           void document.body.offsetWidth;         // 배치를 한 번 해야 이 화면에 쓰인 글꼴을 받기 시작한다
           return document.fonts ? document.fonts.ready : null;
         });
