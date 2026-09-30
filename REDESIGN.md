@@ -736,6 +736,19 @@ AI 작업 관리자에 **넣지 않은 것**: NPU·GPU 사용률(드라이버마
 물어 서버가 대답하면 `http://localhost:포트/` 로 넘어가 부팅(모델 올리기) 화면이 이어진다. 켜는 처음부터 키오스크다.
 90초가 지나도 대답이 없으면 Alt+F4 로 닫고 까만 창을 보라고 안내한다. 창 옵션은 `appwin.py` 한 곳에.
 
+### 10.14c 블록 편집기 모양
+
+openpibo IDE 의 결로 다시 칠했다(코드는 옮기지 않고 값만 참고). Blockly 13 이라 클래스 이름이 10 과 다르다
+(`blocklyTreeRow` → `blocklyToolboxCategory`, `blocklyTreeLabel` → `blocklyToolboxCategoryLabel`, `blocklyTreeSelected` → `blocklyToolboxSelected`).
+
+- 테마 `edgelab`: 기본 블록 색을 한 벌의 hex 로(논리 #5566D9 · 반복 #2E9E6B · 수학 #7A56C9 · 텍스트 #C2477B ·
+  목록 #D15A3A · 변수 #D9772B · 함수 #6C7A8C), 이 프로그램 블록도 hex 로(이미지 #1B8FB5 · 좌표 #3C7DD9 · AI 인식 #1E9C75 ·
+  소리 #8C5BD6 · AI 언어 #7B61D1 · 이벤트 #E8A30C · 판단 #D14A63 · 보드 #2F7FD1). 판 #fdfdfe, 도구상자·펼침 #f7f8fa.
+- 분류 줄: 왼쪽 색 막대·"고르면 줄 전체를 분류 색으로" 를 없애고, 색은 24px 아이콘 타일에만(`ElCategory`, `--cat`).
+  아이콘은 선으로 그린 SVG(toolbox 정의의 `ic`).
+- 글꼴: Pretendard(굵게, SIL OFL 1.1 — `fonts/pretendard/LICENSE.txt`). 늦게 오면 `setTheme` 으로 한 번 다시 잰다.
+- 격자는 거의 안 보이는 점, 블록 테두리 1px, 휴지통·확대 단추는 흐리게.
+
 ### 10.15 확인 (Chromium, 시험 서버)
 
 셸 24 · 카메라 12 · 블록 초안 12 · 내 작품·알림 18 · 빠른 설정·잠금·끄기 12 · 시작 메뉴 9 ·
