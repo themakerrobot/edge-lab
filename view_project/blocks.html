@@ -57,6 +57,35 @@
     
     #blocklyDiv { flex: 1 1 auto; min-height: 0; }
 
+    /* ── 블록 편집기 — 밝고 조용한 판, 분류는 색 타일 + 아이콘 (openpibo IDE 와 같은 결) ──
+       Blockly 13 의 클래스 이름이다(10 의 blocklyTreeRow → blocklyToolboxCategory 등).
+       분류 색은 줄 왼쪽 막대 대신 아이콘 타일에만 쓴다 — ElCategory 가 --cat 으로 넘긴다. */
+    @font-face { font-family: "Pretendard"; font-weight: 100 549; font-display: swap;
+                 src: local("Pretendard Regular"), url("/fonts/pretendard/Pretendard-Regular.subset.woff2") format("woff2"); }
+    @font-face { font-family: "Pretendard"; font-weight: 550 900; font-display: swap;
+                 src: local("Pretendard Bold"), url("/fonts/pretendard/Pretendard-Bold.subset.woff2") format("woff2"); }
+    #blocklyDiv { --bk-bg: #f7f8fa; --bk-work: #fdfdfe; --bk-line: #e4e7ec; --bk-line2: #c7cdd6; --bk-hover: #eceff3;
+                  --bk-ink: #1f2430; --bk-font: "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif; }
+    #blocklyDiv .blocklyToolbox { background: var(--bk-bg) !important; border-right: 1px solid var(--bk-line); padding: 8px 0; width: 184px; }
+    #blocklyDiv .blocklyToolboxCategory { display: flex; align-items: center; height: 34px !important; margin: 1px 8px !important; padding: 0 8px !important;
+                  border: 0 !important; border-radius: 8px; background: transparent; cursor: pointer; }
+    #blocklyDiv .blocklyToolboxCategory:not(.blocklyToolboxSelected):hover { background: var(--bk-hover) !important; }
+    #blocklyDiv .blocklyToolboxSelected { background: #fff !important; box-shadow: 0 1px 3px rgba(20,24,40,.12); }
+    #blocklyDiv .blocklyTreeRowContentContainer { display: flex; align-items: center; gap: 10px; }
+    #blocklyDiv .blocklyToolboxCategoryLabel { color: var(--bk-ink) !important; font: 500 14px var(--bk-font) !important; }
+    #blocklyDiv .blocklyToolboxSelected .blocklyToolboxCategoryLabel { font-weight: 700 !important; }
+    #blocklyDiv .elCatIcon { flex: none; width: 24px; height: 24px; border-radius: 7px; display: grid; place-items: center;
+                  background: var(--cat, #8a93a2); color: #fff; }
+    #blocklyDiv .elCatIcon svg { width: 15px; height: 15px; }
+    #blocklyDiv .blocklyTreeSeparator { border-bottom: 1px solid var(--bk-line) !important; margin: 6px 14px !important; height: 0 !important; }
+    #blocklyDiv .blocklyText { font-family: var(--bk-font) !important; font-weight: 700 !important; }
+    #blocklyDiv .blocklyPath { stroke-width: 1px; }
+    #blocklyDiv .blocklyFlyoutLabelText { fill: #4b5363 !important; font: 600 13px var(--bk-font) !important; }
+    #blocklyDiv .blocklyZoom > image, #blocklyDiv .blocklyTrash > image { opacity: .45; }
+    #blocklyDiv .blocklyZoom > image:hover, #blocklyDiv .blocklyTrash > image:hover { opacity: .75; }
+    #blocklyDiv .blocklyScrollbarHandle { fill: var(--bk-line2) !important; }
+    @media (max-width: 1100px) { #blocklyDiv .blocklyToolbox { width: 156px; } }
+
     .stage-panel {
       flex: 1 1 0; min-width: 380px; display: flex; flex-direction: column;
       background: var(--box); border: 1.5px solid var(--line); border-radius: var(--r); overflow: hidden;
@@ -1163,8 +1192,11 @@ def texts_of(result):
   }
 
   /* ---------------- 커스텀 블록 정의 ---------------- */
-  const C_AI = 220, C_VLM = 260, C_JUDGE = 40, C_SOUND = 20, C_EVENT = 45, C_BOARD = 95,
-        C_EDIT = 175, C_EDITX = 190;
+  /* 색 — 휴(hue) 숫자 대신 한 벌의 또렷한 색. 기본 블록 색은 아래 THEME 이 같은 값을 갖는다 */
+  const C_AI = "#1E9C75", C_VLM = "#7B61D1", C_JUDGE = "#D14A63", C_SOUND = "#8C5BD6", C_EVENT = "#E8A30C",
+        C_BOARD = "#2F7FD1", C_EDIT = "#1B8FB5", C_EDITX = "#3C7DD9";
+  const C_CORE = { logic: "#5566D9", loop: "#2E9E6B", math: "#7A56C9", text: "#C2477B", list: "#D15A3A",
+                   var: "#D9772B", func: "#6C7A8C" };
   const IMG = { type: "input_value", name: "IMG", check: "String" };
   const opt = keys => keys.map(k => [t("o_" + k), k]);
   const POS9 = () => opt(["tl", "tc", "tr", "ml", "mc", "mr", "bl", "bc", "br"]);
@@ -1537,7 +1569,7 @@ def texts_of(result):
   function buildToolbox() {
     return { kind: "categoryToolbox", contents: [
       /* ---------- 기본 블록 (Blockly 표준 — 이름·순서 그대로) ---------- */
-      { kind: "category", name: t("cat_logic"), colour: 210, contents: [
+      { kind: "category", name: t("cat_logic"), ic: "logic", colour: C_CORE.logic, contents: [
         { kind: "block", type: "controls_if" },
         { kind: "block", type: "logic_compare" },
         { kind: "block", type: "logic_operation" },
@@ -1545,14 +1577,14 @@ def texts_of(result):
         { kind: "block", type: "logic_boolean" },
         { kind: "block", type: "logic_null" },
         { kind: "block", type: "logic_ternary" } ] },
-      { kind: "category", name: t("cat_loop"), colour: 120, contents: [
+      { kind: "category", name: t("cat_loop"), ic: "loop", colour: C_CORE.loop, contents: [
         { kind: "block", type: "controls_repeat_ext", inputs: { TIMES: num(10) } },
         { kind: "block", type: "controls_whileUntil" },
         { kind: "block", type: "controls_for",
           inputs: { FROM: num(1), TO: num(10), BY: num(1) } },
         { kind: "block", type: "controls_forEach" },
         { kind: "block", type: "controls_flow_statements" } ] },
-      { kind: "category", name: t("cat_math"), colour: 230, contents: [
+      { kind: "category", name: t("cat_math"), ic: "math", colour: C_CORE.math, contents: [
         { kind: "block", type: "math_number" },
         { kind: "block", type: "math_arithmetic" },
         { kind: "block", type: "math_single" },
@@ -1566,7 +1598,7 @@ def texts_of(result):
           inputs: { LOW: num(1), HIGH: num(100) } },
         { kind: "block", type: "math_random_int", inputs: { FROM: num(1), TO: num(100) } },
         { kind: "block", type: "math_random_float" } ] },
-      { kind: "category", name: t("cat_text"), colour: 160, contents: [
+      { kind: "category", name: t("cat_text"), ic: "text", colour: C_CORE.text, contents: [
         { kind: "block", type: "text" },
         { kind: "block", type: "text_join" },
         { kind: "block", type: "text_append" },
@@ -1578,7 +1610,7 @@ def texts_of(result):
         { kind: "block", type: "text_changeCase" },
         { kind: "block", type: "text_trim" },
         { kind: "block", type: "text_print" } ] },
-      { kind: "category", name: t("cat_list"), colour: 260, contents: [
+      { kind: "category", name: t("cat_list"), ic: "list", colour: C_CORE.list, contents: [
         { kind: "block", type: "lists_create_with" },
         { kind: "block", type: "lists_repeat", inputs: { NUM: num(5) } },
         { kind: "block", type: "lists_length" },
@@ -1589,16 +1621,16 @@ def texts_of(result):
         { kind: "block", type: "lists_getSublist" },
         { kind: "block", type: "lists_split" },
         { kind: "block", type: "lists_sort" } ] },
-      { kind: "category", name: t("cat_var"), custom: "VARIABLE", colour: 330 },
-      { kind: "category", name: t("cat_func"), custom: "PROCEDURE", colour: 290 },
+      { kind: "category", name: t("cat_var"), ic: "var", custom: "VARIABLE", colour: C_CORE.var },
+      { kind: "category", name: t("cat_func"), ic: "func", custom: "PROCEDURE", colour: C_CORE.func },
       { kind: "sep" },
       /* ---------- 커스텀 (이 프로그램만의 블록) ---------- */
-      { kind: "category", name: t("cat_image"), colour: C_EDIT, contents: [
+      { kind: "category", name: t("cat_image"), ic: "image", colour: C_EDIT, contents: [
         { kind: "block", type: "ai_capture" }, { kind: "block", type: "ai_upload" },
         { kind: "block", type: "st_show_image" },
         { kind: "block", type: "st_save_stage" },
         { kind: "block", type: "st_clear" } ] },
-      { kind: "category", name: t("cat_img_edit"), colour: C_EDIT, contents: [
+      { kind: "category", name: t("cat_img_edit"), ic: "wand", colour: C_EDIT, contents: [
         { kind: "block", type: "ed_resize", inputs: { F: num(2) } },
         { kind: "block", type: "ed_rotate", inputs: { DEG: num(90) } },
         { kind: "block", type: "ed_flip" },
@@ -1608,7 +1640,7 @@ def texts_of(result):
         { kind: "block", type: "ed_overlay" },
         { kind: "block", type: "ed_tone", inputs: { V: num(30) } },
         { kind: "block", type: "ed_filter" } ] },
-      { kind: "category", name: t("cat_img_draw"), colour: C_EDIT, contents: [
+      { kind: "category", name: t("cat_img_draw"), ic: "pen", colour: C_EDIT, contents: [
         { kind: "block", type: "ed_text", inputs: { TXT: txt(t("sh_hello")), SIZE: num(48) } },
         { kind: "block", type: "ed_text_rot", inputs: { TXT: txt(t("sh_hello")), DEG: num(-15) } },
         { kind: "block", type: "ed_rect" },
@@ -1619,7 +1651,7 @@ def texts_of(result):
         { kind: "block", type: "ed_size_of" },
         { kind: "block", type: "ed_color_at" },
         { kind: "block", type: "ed_main_color" } ] },
-      { kind: "category", name: t("cat_edit_xy"), colour: C_EDITX, contents: [
+      { kind: "category", name: t("cat_edit_xy"), ic: "xy", colour: C_EDITX, contents: [
         { kind: "label", text: t("lbl_xy_note") },
         { kind: "block", type: "edx_crop",
           inputs: { X: num(160), Y: num(120), W: num(320), H: num(240) } },
@@ -1634,7 +1666,7 @@ def texts_of(result):
         { kind: "block", type: "edx_overlay",
           inputs: { X: num(20), Y: num(20), W: num(160) } },
         { kind: "block", type: "edx_color", inputs: { X: num(320), Y: num(240) } } ] },
-      { kind: "category", name: t("cat_vision"), colour: C_AI, contents: [
+      { kind: "category", name: t("cat_vision"), ic: "eye", colour: C_AI, contents: [
         { kind: "label", text: t("lbl_basic") },
         { kind: "block", type: "ai_face" }, { kind: "block", type: "ai_face_count" },
         { kind: "block", type: "ai_face_dist" }, { kind: "block", type: "ai_hand" },
@@ -1646,23 +1678,23 @@ def texts_of(result):
         { kind: "label", text: t("lbl_draw_box") },
         { kind: "block", type: "ai_detect_draw" },
         { kind: "block", type: "st_boxes" } ] },
-      { kind: "category", name: t("cat_sound"), colour: C_SOUND, contents: [
+      { kind: "category", name: t("cat_sound"), ic: "sound", colour: C_SOUND, contents: [
         { kind: "block", type: "st_say", inputs: { TEXT: txt(t("sh_hello")) } },
         { kind: "block", type: "ai_listen" },
         { kind: "block", type: "st_note", inputs: { B: num(1) } },
         { kind: "block", type: "st_melody", inputs: { M: txt(t("sh_melody")) } },
         { kind: "block", type: "st_beep" },
         { kind: "block", type: "st_freq", inputs: { F: num(440), S: num(1) } } ] },
-      { kind: "category", name: t("cat_lang"), colour: C_VLM, contents: [
+      { kind: "category", name: t("cat_lang"), ic: "talk", colour: C_VLM, contents: [
         { kind: "block", type: "ai_ask", inputs: { Q: txt(t("sh_question")) } },
         { kind: "block", type: "ai_chat", inputs: { Q: txt(t("sh_chatQ")) } },
         { kind: "block", type: "ai_transform" } ] },
-      { kind: "category", name: t("cat_event"), colour: C_EVENT, contents: [
+      { kind: "category", name: t("cat_event"), ic: "bolt", colour: C_EVENT, contents: [
         { kind: "block", type: "st_wait", inputs: { SEC: num(1) } },
         { kind: "block", type: "ev_wait_face" },
         { kind: "block", type: "ev_wait_hand" },
         { kind: "block", type: "ev_wait_custom", inputs: { LABEL: txt("") } } ] },
-      { kind: "category", name: t("cat_board"), colour: C_BOARD, contents: [
+      { kind: "category", name: t("cat_board"), ic: "chip", colour: C_BOARD, contents: [
         { kind: "block", type: "bd_ok" },
         { kind: "block", type: "bd_send", inputs: { TEXT: txt("") } },
         { kind: "block", type: "bd_ask", inputs: { TEXT: txt("") } },
@@ -1670,12 +1702,74 @@ def texts_of(result):
     ] };
   }
 
+  /* 분류 줄 — 왼쪽 색 막대와 "고르면 줄 전체를 분류 색으로 칠하기" 대신, 아이콘 타일에만 분류 색(--cat).
+     아이콘은 toolbox 정의의 ic 로 고른다 (선만으로 그린 24×24, 흰색) */
+  const CAT_IC = {
+    logic: '<path d="M12 3 21 12l-9 9-9-9Z"/>',
+    loop:  '<path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/>',
+    math:  '<path d="M5 7h6M8 4v6M14 7h5M5 17h6M14.5 14.5l4 4M18.5 14.5l-4 4"/>',
+    text:  '<path d="M5 7V4.5h14V7M12 4.5v15M9 19.5h6"/>',
+    list:  '<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>',
+    var:   '<path d="M5 8l6 8M11 8l-6 8"/><path d="M14 12h6"/>',
+    func:  '<path d="M9 4C7 4 7 6 7 8s-2 4-2 4 2 2 2 4 0 4 2 4M15 4c2 0 2 2 2 4s2 4 2 4-2 2-2 4 0 4-2 4"/>',
+    image: '<rect x="3" y="5" width="18" height="15" rx="3"/><circle cx="9" cy="10.5" r="2"/><path d="m21 16-5-5-8 9"/>',
+    wand:  '<path d="M4 20 14 10"/><path d="M15 3v3M18.5 4.5l-2 2M21 9h-3M18.5 13.5l-2-2"/>',
+    pen:   '<path d="M4 20l1-4L16 5l3 3L8 19l-4 1Z"/>',
+    xy:    '<path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="4"/>',
+    eye:   '<path d="M2 12c3.2-4.6 6.6-6.9 10-6.9S18.8 7.4 22 12c-3.2 4.6-6.6 6.9-10 6.9S5.2 16.6 2 12Z"/><circle cx="12" cy="12" r="3.1"/>',
+    sound: '<path d="M4 9h4l5-4v14l-5-4H4Z"/><path d="M16.5 9a4 4 0 0 1 0 6M19 6.5a7.5 7.5 0 0 1 0 11"/>',
+    talk:  '<path d="M3.5 5.5h17v11h-9l-5 4v-4h-3v-11Z"/>',
+    bolt:  '<path d="M13 2 4 14h7l-1 8 9-12h-7Z"/>',
+    chip:  '<rect x="6.5" y="6.5" width="11" height="11" rx="1.5"/><path d="M9 3v3.5M15 3v3.5M9 17.5V21M15 17.5V21M3 9h3.5M3 15h3.5M17.5 9H21M17.5 15H21"/>'
+  };
+  (function registerCategory() {
+    class ElCategory extends Blockly.ToolboxCategory {
+      createIconDom_() {
+        const s = document.createElement("span");
+        s.className = "elCatIcon";
+        const k = this.toolboxItemDef_ && this.toolboxItemDef_.ic;
+        if (CAT_IC[k]) s.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' + CAT_IC[k] + "</svg>";
+        return s;
+      }
+      addColourBorder_(colour) { if (this.rowDiv_ && colour) this.rowDiv_.style.setProperty("--cat", colour); }
+      setSelected(on) { super.setSelected(on); if (this.rowDiv_) this.rowDiv_.style.backgroundColor = ""; }
+    }
+    Blockly.registry.register(Blockly.registry.Type.TOOLBOX_ITEM, Blockly.ToolboxCategory.registrationName, ElCategory, true);
+  })();
+
+  const shade = (hex, k) => {                  // 기본 블록의 밝은/어두운 짝 (그림자 블록·테두리)
+    const n = parseInt(hex.slice(1), 16), f = c => Math.round(k > 0 ? c + (255 - c) * k : c * (1 + k));
+    return "#" + [n >> 16, n >> 8 & 255, n & 255].map(c => f(c).toString(16).padStart(2, "0")).join("");
+  };
+  const style = hex => ({ colourPrimary: hex, colourSecondary: shade(hex, 0.35), colourTertiary: shade(hex, -0.2) });
+  const THEME = Blockly.Theme.defineTheme("edgelab", {
+    base: Blockly.Themes.Classic,
+    fontStyle: { family: '"Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif', weight: "bold", size: 13 },
+    blockStyles: {
+      logic_blocks: style(C_CORE.logic), loop_blocks: style(C_CORE.loop), math_blocks: style(C_CORE.math),
+      text_blocks: style(C_CORE.text), list_blocks: style(C_CORE.list), colour_blocks: style("#B34FB8"),
+      variable_blocks: style(C_CORE.var), variable_dynamic_blocks: style(C_CORE.var), procedure_blocks: style(C_CORE.func),
+    },
+    componentStyles: {
+      workspaceBackgroundColour: "#fdfdfe", toolboxBackgroundColour: "#f7f8fa", toolboxForegroundColour: "#1f2430",
+      flyoutBackgroundColour: "#f3f5f8", flyoutForegroundColour: "#4b5363", flyoutOpacity: 0.97,
+      scrollbarColour: "#c7cdd6", scrollbarOpacity: 0.6, insertionMarkerOpacity: 0.5,
+    },
+  });
+
   const WS_OPTS = {
     media: "/blockly/media/",              // 오프라인용 (휴지통·확대축소 아이콘, 효과음)
-    trashcan: true, renderer: "zelos",
-    zoom: { controls: true, wheel: true, startScale: 0.9 },
-    grid: { spacing: 24, length: 2, colour: "#e6e3d8", snap: true },
+    trashcan: true, renderer: "zelos", theme: THEME,
+    zoom: { controls: true, wheel: true, startScale: 0.85 },
+    grid: { spacing: 24, length: 2, colour: "#e9ecf1", snap: true },   // 거의 안 보이는 점 — 판이 조용해야 블록이 보인다
   };
+  /* Blockly 는 글자 폭을 재서 블록 크기를 정한다 — Pretendard 가 늦게 오면 한 번 다시 재게 한다 */
+  if (document.fonts && document.fonts.load) {
+    document.fonts.load('700 13px "Pretendard"', "가A").then(faces => {
+      if (!faces.length || typeof ws === "undefined" || !ws) return;
+      ws.setTheme(THEME);
+    }).catch(() => {});
+  }
 
   let ws = Blockly.inject("blocklyDiv", Object.assign({ toolbox: buildToolbox() }, WS_OPTS));
   /* 내가 만든 AI 목록 (드롭다운은 열 때마다 최신 목록을 읽음) · 가져다 둔 모델 파일 목록.
