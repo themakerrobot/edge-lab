@@ -165,13 +165,18 @@ BLOCKS_DIR = os.path.join(WORK_ROOT, "blocks")
 # 사람이 넣고 빼는 자리라 작업폴더에 둔다 — USB 로 옮기면 모델도 따라간다.
 YOLO_DIR = os.path.join(WORK_ROOT, "models")
 
+# 코딩 실습 노트북(lab.bat → JupyterLab). 프로그램 폴더의 notebooks\ 는 원본(교재)이고,
+# 처음 켤 때 여기로 복사해 쓴다 — 새 버전을 덮어 깔아도 고친 노트북이 지워지지 않는다.
+NOTEBOOK_DIR = os.path.join(WORK_ROOT, "notebooks")
+
 # 작업폴더에 딸린 칸 이름 — 옮길 때·비었는지 볼 때 모두 이 목록을 쓴다.
 # 예전에는 같은 목록이 두 군데 적혀 있어서, 칸을 하나 늘리면 한쪽만 고쳐질 수 있었다.
-WORK_PARTS = ("user", "project", "pycode", "blocks", "db", "stats", "models")
+WORK_PARTS = ("user", "project", "pycode", "blocks", "db", "stats", "models", "notebooks")
 
 # 임시 사진과 앱 창 프로필은 그 PC 의 것 — 옮겨 봐야 쓸모없으므로 앱데이터에 둔다.
 TMP_DIR = os.path.join(APPDATA_DIR, "tmp")
 APPWIN_DIR = os.path.join(APPDATA_DIR, ".appwin")
+LABWIN_DIR = os.path.join(APPDATA_DIR, ".labwin")      # 코딩 실습 창(JupyterLab) 프로필
 
 
 REPORTS_PATH = os.path.join(STATS_DIR, "reports.json")

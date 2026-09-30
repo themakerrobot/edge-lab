@@ -35,3 +35,6 @@ sounddevice
 
 # --- 보드(MCU) 시리얼 ---
 pyserial
+
+# --- 코딩 실습 (lab.bat → JupyterLab, notebooks\) ---
+jupyterlab

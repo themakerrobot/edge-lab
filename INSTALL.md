@@ -33,6 +33,16 @@ powershell -ExecutionPolicy Bypass -File setup_deploy.ps1
 끝나면 `.\run.bat` 으로 실행한다 (PowerShell 은 `.\` 이 필요하다. cmd 나 더블클릭은 그냥 된다).
 이후 사용법은 README.
 
+### 코딩 실습 (JupyterLab)
+`setup` 이 JupyterLab 까지 설치한다(`requirements.lock.txt`). 배포 번들(`tools\make_bundle.bat`)에도 들어간다.
+- 실행: `lab.bat` 더블클릭 (우분투: `./lab.sh`). 전용 창이 열리고, 창을 닫으면 JupyterLab 도 꺼진다.
+- 바탕화면 바로가기: `lab.bat /shortcut` → "AI 코딩 실습"
+- 노트북 원본은 `notebooks\`, 학습자가 쓰는 곳은 `문서\Edge Lab\notebooks` (처음 켤 때 없는 것만 복사 — 고친 것은 덮어쓰지 않는다).
+  원본으로 되돌리려면 그 노트북을 지우고 다시 켠다.
+- 큰 모델 노트북(08 · 09 · 10)은 edge-lab(`run.bat`)을 끄고 한다 — 모델이 두 벌 올라간다.
+- 이미 설치한 PC 는 `setup.bat` 을 한 번 더 돌리면 JupyterLab 만 더 깔린다.
+- 우분투: 소리는 `sudo apt install libportaudio2`, NPU 는 Intel `linux-npu-driver`, 내장 GPU 는 Intel compute-runtime 이 따로 필요하다.
+
 ## 패키지 버전
 | 파일 | 내용 |
 |---|---|

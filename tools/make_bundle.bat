@@ -90,7 +90,7 @@ if exist "%TOOLS%launcher.py" if exist edge-lab.ico (
 
 echo.
 echo === [6/8] copy sources and models ===
-for %%F in (main.py engines.py prompts.py paths.py hub.py mp_routes.py train_routes.py stats_routes.py code_routes.py speech_routes.py db_routes.py folderpick.py sysinfo.py themaker.py trash.py works_routes.py board.py board_routes.py appwin.py README.md) do (
+for %%F in (main.py engines.py prompts.py paths.py hub.py mp_routes.py train_routes.py stats_routes.py code_routes.py speech_routes.py db_routes.py folderpick.py sysinfo.py themaker.py trash.py works_routes.py board.py board_routes.py appwin.py lab.py README.md) do (
   copy /y %%F %BUILD%\ >nul
   if errorlevel 1 (echo [ERROR] copy failed: %%F & exit /b 1)
 )
@@ -101,6 +101,12 @@ for %%F in (check.py smoke_test.py bundle_check.bat) do (
 if exist edge-lab.exe copy /y edge-lab.exe %BUILD%\ >nul
 REM edge-lab.ico 는 빌드 때 exe 에 심는 용도라 배포본에는 넣지 않는다 -
 REM 확장자 숨김 상태에서 themaker(ico)와 themaker(exe)가 똑같이 보여 헷갈린다
+REM 코딩 실습 - lab.bat 은 python\ + pylib\ 를 스스로 찾는다 (lab.py 가 pylib\share\jupyter 도 알려 준다)
+copy /y lab.bat %BUILD%\ >nul
+if errorlevel 1 (echo [ERROR] copy failed: lab.bat & exit /b 1)
+xcopy /e /i /q /y notebooks %BUILD%\notebooks >nul
+if errorlevel 1 (echo [ERROR] notebooks copy failed & exit /b 1)
+if exist %BUILD%\notebooks\.ipynb_checkpoints rmdir /s /q %BUILD%\notebooks\.ipynb_checkpoints
 xcopy /e /i /q /y view_project %BUILD%\view_project >nul
 echo   copying models\ (several GB, takes a few minutes) ...
 xcopy /e /i /q /y models %BUILD%\models >nul
@@ -143,7 +149,7 @@ REM bundle launcher (ASCII only, CRLF via echo)
 
 echo.
 echo === [7/8] verify bundled python ===
-for %%F in (main.py engines.py prompts.py paths.py hub.py mp_routes.py train_routes.py stats_routes.py code_routes.py speech_routes.py db_routes.py folderpick.py sysinfo.py themaker.py trash.py works_routes.py board.py board_routes.py appwin.py check.py smoke_test.py run.bat bundle_check.bat) do (
+for %%F in (main.py engines.py prompts.py paths.py hub.py mp_routes.py train_routes.py stats_routes.py code_routes.py speech_routes.py db_routes.py folderpick.py sysinfo.py themaker.py trash.py works_routes.py board.py board_routes.py appwin.py lab.py lab.bat check.py smoke_test.py run.bat bundle_check.bat notebooks\00_start.ipynb notebooks\02_yolo_raw.ipynb) do (
   if not exist %BUILD%\%%F (echo [ERROR] missing in bundle: %%F & exit /b 1)
 )
 REM 화면 열셋 — os.html 이 셸(/)이다. 빠지면 첫 화면부터 안 뜬다. home.html 은 창 없이 쓰는 옛 런처(/home).
@@ -174,6 +180,10 @@ for %%F in (mobilenetv2_feat.xml mobilenetv2_feat.bin mobilenetv2_feat.json) do 
 )
 %BUILD%\python\python.exe -c "import openvino,cv2,numpy;print('  import OK  openvino',openvino.__version__.split('-')[0])"
 if errorlevel 1 (echo [ERROR] import failed inside bundle & exit /b 1)
+%BUILD%\python\python.exe -c "import jupyterlab,ipykernel;print('  import OK  jupyterlab',jupyterlab.__version__)"
+if errorlevel 1 (echo [ERROR] jupyterlab import failed inside bundle - lab.bat will not start & exit /b 1)
+REM pip --target 는 JupyterLab 화면 파일을 pylib\share\jupyter\lab 에 깐다 - 없으면 lab.bat 이 빈 화면이 된다
+if not exist %BUILD%\pylib\share\jupyter\lab\static (echo [ERROR] missing in bundle: pylib\share\jupyter\lab\static & exit /b 1)
 
 echo.
 echo === [8/8] compress ===
@@ -186,5 +196,5 @@ REM cmd set /a is 32-bit; use PowerShell for multi-GB sizes
 for /f %%S in ('powershell -NoProfile -Command "[math]::Round((Get-Item ''%ZIP%'').Length/1MB)"') do set SIZEMB=%%S
 echo.
 echo DONE: %ZIP%  (%SIZEMB% MB)
-echo   target PC: extract -^> run.bat (double-click)   check: bundle_check.bat
+echo   target PC: extract -^> run.bat (double-click)   check: bundle_check.bat   coding lab: lab.bat
 endlocal
