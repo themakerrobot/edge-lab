@@ -76,11 +76,13 @@
     ".sm-find kbd{font-family:inherit;font-size:11.5px;color:var(--ink-2);border:1px solid rgba(74,63,46,.25);border-radius:6px;padding:1px 6px}",
     ".sm-body{overflow-y:auto;margin-top:6px;padding-right:2px}",
     ".sm-h{font-size:12px;color:var(--ink-2);margin:12px 4px 6px}",
-    ".sm-apps{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}",
+    ".sm-apps{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}",
     ".sm-app{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 4px;border-radius:14px;font-size:13px;text-align:center;cursor:pointer}",
     ".sm-app:hover{background:rgba(31,95,122,.08)}",
     ".sm-app .g{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--cyan);color:#fff}",
     ".sm-app .g svg{width:24px;height:24px}",
+    ".sm-app.c-dev .g{background:#5d4f9e}.sm-app.c-tool .g{background:#d07a3e}.sm-app.c-sys .g{background:#5b6b76}",
+    ".sm-h.cat{margin-top:8px}",
     ".sm-r{display:flex;align-items:center;gap:12px;width:100%;min-height:46px;padding:5px 10px;border-radius:12px;text-align:left;cursor:pointer;font-size:14.5px;color:var(--ink)}",
     ".sm-r:hover,.sm-r.sel{background:var(--cyan-bg)}",
     ".sm-r .i{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:var(--cyan);color:#fff;flex:0 0 auto}",
@@ -176,15 +178,20 @@
     items = [];
     var hit = function (it) { return !qq || (it.name + " " + (it.sub || "") + " " + (it.keys || "")).toLowerCase().indexOf(qq) >= 0; };
     var apps = APPS.APPS.filter(function (a) { return !hiddenApp(a.href); }).map(function (a) {
-      return { ic: a.ic, name: en() ? a.en : a.ko, sub: en() ? a.en_d : a.ko_d, keys: a.ko + " " + a.en, href: a.href };
+      return { ic: a.ic, cat: a.cat, name: en() ? a.en : a.ko, sub: en() ? a.en_d : a.ko_d, keys: a.ko + " " + a.en, href: a.href };
     });
     if (!qq) {
-      h += '<div class="sm-h">' + esc(T("apps")) + '</div><div class="sm-apps">';
-      apps.forEach(function (a) {
-        h += '<button class="sm-app" type="button" data-i="' + items.length + '"><span class="g">' + icon(a.ic) + "</span>" + esc(a.name) + "</button>";
-        items.push(a);
+      APPS.CATS.forEach(function (c) {                 // 묶음(AI · 개발 · 도구 · 시스템)마다 한 줄
+        var list = apps.filter(function (a) { return a.cat === c[0]; });
+        if (!list.length) return;
+        h += '<div class="sm-h cat">' + esc(APPS.catName(c[0], en() ? "en" : "ko")) + '</div><div class="sm-apps">';
+        list.forEach(function (a) {
+          h += '<button class="sm-app c-' + a.cat + '" type="button" data-i="' + items.length + '"><span class="g">' + icon(a.ic) + "</span>" + esc(a.name) + "</button>";
+          items.push(a);
+        });
+        h += "</div>";
       });
-      h += '</div><div class="sm-h">' + esc(T("recent")) + "</div>";
+      h += '<div class="sm-h">' + esc(T("recent")) + "</div>";
       var rec = works.slice(0, 5);
       if (!rec.length) h += '<div class="sm-none">' + esc(T("noRecent")) + "</div>";
       rec.forEach(function (w) { var it = { ic: w.ic, name: w.name, sub: T("kind")[w.kind], href: w.href }; h += row(it, "", "f"); items.push(it); });

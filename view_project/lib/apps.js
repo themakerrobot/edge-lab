@@ -54,32 +54,47 @@
     "QR코드 인식": { "g": "text", "ic": "qr", "api": "code/barcode", "params": {}, "tooltip": "이미지에서 바코드를 인식합니다.", "en": "QR code", "tooltip_en": "Reads QR codes in the image." }
   };
 
-  /* 화면 열하나. 런처의 첫 줄이다. 설명은 한 줄로 — 아이가 타일만 보고 고른다.
-     play: 놀이 앱, sys: 시스템 앱 — 셸 바탕화면에서 색을 달리한다. */
+  /* 앱 — 셸 바탕화면·시작 메뉴·상단바가 이 순서와 묶음(cat)대로 보여 준다.
+     설명은 한 줄로 — 아이가 타일만 보고 고른다.
+     cat: ai(AI 를 써 보고 가르치기) · dev(만들기 — 블록·파이썬) · tool(도구) · sys(시스템). 묶음마다 색이 다르다. */
+  var CATS = [
+    ["ai",   "AI",     "AI"],
+    ["dev",  "개발",   "Develop"],
+    ["tool", "도구",   "Tools"],
+    ["sys",  "시스템", "System"]
+  ];
+
   var APPS = [
-    { href: "/try",     ic: "eye",    ko: "체험하기",   en: "Try it",
+    { href: "/try",     ic: "eye",    cat: "ai",   ko: "체험하기",   en: "Try it",
       ko_d: "AI 16가지를 눌러 봐요",        en_d: "Try 16 kinds of AI" },
-    { href: "/blocks",  ic: "blocks", ko: "블록",       en: "Blocks",
-      ko_d: "블록을 끼워 AI를 움직여요",    en_d: "Snap blocks to run the AI" },
-    { href: "/code",    ic: "code",   ko: "파이썬",     en: "Python",
-      ko_d: "themaker 로 한 줄이면 돼요",   en_d: "One line with themaker" },
-    { href: "/train",   ic: "train",  ko: "가르치기",   en: "Train",
-      ko_d: "내가 직접 AI를 가르쳐요",      en_d: "Teach the AI yourself" },
-    { href: "/talk",    ic: "talk",   ko: "대화",       en: "Talk",
+    { href: "/talk",    ic: "talk",   cat: "ai",   ko: "대화",       en: "Talk",
       ko_d: "말하거나 써서 물어봐요",       en_d: "Ask by voice or text" },
-    { href: "/drive",   ic: "car",    ko: "자동차 가르치기", en: "Teach a car", play: true,
+    { href: "/train",   ic: "train",  cat: "ai",   ko: "가르치기",   en: "Train",
+      ko_d: "내가 직접 AI를 가르쳐요",      en_d: "Teach the AI yourself" },
+    { href: "/drive",   ic: "car",    cat: "ai",   ko: "자동차 가르치기", en: "Teach a car",
       ko_d: "내 운전을 보고 AI가 배워요",   en_d: "The AI learns from your driving" },
-    { href: "/recorder", ic: "mic",   ko: "녹음기",     en: "Recorder", play: true,
+    { href: "/blocks",  ic: "blocks", cat: "dev",  ko: "블록",       en: "Blocks",
+      ko_d: "블록을 끼워 AI를 움직여요",    en_d: "Snap blocks to run the AI" },
+    { href: "/code",    ic: "code",   cat: "dev",  ko: "파이썬",     en: "Python",
+      ko_d: "themaker 로 한 줄이면 돼요",   en_d: "One line with themaker" },
+    { href: "/paint",   ic: "paint",  cat: "tool", ko: "그림판",     en: "Paint",
+      ko_d: "그리고 AI 에게 보여 줘요",     en_d: "Draw, then show the AI" },
+    { href: "/typing",  ic: "keys",   cat: "tool", ko: "타자 연습",  en: "Typing",
+      ko_d: "한글 · 영어 자판과 낱말 비",   en_d: "Korean & English, word rain" },
+    { href: "/calc",    ic: "calc",   cat: "tool", ko: "계산기",     en: "Calculator",
+      ko_d: "큰 수를 우리말로 읽어 줘요",   en_d: "Reads numbers out in words" },
+    { href: "/recorder", ic: "mic",   cat: "tool", ko: "녹음기",     en: "Recorder",
       ko_d: "말 → 글자 → 다시 읽기",        en_d: "Speech → text → read aloud" },
-    { href: "/story",   ic: "book",   ko: "이야기 극장", en: "Story theater", play: true,
+    { href: "/story",   ic: "book",   cat: "tool", ko: "이야기 극장", en: "Story theater",
       ko_d: "인물마다 다른 목소리로",       en_d: "A voice for each character" },
-    { href: "/works",   ic: "folder", ko: "내 작품",    en: "My work",
+    { href: "/works",   ic: "folder", cat: "sys",  ko: "내 작품",    en: "My work",
       ko_d: "만든 것을 한곳에서 열어요",    en_d: "Open everything you made" },
-    { href: "/tasks",   ic: "gauge",  ko: "AI 작업 관리자", en: "AI task manager", sys: true,
+    { href: "/tasks",   ic: "gauge",  cat: "sys",  ko: "AI 작업 관리자", en: "AI task manager",
       ko_d: "어떤 AI 가 어디서 도는지",      en_d: "Which AI runs where" },
-    { href: "/options", ic: "gear",   ko: "설정",       en: "Settings", sys: true,
+    { href: "/options", ic: "gear",   cat: "sys",  ko: "설정",       en: "Settings",
       ko_d: "수업 전 카메라·소리 점검",     en_d: "Check camera and sound" }
   ];
+
 
   function lang() {
     try { return localStorage.getItem("vapiLang") === "en" ? "en" : "ko"; }
@@ -90,6 +105,8 @@
     GROUPS: GROUPS,
     SERVICE_LIST: SERVICE_LIST,
     APPS: APPS,
+    CATS: CATS,
+    catName: function (c, L) { var x = CATS.filter(function (k) { return k[0] === c; })[0]; return x ? ((L || lang()) === "en" ? x[2] : x[1]) : c; },
     lang: lang,
     /* 화면에 보이는 이름 — 영어 화면이면 en, 없으면 키 그대로 */
     name: function (key, L) {

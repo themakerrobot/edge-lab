@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>edge-lab — 계산기</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+  <link href="/fonts/fonts.css" rel="stylesheet">
+  <script>
+    try { if (localStorage.getItem("vapi-hc") === "1")
+            document.documentElement.classList.add("hc"); } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="/lib/tokens.css">
+  <script src="/lib/embed.js"></script>
+  <link rel="expect" href="#el-built" blocking="render">
+  <style>
+    /* 계산기 — 휴대폰 계산기처럼 누르는 대로 바로 계산한다(2 + 3 × 4 = 20). 식을 먼저 곱하는
+     * 공학용 계산기가 아니다 — 아이가 누른 순서대로 결과가 나와야 헷갈리지 않는다.
+     *
+     * 계산기 밑에 수를 우리말로 읽어 준다(12,345 → 만 이천삼백사십오). 큰 수를 읽는 법은
+     * 초등 수학에서 따로 배우는 것이라, 누를 때마다 눈으로 보게 했다. [읽어 주기] 는
+     * 이 컴퓨터의 목소리(/speech/tts)를 쓴다 — AI 가 준비되기 전에는 글자만 보인다.
+     */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; color: var(--ink); background: var(--paper);
+           font-family: "Gowun Dodum", "Apple SD Gothic Neo", system-ui, sans-serif; line-height: 1.5;
+           padding: var(--sp-2, 8px); gap: var(--sp-2, 8px); }
+    button { font-family: inherit; color: var(--ink); }
+    .panel.calc { flex: 0 0 440px; } .panel.tape { flex: 1 1 auto; }
+    .screen { border: 1.5px solid var(--line-d); border-radius: 12px; background: #fff; padding: 12px 16px; text-align: right; }
+    .screen .ex { font-family: Menlo, Consolas, monospace; font-size: 1rem; color: var(--ink-2); min-height: 1.5rem; overflow: hidden; white-space: nowrap; }
+    .screen .v { font-family: Menlo, Consolas, monospace; font-size: 2.7rem; font-weight: 700; line-height: 1.2; overflow: hidden; white-space: nowrap; }
+    .screen .v.err { color: var(--pen-red); font-size: 1.5rem; font-family: inherit; padding: 10px 0; }
+    .screen.shake { animation: shake .3s; }
+    @keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+    .read { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 6px 10px; border-radius: 10px; background: var(--cyan-bg); }
+    .read span { flex: 1; font-size: 1.05rem; font-weight: 600; color: var(--cyan-d); word-break: keep-all; }
+    .read button { border: 1.5px solid var(--cyan); background: #fff; color: var(--cyan-d); border-radius: 8px; padding: 4px 10px; min-height: 36px; font-weight: 600; cursor: pointer; }
+    .keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .keys button { min-height: 64px; border-radius: 14px; border: 1.5px solid var(--line); background: #fff; font-size: 1.6rem; font-weight: 700; cursor: pointer;
+                   font-family: Menlo, Consolas, monospace; }
+    .keys button:active { transform: translateY(1px); }
+    .keys .fn { background: #efe8da; font-size: 1.2rem; font-family: inherit; }
+    .keys .op { background: #f6e3cf; color: #9a4a12; border-color: #d9a878; }
+    .keys .op.on { background: #d07a3e; color: #fff; }
+    .keys .eq { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; }
+    .tapelist { display: flex; flex-direction: column; gap: 6px; }
+    .tapelist button { text-align: right; border: 1.5px solid var(--line); background: #fff; border-radius: 8px; padding: 6px 12px; cursor: pointer;
+                       font-family: Menlo, Consolas, monospace; font-size: 1rem; }
+    .tapelist button b { display: block; font-size: 1.3rem; }
+    .tapelist button:hover { background: var(--hover-bg); }
+    .hint { font-size: var(--fs-side, 13px); color: var(--ink-2); }
+    .btn { border: 1.5px solid var(--line-d); background: #fff; font-weight: 600; padding: 4px 12px; border-radius: var(--r); cursor: pointer; font-size: .9rem; min-height: 32px; }
+    @media (max-width: 1023px) { .main-container { flex-direction: column; } .panel.calc, .panel.tape { flex: 0 0 auto; }
+                                 .panel, .panel-body { overflow: visible; } body { overflow: auto; height: auto; } }
+  </style>
+  <link rel="stylesheet" href="/lib/ui.css">
+  <link rel="stylesheet" href="/lib/shell.css">
+</head>
+<body data-density="explore">
+  <div class="titlebar">
+    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요"><img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b></a>
+    <span class="tb-sep"></span><span class="tb-app" id="txtTitle"></span>
+    <div class="h-tools"><button id="langButton" title="한국어 / English">EN</button></div>
+  </div>
+  <div class="shell-body"><div class="workbench"><div class="main-container">
+    <div class="panel calc">
+      <div class="panel-head"><span class="q"><span class="qnum">1</span><span class="qtext" id="txtQ1"></span></span></div>
+      <div class="panel-body">
+        <div class="screen" id="screen"><div class="ex" id="ex"></div><div class="v" id="v">0</div></div>
+        <div class="read"><span id="read"></span><button type="button" id="sayBtn"></button></div>
+        <div class="keys" id="keys"></div>
+        <div class="hint" id="txtKeys"></div>
+      </div>
+    </div>
+    <div class="panel tape">
+      <div class="panel-head">
+        <span class="q"><span class="qnum">2</span><span class="qtext" id="txtQ2"></span></span>
+        <button class="btn" type="button" id="clearTape" style="margin-left:auto"></button>
+      </div>
+      <div class="panel-body"><div class="tapelist" id="tape"></div></div>
+    </div>
+  </div></div></div>
+
+  <script src="/lib/icons.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var LANG = "ko";
+    try { LANG = localStorage.getItem("vapiLang") === "en" ? "en" : "ko"; } catch (e) {}
+    document.documentElement.lang = LANG;
+    var I18N = {
+      ko: { title: "edge-lab — 계산기", lang: "EN", q1: "계산기", q2: "계산 기록", say: "읽어 주기", clear: "기록 지우기",
+            none: "계산하면 여기에 쌓여요. 누르면 그 답을 다시 써요.", div0: "0으로 나눌 수 없어요", big: "수가 너무 커요",
+            keys: "자판으로도 돼요: 숫자 · + − * / · Enter(=) · Backspace(지우기) · Esc(처음부터)", notReady: "목소리 AI 가 아직 준비 중이에요" },
+      en: { title: "edge-lab — Calculator", lang: "한", q1: "Calculator", q2: "History", say: "Read aloud", clear: "Clear history",
+            none: "Your sums pile up here. Tap one to use its answer again.", div0: "Cannot divide by 0", big: "The number is too big",
+            keys: "Keyboard works too: digits · + − * / · Enter (=) · Backspace · Esc (clear)", notReady: "The voice AI is still loading" }
+    };
+    function t(k) { return I18N[LANG][k] !== undefined ? I18N[LANG][k] : I18N.ko[k]; }
+    function $(id) { return document.getElementById(id); }
+    var MAXD = 15;                         // 자릿수 한계 — 넘으면 소수 계산의 끝자리가 흔들린다
+    var SYM = { "+": "+", "-": "−", "*": "×", "/": "÷" };
+
+    /* ── 수 읽기 ── */
+    var KD = ["", "일", "이", "삼", "사", "오", "육", "칠", "팔", "구"], KS = ["", "십", "백", "천"], KB = ["", "만", "억", "조"];
+    function koInt(n) {                     // n: 0 이상 정수 문자열
+      n = n.replace(/^0+/, "");
+      if (!n) return "영";
+      var out = "", groups = [];
+      for (var e = n.length; e > 0; e -= 4) groups.unshift(n.slice(Math.max(0, e - 4), e));
+      groups.forEach(function (g, gi) {
+        var big = groups.length - 1 - gi, s = "";
+        for (var i = 0; i < g.length; i++) {
+          var d = +g[i], pos = g.length - 1 - i;
+          if (!d) continue;
+          s += (d === 1 && pos > 0 ? "" : KD[d]) + KS[pos];          // 일십 → 십, 일백 → 백
+        }
+        if (!s) return;
+        if (s === "일" && big === 1) s = "";                             // 일만 → 만 (억·조는 일억·일조)
+        out += (out ? " " : "") + s + KB[big];
+      });
+      return out;
+    }
+    var EO = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen",
+              "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"],
+        ET = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"], EB = ["", " thousand", " million", " billion", " trillion"];
+    function en3(n) {
+      var h = Math.floor(n / 100), r = n % 100, s = h ? EO[h] + " hundred" : "";
+      if (r) s += (s ? " " : "") + (r < 20 ? EO[r] : ET[Math.floor(r / 10)] + (r % 10 ? "-" + EO[r % 10] : ""));
+      return s;
+    }
+    function enInt(n) {
+      n = n.replace(/^0+/, "");
+      if (!n) return "zero";
+      var parts = [];
+      for (var e = n.length, b = 0; e > 0; e -= 3, b++) {
+        var g = +n.slice(Math.max(0, e - 3), e);
+        if (g) parts.unshift(en3(g) + EB[b]);
+      }
+      return parts.join(" ");
+    }
+    function readNum(s) {
+      if (!/^-?\d+(\.\d+)?\.?$/.test(s)) return "";
+      var neg = s[0] === "-", body = neg ? s.slice(1) : s, ip = body.split(".")[0], fp = body.split(".")[1] || "";
+      if (LANG === "en") {
+        return (neg ? "minus " : "") + enInt(ip) + (fp ? " point " + fp.split("").map(function (d) { return EO[+d]; }).join(" ") : "");
+      }
+      return (neg ? "마이너스 " : "") + koInt(ip) + (fp ? " 점 " + fp.split("").map(function (d) { return d === "0" ? "영" : KD[+d]; }).join("") : "");
+    }
+
+    /* ── 계산 ── */
+    var cur = "0", acc = null, op = null, fresh = true, ex = "", err = "";
+    var tape = [];
+    try { tape = JSON.parse(localStorage.getItem("el-calc-tape") || "[]") || []; } catch (e) {}
+
+    function clean(x) { return parseFloat(x.toPrecision(12)); }     // 0.1 + 0.2 = 0.30000000000000004 를 0.3 으로
+    function str(x) {
+      if (!isFinite(x)) return null;
+      if (Math.abs(x) >= 1e15) return null;
+      var s = String(clean(x));
+      if (/e/.test(s)) s = clean(x).toFixed(12).replace(/\.?0+$/, "");   // 아주 작은 수의 1e-7 표기를 풀어 쓴다
+      return s;
+    }
+    function group(s) {
+      var neg = s[0] === "-", b = neg ? s.slice(1) : s, i = b.indexOf("."), ip = i < 0 ? b : b.slice(0, i), fp = i < 0 ? "" : b.slice(i);
+      return (neg ? "-" : "") + ip.replace(/\B(?=(\d{3})+(?!\d))/g, ",") + fp;
+    }
+    function calc(a, o, b) {
+      if (o === "/" && b === 0) throw new Error(t("div0"));
+      var r = o === "+" ? a + b : o === "-" ? a - b : o === "*" ? a * b : a / b;
+      if (str(r) === null) throw new Error(t("big"));
+      return clean(r);
+    }
+    function fail(msg) {
+      err = msg; acc = null; op = null; fresh = true; cur = "0";
+      var s = $("screen"); s.classList.remove("shake"); void s.offsetWidth; s.classList.add("shake");
+    }
+    function digit(d) {
+      err = "";
+      if (fresh) { cur = d === "." ? "0." : d; fresh = false; paint(); return; }
+      if (d === "." && cur.indexOf(".") >= 0) return;
+      if (cur.replace(/[-.]/g, "").length >= MAXD) return;
+      cur = cur === "0" && d !== "." ? d : cur === "-0" && d !== "." ? "-" + d : cur + d;
+      paint();
+    }
+    function setOp(o) {
+      if (err) return;
+      try {
+        if (acc !== null && op && !fresh) acc = calc(acc, op, +cur);
+        else if (acc === null || !op) acc = +cur;
+      } catch (e) { fail(e.message); paint(); return; }
+      op = o; fresh = true; cur = str(acc);
+      ex = group(cur) + " " + SYM[o];
+      paint();
+    }
+    function equals() {
+      if (err || op === null || acc === null) return;
+      var b = +cur, a = acc;
+      try {
+        var r = calc(a, op, b);
+        ex = group(str(a)) + " " + SYM[op] + " " + group(str(b)) + " =";
+        cur = str(r);
+        tape.unshift({ ex: ex, v: cur }); tape = tape.slice(0, 30);
+        try { localStorage.setItem("el-calc-tape", JSON.stringify(tape)); } catch (e) {}
+        paintTape();
+        if (window.vapiStat) vapiStat("calc_eq");
+      } catch (e) { fail(e.message); }
+      acc = null; op = null; fresh = true;
+      paint();
+    }
+    function clearAll() { cur = "0"; acc = null; op = null; fresh = true; ex = ""; err = ""; paint(); }
+    function back() {
+      if (err) { clearAll(); return; }
+      if (fresh) return;
+      cur = cur.length > 1 && cur !== "-0" ? cur.slice(0, -1) : "0";
+      if (cur === "-") cur = "0";
+      paint();
+    }
+    function neg() {
+      if (err) return;
+      cur = cur[0] === "-" ? cur.slice(1) : cur === "0" ? "0" : "-" + cur;
+      paint();
+    }
+    function percent() {
+      if (err) return;
+      var v = +cur;                          // 100 + 10% = 110 처럼 — 더하기·빼기 중이면 앞 수의 몇 %
+      var r = acc !== null && (op === "+" || op === "-") ? acc * v / 100 : v / 100;
+      cur = str(r) || "0"; fresh = false;
+      paint();
+    }
+
+    function paint() {
+      var v = $("v");
+      v.className = "v" + (err ? " err" : "");
+      v.textContent = err || group(cur);
+      $("ex").textContent = err ? "" : ex;
+      $("read").textContent = err ? "" : readNum(cur);
+      Array.prototype.forEach.call(document.querySelectorAll(".keys .op"), function (b) {
+        b.classList.toggle("on", !!op && fresh && b.getAttribute("data-k") === op);
+      });
+      /* 글자가 칸을 넘으면 줄인다 — 15자리 + 쉼표까지 한 줄에 */
+      v.style.fontSize = "";
+      if (!err && v.scrollWidth > v.clientWidth) v.style.fontSize = Math.max(1.3, 2.7 * v.clientWidth / v.scrollWidth) + "rem";
+    }
+    function paintTape() {
+      $("tape").innerHTML = tape.length ? tape.map(function (x, i) {
+        return '<button type="button" data-i="' + i + '">' + x.ex.replace(/</g, "&lt;") + "<b>" + group(x.v) + "</b></button>";
+      }).join("") : '<div class="hint">' + t("none") + "</div>";
+    }
+
+    var KEYS = [["C", "fn", "AC"], ["back", "fn", "⌫"], ["%", "fn", "%"], ["/", "op", "÷"],
+                ["7"], ["8"], ["9"], ["*", "op", "×"],
+                ["4"], ["5"], ["6"], ["-", "op", "−"],
+                ["1"], ["2"], ["3"], ["+", "op", "+"],
+                ["neg", "fn", "±"], ["0"], ["."], ["=", "eq", "="]];
+    $("keys").innerHTML = KEYS.map(function (k) {
+      return '<button type="button" data-k="' + k[0] + '"' + (k[1] ? ' class="' + k[1] + '"' : "") + ">" + (k[2] || k[0]) + "</button>";
+    }).join("");
+    function press(k) {
+      if (/^[0-9.]$/.test(k)) digit(k);
+      else if (SYM[k]) setOp(k);
+      else if (k === "=") equals();
+      else if (k === "C") clearAll();
+      else if (k === "back") back();
+      else if (k === "neg") neg();
+      else if (k === "%") percent();
+    }
+    $("keys").addEventListener("click", function (e) { var b = e.target.closest("[data-k]"); if (b) press(b.getAttribute("data-k")); });
+    document.addEventListener("keydown", function (e) {
+      if (e.ctrlKey || e.altKey || e.metaKey) return;
+      var k = e.key, map = { Enter: "=", "=": "=", Backspace: "back", Escape: "C", Delete: "C", x: "*", X: "*", ",": "." };
+      k = map[k] || k;
+      if (!/^[0-9.]$/.test(k) && !SYM[k] && ["=", "C", "back", "%"].indexOf(k) < 0) return;
+      e.preventDefault();
+      press(k);
+      var b = document.querySelector('.keys [data-k="' + (k === "." ? "." : k) + '"]');
+      if (b) { b.style.background = "var(--cyan-bg)"; setTimeout(function () { b.style.background = ""; }, 120); }
+    });
+    $("tape").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-i]"); if (!b) return;
+      var x = tape[+b.getAttribute("data-i")];
+      if (acc !== null && op && fresh) { cur = x.v; fresh = false; } else { clearAll(); cur = x.v; fresh = false; }
+      err = ""; paint();
+    });
+    $("clearTape").addEventListener("click", function () {
+      tape = []; try { localStorage.removeItem("el-calc-tape"); } catch (e) {}
+      paintTape();
+    });
+    function voice() { try { return localStorage.getItem("vapi-voice") || "F1"; } catch (e) { return "F1"; } }   // 설정에서 고른 목소리
+    $("sayBtn").addEventListener("click", function () {
+      var text = $("read").textContent; if (!text) return;
+      var b = this; b.disabled = true;
+      fetch("/speech/tts", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: text, voice: voice(), lang: LANG, speed: 0.95 }) }).then(function (r) {
+        if (r.status === 503) throw new Error(t("notReady"));
+        if (!r.ok || (r.headers.get("Content-Type") || "").indexOf("audio") < 0) throw new Error("tts");
+        return r.blob();
+      }).then(function (blob) { new Audio(URL.createObjectURL(blob)).play().catch(function () {}); })
+        .catch(function (e) { $("read").textContent = text + "  (" + (e.message === "tts" ? "…" : e.message) + ")"; })
+        .then(function () { b.disabled = false; });
+    });
+
+    $("langButton").addEventListener("click", function () {
+      try { localStorage.setItem("vapiLang", LANG === "ko" ? "en" : "ko"); } catch (e) {}
+      location.reload();
+    });
+    document.title = t("title"); $("langButton").textContent = t("lang");
+    $("txtQ1").textContent = t("q1"); $("txtQ2").textContent = t("q2"); $("sayBtn").textContent = t("say");
+    $("clearTape").textContent = t("clear"); $("txtKeys").textContent = t("keys");
+    paint(); paintTape();
+    window.EL_CALC = { press: press, readNum: readNum, get value() { return err || cur; } };   // 시험용
+  })();
+  </script>
+  <script src="/lib/shell.js"></script>
+  <script src="/lib/usage.js" data-page="calc"></script>
+  <i id="el-built" hidden></i>
+</body>
+</html>

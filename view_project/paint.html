@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>edge-lab — 그림판</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+  <link href="/fonts/fonts.css" rel="stylesheet">
+  <script>
+    try { if (localStorage.getItem("vapi-hc") === "1")
+            document.documentElement.classList.add("hc"); } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="/lib/tokens.css">
+  <script src="/lib/embed.js"></script>
+  <link rel="expect" href="#el-built" blocking="render">
+  <style>
+    /* 그림판 — 펜 · 지우개 · 채우기 · 선 · 네모 · 동그라미, 되돌리기, 사진 가져오기, 저장.
+     * [AI 에게 보여 주기] 는 그림을 이 컴퓨터의 말로 답하는 AI(/vlm/look)에게 보내 무엇을 그렸는지 묻는다.
+     *
+     * 도화지는 1200×800 고정이고 화면에 맞춰 늘리고 줄인다 — 창 크기가 바뀌어도 그림이 잘리지 않게.
+     * 그리던 그림은 IndexedDB 에 저절로 남는다(창을 닫거나 꺼도). localStorage 는 5MB 라 그림에는 작다.
+     */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; color: var(--ink); background: var(--paper);
+           font-family: "Gowun Dodum", "Apple SD Gothic Neo", system-ui, sans-serif; line-height: 1.5;
+           padding: var(--sp-2, 8px); gap: var(--sp-2, 8px); }
+    button, input { font-family: inherit; color: var(--ink); }
+    .panel.tools { flex: 0 0 236px; } .panel.board { flex: 1 1 auto; }
+    .st { font-weight: 700; font-size: var(--fs-head, 14px); color: var(--cyan-d); }
+    .hint { font-size: var(--fs-side, 13px); color: var(--ink-2); }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .tool { display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 58px; padding: 6px 2px; border: 1.5px solid var(--line);
+            border-radius: 10px; background: #fff; cursor: pointer; font-size: 12.5px; }
+    .tool svg { width: 24px; height: 24px; }
+    .tool.on { border-color: var(--pen-blue); background: var(--pen-blue); color: #fff; }
+    .sizes { display: flex; gap: 6px; }
+    .sizes button { flex: 1; height: 44px; border: 1.5px solid var(--line); border-radius: 10px; background: #fff; cursor: pointer; display: grid; place-items: center; }
+    .sizes button i { display: block; border-radius: 50%; background: var(--ink); }
+    .sizes button.on { border-color: var(--pen-blue); background: var(--cyan-bg); }
+    .colors { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
+    .colors button { aspect-ratio: 1; border-radius: 8px; border: 1.5px solid rgba(0,0,0,.25); cursor: pointer; }
+    .colors button.on { outline: 3px solid var(--pen-blue); outline-offset: 2px; }
+    .colors label { aspect-ratio: 1; border-radius: 8px; border: 1.5px dashed var(--line-d); display: grid; place-items: center; cursor: pointer; font-size: 18px; position: relative; overflow: hidden; }
+    .colors label input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .btn { border: 1.5px solid var(--line-d); background: #fff; font-weight: 600; padding: 6px 12px; border-radius: var(--r); cursor: pointer; font-size: .92rem;
+           min-height: 40px; display: inline-flex; align-items: center; gap: 6px; }
+    .btn svg { width: 18px; height: 18px; }
+    .btn.primary { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+    .chk { display: flex; align-items: center; gap: 6px; font-size: .92rem; cursor: pointer; }
+    .chk input { width: 18px; height: 18px; }
+    .stage { position: relative; display: flex; align-items: center; justify-content: center; min-height: 200px;
+             background: repeating-conic-gradient(#ece5d6 0 25%, #f4efe4 0 50%) 0 0 / 20px 20px; border-radius: var(--r); }
+    .stage canvas { position: absolute; background: transparent; touch-action: none; }
+    #cv { background: #fff; box-shadow: 0 4px 16px rgba(40,30,20,.18); }
+    #fx { pointer-events: none; }
+    .ask { display: flex; gap: 10px; align-items: flex-start; }
+    .bubble { flex: 1; min-height: 44px; padding: 8px 12px; border-radius: 12px; background: var(--cyan-bg); color: var(--cyan-d); font-size: 1.02rem; }
+    .bubble.wait { color: var(--ink-2); }
+    @media (max-width: 1023px) { .main-container { flex-direction: column; } .panel.tools, .panel.board { flex: 0 0 auto; }
+                                 .panel, .panel-body { overflow: visible; } body { overflow: auto; height: auto; } .stage { height: 60vh; } }
+  </style>
+  <link rel="stylesheet" href="/lib/ui.css">
+  <link rel="stylesheet" href="/lib/shell.css">
+</head>
+<body data-density="explore">
+  <div class="titlebar">
+    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요"><img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b></a>
+    <span class="tb-sep"></span><span class="tb-app" id="txtTitle"></span>
+    <div class="h-tools"><button id="langButton" title="한국어 / English">EN</button></div>
+  </div>
+  <div class="shell-body"><div class="workbench"><div class="main-container">
+    <div class="panel tools">
+      <div class="panel-head"><span class="q"><span class="qnum">1</span><span class="qtext" id="txtQ1"></span></span></div>
+      <div class="panel-body">
+        <div class="grid" id="tools"></div>
+        <label class="chk"><input type="checkbox" id="filled"><span id="txtFilled"></span></label>
+        <div class="st" id="txtSize"></div>
+        <div class="sizes" id="sizes"></div>
+        <div class="st" id="txtColor"></div>
+        <div class="colors" id="colors"></div>
+      </div>
+    </div>
+    <div class="panel board">
+      <div class="panel-head">
+        <span class="q"><span class="qnum">2</span><span class="qtext" id="txtQ2"></span></span>
+        <div class="row" style="margin-left:auto">
+          <button class="btn" type="button" id="undoBtn"></button>
+          <button class="btn" type="button" id="redoBtn"></button>
+          <button class="btn" type="button" id="newBtn"></button>
+          <button class="btn" type="button" id="openBtn"></button>
+          <button class="btn" type="button" id="saveBtn"></button>
+          <input type="file" id="file" accept="image/*" hidden>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="stage grow" id="stage"><canvas id="cv" width="1200" height="800"></canvas><canvas id="fx" width="1200" height="800"></canvas></div>
+        <div class="ask">
+          <button class="btn primary" type="button" id="askBtn"></button>
+          <div class="bubble" id="bubble"></div>
+        </div>
+      </div>
+    </div>
+  </div></div></div>
+
+  <script src="/lib/icons.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var LANG = "ko";
+    try { LANG = localStorage.getItem("vapiLang") === "en" ? "en" : "ko"; } catch (e) {}
+    document.documentElement.lang = LANG;
+    var I18N = {
+      ko: { title: "edge-lab — 그림판", lang: "EN", q1: "도구", q2: "도화지", size: "굵기", color: "색",
+            pen: "펜", eraser: "지우개", fill: "채우기", line: "선", rect: "네모", ellipse: "동그라미", filled: "도형 속을 채우기",
+            undo: "되돌리기", redo: "다시", nw: "새로", open: "사진 가져오기", save: "저장", newAsk: "지금 그림을 지우고 새로 그릴까요?",
+            ask: "AI 에게 보여 주기", askHint: "다 그리면 AI 에게 무엇을 그렸는지 물어봐요. 이 컴퓨터 안에서만 봐요.",
+            asking: "AI 가 그림을 보는 중… (몇 초 걸려요)", notReady: "말로 답하는 AI 가 아직 준비 중이에요. 잠시 뒤에 다시 눌러 주세요.",
+            askFail: "AI 가 답하지 못했어요: ", prompt: "어린이가 그린 그림이에요. 무엇을 그렸는지 한두 문장으로 다정하게 말해 주세요.",
+            file: "그림" },
+      en: { title: "edge-lab — Paint", lang: "한", q1: "Tools", q2: "Canvas", size: "Size", color: "Color",
+            pen: "Pen", eraser: "Eraser", fill: "Fill", line: "Line", rect: "Box", ellipse: "Circle", filled: "Fill the shape",
+            undo: "Undo", redo: "Redo", nw: "New", open: "Open photo", save: "Save", newAsk: "Clear this picture and start a new one?",
+            ask: "Show the AI", askHint: "When you are done, ask the AI what you drew. It stays on this computer.",
+            asking: "The AI is looking… (a few seconds)", notReady: "The AI that answers in words is still loading. Try again soon.",
+            askFail: "The AI could not answer: ", prompt: "A child drew this picture. In one or two kind sentences, say what they drew.",
+            file: "drawing" }
+    };
+    function t(k) { return I18N[LANG][k] !== undefined ? I18N[LANG][k] : I18N.ko[k]; }
+    function $(id) { return document.getElementById(id); }
+    var W = 1200, H = 800;
+    var IC = {
+      pen: '<path d="M4 20l1-4L16 5l3 3L8 19l-4 1Z"/><path d="M14 7l3 3"/>',
+      eraser: '<path d="M8 20h12"/><path d="M4.5 14.5 14 5l5 5-8.5 8.5a2 2 0 0 1-2.8 0l-3.2-3.2a2 2 0 0 1 0-2.8Z"/><path d="m9 10 5 5"/>',
+      fill: '<path d="m5 11 7-7 7 7-7 7-7-7Z"/><path d="M5 11h14"/><path d="M20 15s1.5 2 1.5 3a1.5 1.5 0 0 1-3 0c0-1 1.5-3 1.5-3Z"/>',
+      line: '<path d="M5 19 19 5"/>',
+      rect: '<rect x="4" y="6" width="16" height="12" rx="1"/>',
+      ellipse: '<ellipse cx="12" cy="12" rx="8.5" ry="6.5"/>',
+      undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
+      redo: '<path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/>',
+      nw: '<path d="M6 3h8l4 4v14H6Z"/><path d="M14 3v4h4"/>',
+      open: '<rect x="3" y="5" width="18" height="15" rx="3"/><circle cx="9" cy="10.5" r="2"/><path d="m21 16-5-5-8 9"/>',
+      save: '<path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 20h14"/>',
+      eye: '<path d="M2 12c3.2-4.6 6.6-6.9 10-6.9S18.8 7.4 22 12c-3.2 4.6-6.6 6.9-10 6.9S5.2 16.6 2 12Z"/><circle cx="12" cy="12" r="3.1"/>'
+    };
+    function svg(n) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + IC[n] + "</svg>"; }
+    var TOOLS = ["pen", "eraser", "fill", "line", "rect", "ellipse"];
+    var SIZES = [3, 8, 16, 32];
+    var COLORS = ["#1f1a14", "#6b6257", "#ffffff", "#d9412b", "#f08a24", "#f5c518", "#8bc34a", "#2f8a4c", "#3aa6d6", "#1f5f7a", "#7b4fc9", "#e56aa6",
+                  "#8a5a2b", "#f3c9a0", "#b3e5fc", "#c8e6c9", "#ffe0e9"];
+
+    var cv = $("cv"), g = cv.getContext("2d", { willReadFrequently: true }), fx = $("fx"), gx = fx.getContext("2d");
+    var tool = "pen", size = 8, color = "#1f1a14", filled = false, scale = 1;
+    var undo = [], redo = [], MAX_UNDO = 12, dirty = false;
+
+    function blank() { g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = "#fff"; g.fillRect(0, 0, W, H); g.restore(); }
+
+    /* ── 화면 맞추기 ── */
+    function fit() {
+      var st = $("stage"), bw = st.clientWidth - 16, bh = st.clientHeight - 16;
+      if (bw <= 0 || bh <= 0) return;
+      scale = Math.min(bw / W, bh / H);
+      [cv, fx].forEach(function (c) { c.style.width = W * scale + "px"; c.style.height = H * scale + "px"; });
+    }
+    new ResizeObserver(fit).observe($("stage"));
+
+    /* ── 되돌리기 ── */
+    function snap() {
+      undo.push(g.getImageData(0, 0, W, H));
+      if (undo.length > MAX_UNDO) undo.shift();
+      redo = []; paintUndo();
+    }
+    function paintUndo() { $("undoBtn").disabled = !undo.length; $("redoBtn").disabled = !redo.length; }
+    function doUndo() { if (!undo.length) return; redo.push(g.getImageData(0, 0, W, H)); g.putImageData(undo.pop(), 0, 0); paintUndo(); changed(); }
+    function doRedo() { if (!redo.length) return; undo.push(g.getImageData(0, 0, W, H)); g.putImageData(redo.pop(), 0, 0); paintUndo(); changed(); }
+
+    /* ── 그리기 ── */
+    function pos(e) {
+      var r = cv.getBoundingClientRect();
+      return { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H };
+    }
+    function stroke(ctx) {
+      ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.lineWidth = tool === "eraser" ? size * 2 : size;
+      ctx.strokeStyle = tool === "eraser" ? "#fff" : color; ctx.fillStyle = color;
+    }
+    function shape(ctx, a, b) {
+      ctx.beginPath();
+      if (tool === "line") { ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); return; }
+      var x = Math.min(a.x, b.x), y = Math.min(a.y, b.y), w = Math.abs(b.x - a.x), h = Math.abs(b.y - a.y);
+      if (tool === "rect") ctx.rect(x, y, w, h);
+      else ctx.ellipse(x + w / 2, y + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2);
+      if (filled) ctx.fill();
+      ctx.stroke();
+    }
+    var drag = null;
+    fx.style.pointerEvents = "none";
+    cv.addEventListener("pointerdown", function (e) {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      cv.setPointerCapture(e.pointerId);
+      var p = pos(e);
+      if (tool === "fill") { snap(); flood(p.x | 0, p.y | 0); changed(); return; }
+      snap();
+      drag = { a: p, last: p };
+      if (tool === "pen" || tool === "eraser") {
+        stroke(g); g.beginPath(); g.arc(p.x, p.y, g.lineWidth / 2, 0, Math.PI * 2); g.fillStyle = g.strokeStyle; g.fill();
+      }
+    });
+    cv.addEventListener("pointermove", function (e) {
+      if (!drag) return;
+      var evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+      if (tool === "pen" || tool === "eraser") {
+        stroke(g);
+        evs.forEach(function (ev) {
+          var p = pos(ev);
+          g.beginPath(); g.moveTo(drag.last.x, drag.last.y); g.lineTo(p.x, p.y); g.stroke();
+          drag.last = p;
+        });
+      } else {
+        var b = pos(e);
+        gx.clearRect(0, 0, W, H); stroke(gx); shape(gx, drag.a, b); drag.last = b;
+      }
+    });
+    function end() {
+      if (!drag) return;
+      if (tool !== "pen" && tool !== "eraser") { gx.clearRect(0, 0, W, H); stroke(g); shape(g, drag.a, drag.last); }
+      drag = null; changed();
+    }
+    cv.addEventListener("pointerup", end);
+    cv.addEventListener("pointercancel", end);
+
+    /* 채우기 — 누른 곳과 비슷한 색(차이 48 이내)이 이어진 곳을 한 줄씩 칠한다.
+       펜 선의 가장자리는 흐리게 칠해져 있어서, 딱 같은 색만 보면 선 안쪽에 흰 테두리가 남는다 */
+    function flood(x, y) {
+      var img = g.getImageData(0, 0, W, H), d = img.data, i0 = (y * W + x) * 4;
+      var sr = d[i0], sg = d[i0 + 1], sb = d[i0 + 2];
+      var c = parseInt(color.slice(1), 16), fr = c >> 16 & 255, fg = c >> 8 & 255, fb = c & 255;
+      if (Math.abs(sr - fr) + Math.abs(sg - fg) + Math.abs(sb - fb) < 6) return;
+      var TOL = 48, seen = new Uint8Array(W * H), stack = [x, y];
+      function same(p) { var k = p * 4; return !seen[p] && Math.abs(d[k] - sr) + Math.abs(d[k + 1] - sg) + Math.abs(d[k + 2] - sb) <= TOL * 1.5; }
+      while (stack.length) {
+        var py = stack.pop(), px = stack.pop(), p = py * W + px;
+        while (px > 0 && same(p - 1)) { px--; p--; }
+        var up = false, dn = false;
+        for (; px < W && same(p); px++, p++) {
+          seen[p] = 1; var k = p * 4; d[k] = fr; d[k + 1] = fg; d[k + 2] = fb; d[k + 3] = 255;
+          if (py > 0) { if (same(p - W)) { if (!up) { stack.push(px, py - 1); up = true; } } else up = false; }
+          if (py < H - 1) { if (same(p + W)) { if (!dn) { stack.push(px, py + 1); dn = true; } } else dn = false; }
+        }
+      }
+      g.putImageData(img, 0, 0);
+    }
+
+    /* ── 저절로 남기기 (IndexedDB) ── */
+    var db = null, saveTimer = 0;
+    function idb(fn) {
+      if (db) return fn(db);
+      try {
+        var rq = indexedDB.open("el-paint", 1);
+        rq.onupgradeneeded = function () { rq.result.createObjectStore("draft"); };
+        rq.onsuccess = function () { db = rq.result; fn(db); };
+      } catch (e) {}
+    }
+    function changed() {
+      dirty = true;
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(function () {
+        cv.toBlob(function (blob) {
+          idb(function (d) { try { d.transaction("draft", "readwrite").objectStore("draft").put(blob, "now"); } catch (e) {} });
+        }, "image/png");
+      }, 800);
+    }
+    function restore() {
+      idb(function (d) {
+        try {
+          var rq = d.transaction("draft").objectStore("draft").get("now");
+          rq.onsuccess = function () {
+            if (!rq.result) return;
+            var im = new Image();
+            im.onload = function () { g.drawImage(im, 0, 0); URL.revokeObjectURL(im.src); dirty = true; };
+            im.src = URL.createObjectURL(rq.result);
+          };
+        } catch (e) {}
+      });
+    }
+
+    /* ── 도구 고르기 ── */
+    function paintTools() {
+      $("tools").innerHTML = TOOLS.map(function (k) {
+        return '<button class="tool' + (k === tool ? " on" : "") + '" type="button" data-t="' + k + '">' + svg(k) + t(k) + "</button>";
+      }).join("");
+      $("sizes").innerHTML = SIZES.map(function (s) {
+        var d = Math.max(4, Math.min(28, s));
+        return '<button type="button" data-s="' + s + '"' + (s === size ? ' class="on"' : "") + '><i style="width:' + d + "px;height:" + d + 'px"></i></button>';
+      }).join("");
+      $("colors").innerHTML = COLORS.map(function (c) {
+        return '<button type="button" data-c="' + c + '" style="background:' + c + '"' + (c === color ? ' class="on"' : "") + ' title="' + c + '"></button>';
+      }).join("") + '<label title="+">+<input type="color" id="pick" value="' + color + '"></label>';
+      $("pick").addEventListener("input", function () { color = this.value; paintTools(); });
+      cv.style.cursor = tool === "fill" ? "cell" : "crosshair";
+    }
+    document.querySelector(".panel.tools").addEventListener("click", function (e) {
+      var b;
+      if ((b = e.target.closest("[data-t]"))) tool = b.getAttribute("data-t");
+      else if ((b = e.target.closest("[data-s]"))) size = +b.getAttribute("data-s");
+      else if ((b = e.target.closest("[data-c]"))) { color = b.getAttribute("data-c"); if (tool === "eraser") tool = "pen"; }
+      else return;
+      paintTools();
+    });
+    $("filled").addEventListener("change", function () { filled = this.checked; });
+
+    /* ── 위쪽 단추 ── */
+    $("undoBtn").addEventListener("click", doUndo);
+    $("redoBtn").addEventListener("click", doRedo);
+    $("newBtn").addEventListener("click", function () {
+      if (dirty && !confirm(t("newAsk"))) return;
+      snap(); blank(); changed(); dirty = false; $("bubble").textContent = t("askHint"); $("bubble").className = "bubble wait";
+    });
+    $("openBtn").addEventListener("click", function () { $("file").click(); });
+    function putImage(blob) {
+      var im = new Image();
+      im.onload = function () {
+        snap(); blank();
+        var s = Math.min(W / im.width, H / im.height), w = im.width * s, h = im.height * s;
+        g.drawImage(im, (W - w) / 2, (H - h) / 2, w, h);
+        URL.revokeObjectURL(im.src); changed();
+      };
+      im.src = URL.createObjectURL(blob);
+    }
+    $("file").addEventListener("change", function () { if (this.files[0]) putImage(this.files[0]); this.value = ""; });
+    document.addEventListener("paste", function (e) {
+      var it = Array.prototype.filter.call((e.clipboardData && e.clipboardData.items) || [], function (x) { return x.type.indexOf("image") === 0; })[0];
+      if (it) putImage(it.getAsFile());
+    });
+    $("saveBtn").addEventListener("click", function () {
+      cv.toBlob(function (blob) {
+        var d = new Date(), p = function (n) { return String(n).padStart(2, "0"); };
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = t("file") + "-" + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + "-" + p(d.getHours()) + p(d.getMinutes()) + ".png";
+        document.body.appendChild(a); a.click(); a.remove();
+        if (window.vapiStat) vapiStat("paint_save");
+      }, "image/png");
+    });
+    document.addEventListener("keydown", function (e) {
+      if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+      var k = e.key.toLowerCase();
+      if (k === "z" && !e.shiftKey) { e.preventDefault(); doUndo(); }
+      else if (k === "y" || (k === "z" && e.shiftKey)) { e.preventDefault(); doRedo(); }
+    });
+
+    /* ── AI 에게 보여 주기 — 체험하기의 "이미지 질문·설명" 과 같은 /vlm/look ── */
+    $("askBtn").addEventListener("click", function () {
+      var b = this, bub = $("bubble");
+      b.disabled = true; bub.className = "bubble wait"; bub.textContent = t("asking");
+      cv.toBlob(function (blob) {
+        var fd = new FormData();
+        fd.append("uploadFile", blob, "drawing.jpg");
+        fetch("/vlm/look?" + new URLSearchParams({ prompt: t("prompt"), lang: LANG }), { method: "POST", body: fd }).then(function (r) {
+          if (r.status === 503) throw new Error(t("notReady"));
+          return r.json();
+        }).then(function (j) {
+          if (!j || j.result !== "ok") throw new Error((j && j.data) || "?");
+          bub.className = "bubble"; bub.textContent = (j.data && j.data.answer) || String(j.data);
+          if (window.vapiStat) vapiStat("paint_ask");
+          if (window.EL_WIN && EL_WIN.hidden) EL_WIN.notify(bub.textContent, { actions: [{ label: t("title").replace(/^edge-lab — /, ""), href: "/paint" }] });
+        }).catch(function (e) {
+          bub.className = "bubble wait";
+          bub.textContent = e.message === t("notReady") ? e.message : t("askFail") + ((e && e.message) || e);
+        }).then(function () { b.disabled = false; });
+      }, "image/jpeg", 0.9);
+    });
+
+    $("langButton").addEventListener("click", function () {
+      try { localStorage.setItem("vapiLang", LANG === "ko" ? "en" : "ko"); } catch (e) {}
+      location.reload();
+    });
+    document.title = t("title"); $("langButton").textContent = t("lang");
+    $("txtQ1").textContent = t("q1"); $("txtQ2").textContent = t("q2"); $("txtSize").textContent = t("size"); $("txtColor").textContent = t("color");
+    $("txtFilled").textContent = t("filled");
+    ["undo", "redo", "nw", "open", "save"].forEach(function (k) {
+      var id = k === "nw" ? "newBtn" : k + "Btn";
+      $(id).innerHTML = svg(k) + "<span>" + t(k) + "</span>";
+    });
+    $("askBtn").innerHTML = svg("eye") + "<span>" + t("ask") + "</span>";
+    $("bubble").className = "bubble wait"; $("bubble").textContent = t("askHint");
+    blank(); paintTools(); paintUndo(); fit(); restore();
+    window.EL_PAINT = { get tool() { return tool; }, pixel: function (x, y) { return Array.from(g.getImageData(x, y, 1, 1).data); },
+                        get undo() { return undo.length; } };   // 시험용
+  })();
+  </script>
+  <script src="/lib/shell.js"></script>
+  <script src="/lib/usage.js" data-page="paint"></script>
+  <i id="el-built" hidden></i>
+</body>
+</html>
