@@ -32,9 +32,18 @@ router = APIRouter()
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 STT_DIR = os.path.join(ROOT, "models", "stt")
-# 읽어 주기 모델 폴더. VAPI_TTS=tts-int8 처럼 주면 models/ 아래 다른 폴더를 쓴다(int8 양자화판 등).
-# 어느 쪽이 빠른지는 tools\tts_bench.py 로 그 PC 에서 잰다.
-TTS_DIR = os.path.join(ROOT, "models", os.environ.get("VAPI_TTS", "").strip() or "tts")
+# 읽어 주기 모델 폴더 — int8 양자화판(models/tts-int8)이 있으면 그것을 쓴다(소리는 같고 CPU 에서 가볍다).
+# 원본 models/tts 는 만일을 위해 그대로 둔다: tts-int8 이 없으면 원본으로, VAPI_TTS=tts 로 원본을 고를 수도 있다.
+# 두 모델의 속도는 tools\tts_bench.py 로 그 PC 에서 잰다.
+def _pick_tts():
+    want = os.environ.get("VAPI_TTS", "").strip()
+    if want:
+        return os.path.join(ROOT, "models", want)
+    q = os.path.join(ROOT, "models", "tts-int8")
+    return q if os.path.isdir(q) else os.path.join(ROOT, "models", "tts")
+
+
+TTS_DIR = _pick_tts()
 TARGET_SR = 16000                       # Whisper 입력 샘플레이트
 
 _pipe = None
