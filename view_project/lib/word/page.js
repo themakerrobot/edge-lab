@@ -471,7 +471,7 @@ function drawLook(l) {
   if (l.kind === 'mlp') {
     $('look').innerHTML = `
       <div class="st">${esc(t('sees'))}</div>
-      <div class="chips">${l.window.map(ch => `<span class="chip on">${esc(shown(ch))}</span>`).join('')}<span class="chip q">?</span></div>
+      <div class="chips">${l.window.map(ch => `<span class="chip on">${esc(shown(ch))}</span>`).join('')}<span class="chip next">?</span></div>
       <div class="hint">${esc(t('mlpHint1'))}<br>${esc(t('mlpHint2'))} ${esc(t('mlpHint3'))}</div>`;
     return;
   }
