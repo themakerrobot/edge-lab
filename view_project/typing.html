@@ -165,7 +165,7 @@
     var I18N = {
       ko: { title: "edge-lab — 타자 연습", lang: "EN", q1: "연습 고르기", lesson: "자리 고르기", best: "내 최고 기록",
             mKeys: "자리 연습", mKeysD: "손가락 자리를 익혀요", mWords: "낱말 연습", mWordsD: "낱말 20개",
-            mSent: "문장 연습", mSentD: "문장 8개", mGame: "낱말 비", mGameD: "떨어지는 낱말을 쳐서 터뜨려요",
+            mSent: "문장 연습", mSentD: "8개씩 · 모두 100개", mGame: "낱말 비", mGameD: "떨어지는 낱말을 쳐서 터뜨려요",
             L1: "기본 자리", L2: "검지 뻗기", L3: "윗줄", L4: "아랫줄", L5: "모든 자리", L6ko: "쌍자음 · ㅒㅖ", L6en: "대문자",
             clickFirst: "여기를 한 번 누르고, 파란 자판을 눌러요", done: "{n}개 중 {n}개",
             acc: "정확도", speed: "타수 (1분)", time: "걸린 시간", left: "남은 것", score: "점수", level: "단계", life: "목숨",
@@ -178,7 +178,7 @@
             bKeys: "자리 (타/분)", bWords: "낱말 (타/분)", bSent: "문장 (타/분)", bGame: "낱말 비 (점)", none: "—" },
       en: { title: "edge-lab — Typing", lang: "한", q1: "Pick a practice", lesson: "Pick keys", best: "My best",
             mKeys: "Key practice", mKeysD: "Learn where fingers go", mWords: "Words", mWordsD: "20 words",
-            mSent: "Sentences", mSentD: "8 sentences", mGame: "Word rain", mGameD: "Type falling words to pop them",
+            mSent: "Sentences", mSentD: "8 at a time · 100 in all", mGame: "Word rain", mGameD: "Type falling words to pop them",
             L1: "Home row", L2: "Index reach", L3: "Top row", L4: "Bottom row", L5: "All keys", L6ko: "Double consonants", L6en: "Capitals",
             clickFirst: "Click here once, then press the blue key", done: "{n} of {n}",
             acc: "Accuracy", speed: "Strokes / min", time: "Time", left: "Left", score: "Score", level: "Level", life: "Lives",
@@ -227,14 +227,59 @@
            "code", "data", "mouse", "sensor", "camera", "tiger", "lion", "zebra", "pizza", "bread", "juice", "game", "play", "jump", "swim",
            "read", "write", "draw", "lamp", "clock", "phone", "chair", "table", "window", "door", "heart", "space", "rocket", "planet"]
     };
+    /* 문장 — 한글·영어 100개씩. 한 판에 8개를 섞어 낸다. 초등학생이 아는 낱말로, 짧은 것부터 긴 것까지 */
     var SENTS = {
-      ko: ["나는 로봇을 좋아해요.", "오늘은 하늘이 맑아요.", "인공지능은 데이터로 배워요.", "친구와 함께 그림을 그려요.", "고양이가 창가에서 졸아요.",
+      ko: [
+           "나는 로봇을 좋아해요.", "오늘은 하늘이 맑아요.", "인공지능은 데이터로 배워요.", "친구와 함께 그림을 그려요.", "고양이가 창가에서 졸아요.",
            "도서관에서 책을 읽어요.", "카메라가 내 얼굴을 찾았어요.", "비가 오면 우산을 써요.", "컴퓨터에게 말을 가르쳐요.", "천천히 정확하게 쳐 봐요.",
-           "무지개는 일곱 빛깔이에요.", "자동차가 트랙을 돌아요.", "내일은 소풍을 가요.", "손가락을 제자리에 두어요.", "별이 반짝반짝 빛나요."],
-      en: ["I like robots.", "The sun is hot.", "My cat can jump.", "We read books at school.", "The AI learns from data.", "Dogs love to run and play.",
-           "I drink milk every day.", "The sky is blue today.", "Look at the big red bus.", "She draws a green tree.", "Type slowly and carefully.",
-           "The robot can see my face.", "We sing a song together.", "Fish swim in the river.", "Rain makes the flowers grow."]
+           "무지개는 일곱 빛깔이에요.", "자동차가 트랙을 돌아요.", "내일은 소풍을 가요.", "손가락을 제자리에 두어요.", "별이 반짝반짝 빛나요.",
+           "아침마다 이를 닦아요.", "우리 집 강아지는 공놀이를 좋아해요.", "봄이 오면 꽃이 피어요.", "여름에는 바다에서 수영해요.", "가을 하늘은 높고 푸르러요.",
+           "겨울에는 눈사람을 만들어요.", "엄마가 맛있는 김밥을 싸 주셨어요.", "아빠와 자전거를 탔어요.", "할머니 댁에 가면 마음이 편해요.", "동생이 블록으로 성을 쌓았어요.",
+           "선생님께 인사를 드려요.", "운동장에서 친구들과 뛰어놀아요.", "점심시간이 제일 기다려져요.", "교실 창문으로 햇살이 들어와요.", "연필을 깎아서 필통에 넣었어요.",
+           "숙제를 끝내고 게임을 했어요.", "로봇이 내 말을 알아들었어요.", "센서는 주변을 느끼는 부품이에요.", "마이크로 내 목소리를 녹음했어요.", "스피커에서 노래가 흘러나와요.",
+           "컴퓨터는 0과 1로 생각해요.", "코딩은 컴퓨터에게 하는 부탁이에요.", "반복 블록을 쓰면 코드가 짧아져요.", "버그를 찾아서 고치면 뿌듯해요.", "인공지능도 틀릴 수 있어요.",
+           "사진을 많이 보여 주면 더 잘 맞혀요.", "개와 고양이를 구별하는 AI를 만들었어요.", "손을 흔들면 화면이 바뀌어요.", "달님이 창밖에서 웃고 있어요.", "우주에는 별이 셀 수 없이 많아요.",
+           "지구는 해 둘레를 돌아요.", "달은 스스로 빛을 내지 못해요.", "물은 백 도에서 끓어요.", "얼음이 녹으면 물이 돼요.", "식물은 햇빛으로 양분을 만들어요.",
+           "꿀벌은 꽃가루를 옮겨 줘요.", "개미는 힘을 모아 먹이를 날라요.", "공룡은 아주 오래전에 살았어요.", "거북이는 느리지만 꾸준해요.", "토끼는 귀가 길고 깡충깡충 뛰어요.",
+           "코끼리는 코로 물을 뿌려요.", "기린은 목이 길어서 높은 잎을 먹어요.", "펭귄은 날지 못하지만 헤엄을 잘 쳐요.", "우리는 모두 소중한 사람이에요.", "친구가 슬퍼하면 먼저 다가가요.",
+           "고마울 때는 고맙다고 말해요.", "실수해도 다시 하면 돼요.", "차례를 지키면 모두가 즐거워요.", "쓰레기는 분리해서 버려요.", "물을 아껴 쓰면 지구가 웃어요.",
+           "길을 건널 때는 좌우를 살펴요.", "초록불이 켜지면 손을 들고 건너요.", "밥을 먹기 전에 손을 씻어요.", "일찍 자고 일찍 일어나요.", "채소도 골고루 먹어야 튼튼해져요.",
+           "오늘 일기에는 무엇을 쓸까요?", "내 꿈은 로봇을 만드는 사람이에요.", "커서 과학자가 되고 싶어요.", "우리 반 친구들은 모두 스물다섯 명이에요.", "시계가 세 시를 가리켜요.",
+           "달력에 내 생일을 표시했어요.", "수박은 여름에 먹어야 제맛이에요.", "딸기 우유를 한 잔 마셨어요.", "떡볶이는 조금 맵지만 맛있어요.", "비빔밥에는 여러 가지 나물이 들어가요.",
+           "도서관은 조용히 해야 하는 곳이에요.", "박물관에서 옛날 물건을 구경했어요.", "기차를 타고 할아버지 댁에 갔어요.", "비행기가 구름 위를 날아가요.", "배가 항구로 천천히 들어와요.",
+           "소방관은 불을 끄고 사람을 구해요.", "의사 선생님이 주사를 놓아 주셨어요.", "경찰관 아저씨께 길을 물어봤어요.", "바람이 불어서 연이 높이 날아요.", "눈이 소복소복 쌓였어요.",
+           "천둥이 치더니 소나기가 내렸어요.", "무지개 끝에는 무엇이 있을까요?", "오늘 급식에 좋아하는 반찬이 나왔어요.", "체육 시간에 줄넘기를 백 번 했어요.", "음악 시간에 리코더를 불었어요.",
+           "미술 시간에 찰흙으로 강아지를 만들었어요.", "수학 문제를 풀면 머리가 개운해요.", "한글은 세종대왕이 만드셨어요.", "우리말을 바르게 쓰면 뜻이 잘 통해요.", "끝까지 해낸 나에게 박수를 보내요."],
+      en: [
+           "I like robots.", "The sun is hot.", "My cat can jump.", "We read books at school.", "The AI learns from data.",
+           "Dogs love to run and play.", "I drink milk every day.", "The sky is blue today.", "Look at the big red bus.", "She draws a green tree.",
+           "Type slowly and carefully.", "The robot can see my face.", "We sing a song together.", "Fish swim in the river.", "Rain makes the flowers grow.",
+           "I brush my teeth every morning.", "My dog likes to play ball.", "Flowers bloom in spring.", "We swim in the sea in summer.", "Leaves turn red in autumn.",
+           "We make a snowman in winter.", "Mom made a tasty lunch.", "I rode a bike with Dad.", "My brother built a tall tower.", "Say hello to your teacher.",
+           "We run on the playground.", "Lunch time is my favorite.", "Sunlight comes through the window.", "I put my pencil in the case.", "I finished my homework first.",
+           "The robot understood my words.", "A sensor feels the world around it.", "I recorded my voice with a mic.", "Music comes from the speaker.", "Computers think in zeros and ones.",
+           "Coding is asking a computer for help.", "A loop makes the code shorter.", "Fixing a bug feels great.", "An AI can make mistakes too.", "More photos help the AI guess better.",
+           "I made an AI that tells cats from dogs.", "Wave your hand to change the screen.", "The moon is smiling at me.", "There are countless stars in space.", "The Earth goes around the Sun.",
+           "The Moon does not make its own light.", "Water boils at one hundred degrees.", "Ice turns into water when it melts.", "Plants make food from sunlight.", "Bees carry pollen from flower to flower.",
+           "Ants work together to carry food.", "Dinosaurs lived a long time ago.", "The turtle is slow but steady.", "Rabbits have long ears.", "Elephants spray water with their trunks.",
+           "Giraffes eat leaves from tall trees.", "Penguins cannot fly, but they swim well.", "Everyone is special.", "Be kind to a friend who is sad.", "Say thank you when someone helps you.",
+           "It is okay to make mistakes.", "Wait for your turn in line.", "Sort the trash before you throw it away.", "Save water to help the Earth.", "Look both ways before you cross.",
+           "Wash your hands before you eat.", "Go to bed early and wake up early.", "Eat your vegetables to grow strong.", "What will I write in my diary today?", "I want to build robots someday.",
+           "I want to be a scientist.", "There are twenty-five kids in my class.", "The clock says three o'clock.", "I marked my birthday on the calendar.", "Watermelon tastes best in summer.",
+           "I had a glass of strawberry milk.", "This soup is warm and tasty.", "The library is a quiet place.", "We saw old things at the museum.", "We took a train to Grandpa's house.",
+           "The plane flies above the clouds.", "The boat comes slowly into the port.", "Firefighters put out fires and save people.", "The doctor gave me a shot.", "I asked a police officer for directions.",
+           "The kite flies high in the wind.", "Snow piled up softly on the ground.", "Thunder rolled and then it rained.", "What is at the end of a rainbow?", "My favorite food was at lunch today.",
+           "I jumped rope one hundred times.", "I played the recorder in music class.", "I made a clay puppy in art class.", "Solving math problems is fun.", "Practice makes perfect.",
+           "Keep your fingers on the home row.", "Look at the screen, not the keys.", "The quick brown fox jumps over the lazy dog.", "My keyboard has many letters.", "Give yourself a big hand for finishing!"]
     };
+    /* 문장은 100개를 다 쓸 때까지 같은 문장이 다시 나오지 않게 — 섞은 더미에서 차례로 뗀다 */
+    var DECK = {};
+    function deal(lang, n) {
+      var d = DECK[lang] || [];
+      if (d.length < n) d = d.concat(shuffle(SENTS[lang]).filter(function (x) { return d.indexOf(x) < 0; }));
+      DECK[lang] = d.slice(n);
+      return d.slice(0, n);
+    }
     function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = (Math.random() * (i + 1)) | 0, x = a[i]; a[i] = a[j]; a[j] = x; } return a; }
 
     /* 타수 — 한글은 자모 수 (겹모음 ㅘㅙㅚㅝㅞㅟㅢ·겹받침은 2타), 그 밖은 한 글자 1타 */
@@ -352,7 +397,7 @@
 
     /* ════════ 낱말 · 문장 ════════ */
     function startType(kind) {
-      var list = kind === "words" ? shuffle(WORDS[kbl]).slice(0, 20) : shuffle(SENTS[kbl]).slice(0, 8);
+      var list = kind === "words" ? shuffle(WORDS[kbl]).slice(0, 20) : deal(kbl, 8);
       run = { kind: kind, list: list, i: 0, ok: 0, typed: 0, good: 0, t0: 0, comp: false };
       $("stats").innerHTML = statsHtml([["left", "sLeft", list.length], ["acc", "sAcc", "100%"], ["speed", "sSpeed", 0]]);
       $("stage").innerHTML = '<div class="next" id="prev"></div><div class="line' + (kind === "sent" ? " sent" : "") + '" id="line"></div>' +
