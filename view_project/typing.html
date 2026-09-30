@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>edge-lab — 타자 연습</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+  <link href="/fonts/fonts.css" rel="stylesheet">
+  <script>
+    try { if (localStorage.getItem("vapi-hc") === "1")
+            document.documentElement.classList.add("hc"); } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="/lib/tokens.css">
+  <script src="/lib/embed.js"></script>
+  <link rel="expect" href="#el-built" blocking="render">
+  <style>
+    /* 타자 연습 — 한글(두벌식)·영어 자판. 자리 연습 → 낱말 → 문장 → 낱말 비 게임.
+     *
+     * 자리 연습은 입력칸 없이 e.code(누른 자판의 자리)로 본다 — 한/영 상태와 상관없이
+     * "어느 손가락으로 어느 자리를 눌렀는지"만 본다. 낱말·문장·게임은 입력칸에 치고
+     * 운영체제의 한글 입력기(IME)로 글자가 조합된다. 그래서 제출은 keyup 에서 본다:
+     * 조합 중에 Enter 를 누르면 keydown 은 조합을 끝내는 데 쓰이고(isComposing),
+     * keyup 때에야 입력칸에 완성된 글자가 들어 있다.
+     *
+     * 타수는 한글이면 자모 수(ㅘ·ㄳ 은 2타), 영어면 글자 수로 센다. 기록은 이 컴퓨터에만(localStorage).
+     */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root { --ok: #2f8a4c; --bad: #c2412a; --f1: #f4dde6; --f2: #fbe8c8; --f3: #dcefd6; --f4: #d6e7f4; }
+    html.hc { --ok: #1f6e38; --bad: #9e2e19; }
+    body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; color: var(--ink); background: var(--paper);
+           font-family: "Gowun Dodum", "Apple SD Gothic Neo", system-ui, sans-serif; line-height: 1.5;
+           padding: var(--sp-2, 8px); gap: var(--sp-2, 8px); }
+    button, input { font-family: inherit; color: var(--ink); }
+    .btn { border: 1.5px solid var(--line-d); background: #fff; font-weight: 600; padding: 7px 13px; border-radius: var(--r); cursor: pointer;
+           font-size: .92rem; min-height: 40px; }
+    .btn.primary { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; }
+    .panel.side { flex: 0 0 270px; } .panel.main { flex: 1 1 auto; }
+    .hint { font-size: var(--fs-side, 13px); color: var(--ink-2); }
+    .st { font-weight: 700; font-size: var(--fs-head, 14px); color: var(--cyan-d); }
+    .sec { display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1.5px dashed var(--line); }
+    .sec[hidden] { display: none; }
+    .seg { display: flex; border: 1.5px solid var(--line-d); border-radius: var(--r); overflow: hidden; }
+    .seg button { flex: 1; border: 0; background: #fff; min-height: var(--tap, 48px); font-size: 1rem; font-weight: 600; cursor: pointer; }
+    .seg button + button { border-left: 1.5px solid var(--line-d); }
+    .seg button.on { background: var(--pen-blue); color: #fff; }
+    .modes { display: flex; flex-direction: column; gap: 6px; }
+    .modes button { display: flex; flex-direction: column; align-items: flex-start; min-height: var(--tap, 48px); padding: 7px 12px; text-align: left;
+                    border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; cursor: pointer; }
+    .modes button b { font-size: 1rem; } .modes button small { font-size: var(--fs-side, 13px); color: var(--ink-2); }
+    .modes button.on { border-color: var(--cyan); background: var(--cyan-bg); }
+    .lessons { display: flex; flex-wrap: wrap; gap: 6px; }
+    .lessons button { border: 1.5px solid var(--line); background: #fff; border-radius: 16px; padding: 4px 12px; min-height: 36px; cursor: pointer; font-size: .9rem; }
+    .lessons button.on { border-color: var(--pen-blue); background: var(--pen-blue); color: #fff; }
+    .best { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; font-size: var(--fs-side, 13px); }
+    .best b { font-family: Menlo, Consolas, monospace; font-weight: 700; text-align: right; }
+
+    .stats { display: flex; gap: 10px; flex-wrap: wrap; }
+    .stat { flex: 1 1 110px; border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; padding: 6px 10px; }
+    .stat small { display: block; font-size: var(--fs-side, 13px); color: var(--ink-2); }
+    .stat b { font-family: Menlo, Consolas, monospace; font-size: 1.35rem; }
+    .imewarn { background: #fdecc8; border: 1.5px solid #e0a030; border-radius: var(--r); padding: 6px 10px; font-weight: 600; }
+
+    /* 자리 연습 */
+    .keysview { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; outline: none; }
+    .target { font-size: 5rem; line-height: 1; font-weight: 700; min-width: 1.4em; text-align: center; padding: 10px 26px; border-radius: 16px;
+              background: #fff; border: 2px solid var(--line); }
+    .target.bad { animation: shake .25s; border-color: var(--bad); }
+    @keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+    .queue { font-size: 1.5rem; letter-spacing: .4em; color: var(--ink-2); min-height: 2rem; }
+    .finger { font-weight: 700; color: var(--cyan-d); min-height: 1.5rem; }
+    .kb { display: flex; flex-direction: column; gap: 6px; user-select: none; }
+    .kb .r { display: flex; gap: 6px; }
+    .kb .r:nth-child(2) { margin-left: 22px; } .kb .r:nth-child(3) { margin-left: 50px; }
+    .kb .k { width: 54px; height: 54px; border-radius: 9px; border: 1.5px solid var(--line); display: flex; flex-direction: column;
+             align-items: center; justify-content: center; font-size: 1.15rem; font-weight: 700; position: relative; }
+    .kb .k small { position: absolute; left: 5px; top: 2px; font-size: 10px; font-weight: 400; color: var(--ink-2); }
+    .kb .k.f1 { background: var(--f1); } .kb .k.f2 { background: var(--f2); } .kb .k.f3 { background: var(--f3); } .kb .k.f4 { background: var(--f4); }
+    .kb .k.home::after { content: ""; position: absolute; bottom: 6px; width: 12px; height: 2px; background: var(--ink-2); border-radius: 1px; }
+    .kb .k.on { outline: 4px solid var(--pen-blue); outline-offset: 1px; background: var(--pen-blue); color: #fff; }
+    .kb .k.on small { color: #dfe9ef; }
+    .kb .k.dim { opacity: .35; }
+    .kb .k.wide { width: 120px; font-size: .85rem; font-weight: 600; }
+    .kb .k.space { width: 330px; font-size: .85rem; font-weight: 600; }
+    .kb .r.last { justify-content: center; margin-left: 0; }
+
+    /* 낱말·문장 */
+    .typeview { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+    .line { font-size: 2.4rem; font-weight: 700; letter-spacing: .02em; text-align: center; min-height: 3.4rem; word-break: keep-all; }
+    .line.sent { font-size: 1.8rem; }
+    .line span.ok { color: var(--ok); } .line span.no { color: #fff; background: var(--bad); border-radius: 4px; }
+    .line span.now { text-decoration: underline 3px var(--pen-blue); text-underline-offset: 6px; }
+    .next { color: var(--ink-2); font-size: 1.1rem; min-height: 1.6rem; }
+    .inp { width: min(640px, 100%); font-size: 1.8rem; padding: 10px 14px; border: 2px solid var(--line-d); border-radius: 10px; text-align: center; background: #fff; }
+    .inp:focus { outline: 3px solid var(--cyan-bg); border-color: var(--cyan); }
+    .bar { width: min(640px, 100%); height: 10px; border-radius: 5px; background: #ece5d6; overflow: hidden; }
+    .bar i { display: block; height: 100%; width: 0; background: var(--ok); transition: width .15s; }
+
+    /* 게임 */
+    .rain { position: relative; overflow: hidden; border: 1.5px solid var(--line); border-radius: var(--r);
+            background: linear-gradient(#eaf2f6, #fbf7ef 80%); min-height: 240px; }
+    .rain { flex: 1 1 auto; }
+    .rain .w { position: absolute; top: 0; left: 0; padding: 3px 12px; border-radius: 14px; background: #fff; border: 1.5px solid var(--line-d);
+               font-size: 1.35rem; font-weight: 700; white-space: nowrap; will-change: transform; }
+    .rain .w.hit { background: var(--ok); color: #fff; border-color: var(--ok); transition: opacity .3s, transform .3s; opacity: 0; }
+    .rain .ground { position: absolute; left: 0; right: 0; bottom: 0; height: 6px; background: #b99d7a; }
+    .rain .msg { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+                 background: rgba(251,247,239,.86); text-align: center; font-size: 1.1rem; }
+    .rain .msg[hidden] { display: none; }
+    .rain .msg b { font-size: 2rem; }
+    .hearts { letter-spacing: 2px; color: var(--bad); font-size: 1.25rem; }
+    .result { text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+    .result b { font-size: 1.6rem; }
+    .result .new { color: var(--ok); font-weight: 700; }
+
+    @media (max-width: 1439px) { .panel.side { flex-basis: 240px; } .kb .k { width: 48px; height: 48px; } .kb .k.space { width: 280px; } }
+    @media (max-width: 1023px) { .main-container { flex-direction: column; } .panel.side, .panel.main { flex: 0 0 auto; }
+                                 .panel, .panel-body { overflow: visible; } body { overflow: auto; height: auto; } .rain { height: 360px; } }
+  </style>
+  <link rel="stylesheet" href="/lib/ui.css">
+  <link rel="stylesheet" href="/lib/shell.css">
+</head>
+<body data-density="explore">
+  <div class="titlebar">
+    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요"><img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b></a>
+    <span class="tb-sep"></span><span class="tb-app" id="txtTitle"></span>
+    <div class="h-tools"><button id="langButton" title="한국어 / English">EN</button></div>
+  </div>
+  <div class="shell-body"><div class="workbench"><div class="main-container">
+
+    <div class="panel side">
+      <div class="panel-head"><span class="q"><span class="qnum">1</span><span class="qtext" id="txtQ1"></span></span></div>
+      <div class="panel-body">
+        <div class="seg" id="kbSeg"><button type="button" data-kb="ko">한글</button><button type="button" data-kb="en">English</button></div>
+        <div class="modes" id="modes"></div>
+        <div class="sec" id="lessonSec">
+          <div class="st" id="txtLesson"></div>
+          <div class="lessons" id="lessons"></div>
+        </div>
+        <div class="sec">
+          <div class="st" id="txtBest"></div>
+          <div class="best" id="best"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel main">
+      <div class="panel-head"><span class="q"><span class="qnum">2</span><span class="qtext" id="modeTitle"></span></span></div>
+      <div class="panel-body" id="stageBody">
+        <div class="stats" id="stats"></div>
+        <div class="imewarn" id="imeWarn" hidden></div>
+        <div class="grow" id="stage"></div>
+      </div>
+    </div>
+
+  </div></div></div>
+
+  <script src="/lib/icons.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var LANG = "ko";
+    try { LANG = localStorage.getItem("vapiLang") === "en" ? "en" : "ko"; } catch (e) {}
+    document.documentElement.lang = LANG;
+    var I18N = {
+      ko: { title: "edge-lab — 타자 연습", lang: "EN", q1: "연습 고르기", lesson: "자리 고르기", best: "내 최고 기록",
+            mKeys: "자리 연습", mKeysD: "손가락 자리를 익혀요", mWords: "낱말 연습", mWordsD: "낱말 20개",
+            mSent: "문장 연습", mSentD: "문장 8개", mGame: "낱말 비", mGameD: "떨어지는 낱말을 쳐서 터뜨려요",
+            L1: "기본 자리", L2: "검지 뻗기", L3: "윗줄", L4: "아랫줄", L5: "모든 자리", L6ko: "쌍자음 · ㅒㅖ", L6en: "대문자",
+            clickFirst: "여기를 한 번 누르고, 파란 자판을 눌러요", done: "{n}개 중 {n}개",
+            acc: "정확도", speed: "타수 (1분)", time: "걸린 시간", left: "남은 것", score: "점수", level: "단계", life: "목숨",
+            fingers: { lp: "왼손 새끼", lr: "왼손 약지", lm: "왼손 중지", li: "왼손 검지", ri: "오른손 검지", rm: "오른손 중지", rr: "오른손 약지", rp: "오른손 새끼" },
+            shift: "Shift 를 누른 채로", wordPh: "여기에 치고 Enter 나 스페이스", sentPh: "여기에 치고 Enter",
+            imeKo: "지금 영어로 쳐지고 있어요 — 한/영 키를 한 번 눌러 한글로 바꿔요.",
+            imeEn: "지금 한글로 쳐지고 있어요 — 한/영 키를 한 번 눌러 영어로 바꿔요.",
+            again: "다시 하기", fin: "다 했어요!", newBest: "새 최고 기록!",
+            gameStart: "시작", gameHow: "떨어지는 낱말을 치고 Enter 나 스페이스. 땅에 닿기 전에!", gameOver: "끝!", gameScore: "{s}점 · {n}개 터뜨림",
+            bKeys: "자리 (타/분)", bWords: "낱말 (타/분)", bSent: "문장 (타/분)", bGame: "낱말 비 (점)", none: "—" },
+      en: { title: "edge-lab — Typing", lang: "한", q1: "Pick a practice", lesson: "Pick keys", best: "My best",
+            mKeys: "Key practice", mKeysD: "Learn where fingers go", mWords: "Words", mWordsD: "20 words",
+            mSent: "Sentences", mSentD: "8 sentences", mGame: "Word rain", mGameD: "Type falling words to pop them",
+            L1: "Home row", L2: "Index reach", L3: "Top row", L4: "Bottom row", L5: "All keys", L6ko: "Double consonants", L6en: "Capitals",
+            clickFirst: "Click here once, then press the blue key", done: "{n} of {n}",
+            acc: "Accuracy", speed: "Strokes / min", time: "Time", left: "Left", score: "Score", level: "Level", life: "Lives",
+            fingers: { lp: "left pinky", lr: "left ring", lm: "left middle", li: "left index", ri: "right index", rm: "right middle", rr: "right ring", rp: "right pinky" },
+            shift: "Hold Shift and", wordPh: "Type here, then Enter or Space", sentPh: "Type here, then Enter",
+            imeKo: "You are typing English — press the Han/Eng key to switch to Korean.",
+            imeEn: "You are typing Korean — press the Han/Eng key to switch to English.",
+            again: "Again", fin: "Done!", newBest: "New best!",
+            gameStart: "Start", gameHow: "Type a falling word and press Enter or Space before it lands!", gameOver: "Game over", gameScore: "{s} points · {n} popped",
+            bKeys: "Keys (per min)", bWords: "Words (per min)", bSent: "Sentences (per min)", bGame: "Word rain (pts)", none: "—" }
+    };
+    function t(k) { return I18N[LANG][k] !== undefined ? I18N[LANG][k] : I18N.ko[k]; }
+    function $(id) { return document.getElementById(id); }
+    function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+    /* ── 자판 — KS X 5002 두벌식과 QWERTY. 자리는 e.code 로 본다 ── */
+    var ROWS = [["KeyQ", "KeyW", "KeyE", "KeyR", "KeyT", "KeyY", "KeyU", "KeyI", "KeyO", "KeyP"],
+                ["KeyA", "KeyS", "KeyD", "KeyF", "KeyG", "KeyH", "KeyJ", "KeyK", "KeyL"],
+                ["KeyZ", "KeyX", "KeyC", "KeyV", "KeyB", "KeyN", "KeyM"]];
+    var KO = { KeyQ: "ㅂ", KeyW: "ㅈ", KeyE: "ㄷ", KeyR: "ㄱ", KeyT: "ㅅ", KeyY: "ㅛ", KeyU: "ㅕ", KeyI: "ㅑ", KeyO: "ㅐ", KeyP: "ㅔ",
+               KeyA: "ㅁ", KeyS: "ㄴ", KeyD: "ㅇ", KeyF: "ㄹ", KeyG: "ㅎ", KeyH: "ㅗ", KeyJ: "ㅓ", KeyK: "ㅏ", KeyL: "ㅣ",
+               KeyZ: "ㅋ", KeyX: "ㅌ", KeyC: "ㅊ", KeyV: "ㅍ", KeyB: "ㅠ", KeyN: "ㅜ", KeyM: "ㅡ" };
+    var KO_SH = { KeyQ: "ㅃ", KeyW: "ㅉ", KeyE: "ㄸ", KeyR: "ㄲ", KeyT: "ㅆ", KeyO: "ㅒ", KeyP: "ㅖ" };
+    var FINGER = { KeyQ: "lp", KeyA: "lp", KeyZ: "lp", KeyW: "lr", KeyS: "lr", KeyX: "lr", KeyE: "lm", KeyD: "lm", KeyC: "lm",
+                   KeyR: "li", KeyF: "li", KeyV: "li", KeyT: "li", KeyG: "li", KeyB: "li",
+                   KeyY: "ri", KeyH: "ri", KeyN: "ri", KeyU: "ri", KeyJ: "ri", KeyM: "ri", KeyI: "rm", KeyK: "rm", KeyO: "rr", KeyL: "rr", KeyP: "rp" };
+    var FCLS = { lp: "f1", rp: "f1", lr: "f2", rr: "f2", lm: "f3", rm: "f3", li: "f4", ri: "f4" };
+    var HOME = ["KeyA", "KeyS", "KeyD", "KeyF", "KeyJ", "KeyK", "KeyL"];
+    function en(code) { return code.slice(3).toLowerCase(); }
+    function label(code, sh) { return kbl === "ko" ? (sh ? KO_SH[code] : KO[code]) : (sh ? en(code).toUpperCase() : en(code)); }
+    function lessonKeys(n) {
+      var all = ROWS[0].concat(ROWS[1], ROWS[2]);
+      var set = n === 1 ? HOME : n === 2 ? HOME.concat(["KeyG", "KeyH"]) : n === 3 ? ROWS[0] : n === 4 ? ROWS[2] : all;
+      if (n === 6) return (kbl === "ko" ? Object.keys(KO_SH) : all).map(function (c) { return { code: c, sh: true }; });
+      return set.map(function (c) { return { code: c, sh: false }; });
+    }
+
+    /* ── 글감 ── */
+    var WORDS = {
+      ko: ["사과", "바나나", "학교", "친구", "로봇", "컴퓨터", "하늘", "바다", "나무", "고양이", "강아지", "자동차", "비행기", "연필", "공책",
+           "선생님", "무지개", "도서관", "운동장", "우유", "김밥", "기차", "자전거", "우주", "별빛", "거북이", "토끼", "사자", "호랑이", "코끼리",
+           "기린", "딸기", "수박", "포도", "가방", "신발", "모자", "안경", "시계", "노래", "그림", "편지", "선물", "생일", "여름", "겨울",
+           "가을", "눈사람", "인공지능", "카메라", "센서", "마이크", "스피커", "배터리", "키보드", "마우스", "화면", "전기", "과학", "우산"],
+      en: ["cat", "dog", "sun", "moon", "star", "tree", "fish", "bird", "cake", "milk", "book", "pen", "robot", "apple", "happy", "water",
+           "green", "blue", "red", "house", "school", "friend", "music", "smile", "train", "plane", "river", "cloud", "rain", "snow", "light",
+           "code", "data", "mouse", "sensor", "camera", "tiger", "lion", "zebra", "pizza", "bread", "juice", "game", "play", "jump", "swim",
+           "read", "write", "draw", "lamp", "clock", "phone", "chair", "table", "window", "door", "heart", "space", "rocket", "planet"]
+    };
+    var SENTS = {
+      ko: ["나는 로봇을 좋아해요.", "오늘은 하늘이 맑아요.", "인공지능은 데이터로 배워요.", "친구와 함께 그림을 그려요.", "고양이가 창가에서 졸아요.",
+           "도서관에서 책을 읽어요.", "카메라가 내 얼굴을 찾았어요.", "비가 오면 우산을 써요.", "컴퓨터에게 말을 가르쳐요.", "천천히 정확하게 쳐 봐요.",
+           "무지개는 일곱 빛깔이에요.", "자동차가 트랙을 돌아요.", "내일은 소풍을 가요.", "손가락을 제자리에 두어요.", "별이 반짝반짝 빛나요."],
+      en: ["I like robots.", "The sun is hot.", "My cat can jump.", "We read books at school.", "The AI learns from data.", "Dogs love to run and play.",
+           "I drink milk every day.", "The sky is blue today.", "Look at the big red bus.", "She draws a green tree.", "Type slowly and carefully.",
+           "The robot can see my face.", "We sing a song together.", "Fish swim in the river.", "Rain makes the flowers grow."]
+    };
+    function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = (Math.random() * (i + 1)) | 0, x = a[i]; a[i] = a[j]; a[j] = x; } return a; }
+
+    /* 타수 — 한글은 자모 수 (겹모음 ㅘㅙㅚㅝㅞㅟㅢ·겹받침은 2타), 그 밖은 한 글자 1타 */
+    var JUNG2 = [9, 10, 11, 14, 15, 16, 19], JONG2 = [3, 5, 6, 9, 10, 11, 12, 13, 14, 15, 18];
+    function strokes(s) {
+      var n = 0;
+      for (var i = 0; i < s.length; i++) {
+        var c = s.charCodeAt(i) - 0xAC00;
+        if (c < 0 || c > 11171) { n++; continue; }
+        var jung = Math.floor((c % 588) / 28), jong = c % 28;
+        n += 1 + (JUNG2.indexOf(jung) >= 0 ? 2 : 1) + (jong ? (JONG2.indexOf(jong) >= 0 ? 2 : 1) : 0);
+      }
+      return n;
+    }
+    var HANGUL = /[ᄀ-ᇿ㄰-㆏가-힣]/, LATIN = /[A-Za-z]/;
+
+    /* ── 기록 ── */
+    var BEST = {};
+    try { BEST = JSON.parse(localStorage.getItem("el-typing-best") || "{}") || {}; } catch (e) {}
+    function best(kind) { return (BEST[kbl] || {})[kind] || 0; }
+    var HUMAN_MAX = 1500;           // 타/분 — 이보다 빠르면 사람이 친 것이 아니다(붙여넣기 등). 점수(game)는 따로
+    function putBest(kind, v) {
+      if (v <= best(kind) || (kind !== "game" && v > HUMAN_MAX)) return false;
+      BEST[kbl] = BEST[kbl] || {}; BEST[kbl][kind] = v;
+      try { localStorage.setItem("el-typing-best", JSON.stringify(BEST)); } catch (e) {}
+      paintBest(); return true;
+    }
+    function paintBest() {
+      $("best").innerHTML = [["keys", "bKeys"], ["words", "bWords"], ["sent", "bSent"], ["game", "bGame"]].map(function (x) {
+        var v = best(x[0]); return "<span>" + t(x[1]) + "</span><b>" + (v || t("none")) + "</b>";
+      }).join("");
+    }
+
+    /* ── 상태 ── */
+    var kbl = LANG === "en" ? "en" : "ko";          // 연습할 자판 — 화면 언어와 따로 고를 수 있다
+    try { kbl = localStorage.getItem("el-typing-kb") || kbl; } catch (e) {}
+    var mode = "keys", lesson = 1, run = null;
+
+    function statsHtml(list) {
+      return list.map(function (s) { return '<div class="stat"><small>' + t(s[0]) + '</small><b id="' + s[1] + '">' + s[2] + "</b></div>"; }).join("");
+    }
+    function mmss(ms) { var s = Math.round(ms / 1000); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); }
+    function resultHtml(lines, isNew) {
+      return '<div class="result"><b>' + esc(t("fin")) + "</b>" + lines.map(function (l) { return "<div>" + esc(l) + "</div>"; }).join("") +
+        (isNew ? '<div class="new">' + esc(t("newBest")) + "</div>" : "") +
+        '<button class="btn primary" type="button" id="againBtn">' + esc(t("again")) + "</button></div>";
+    }
+
+    /* ════════ 자리 연습 ════════ */
+    var ROUND_KEYS = 40;
+    function startKeys() {
+      var pool = lessonKeys(lesson), seq = [];
+      for (var i = 0; i < ROUND_KEYS; i++) {
+        var k = pool[(Math.random() * pool.length) | 0];
+        if (seq.length && seq[seq.length - 1].code === k.code && pool.length > 1) { i--; continue; }
+        seq.push(k);
+      }
+      run = { kind: "keys", seq: seq, i: 0, miss: 0, t0: 0 };
+      $("stats").innerHTML = statsHtml([["left", "sLeft", ROUND_KEYS], ["acc", "sAcc", "100%"], ["speed", "sSpeed", 0]]);
+      var kb = ROWS.map(function (r) {
+        return '<div class="r">' + r.map(function (c) {
+          return '<div class="k ' + FCLS[FINGER[c]] + (HOME.indexOf(c) >= 0 ? " home" : "") + '" data-c="' + c + '"><small>' +
+                 (kbl === "ko" ? en(c).toUpperCase() : "") + "</small>" + label(c, false) + "</div>";
+        }).join("") + "</div>";
+      }).join("") + '<div class="r last"><div class="k wide" data-c="Shift">Shift</div><div class="k space">Space</div><div class="k wide" data-c="Shift">Shift</div></div>';
+      $("stage").innerHTML = '<div class="keysview" id="keysView" tabindex="0"><div class="target" id="target"></div><div class="queue" id="queue"></div>' +
+        '<div class="finger" id="finger"></div><div class="kb" id="kb">' + kb + '</div><div class="hint">' + esc(t("clickFirst")) + "</div></div>";
+      $("stage").className = "grow keysview";
+      paintKey();
+      $("keysView").focus();
+    }
+    function paintKey() {
+      var k = run.seq[run.i];
+      $("target").textContent = label(k.code, k.sh);
+      $("queue").textContent = run.seq.slice(run.i + 1, run.i + 7).map(function (x) { return label(x.code, x.sh); }).join("");
+      $("finger").textContent = (k.sh ? t("shift") + " " : "") + t("fingers")[FINGER[k.code]];
+      var pool = lessonKeys(lesson).map(function (x) { return x.code; });
+      Array.prototype.forEach.call($("kb").querySelectorAll(".k[data-c]"), function (el) {
+        var c = el.getAttribute("data-c");
+        el.classList.toggle("on", c === k.code || (c === "Shift" && k.sh));
+        el.classList.toggle("dim", c !== "Shift" && pool.indexOf(c) < 0);
+        if (c !== "Shift") el.lastChild.textContent = label(c, k.sh && lesson === 6 && (kbl === "en" || KO_SH[c]));
+      });
+    }
+    function keyDown(e) {
+      if (!run || run.kind !== "keys" || e.ctrlKey || e.altKey || e.metaKey) return;
+      if (!/^Key[A-Z]$/.test(e.code)) return;
+      e.preventDefault();
+      var k = run.seq[run.i];
+      if (!run.t0) run.t0 = performance.now();
+      if (e.code === k.code && e.shiftKey === k.sh) {
+        run.i++;
+        if (run.i >= run.seq.length) return finishKeys();
+        paintKey();
+      } else {
+        run.miss++;
+        var tg = $("target"); tg.classList.remove("bad"); void tg.offsetWidth; tg.classList.add("bad");
+      }
+      var min = (performance.now() - run.t0) / 60000;
+      $("sLeft").textContent = run.seq.length - run.i;
+      $("sAcc").textContent = Math.round(run.i / Math.max(1, run.i + run.miss) * 100) + "%";
+      $("sSpeed").textContent = min > 0.02 ? Math.round(run.i / min) : 0;
+    }
+    function finishKeys() {
+      var ms = performance.now() - run.t0, spm = Math.round(run.seq.length / (ms / 60000));
+      var acc = Math.round(run.seq.length / (run.seq.length + run.miss) * 100);
+      var isNew = acc >= 90 && putBest("keys", spm);       // 마구 눌러 빨라진 기록은 치지 않는다
+      $("stage").innerHTML = resultHtml([t("speed") + " " + spm, t("acc") + " " + acc + "%", t("time") + " " + mmss(ms)], isNew);
+      $("stage").className = "grow typeview";
+      $("againBtn").addEventListener("click", start);
+      run = null;
+      if (window.vapiStat) vapiStat("typing_round");
+    }
+    document.addEventListener("keydown", keyDown);
+
+    /* ════════ 낱말 · 문장 ════════ */
+    function startType(kind) {
+      var list = kind === "words" ? shuffle(WORDS[kbl]).slice(0, 20) : shuffle(SENTS[kbl]).slice(0, 8);
+      run = { kind: kind, list: list, i: 0, ok: 0, typed: 0, good: 0, t0: 0, comp: false };
+      $("stats").innerHTML = statsHtml([["left", "sLeft", list.length], ["acc", "sAcc", "100%"], ["speed", "sSpeed", 0]]);
+      $("stage").innerHTML = '<div class="next" id="prev"></div><div class="line' + (kind === "sent" ? " sent" : "") + '" id="line"></div>' +
+        '<input class="inp" id="inp" autocomplete="off" autocapitalize="off" spellcheck="false" lang="' + kbl + '">' +
+        '<div class="bar"><i id="bar"></i></div><div class="next" id="next"></div>';
+      $("stage").className = "grow typeview";
+      var inp = $("inp");
+      inp.placeholder = kind === "words" ? t("wordPh") : t("sentPh");
+      inp.addEventListener("paste", function (e) { e.preventDefault(); });      // 붙여넣기는 타자가 아니다
+      inp.addEventListener("compositionstart", function () { run.comp = true; });
+      inp.addEventListener("compositionend", function () { run.comp = false; paintLine(); });
+      inp.addEventListener("input", function () { if (!run.t0) run.t0 = performance.now(); paintLine(); checkIme(inp.value); });
+      inp.addEventListener("keydown", function (e) { if (e.key === "Enter") e.preventDefault(); });
+      inp.addEventListener("keyup", function (e) {
+        if (e.isComposing) return;
+        if (e.key === "Enter" || (kind === "words" && e.key === " ")) submit();
+      });
+      paintLine(); inp.focus();
+    }
+    function paintLine() {
+      if (!run || !run.list) return;
+      var tg = run.list[run.i], v = $("inp").value, h = "";
+      for (var i = 0; i < tg.length; i++) {
+        var cls = "";
+        if (i < v.length) {
+          var last = i === v.length - 1 && run.comp;          // 조합 중인 글자는 아직 맞다·틀리다 하지 않는다
+          cls = last ? "now" : v[i] === tg[i] ? "ok" : "no";
+        } else if (i === v.length) cls = "now";
+        h += '<span class="' + cls + '">' + esc(tg[i]) + "</span>";
+      }
+      $("line").innerHTML = h;
+      $("next").textContent = run.list.slice(run.i + 1, run.i + 4).join("   ·   ");
+    }
+    function checkIme(v) {
+      var w = $("imeWarn"), bad = kbl === "ko" ? LATIN.test(v) : HANGUL.test(v);
+      w.hidden = !bad; w.textContent = kbl === "ko" ? t("imeKo") : t("imeEn");
+    }
+    function submit() {
+      var inp = $("inp"), v = inp.value.trim(), tg = run.list[run.i];
+      if (!v) { inp.value = ""; return; }
+      var ok = 0;
+      for (var i = 0; i < tg.length; i++) if (v[i] === tg[i]) ok++;
+      run.typed += Math.max(tg.length, v.length); run.good += ok;
+      run.ok += strokes(tg.slice(0, ok));                  // 맞게 친 글자만 타수로
+      $("prev").innerHTML = (v === tg ? "✓ " : "✗ ") + esc(v);
+      $("prev").style.color = v === tg ? "var(--ok)" : "var(--bad)";
+      inp.value = ""; $("imeWarn").hidden = true;
+      run.i++;
+      var min = (performance.now() - run.t0) / 60000;
+      $("sLeft").textContent = run.list.length - run.i;
+      $("sAcc").textContent = Math.round(run.good / Math.max(1, run.typed) * 100) + "%";
+      $("sSpeed").textContent = min > 0.02 ? Math.round(run.ok / min) : 0;
+      $("bar").style.width = (run.i / run.list.length * 100) + "%";
+      if (run.i >= run.list.length) return finishType();
+      paintLine();
+    }
+    function finishType() {
+      var ms = performance.now() - run.t0, spm = Math.round(run.ok / (ms / 60000)), acc = Math.round(run.good / Math.max(1, run.typed) * 100);
+      var isNew = acc >= 90 && putBest(run.kind, spm);
+      $("stage").innerHTML = resultHtml([t("speed") + " " + spm, t("acc") + " " + acc + "%", t("time") + " " + mmss(ms)], isNew);
+      $("againBtn").addEventListener("click", start);
+      run = null;
+      if (window.vapiStat) vapiStat("typing_round");
+    }
+
+    /* ════════ 낱말 비 ════════ */
+    function startGame() {
+      run = { kind: "game", words: [], score: 0, popped: 0, life: 5, level: 1, spawn: 0, last: 0, on: false, paused: false };
+      $("stats").innerHTML = statsHtml([["score", "sScore", 0], ["level", "sLevel", 1], ["life", "sLife", "♥♥♥♥♥"]]);
+      $("sLife").className = "hearts";
+      $("stage").innerHTML = '<div class="rain grow" id="rain"><div class="ground"></div><div class="msg" id="gMsg"><div>' + esc(t("gameHow")) +
+        '</div><button class="btn primary" type="button" id="gGo">' + esc(t("gameStart")) + "</button></div></div>" +
+        '<input class="inp" id="inp" autocomplete="off" autocapitalize="off" spellcheck="false" lang="' + kbl + '">';
+      $("stage").className = "grow typeview";
+      $("stage").style.alignItems = "stretch";
+      $("inp").style.alignSelf = "center";
+      $("inp").placeholder = t("wordPh");
+      $("gGo").addEventListener("click", goGame);
+      var inp = $("inp");
+      inp.addEventListener("paste", function (e) { e.preventDefault(); });
+      inp.addEventListener("input", function () { checkIme(inp.value); });
+      inp.addEventListener("keydown", function (e) { if (e.key === "Enter") e.preventDefault(); });
+      inp.addEventListener("keyup", function (e) { if (!e.isComposing && (e.key === "Enter" || e.key === " ")) shoot(); });
+    }
+    function goGame() {
+      $("gMsg").hidden = true; run.on = true; run.last = performance.now(); run.spawn = 0;
+      $("inp").focus();
+      requestAnimationFrame(tickGame);
+    }
+    function tickGame(now) {
+      if (!run || run.kind !== "game" || !run.on) return;
+      if (run.paused) { run.last = now; requestAnimationFrame(tickGame); return; }
+      var dt = Math.min(0.1, (now - run.last) / 1000); run.last = now;
+      var rain = $("rain"), H = rain.clientHeight, W = rain.clientWidth;
+      var speed = 26 + run.level * 7, every = Math.max(1.0, 2.8 - run.level * 0.22);
+      run.spawn -= dt;
+      if (run.spawn <= 0) {
+        run.spawn = every;
+        var pool = WORDS[kbl].filter(function (w) { return !run.words.some(function (x) { return x.text === w; }); });
+        var el = document.createElement("div"); el.className = "w";
+        el.textContent = pool[(Math.random() * pool.length) | 0];
+        rain.appendChild(el);
+        var x = Math.random() * Math.max(10, W - el.offsetWidth - 10) + 5;
+        run.words.push({ el: el, text: el.textContent, x: x, y: -30 });
+      }
+      for (var i = run.words.length - 1; i >= 0; i--) {
+        var w = run.words[i];
+        w.y += speed * dt;
+        w.el.style.transform = "translate(" + w.x + "px," + w.y + "px)";
+        if (w.y > H - 40) {
+          w.el.remove(); run.words.splice(i, 1);
+          run.life--;
+          $("sLife").textContent = "♥♥♥♥♥".slice(0, Math.max(0, run.life)) + "♡♡♡♡♡".slice(0, 5 - Math.max(0, run.life));
+          if (run.life <= 0) return overGame();
+        }
+      }
+      requestAnimationFrame(tickGame);
+    }
+    function shoot() {
+      var inp = $("inp"), v = inp.value.trim(); inp.value = ""; $("imeWarn").hidden = true;
+      if (!v || !run || !run.on) return;
+      var hit = null;
+      run.words.forEach(function (w) { if (w.text === v && (!hit || w.y > hit.y)) hit = w; });   // 같은 낱말이면 땅에 가까운 것부터
+      if (!hit) return;
+      run.words.splice(run.words.indexOf(hit), 1);
+      hit.el.classList.add("hit");
+      setTimeout(function () { hit.el.remove(); }, 300);
+      run.popped++; run.score += strokes(v) * 10 * run.level;
+      run.level = 1 + Math.floor(run.popped / 8);
+      $("sScore").textContent = run.score; $("sLevel").textContent = run.level;
+    }
+    function overGame() {
+      run.on = false;
+      run.words.forEach(function (w) { w.el.remove(); });
+      var isNew = putBest("game", run.score);
+      var m = $("gMsg"); m.hidden = false;
+      m.innerHTML = "<b>" + esc(t("gameOver")) + "</b><div>" + esc(t("gameScore").replace("{s}", run.score).replace("{n}", run.popped)) + "</div>" +
+        (isNew ? '<div class="new" style="color:var(--ok);font-weight:700">' + esc(t("newBest")) + "</div>" : "") +
+        '<button class="btn primary" type="button" id="gAgain">' + esc(t("again")) + "</button>";
+      $("gAgain").addEventListener("click", start);
+      if (window.vapiStat) vapiStat("typing_game");
+    }
+
+    /* ── 고르기 ── */
+    var MODES = [["keys", "mKeys", "mKeysD"], ["words", "mWords", "mWordsD"], ["sent", "mSent", "mSentD"], ["game", "mGame", "mGameD"]];
+    function paintSide() {
+      Array.prototype.forEach.call($("kbSeg").children, function (b) { b.classList.toggle("on", b.getAttribute("data-kb") === kbl); });
+      $("modes").innerHTML = MODES.map(function (m) {
+        return '<button type="button" data-m="' + m[0] + '"' + (m[0] === mode ? ' class="on"' : "") + "><b>" + esc(t(m[1])) + "</b><small>" + esc(t(m[2])) + "</small></button>";
+      }).join("");
+      $("lessons").innerHTML = [1, 2, 3, 4, 5, 6].map(function (n) {
+        var name = n === 6 ? t(kbl === "ko" ? "L6ko" : "L6en") : t("L" + n);
+        return '<button type="button" data-l="' + n + '"' + (n === lesson ? ' class="on"' : "") + ">" + esc(name) + "</button>";
+      }).join("");
+      $("lessonSec").hidden = mode !== "keys";
+      var m = MODES.filter(function (x) { return x[0] === mode; })[0];
+      $("modeTitle").textContent = t(m[1]) + " · " + (kbl === "ko" ? "한글" : "English");
+      paintBest();
+    }
+    function stop() {
+      if (run && run.kind === "game") { run.on = false; }
+      run = null;
+      $("imeWarn").hidden = true; $("stage").style.alignItems = "";
+    }
+    function start() {
+      stop(); paintSide();
+      if (mode === "keys") startKeys(); else if (mode === "game") startGame(); else startType(mode);
+    }
+    $("kbSeg").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-kb]"); if (!b) return;
+      kbl = b.getAttribute("data-kb");
+      try { localStorage.setItem("el-typing-kb", kbl); } catch (err) {}
+      start();
+    });
+    $("modes").addEventListener("click", function (e) { var b = e.target.closest("[data-m]"); if (b) { mode = b.getAttribute("data-m"); start(); } });
+    $("lessons").addEventListener("click", function (e) { var b = e.target.closest("[data-l]"); if (b) { lesson = +b.getAttribute("data-l"); start(); } });
+    $("stage").addEventListener("click", function (e) {
+      if (e.target.closest("button")) return;
+      var f = $("inp") || $("keysView"); if (f) f.focus();      // 어디를 눌러도 치던 곳으로
+    });
+
+    /* 가려지면 낱말 비를 멈춘다 — 보지 못하는 사이에 목숨이 줄지 않게. 다시 보이면 이어서 */
+    if (window.EL_WIN) {
+      EL_WIN.onHide(function () { if (run && run.kind === "game") run.paused = true; });
+      EL_WIN.onShow(function () { if (run && run.kind === "game") { run.paused = false; var i = $("inp"); if (i) i.focus(); } });
+    }
+
+    $("langButton").addEventListener("click", function () {
+      try { localStorage.setItem("vapiLang", LANG === "ko" ? "en" : "ko"); } catch (e) {}
+      location.reload();
+    });
+    document.title = t("title"); $("langButton").textContent = t("lang");
+    $("txtQ1").textContent = t("q1"); $("txtLesson").textContent = t("lesson"); $("txtBest").textContent = t("best");
+    start();
+    window.EL_TYPING = { get run() { return run; }, strokes: strokes };      // 시험용
+  })();
+  </script>
+  <script src="/lib/shell.js"></script>
+  <script src="/lib/usage.js" data-page="typing"></script>
+  <i id="el-built" hidden></i>
+</body>
+</html>

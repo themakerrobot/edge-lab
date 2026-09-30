@@ -291,7 +291,7 @@ ALLOW_WHILE_LOADING = ("/ready", "/system", "/lib", "/assets", "/fonts", "/block
 # 화면 주소 — 로딩 중에도 열린다. 새 화면을 만들면 여기에 더한다(빠지면 켜진 직후 1~2분은
 # 그 앱이 JSON 503 으로 뜬다 — 셸에 새 앱을 넣으며 한 번 겪었다).
 PAGE_PATHS = ("/", "/home", "/try", "/blocks", "/train", "/options", "/code", "/talk",
-              "/works", "/drive", "/recorder", "/story", "/tasks")
+              "/works", "/drive", "/paint", "/typing", "/calc", "/recorder", "/story", "/tasks")
 
 
 @app.middleware("http")
@@ -706,6 +706,27 @@ async def code_page():
 async def drive_page():
     """자동차 가르치기 — 내 운전을 보고 배우는 AI (브라우저 안에서 학습, 서버 AI 안 씀)."""
     with open("view_project/drive.html", encoding="utf-8") as f:
+        return f.read()
+
+
+@app.get("/paint", response_class=HTMLResponse)
+async def paint_page():
+    """그림판 — 그리고, AI(/vlm/look)에게 무엇을 그렸는지 묻는다."""
+    with open("view_project/paint.html", encoding="utf-8") as f:
+        return f.read()
+
+
+@app.get("/typing", response_class=HTMLResponse)
+async def typing_page():
+    """타자 연습 — 한글(두벌식)·영어 자리 연습, 낱말·문장, 낱말 비 게임."""
+    with open("view_project/typing.html", encoding="utf-8") as f:
+        return f.read()
+
+
+@app.get("/calc", response_class=HTMLResponse)
+async def calc_page():
+    """계산기 — 누르는 대로 계산하고, 수를 우리말로 읽어 준다."""
+    with open("view_project/calc.html", encoding="utf-8") as f:
         return f.read()
 
 

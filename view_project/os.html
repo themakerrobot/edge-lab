@@ -119,8 +119,14 @@
     .d-ic .g { width: 64px; height: 64px; border-radius: 20px; display: grid; place-items: center; color: #fff;
                background: var(--cyan); box-shadow: 0 6px 16px rgba(23,71,92,.24); }
     .d-ic .g svg { width: 34px; height: 34px; }
-    .d-ic.sys .g { background: #5b6b76; box-shadow: 0 6px 14px rgba(40,50,60,.2); }
-    .d-ic.play .g { background: #d07a3e; box-shadow: 0 6px 14px rgba(150,80,30,.22); }
+    /* 묶음(lib/apps.js 의 cat)마다 색 — AI 는 기본 파랑 */
+    .d-ic.c-dev .g { background: #5d4f9e; box-shadow: 0 6px 14px rgba(70,55,130,.22); }
+    .d-ic.c-tool .g { background: #d07a3e; box-shadow: 0 6px 14px rgba(150,80,30,.22); }
+    .d-ic.c-sys .g { background: #5b6b76; box-shadow: 0 6px 14px rgba(40,50,60,.2); }
+    .d-cat { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 700; color: var(--ink-2);
+             letter-spacing: .04em; margin: 4px 4px -4px; }
+    .d-cat::after { content: ""; flex: 1; height: 1px; background: rgba(74,63,46,.16); }
+    .d-cat:first-child { margin-top: 0; }
     .d-ic b { font-size: var(--fs-name); }
     .d-ic i { font-style: normal; font-size: 12.5px; color: var(--ink-2); line-height: 1.35; }
     .d-file .g { background: #fff; color: var(--ink-2); border-radius: 8px 20px 8px 8px; border: 1.5px solid rgba(74,63,46,.22);
@@ -300,7 +306,7 @@
 
       var UI = {
         ko: {
-          hello: "무엇을 해 볼까요?", helloName: "{n}, 무엇을 해 볼까요?",
+          hello: "무엇을 해 볼까요?", helloName: "{n}, 무엇을 해 볼까요?", pins: "바탕화면에 둔 것",
           days: ["일", "월", "화", "수", "목", "금", "토"], date: "{m}월 {d}일 {w}요일",
           mine: "내가 가르친 AI", mineGo: "가르치기에서 보기", mineNone: "아직 없어요. 가르치기에서 만들어 보세요.",
           pc: "이 컴퓨터", pcSub: "AI 를 돌리는 곳", mem: "메모리 {u} / {t} GB",
@@ -315,7 +321,7 @@
           blocked: "‘{app}’ 은(는) 수업 중에는 쉬어요."
         },
         en: {
-          hello: "What shall we do?", helloName: "{n}, what shall we do?",
+          hello: "What shall we do?", helloName: "{n}, what shall we do?", pins: "Pinned",
           days: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], date: "{w}, {mo} {d}",
           mine: "AI I trained", mineGo: "Open in Train", mineNone: "None yet. Make one in Train.",
           pc: "This computer", pcSub: "Where the AI runs", mem: "Memory {u} / {t} GB",
@@ -487,8 +493,14 @@
         $("osStart").title = T("start");
         var box = $("osApps");
         box.innerHTML = "";
+        var lastCat = null;
         A.APPS.forEach(function (a) {
           if (hiddenApp(a.href) && !wins[a.href]) return;
+          if (lastCat && a.cat !== lastCat) {            // 묶음이 바뀌는 곳에 가는 세로줄
+            var sep = document.createElement("span"); sep.className = "os-sep"; sep.style.alignSelf = "center";
+            box.appendChild(sep);
+          }
+          lastCat = a.cat;
           var run = !!wins[a.href], on = active === a.href;
           var name = LANG === "en" ? a.en : a.ko;
           var b = document.createElement("button");
@@ -663,23 +675,34 @@
 
         var box = $("dIcons");
         box.innerHTML = "";
-        A.APPS.forEach(function (a) {
-          if (hiddenApp(a.href)) return;
+        function head(text) {
+          var h = document.createElement("div");
+          h.className = "d-cat"; h.textContent = text;
+          box.appendChild(h);
+        }
+        A.CATS.forEach(function (c) {
+          var list = A.APPS.filter(function (a) { return a.cat === c[0] && !hiddenApp(a.href); });
+          if (!list.length) return;
+          head(A.catName(c[0], LANG));
+          list.forEach(deskIcon);
+        });
+        function deskIcon(a) {
           var b = document.createElement("a");
           b.href = a.href;
-          b.className = "d-ic" + (a.sys ? " sys" : a.play ? " play" : "") + (wins[a.href] ? " run" : "");
+          b.className = "d-ic c-" + a.cat + (wins[a.href] ? " run" : "");
           b.innerHTML = '<span class="g">' + icon(a.ic) + "</span><b></b><i></i>";
           b.querySelector("b").textContent = LANG === "en" ? a.en : a.ko;
           b.querySelector("i").textContent = LANG === "en" ? a.en_d : a.ko_d;
           b.addEventListener("click", function (e) { e.preventDefault(); open(a.href); });
           box.appendChild(b);
-        });
+        }
 
         /* 바탕화면에 둔 작품 (내 작품의 ⋯ → 바탕화면에 두기). 종이 모양에 어느 앱 것인지 딱지 */
         var PINS = [];
         try { PINS = JSON.parse(localStorage.getItem("el-desk-pins") || "[]"); } catch (e) {}
+        PINS = PINS.filter(function (p) { return p && typeof p.href === "string" && p.href.charAt(0) === "/"; });
+        if (PINS.length) head(T("pins"));
         PINS.forEach(function (p) {
-          if (!p || typeof p.href !== "string" || p.href.charAt(0) !== "/") return;
           var f = document.createElement("a");
           f.href = p.href;
           f.className = "d-ic d-file";
