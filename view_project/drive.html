@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>edge-lab — 자동차 가르치기</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+  <link href="/fonts/fonts.css" rel="stylesheet">
+  <script>
+    try { if (localStorage.getItem("vapi-hc") === "1")
+            document.documentElement.classList.add("hc"); } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="/lib/tokens.css">
+  <script src="/lib/embed.js"></script>
+  <link rel="expect" href="#el-built" blocking="render">
+  <style>
+    /* 자동차 가르치기 — 내가 운전하는 것을 보고 AI 가 따라 배운다 (모방 학습).
+     *
+     * 가르치기(/train)는 사진을 보여 주고 이름을 맞히게 한다. 여기서는 "행동"을 가르친다:
+     * 차의 센서 숫자 7개와 그때 내가 누른 키를 짝지어 모으고, 작은 신경망이 그 짝을 배운다.
+     * AI 가 운전하는 중에 키를 누르면 내가 끼어들고 그 장면도 모인다 — 고쳐 가르치기.
+     * 계산은 전부 브라우저 안(lib/drive.js)이라 서버 AI 가 준비되기 전에도 된다.
+     *
+     * ml-lab 의 "운전" 활동(themakerrobot/ml-lab, MIT)을 이 저장소 화면에 맞게 다시 짰다.
+     */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root { --road: #ddd5c4; --road-edge: #8f836e; --ground: #eef0e2; --go: #3a9a55; --bad: #c2412a; }
+    html.hc { --road: #d2c8b3; --road-edge: #5e5443; --ground: #f4f6ea; --go: #237a3b; --bad: #9e2e19; }
+    body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; color: var(--ink); background: var(--paper);
+           font-family: "Gowun Dodum", "Apple SD Gothic Neo", system-ui, sans-serif; line-height: 1.5;
+           padding: var(--sp-2, 8px); gap: var(--sp-2, 8px); }
+    button, input, select { font-family: inherit; color: var(--ink); }
+    .btn { border: 1.5px solid var(--line-d); background: #fff; font-weight: 600; padding: 7px 13px; border-radius: var(--r); cursor: pointer;
+           font-size: .92rem; min-height: 40px; display: inline-flex; align-items: center; gap: 6px; }
+    .btn.primary { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; }
+    .btn.go { background: var(--go); border-color: var(--go); color: #fff; }
+    .btn.on { background: var(--cyan-bg); border-color: var(--cyan); color: var(--cyan-d); }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+    .btn.wide { width: 100%; justify-content: center; min-height: var(--tap, 48px); font-size: 1rem; }
+    .btn svg { width: 18px; height: 18px; }
+
+    .panel.side { flex: 0 0 280px; } .panel.road { flex: 1 1 auto; } .panel.out { flex: 0 0 300px; }
+    .st { font-weight: 700; font-size: var(--fs-head, 14px); color: var(--cyan-d); }
+    .hint { font-size: var(--fs-side, 13px); color: var(--ink-2); }
+    .sec { display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1.5px dashed var(--line); }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .num { font-family: Menlo, Consolas, monospace; font-size: var(--fs-mono, 13px); }
+
+    /* 트랙 고르기 */
+    .pick { display: flex; flex-direction: column; gap: 6px; }
+    .pick button { display: flex; align-items: center; gap: 8px; min-height: var(--tap, 48px); padding: 6px 10px; text-align: left;
+                   border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; cursor: pointer; font-size: .98rem; }
+    .pick button b { flex: 1; font-weight: 600; }
+    .pick button small { font-size: var(--fs-side, 13px); color: var(--pen-red); }
+    .pick button.on { border-color: var(--cyan); background: var(--cyan-bg); }
+    .pick svg { width: 44px; height: 30px; flex: 0 0 auto; }
+
+    /* 두세 개 중 하나 */
+    .seg { display: inline-flex; border: 1.5px solid var(--line-d); border-radius: var(--r); overflow: hidden; }
+    .seg button { border: 0; background: #fff; padding: 0 12px; min-height: 40px; font-size: .92rem; font-weight: 600; cursor: pointer; }
+    .seg button + button { border-left: 1.5px solid var(--line-d); }
+    .seg button.on { background: var(--pen-blue); color: #fff; }
+    .seg.big { display: flex; } .seg.big button { flex: 1; min-height: var(--tap, 48px); font-size: 1rem; }
+
+    /* 막대 */
+    .bar { display: flex; flex-direction: column; gap: 2px; }
+    .bar .bl { display: flex; justify-content: space-between; font-size: var(--fs-side, 13px); }
+    .bar .bt { height: 10px; border-radius: 5px; background: #ece5d6; overflow: hidden; }
+    .bar .bf { height: 100%; background: var(--pen-blue); transition: width .12s; }
+    .bar.top .bf { background: var(--go); } .bar.top .bl { font-weight: 700; }
+    .ready { font-size: var(--fs-side, 13px); padding: 6px 8px; border-radius: var(--r); background: #f4efe4; }
+    .ready.ok { background: #e3f1e6; color: #1e5b30; font-weight: 600; }
+
+    /* 진행 단계 */
+    .steps { display: flex; gap: 4px; margin-left: auto; font-size: var(--fs-side, 13px); }
+    .steps span { padding: 2px 8px; border-radius: 12px; border: 1.5px solid var(--line); color: var(--ink-2); white-space: nowrap; }
+    .steps span.done { border-color: var(--go); color: var(--go); }
+    .steps span.on { border-color: var(--pen-blue); background: var(--pen-blue); color: #fff; font-weight: 700; }
+
+    /* 트랙 */
+    .stage { position: relative; display: flex; align-items: center; justify-content: center; min-height: 200px; }
+    #cv { display: block; border-radius: var(--r); border: 1.5px solid var(--line); touch-action: none; }
+    #overlay { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 12px 22px; border-radius: 10px;
+               font-size: 1.3rem; font-weight: 700; color: #fff; display: none; align-items: center; gap: 8px; pointer-events: none; }
+    #overlay.on { display: flex; } #overlay.good { background: rgba(35,122,59,.92); } #overlay.bad { background: rgba(158,46,25,.92); }
+    #overlay svg { width: 26px; height: 26px; }
+    .badge { font-family: Menlo, Consolas, monospace; font-weight: 700; padding: 4px 10px; border-radius: 12px; background: var(--cyan-bg); color: var(--cyan-d); }
+    .padrow { display: flex; align-items: center; gap: 10px; }
+    .pad { width: 84px; height: 56px; border-radius: 12px; border: 1.5px solid var(--line-d); background: #fff; cursor: pointer;
+           display: grid; place-items: center; touch-action: none; user-select: none; }
+    .pad svg { width: 30px; height: 30px; }
+    .pad.on { background: var(--pen-blue); color: #fff; }
+    .padrow .hint { flex: 1; text-align: center; }
+
+    /* 배우기 */
+    .prg .lb { display: flex; justify-content: space-between; font-size: var(--fs-side, 13px); }
+    .prg .tr { height: 10px; border-radius: 5px; background: #ece5d6; overflow: hidden; }
+    .prg .fl { height: 100%; width: 0; background: var(--go); }
+    #chart { width: 100%; height: 110px; display: block; border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; }
+    .legend { display: flex; gap: 14px; font-size: var(--fs-side, 13px); }
+    .legend i { display: inline-block; width: 14px; height: 3px; vertical-align: middle; margin-right: 4px; }
+    .sensor { display: grid; grid-template-columns: 42px 1fr 40px; gap: 6px; align-items: center; font-size: var(--fs-side, 13px); }
+    .sensor .bt { height: 8px; border-radius: 4px; background: #ece5d6; overflow: hidden; }
+    .sensor .bf { height: 100%; background: var(--go); }
+    .run { display: flex; gap: 6px; align-items: center; font-size: var(--fs-side, 13px); }
+    .run b { font-weight: 600; } .run .ok { color: var(--go); } .run .no { color: var(--bad); }
+    .run svg { width: 16px; height: 16px; flex: 0 0 auto; }
+
+    #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 18px;
+             border-radius: 10px; font-size: .95rem; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 5; }
+    #toast.on { opacity: 1; }
+
+    @media (max-width: 1439px) { .panel.side { flex-basis: 250px; } .panel.out { flex-basis: 270px; } }
+    @media (max-width: 1023px) { .main-container { flex-direction: column; } .panel.side, .panel.out, .panel.road { flex: 0 0 auto; }
+                                 .panel, .panel-body { overflow: visible; } body { overflow: auto; height: auto; } }
+  </style>
+  <link rel="stylesheet" href="/lib/ui.css">
+  <link rel="stylesheet" href="/lib/shell.css">
+</head>
+<body data-density="explore">
+  <div class="titlebar">
+    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요"><img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b></a>
+    <span class="tb-sep"></span><span class="tb-app" id="txtTitle"></span>
+    <div class="h-tools"><button id="langButton" title="한국어 / English">EN</button></div>
+  </div>
+  <div class="shell-body"><div class="workbench"><div class="main-container">
+
+    <div class="panel side">
+      <div class="panel-head"><span class="q"><span class="qnum">1</span><span class="qtext" id="txtQ1"></span></span></div>
+      <div class="panel-body">
+        <div class="pick" id="trackPick"></div>
+        <div class="sec">
+          <div class="st" id="txtWho"></div>
+          <div class="seg big" id="whoSeg">
+            <button type="button" data-who="me" class="on"></button>
+            <button type="button" data-who="ai"></button>
+          </div>
+          <div class="hint" id="whoHint"></div>
+        </div>
+        <div class="sec">
+          <div class="st" id="txtData"></div>
+          <div id="counts"></div>
+          <div class="row"><span class="hint" id="totalCnt" style="flex:1"></span><button class="btn" id="clearBtn" type="button"></button></div>
+          <div class="ready" id="readyHint"></div>
+          <div class="hint" id="txtTip"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel road">
+      <div class="panel-head">
+        <span class="q"><span class="qnum">2</span><span class="qtext" id="panTitle"></span></span>
+        <div class="steps" id="steps"><span data-s="1"></span><span data-s="2"></span><span data-s="3"></span><span data-s="4"></span></div>
+      </div>
+      <div class="panel-body">
+        <div class="row">
+          <button class="btn go" id="goBtn" type="button"></button>
+          <button class="btn" id="stopBtn" type="button" disabled></button>
+          <button class="btn" id="fastBtn" type="button"></button>
+          <span style="flex:1"></span>
+          <span class="hint" id="txtSpeed"></span>
+          <div class="seg" id="speedSeg">
+            <button type="button" data-s="0.35"></button>
+            <button type="button" data-s="0.55" class="on"></button>
+            <button type="button" data-s="1"></button>
+          </div>
+          <span class="badge" id="lapBadge"></span>
+        </div>
+        <div class="stage grow" id="stage"><canvas id="cv"></canvas><div id="overlay"></div></div>
+        <div class="padrow">
+          <button class="pad" id="padL" type="button"></button>
+          <div class="hint" id="keyHint"></div>
+          <button class="pad" id="padR" type="button"></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel out">
+      <div class="panel-head"><span class="q"><span class="qnum">3</span><span class="qtext" id="txtQ3"></span></span></div>
+      <div class="panel-body">
+        <button class="btn primary wide" id="trainBtn" type="button" disabled></button>
+        <div class="hint" id="trainHint"></div>
+        <div class="prg">
+          <div class="lb"><span id="prgLabel"></span><span class="num" id="prgPct"></span></div>
+          <div class="tr"><div class="fl" id="prgFill"></div></div>
+        </div>
+        <canvas id="chart"></canvas>
+        <div class="legend"><span><i style="background:var(--pen-blue)"></i><span id="txtAcc"></span></span><span><i style="background:var(--pen-red)"></i><span id="txtLoss"></span></span></div>
+        <div class="sec">
+          <div class="st" id="txtSens"></div>
+          <div id="sensors"></div>
+          <div class="hint" id="txtSensHint"></div>
+        </div>
+        <div class="sec">
+          <div class="st" id="txtChoice"></div>
+          <div id="choice"></div>
+        </div>
+        <div class="sec">
+          <div class="st" id="txtRuns"></div>
+          <div id="runLog"></div>
+        </div>
+      </div>
+    </div>
+
+  </div></div></div>
+  <div id="toast"></div>
+
+  <script src="/lib/icons.js"></script>
+  <script src="/lib/drive.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var D = window.EL_DRIVE;
+    var LANG = "ko";
+    try { LANG = localStorage.getItem("vapiLang") === "en" ? "en" : "ko"; } catch (e) {}
+    document.documentElement.lang = LANG;
+    var I18N = {
+      ko: { title: "edge-lab — 자동차 가르치기", lang: "EN", q1: "운전 교실", q3: "배우기 · AI",
+            s1: "① 운전하기", s2: "② 배우기", s3: "③ AI 운전", s4: "④ 새 트랙", forTest: "시험용",
+            who: "누가 운전할까요?", me: "나", ai: "AI",
+            whoMe: "내가 운전하는 동안 AI가 보고 배워요.", whoAi: "AI가 운전해요. 키를 누르면 내가 끼어들어 고쳐 가르쳐요.",
+            data: "AI에게 보여 준 운전", total: "모두 {n}장면", clear: "지우기", clearAsk: "보여 준 운전을 모두 지울까요?",
+            left: "왼쪽", straight: "곧게", right: "오른쪽",
+            rEmpty: "운전을 시작하면 장면이 쌓여요.", rOk: "양쪽으로 도는 장면이 넉넉해요. 배우기를 눌러 봐요!",
+            rNeed: "{dir}으로 도는 장면이 더 필요해요 ({n}/{need})",
+            tip: "바퀴 수보다 왼쪽·오른쪽으로 도는 장면이 골고루 있는 게 중요해요. 둥근 트랙은 한쪽으로만 돌아요.",
+            go: "출발", stop: "멈춤", fast: "AI 3배", fastTip: "AI 운전을 3배 빠르게", speed: "속도", slow: "느리게", normal: "보통", quick: "빠르게",
+            laps: "{n}바퀴", keys: "← → 키(또는 A D)로 운전해요. 아무것도 안 누르면 곧게 가요. 스페이스 = 출발/멈춤",
+            crash: "쾅! 길 밖으로 나갔어요", finish: "{n}바퀴 완주!",
+            train: "배우기 시작", trainAgain: "다시 배우기", trainHint: "운전을 조금 보여 준 뒤에 눌러요.",
+            notYet: "아직 안 배웠어요", learning: "배우는 중", learned: "다 배웠어요 · 맞힌 비율 {p}%",
+            learnedHint: "장면 {n}개로 배웠어요. 이제 AI에게 운전을 맡겨 봐요.",
+            needTurn: "왼쪽이나 오른쪽으로 도는 운전도 보여 주세요", needTrain: "먼저 배우기를 해 주세요",
+            acc: "맞힌 비율", loss: "틀린 정도",
+            sens: "AI가 보는 숫자 — 센서 7개", sensHint: "AI는 트랙 그림이 아니라 이 숫자만 봐요. 1에 가까울수록 길이 멀리 열려 있어요.",
+            choice: "AI라면 이렇게 해요", afterTrain: "배운 뒤에 보여요", cutting: "지금은 내가 끼어들어 운전 중이에요",
+            runs: "AI 운전 기록", none: "아직 없어요", done: "완주", stopAt: "{n}바퀴에서 멈춤", cut: "끼어들기 {n}" },
+      en: { title: "edge-lab — Teach a car", lang: "한", q1: "Driving class", q3: "Learn · AI",
+            s1: "① Drive", s2: "② Learn", s3: "③ AI drives", s4: "④ New track", forTest: "test",
+            who: "Who drives?", me: "Me", ai: "AI",
+            whoMe: "While you drive, the AI watches and learns.", whoAi: "The AI drives. Press a key to take over and correct it.",
+            data: "Driving shown to the AI", total: "{n} scenes in all", clear: "Clear", clearAsk: "Clear all the driving you showed?",
+            left: "Left", straight: "Straight", right: "Right",
+            rEmpty: "Scenes pile up once you start driving.", rOk: "Plenty of turns both ways. Press Learn!",
+            rNeed: "Needs more {dir} turns ({n}/{need})",
+            tip: "Balanced left and right turns matter more than the number of laps. The round track only turns one way.",
+            go: "Go", stop: "Stop", fast: "AI ×3", fastTip: "Run the AI three times faster", speed: "Speed", slow: "Slow", normal: "Normal", quick: "Fast",
+            laps: "{n} laps", keys: "Drive with ← → (or A D). Nothing pressed = straight. Space = go/stop",
+            crash: "Crash! Off the road", finish: "{n} laps done!",
+            train: "Start learning", trainAgain: "Learn again", trainHint: "Show some driving first, then press.",
+            notYet: "Not learned yet", learning: "Learning", learned: "Done · {p}% right",
+            learnedHint: "Learned from {n} scenes. Now let the AI drive.",
+            needTurn: "Show some left or right turns too", needTrain: "Press Learn first",
+            acc: "Right answers", loss: "How wrong",
+            sens: "What the AI sees — 7 sensors", sensHint: "The AI never sees the picture, only these numbers. Near 1 means the road is open far ahead.",
+            choice: "What the AI would do", afterTrain: "Shows up after learning", cutting: "You are driving now (taking over)",
+            runs: "AI runs", none: "None yet", done: "Finished", stopAt: "Stopped at {n} laps", cut: "take-overs {n}" }
+    };
+    function t(k) { return I18N[LANG][k] !== undefined ? I18N[LANG][k] : I18N.ko[k]; }
+    function $(id) { return document.getElementById(id); }
+    function css(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+    var IC = {
+      left: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>',
+      right: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+      up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
+      play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l12.5-7.5Z"/></svg>',
+      stop: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>',
+      fast: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.5v13l9-6.5Zm9 0v13l9-6.5Z"/></svg>',
+      flag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 21V4M5 4h13l-3 4.5 3 4.5H5"/></svg>',
+      boom: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 2 2.2 5.5L20 5l-2.5 5.8L22 14l-5.8.8L17 21l-5-3.8L7 21l.8-6.2L2 14l4.5-3.2L4 5l5.8 2.5Z"/></svg>',
+      trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',
+      learn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 4 22 8.6 12 13.2 2 8.6 12 4Z"/><path d="M6 10.6v4.9c0 1.7 2.7 3.1 6 3.1s6-1.4 6-3.1v-4.9"/></svg>'
+    };
+    var ACT = ["left", "straight", "right"], ACT_IC = [IC.left, IC.up, IC.right];
+
+    /* ml-lab DEVELOP.md 에서 잰 값 그대로 — 바꾸면 "양쪽 30장면이면 세 트랙 완주" 가 깨진다 */
+    var RECORD_EVERY = 3;        // 3걸음마다 한 장면 (초당 20장)
+    var REACT_STEPS = 6;         // 누른 키를 0.1초(6걸음) 전 센서와 짝짓는다 — 사람의 반응 지연
+    var AI_LAPS = 3, EPOCHS = 60, MIN_SAMPLES = 30, READY_TURNS = 30;
+
+    /* ── 상태 ── */
+    var built = D.TRACKS.map(D.buildTrack), ti = 0, track = built[0];
+    var car = new D.Car(track);
+    var who = "me", running = false, fast = false, speed = 0.55, step = 1, tick = 0;
+    var keys = { left: false, right: false };
+    var data = { X: [], Y: [] };
+    var policy = null, training = false, lastAcc = null, hist = [];
+    var lastSense = car.sense(), lastByMe = false, cutIns = 0, senseHist = [];
+    var runs = [];
+
+    var toastTimer = 0;
+    function toast(msg) {
+      var el = $("toast"); el.textContent = msg; el.classList.add("on");
+      clearTimeout(toastTimer); toastTimer = setTimeout(function () { el.classList.remove("on"); }, 2200);
+    }
+    function setStep(n) {
+      step = n;
+      Array.prototype.forEach.call($("steps").children, function (el) {
+        var s = +el.getAttribute("data-s");
+        el.classList.toggle("on", s === n); el.classList.toggle("done", s < n);
+      });
+    }
+    function tname(tr) { return LANG === "en" ? tr.def.en : tr.def.ko; }
+
+    /* ── 글자 ── */
+    function paintText() {
+      document.title = t("title"); $("langButton").textContent = t("lang");
+      $("txtQ1").textContent = t("q1"); $("txtQ3").textContent = t("q3");
+      Array.prototype.forEach.call($("steps").children, function (el) { el.textContent = t("s" + el.getAttribute("data-s")); });
+      $("txtWho").textContent = t("who");
+      $("whoSeg").children[0].textContent = t("me"); $("whoSeg").children[1].textContent = t("ai");
+      $("txtData").textContent = t("data"); $("txtTip").textContent = t("tip");
+      $("clearBtn").innerHTML = IC.trash + " " + t("clear");
+      $("goBtn").innerHTML = IC.play + " " + t("go"); $("stopBtn").innerHTML = IC.stop + " " + t("stop");
+      $("fastBtn").innerHTML = IC.fast + " " + t("fast"); $("fastBtn").title = t("fastTip");
+      $("txtSpeed").textContent = t("speed");
+      var sp = $("speedSeg").children; sp[0].textContent = t("slow"); sp[1].textContent = t("normal"); sp[2].textContent = t("quick");
+      $("padL").innerHTML = IC.left; $("padR").innerHTML = IC.right; $("keyHint").textContent = t("keys");
+      $("txtAcc").textContent = t("acc"); $("txtLoss").textContent = t("loss");
+      $("txtSens").textContent = t("sens"); $("txtSensHint").textContent = t("sensHint");
+      $("txtChoice").textContent = t("choice"); $("txtRuns").textContent = t("runs");
+      $("trainHint").textContent = t("trainHint");
+      paintTrain(); paintPick(); paintWho(); paintCounts(); paintRuns(); paintLive();
+      if (window.navRepaint) window.navRepaint();
+    }
+
+    /* ── 트랙 고르기 — 목록 옆에 트랙 모양을 작게 그린다 ── */
+    function thumb(tr) {
+      var d = tr.pts.filter(function (_, i) { return i % 4 === 0; }).map(function (p, i) {
+        return (i ? "L" : "M") + (p[0] / D.WORLD_W * 44).toFixed(1) + " " + (p[1] / D.WORLD_H * 30).toFixed(1);
+      }).join("") + "Z";
+      return '<svg viewBox="0 0 44 30"><path d="' + d + '" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/></svg>';
+    }
+    function paintPick() {
+      $("trackPick").innerHTML = built.map(function (tr, i) {
+        return '<button type="button" data-i="' + i + '"' + (i === ti ? ' class="on"' : "") + ">" + thumb(tr) +
+          "<b>" + tname(tr) + "</b>" + (tr.def.unseen ? "<small>" + t("forTest") + "</small>" : "") + "</button>";
+      }).join("");
+      $("panTitle").textContent = tname(track);
+    }
+    $("trackPick").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-i]"); if (!b) return;
+      if (running) stop();
+      ti = +b.getAttribute("data-i"); track = built[ti]; car.reset(track);
+      if (track.def.unseen && policy) setStep(4);
+      roadCache = null; overlay(""); paintPick(); paintLive(); draw();
+    });
+
+    /* ── 누가 운전할까 ── */
+    function paintWho() {
+      Array.prototype.forEach.call($("whoSeg").children, function (b) { b.classList.toggle("on", b.getAttribute("data-who") === who); });
+      $("whoHint").textContent = who === "me" ? t("whoMe") : t("whoAi");
+    }
+    $("whoSeg").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-who]"); if (!b) return;
+      if (b.getAttribute("data-who") === "ai" && !policy) { toast(t("needTrain")); return; }
+      if (running) stop();
+      who = b.getAttribute("data-who"); car.reset(track); overlay(""); paintWho(); draw();
+    });
+
+    /* ── 모은 운전 ── */
+    function paintCounts() {
+      var c = [0, 0, 0];
+      data.Y.forEach(function (y) { c[y]++; });
+      var max = Math.max(1, c[0], c[1], c[2]);
+      $("counts").innerHTML = c.map(function (n, k) {
+        return '<div class="bar"><div class="bl"><span>' + t(ACT[k]) + '</span><span class="num">' + n + "</span></div>" +
+          '<div class="bt"><div class="bf" style="width:' + (n / max * 100) + '%"></div></div></div>';
+      }).join("");
+      $("totalCnt").textContent = t("total").replace("{n}", data.Y.length);
+      $("trainBtn").disabled = training || data.Y.length < MIN_SAMPLES;
+      $("clearBtn").disabled = !data.Y.length;
+      var short = [0, 2].filter(function (k) { return c[k] < READY_TURNS; }), r = $("readyHint");
+      if (!data.Y.length) { r.className = "ready"; r.textContent = t("rEmpty"); }
+      else if (!short.length) { r.className = "ready ok"; r.textContent = t("rOk"); }
+      else {
+        r.className = "ready";
+        r.textContent = short.map(function (k) {
+          return t("rNeed").replace("{dir}", t(ACT[k])).replace("{n}", c[k]).replace("{need}", READY_TURNS);
+        }).join(" ");
+      }
+    }
+    $("clearBtn").addEventListener("click", function () {
+      if (!data.Y.length || !confirm(t("clearAsk"))) return;
+      data.X = []; data.Y = []; paintCounts();
+    });
+
+    /* ── 운전 입력 (키보드 · 화면 단추) ── */
+    var KEYMAP = { ArrowLeft: "left", KeyA: "left", ArrowRight: "right", KeyD: "right" };
+    function typing(e) { return e.target && e.target.matches && e.target.matches("input, textarea, select"); }
+    addEventListener("keydown", function (e) {
+      if (typing(e) || e.ctrlKey || e.altKey || e.metaKey) return;
+      if (KEYMAP[e.code]) { keys[KEYMAP[e.code]] = true; e.preventDefault(); }
+      else if (e.code === "Space") { e.preventDefault(); if (!e.repeat) { if (running) stop(); else go(); } }
+    });
+    addEventListener("keyup", function (e) {
+      if (KEYMAP[e.code]) keys[KEYMAP[e.code]] = false;
+      if (e.code === "Space" && !typing(e)) e.preventDefault();       // 단추에 포커스가 있어도 한 번만 눌리게
+    });
+    function releaseKeys() {
+      keys.left = keys.right = false;
+      $("padL").classList.remove("on"); $("padR").classList.remove("on");
+    }
+    addEventListener("blur", releaseKeys);
+    [["padL", "left"], ["padR", "right"]].forEach(function (p) {
+      var b = $(p[0]);
+      b.addEventListener("pointerdown", function (e) { e.preventDefault(); keys[p[1]] = true; b.classList.add("on"); });
+      ["pointerup", "pointerleave", "pointercancel"].forEach(function (ev) {
+        b.addEventListener(ev, function () { keys[p[1]] = false; b.classList.remove("on"); });
+      });
+    });
+    function myAction() {
+      if (keys.left && !keys.right) return 0;
+      if (keys.right && !keys.left) return 2;
+      return 1;
+    }
+    function pressing() { return keys.left !== keys.right; }
+
+    /* ── 달리기 ── */
+    var last = 0, acc = 0;
+    function go() {
+      if (training) return;
+      if (who === "ai" && !policy) { toast(t("needTrain")); return; }
+      if (car.crashed || (who === "ai" && car.progress >= AI_LAPS)) car.reset(track);
+      senseHist = [];
+      if (car.progress === 0) cutIns = 0;
+      running = true; overlay("");
+      $("goBtn").disabled = true; $("stopBtn").disabled = false;
+      if (who === "ai") setStep(track.def.unseen ? 4 : 3);
+      last = performance.now(); acc = 0;
+      requestAnimationFrame(loop);
+    }
+    function stop() {
+      running = false;
+      $("goBtn").disabled = false; $("stopBtn").disabled = true;
+    }
+    $("goBtn").addEventListener("click", go);
+    $("stopBtn").addEventListener("click", stop);
+    $("fastBtn").addEventListener("click", function () { fast = !fast; this.classList.toggle("on", fast); });
+    /* 속도: 게임 시간만 느리게 흘린다. 차의 물리·센서·학습은 그대로라 배운 AI 도 똑같이 달린다 */
+    $("speedSeg").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-s]"); if (!b) return;
+      speed = +b.getAttribute("data-s");
+      Array.prototype.forEach.call(this.children, function (o) { o.classList.toggle("on", o === b); });
+    });
+
+    function loop(now) {
+      if (!running) return;
+      acc += Math.min(0.1, (now - last) / 1000) * speed; last = now;
+      var mult = who === "ai" && fast ? 3 : 1, n = 0;
+      while (acc >= D.DT && n < 12 * mult) {
+        for (var m = 0; m < mult && running; m++) stepOnce();
+        acc -= D.DT; n++;
+      }
+      paintLive(); draw();
+      if (running) requestAnimationFrame(loop);
+    }
+
+    function stepOnce() {
+      var s = car.sense(), a, byMe;
+      senseHist.push(s);
+      if (senseHist.length > REACT_STEPS + 1) senseHist.shift();
+      if (who === "me" || pressing()) { a = myAction(); byMe = true; }
+      else { a = D.argmax(policy.predict(s)); byMe = false; }
+      if (byMe && tick % RECORD_EVERY === 0) {
+        data.X.push(senseHist[0]); data.Y.push(a);        // 0.1초 전 장면 + 지금 누른 키
+        if (who === "ai") cutIns++;
+        paintCounts();
+      }
+      tick++;
+      lastSense = s; lastByMe = byMe;
+      if (car.step(a)) {
+        stop();
+        overlay(IC.boom + " " + t("crash"), "bad");
+        if (who === "ai") logRun(false);
+      } else if (who === "ai" && car.progress >= AI_LAPS) {
+        stop();
+        overlay(IC.flag + " " + t("finish").replace("{n}", AI_LAPS), "good");
+        logRun(true);
+      }
+    }
+
+    function logRun(done) {
+      runs.unshift({ ti: ti, done: done, prog: Math.max(0, car.progress), cutIns: cutIns });
+      runs.length = Math.min(runs.length, 6);
+      paintRuns();
+      if (window.vapiStat) vapiStat(done ? "drive_finish" : "drive_crash");
+    }
+    function paintRuns() {
+      $("runLog").innerHTML = runs.length ? runs.map(function (r) {
+        return '<div class="run"><span class="' + (r.done ? "ok" : "no") + '">' + (r.done ? IC.flag : IC.boom) + "</span><b>" + tname(built[r.ti]) + "</b>" +
+          "<span>" + (r.done ? t("done") : t("stopAt").replace("{n}", r.prog.toFixed(1))) +
+          (r.cutIns ? " · " + t("cut").replace("{n}", r.cutIns) : "") + "</span></div>";
+      }).join("") : '<div class="hint">' + t("none") + "</div>";
+    }
+
+    /* ── 배우기 ── */
+    function paintTrain() {
+      $("trainBtn").innerHTML = IC.learn + " " + (policy ? t("trainAgain") : t("train"));
+      if (training) return;
+      $("prgLabel").textContent = policy ? t("learned").replace("{p}", lastAcc) : t("notYet");
+    }
+    $("trainBtn").addEventListener("click", function () {
+      if (new Set(data.Y).size < 2) { toast(t("needTurn")); return; }
+      if (running) stop();
+      training = true; paintCounts(); $("goBtn").disabled = true;
+      $("prgLabel").textContent = t("learning"); setStep(2);
+      var p = new D.Policy(), X = data.X.slice(), Y = data.Y.slice(), e = 0, r = null;
+      hist = [];
+      (function epoch() {
+        /* 세 에폭마다 화면에 한 번 돌려준다 — 막대와 그래프가 차오르는 게 보이게 */
+        for (var k = 0; k < 3 && e < EPOCHS; k++, e++) { r = p.fitEpoch(X, Y); hist.push(r); }
+        var pct = Math.round(e / EPOCHS * 100);
+        $("prgFill").style.width = pct + "%"; $("prgPct").textContent = pct + "%";
+        drawChart();
+        if (e < EPOCHS) { requestAnimationFrame(epoch); return; }
+        policy = p; training = false; lastAcc = Math.round(r.acc * 100);
+        $("prgPct").textContent = ""; $("goBtn").disabled = running;
+        $("trainHint").textContent = t("learnedHint").replace("{n}", X.length);
+        paintTrain(); paintCounts(); setStep(3); paintLive();
+        if (window.vapiStat) vapiStat("drive_train");
+        if (window.EL_WIN && EL_WIN.hidden) EL_WIN.notify(t("learned").replace("{p}", lastAcc), { actions: [{ label: t("title").replace(/^edge-lab — /, ""), href: "/drive" }] });
+      })();
+    });
+
+    function drawChart() {
+      var c = $("chart"), dpr = window.devicePixelRatio || 1, W = c.clientWidth, H = c.clientHeight;
+      if (!W || !H) return;
+      c.width = W * dpr; c.height = H * dpr;
+      var g = c.getContext("2d"); g.scale(dpr, dpr); g.clearRect(0, 0, W, H);
+      if (hist.length < 2) return;
+      var maxL = Math.max.apply(null, hist.map(function (h) { return h.loss; }));
+      function line(vals, color) {
+        g.strokeStyle = color; g.lineWidth = 2; g.beginPath();
+        vals.forEach(function (v, i) {
+          var x = 6 + i / (EPOCHS - 1) * (W - 12), y = H - 6 - v * (H - 12);
+          if (i) g.lineTo(x, y); else g.moveTo(x, y);
+        });
+        g.stroke();
+      }
+      line(hist.map(function (h) { return h.acc; }), css("--pen-blue"));
+      line(hist.map(function (h) { return h.loss / maxL; }), css("--pen-red"));
+    }
+
+    /* ── 오른쪽 실시간 ── */
+    function paintLive() {
+      if (!running) lastSense = car.sense();
+      $("sensors").innerHTML = lastSense.map(function (v, i) {
+        var d = D.RAY_DEG[i];
+        return '<div class="sensor"><span class="num">' + (d > 0 ? "+" : "") + d + '°</span><div class="bt"><div class="bf" style="width:' +
+          (v * 100) + '%"></div></div><span class="num">' + v.toFixed(2) + "</span></div>";
+      }).join("");
+      if (!policy) { $("choice").innerHTML = '<div class="hint">' + t("afterTrain") + "</div>"; return; }
+      var P = policy.predict(lastSense), best = D.argmax(P);
+      $("choice").innerHTML = Array.prototype.map.call(P, function (v, k) {
+        return '<div class="bar' + (k === best ? " top" : "") + '"><div class="bl"><span>' + t(ACT[k]) + '</span><span class="num">' +
+          Math.round(v * 100) + '%</span></div><div class="bt"><div class="bf" style="width:' + (v * 100) + '%"></div></div></div>';
+      }).join("") + (running && who === "ai" && lastByMe ? '<div class="hint">' + t("cutting") + "</div>" : "");
+    }
+
+    /* ── 그리기 ── 트랙은 바뀔 때만 따로 그려 두고 매 장면에는 복사만 한다 (교실 노트북 배려) */
+    var cv = $("cv"), roadCache = null, scale = 1;
+    function sizeCanvas() {
+      var box = $("stage"), bw = box.clientWidth, bh = box.clientHeight, dpr = window.devicePixelRatio || 1;
+      if (!bw || !bh) return;           // 아직 자리가 안 잡혔다(가려진 창 등) — ResizeObserver 가 다시 부른다
+      var w = Math.min(bw, bh * D.WORLD_W / D.WORLD_H), h = w * D.WORLD_H / D.WORLD_W;
+      cv.style.width = Math.floor(w) + "px"; cv.style.height = Math.floor(h) + "px";
+      cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+      scale = cv.width / D.WORLD_W;
+      roadCache = null;
+    }
+    function renderRoad() {
+      var c = document.createElement("canvas");
+      c.width = cv.width; c.height = cv.height;
+      var g = c.getContext("2d");
+      g.fillStyle = css("--ground"); g.fillRect(0, 0, c.width, c.height);
+      g.setTransform(scale, 0, 0, scale, 0, 0);
+      function path() {
+        g.beginPath();
+        track.pts.forEach(function (p, i) { if (i) g.lineTo(p[0], p[1]); else g.moveTo(p[0], p[1]); });
+        g.closePath();
+      }
+      g.lineJoin = "round";
+      path(); g.strokeStyle = css("--road-edge"); g.lineWidth = track.def.width + 4; g.stroke();
+      path(); g.strokeStyle = css("--road"); g.lineWidth = track.def.width; g.stroke();
+      path(); g.strokeStyle = "#fff"; g.lineWidth = 1.5; g.setLineDash([8, 10]); g.stroke(); g.setLineDash([]);
+      var x0 = track.pts[0][0], y0 = track.pts[0][1], th = track.start.th, nx = -Math.sin(th), ny = Math.cos(th);
+      g.strokeStyle = css("--ink"); g.lineWidth = 4;                       // 출발선
+      g.beginPath(); g.moveTo(x0 + nx * track.hw, y0 + ny * track.hw); g.lineTo(x0 - nx * track.hw, y0 - ny * track.hw); g.stroke();
+      return c;
+    }
+    function draw() {
+      if (!cv.width) sizeCanvas();
+      if (!cv.width) return;
+      if (!roadCache) roadCache = renderRoad();
+      var g = cv.getContext("2d");
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.drawImage(roadCache, 0, 0);
+      g.setTransform(scale, 0, 0, scale, 0, 0);
+      g.strokeStyle = css("--go"); g.fillStyle = css("--go"); g.lineWidth = 1.2; g.globalAlpha = 0.7;   // 센서 광선
+      lastSense.forEach(function (v, i) {
+        var a = car.th + D.RAY_DEG[i] * Math.PI / 180, r = v * D.RAY_MAX;
+        var ex = car.x + Math.cos(a) * r, ey = car.y + Math.sin(a) * r;
+        g.beginPath(); g.moveTo(car.x, car.y); g.lineTo(ex, ey); g.stroke();
+        g.beginPath(); g.arc(ex, ey, 2.5, 0, Math.PI * 2); g.fill();
+      });
+      g.globalAlpha = 1;
+      g.save(); g.translate(car.x, car.y); g.rotate(car.th);
+      g.fillStyle = car.crashed ? css("--bad") : (who === "ai" && !lastByMe ? css("--go") : css("--pen-blue"));
+      g.fillRect(-11, -6, 22, 12);
+      g.fillStyle = "#fff"; g.fillRect(3, -4, 5, 8);                    // 앞유리 = 앞쪽 표시
+      g.restore();
+      $("lapBadge").textContent = t("laps").replace("{n}", Math.max(0, car.progress).toFixed(1));
+    }
+    function overlay(html, kind) {
+      var o = $("overlay");
+      o.innerHTML = html; o.className = html ? "on " + (kind || "") : "";
+    }
+    new ResizeObserver(function () { sizeCanvas(); draw(); drawChart(); }).observe($("stage"));
+
+    /* 가려지면 멈춘다 — 키보드가 이 창에 닿지 않으니 사람 운전은 곧게만 가다 부딪히고,
+       AI 운전도 보는 사람이 없으면 의미가 없다. 눌린 키도 놓는다(가려지는 순간 keyup 을 못 받는다). */
+    if (window.EL_WIN) EL_WIN.onHide(function () { if (running) stop(); releaseKeys(); });
+
+    $("langButton").addEventListener("click", function () {
+      try { localStorage.setItem("vapiLang", LANG === "ko" ? "en" : "ko"); } catch (e) {}
+      location.reload();
+    });
+    setStep(1); paintText(); sizeCanvas(); draw();
+    window.EL_DRIVE_PAGE = { data: data, car: car, repaint: paintCounts, get policy() { return policy; }, get running() { return running; }, get step() { return step; } };
+  })();
+  </script>
+  <script src="/lib/shell.js"></script>
+  <script src="/lib/usage.js" data-page="drive"></script>
+  <i id="el-built" hidden></i>
+</body>
+</html>
