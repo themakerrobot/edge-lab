@@ -129,7 +129,7 @@ AI를 메모리에 올리는 동안 진행 막대가 보이고, 그 사이 파�
 
 탐색기에서 `run.bat` 을 더블클릭해도 됩니다. 브라우저가 자동으로 열립니다.
 
-**코딩 실습** — `lab.bat` (우분투 `./lab.sh`) 을 실행하면 JupyterLab 이 열립니다. `notebooks\` 의 노트북 13개로
+**코딩 실습** — `lab.bat` (우분투 `./lab.sh`) 을 실행하면 JupyterLab 이 열립니다. `notebooks\` 의 노트북 12개로
 래퍼 없이 OpenVINO · numpy · OpenCV 를 직접 씁니다 (YOLO 직접 추론, 얼굴 분석, 나만의 분류기, RAG, VLM, 음성, 보드 시리얼 …).
 노트북은 `문서\Edge Lab\notebooks` 에 복사해 쓰므로 새 버전을 깔아도 고친 것이 남습니다.
 
@@ -314,7 +314,7 @@ For installation see [INSTALL.md](INSTALL.md). Once installed:
 
 Double-clicking `run.bat` in Explorer works too. The browser opens by itself.
 
-**Coding lab** — run `lab.bat` (Ubuntu: `./lab.sh`) to open JupyterLab. The 13 notebooks in `notebooks\` use
+**Coding lab** — run `lab.bat` (Ubuntu: `./lab.sh`) to open JupyterLab. The 12 notebooks in `notebooks\` use
 OpenVINO · numpy · OpenCV directly, no wrapper (raw YOLO inference, face analysis, your own classifier, RAG, VLM, speech, serial board …).
 They are copied to `Documents\Edge Lab\notebooks`, so your edits survive an upgrade.
 
