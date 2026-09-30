@@ -7,80 +7,57 @@
   <!--
     켜는 화면 — 서버보다 먼저 뜬다 (appwin.early 가 키오스크 창을 이 파일로 연다).
 
-    서버(main.py)는 cv2·mediapipe 를 읽느라 교실 노트북에서 몇 초~십몇 초가 걸린다. 그동안 이 화면이
-    보이고, /ready 가 대답하면 서버 화면("/")으로 넘어가 부팅(모델 올리기) 화면이 이어진다.
+    처음부터 준비 화면(lib/boot.js)을 그대로 보여 준다. boot.js 가 서버의 /ready 를 물으며 서버를 기다리는 것부터
+    모델 올리기까지 이 한 화면에서 보여 주고, [시작하기](또는 건너뛰기)를 누르면 바탕화면("/?booted=1")으로
+    한 번만 넘어간다. 전에는 켜는 화면 → 바탕화면 → 준비 화면으로 세 번 바뀌어 깜빡였다.
 
-    file:// 에서 열리므로 서버의 /fonts · /lib 를 못 쓴다 — 글꼴은 시스템 것, 그림은 옆 폴더(assets/)의 것.
-    /ready 는 no-cors 로 묻는다 — 내용은 못 읽어도 "대답했다" 는 알 수 있고, CORS 설정과 상관없다.
+    file:// 에서 열리므로 서버의 /fonts 는 서버가 대답한 뒤에 붙인다(onServer). 그림은 옆 폴더(assets/)의 것.
+    CORS 는 서버가 allow_origins=["*"] 라 file:// 에서 /ready 를 읽을 수 있다.
     화면 주소는 localhost 로 연다 — 전과 같은 주소여야 저장해 둔 설정(localStorage)이 이어진다.
+    location.replace 로 넘어가 방문 기록이 한 칸으로 남는다 — [끄기] 의 window.close() 가 먹힌다.
   -->
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { height: 100%; }
-    body { display: flex; align-items: center; justify-content: center; padding: 20px; color: #2a2620; cursor: default;
-           font-family: "Apple SD Gothic Neo", "Malgun Gothic", "맑은 고딕", system-ui, sans-serif;
-           background: #fbf7ef radial-gradient(rgba(31,95,122,.07) 1px, transparent 1px) 0 0 / 22px 22px; }
-    .card { display: flex; flex-direction: column; align-items: center; gap: 18px; text-align: center; }
-    .card img { width: 120px; height: auto; }
-    .card b { font-family: Menlo, Consolas, ui-monospace, monospace; font-size: 2rem; color: #17475c; letter-spacing: .02em; }
-    .sub { font-size: 1.05rem; color: #4a423a; }
-    .dots { display: flex; gap: 10px; height: 14px; }
-    .dots i { width: 12px; height: 12px; border-radius: 50%; background: #1f5f7a; opacity: .25; animation: d 1.2s infinite; }
-    .dots i:nth-child(2) { animation-delay: .2s; } .dots i:nth-child(3) { animation-delay: .4s; }
-    @keyframes d { 40% { opacity: 1; transform: translateY(-3px); } }
-    @media (prefers-reduced-motion: reduce) { .dots i { animation: none; opacity: .6; } }
-    .err { display: none; max-width: 560px; background: #fff; border: 2px solid #b4451c; border-radius: 10px; padding: 16px 20px; line-height: 1.6; }
-    .err h2 { font-size: 1.15rem; color: #8f3312; margin-bottom: 6px; }
-    .err button { margin-top: 12px; font: inherit; font-weight: 700; padding: 8px 18px; border-radius: 8px; border: 0; background: #1f5f7a; color: #fff; cursor: pointer; }
-    .err kbd { font-family: inherit; border: 1px solid #9a8f7d; border-radius: 5px; padding: 0 6px; background: #f4efe4; }
-    body.slow .err { display: block; } body.slow .dots { display: none; }
+    html, body { margin: 0; height: 100%; }
+    body { background: #fbf7ef radial-gradient(rgba(31,95,122,.07) 1px, transparent 1px) 0 0 / 22px 22px;
+           font-family: "Gowun Dodum", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif; }
+    #slow { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 200; display: none;
+            max-width: min(640px, calc(100% - 32px)); background: #fff; border: 2px solid #b4451c; border-radius: 10px;
+            padding: 12px 18px; color: #2a2620; line-height: 1.6; box-shadow: 0 8px 24px rgba(0,0,0,.15); }
+    #slow b { color: #8f3312; }
+    #slow kbd { font-family: inherit; border: 1px solid #9a8f7d; border-radius: 5px; padding: 0 6px; background: #f4efe4; }
+    body.slow #slow { display: block; }
   </style>
+  <script>
+    (function () {
+      var port = +(new URLSearchParams(location.search).get("port")) || 57711;
+      var base = "http://localhost:" + port, answered = false;
+      window.EL_BOOT = {
+        base: base,
+        asset: "assets/",
+        onServer: function () {                 // 서버가 처음 대답했다 — 글꼴을 서버에서 받는다
+          answered = true;
+          document.body.classList.remove("slow");
+          var l = document.createElement("link");
+          l.rel = "stylesheet"; l.href = base + "/fonts/fonts.css";
+          document.head.appendChild(l);
+        },
+        onDone: function () { location.replace(base + "/?booted=1"); }
+      };
+      /* 90초가 지나도 서버가 한 번도 대답하지 않으면 — 까만 창에 오류가 있을 것이다 */
+      setTimeout(function () { if (!answered) document.body.classList.add("slow"); }, 90000);
+    })();
+  </script>
+  <script src="lib/boot.js"></script>
 </head>
 <body>
-  <div class="card">
-    <img src="assets/pibo-logo.png" alt="">
-    <b>edge-lab</b>
-    <div class="sub" id="sub">켜는 중이에요…</div>
-    <div class="dots"><i></i><i></i><i></i></div>
-    <div class="err">
-      <h2 id="errH">프로그램이 아직 켜지지 않았어요</h2>
-      <div id="errB"></div>
-      <button type="button" id="again">다시 확인</button>
-    </div>
-  </div>
+  <div id="slow"></div>
   <script>
-  (function () {
-    "use strict";
-    var port = +(new URLSearchParams(location.search).get("port")) || 57711;
-    var base = "http://localhost:" + port;
-    var en = false;
-    try { en = localStorage.getItem("vapiLang") === "en"; } catch (e) {}   // file:// 의 저장소라 보통 비어 있다
-    if (!en && navigator.language && !/^ko/i.test(navigator.language)) en = true;
-    if (en) {
-      document.documentElement.lang = "en";
-      document.getElementById("sub").textContent = "Starting…";
-      document.getElementById("errH").textContent = "The program has not started yet";
-      document.getElementById("again").textContent = "Check again";
-    }
-    document.getElementById("errB").innerHTML = en
-      ? "It is taking longer than usual. Press <kbd>Alt</kbd> + <kbd>F4</kbd> to close this screen and read the message in the black window behind it."
-      : "평소보다 오래 걸려요. <kbd>Alt</kbd> + <kbd>F4</kbd> 로 이 화면을 닫으면 뒤의 까만 창에서 무슨 일인지 볼 수 있어요.";
-
-    var t0 = Date.now(), SLOW = 90 * 1000, busy = false;
-    function check() {
-      if (busy) return;
-      busy = true;
-      fetch(base + "/ready", { cache: "no-store", mode: "no-cors" }).then(function () {
-        location.replace(base + "/");                    // 서버가 대답했다 — 부팅 화면이 이어진다
-      }).catch(function () {
-        busy = false;
-        if (Date.now() - t0 > SLOW) document.body.classList.add("slow");
-      });
-    }
-    setInterval(check, 500);
-    check();
-    document.getElementById("again").addEventListener("click", function () { t0 = Date.now(); document.body.classList.remove("slow"); check(); });
-  })();
+    (function () {
+      var en = navigator.language && !/^ko/i.test(navigator.language);
+      document.getElementById("slow").innerHTML = en
+        ? "<b>The program has not started yet.</b> Press <kbd>Alt</kbd> + <kbd>F4</kbd> to close this screen and read the message in the black window behind it."
+        : "<b>프로그램이 아직 켜지지 않았어요.</b> <kbd>Alt</kbd> + <kbd>F4</kbd> 로 이 화면을 닫으면 뒤의 까만 창에서 무슨 일인지 볼 수 있어요.";
+    })();
   </script>
 </body>
 </html>

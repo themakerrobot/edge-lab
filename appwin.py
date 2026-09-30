@@ -84,8 +84,27 @@ def early(port):
 
 
 def close():
+    """[끄기] 때 앱 창을 닫는다.
+
+    띄운 프로세스(PROC)만 끝내면 안 닫힐 때가 있다: 같은 프로필(APPWIN_DIR)로 이미 떠 있는 창이 있으면
+    새로 띄운 chrome.exe 는 그 창에 일을 넘기고 바로 끝나 버린다(예: 다른 폴더에서 띄운 창이 남아 있을 때).
+    윈도우에서는 그 프로필로 뜬 Chrome/Edge 를 전부 찾아 닫는다 — 우리 프로필만이라 다른 브라우저 창은 건드리지 않는다."""
     p = PROC
-    if p is not None and p.poll() is None:
+    if os.name == "nt":
+        flags = 0x08000000                     # CREATE_NO_WINDOW — 까만 창이 번쩍이지 않게
+        if p is not None and p.poll() is None:
+            subprocess.run(["taskkill", "/PID", str(p.pid), "/T", "/F"], capture_output=True, creationflags=flags)
+        prof = APPWIN_DIR.replace("'", "''").replace("[", "`[").replace("]", "`]")
+        # 큰따옴표를 쓰지 않는다 — 명령줄로 넘길 때 따옴표 이스케이프가 꼬이지 않게
+        ps = ("Get-CimInstance Win32_Process | "
+              "Where-Object { ($_.Name -eq 'chrome.exe' -or $_.Name -eq 'msedge.exe') -and $_.CommandLine -like '*%s*' } | "
+              "ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }" % prof)
+        try:
+            subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", ps],
+                           capture_output=True, timeout=15, creationflags=flags)
+        except Exception as ex:
+            print("[browser] 앱 창 닫기 실패:", ex)
+    elif p is not None and p.poll() is None:
         try:
             p.terminate()
         except Exception:
