@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>edge-lab — 문장</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+  <link href="/fonts/fonts.css" rel="stylesheet">
+  <script>
+    try { if (localStorage.getItem("vapi-hc") === "1")
+            document.documentElement.classList.add("hc"); } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="/lib/tokens.css">
+  <script src="/lib/embed.js"></script>
+  <link rel="expect" href="#el-built" blocking="render">
+  <style>
+    /* 문장 — 글을 가르치면 AI 가 다음 글자를 맞히며 글을 이어 쓴다 (아주 작은 언어모델).
+     *
+     * 대화(/talk)의 큰 언어모델이 "어떻게" 말을 만드는지 손바닥만 한 크기로 직접 만들어 본다:
+     * 글 넣기 → 배우기 → 이어 쓰기 → 들여다보기. 작은 신경망(앞 몇 글자만 봄)과
+     * Transformer(앞 글을 다 봄)를 같은 글로 비교하고, 가르친 글에 없는 문장(환각)에 밑줄을 친다.
+     * 계산은 전부 브라우저 안의 워커(lib/word/worker.js)라 서버 AI 가 준비되기 전에도 된다.
+     *
+     * ml-lab 의 "문장" 활동(themakerrobot/ml-lab, MIT)을 이 저장소 화면에 맞게 다시 짰다.
+     * 화면 로직은 lib/word/page.js, 모델·학습은 lib/word/ 의 원본 그대로다.
+     */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root { --go: #3a9a55; --soft: #ece5d6; }
+    html.hc { --go: #237a3b; --soft: #ddd3bf; }
+    body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; color: var(--ink); background: var(--paper);
+           font-family: "Gowun Dodum", "Apple SD Gothic Neo", system-ui, sans-serif; line-height: 1.5;
+           padding: var(--sp-2, 8px); gap: var(--sp-2, 8px); }
+    button, input, select, textarea { font-family: inherit; color: var(--ink); }
+    .btn { border: 1.5px solid var(--line-d); background: #fff; font-weight: 600; padding: 7px 13px; border-radius: var(--r); cursor: pointer;
+           font-size: .92rem; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; }
+    .btn.primary { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; }
+    .btn.on { background: var(--cyan-bg); border-color: var(--cyan); color: var(--cyan-d); }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+    .btn.wide { width: 100%; min-height: var(--tap, 48px); font-size: 1rem; }
+    .btn.fill { flex: 1 1 0; }
+    .btn svg { width: 18px; height: 18px; flex: 0 0 auto; }
+
+    .panel.side { flex: 0 0 280px; } .panel.write { flex: 1 1 auto; } .panel.out { flex: 0 0 320px; }
+    .st { font-weight: 700; font-size: var(--fs-head, 14px); color: var(--cyan-d); }
+    .hint { font-size: var(--fs-side, 13px); color: var(--ink-2); }
+    .sec { display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1.5px dashed var(--line); }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .num { font-family: Menlo, Consolas, monospace; font-size: var(--fs-mono, 13px); }
+    .inp { border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; font-size: 1rem; padding: 0 10px; min-height: 44px; min-width: 0; }
+    .inp:focus, textarea:focus { outline: 2.5px solid var(--cyan); outline-offset: 0; border-color: var(--cyan); }
+    .inp:disabled, textarea:disabled { background: #f4efe4; color: var(--ink-2); }
+
+    /* 가르칠 글 */
+    /* 예시 글 단추는 한 줄에 셋 — 영어 이름이 길면 단추 안에서 두 줄로 접힌다 (줄이 늘지 않게) */
+    #presetRow { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; }
+    #presetRow .btn { min-height: 38px; padding: 3px 6px; font-size: .9rem; white-space: normal; line-height: 1.2; text-align: center; }
+    #corpus { width: 100%; min-height: 90px; resize: none; border: 1.5px solid var(--line); border-radius: var(--r); padding: 8px 10px;
+              font-size: var(--fs-body, 13.5px); line-height: 1.6; background: #fff; }
+
+    /* AI 고르기 — 자동차 가르치기의 트랙 고르기와 같은 생김새 */
+    /* 두 칸 나란히 — 세로로 쌓으면 왼쪽 칸이 1366×768 에서 넘친다 */
+    .pick { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .pick button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: var(--tap, 48px); padding: 6px 7px; text-align: left;
+                   border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; cursor: pointer; font-size: .95rem; line-height: 1.3; }
+    .pick button .nm { display: flex; align-items: center; gap: 5px; font-weight: 700; word-break: keep-all; }
+    .pick button small { font-size: var(--fs-side, 13px); color: var(--ink-2); }
+    .pick button.on { border-color: var(--cyan); background: var(--cyan-bg); }
+    .pick button.on small { color: var(--cyan-d); }
+    .pick button:disabled { opacity: .5; cursor: not-allowed; }
+    .pick svg { width: 22px; height: 22px; flex: 0 0 auto; color: var(--cyan); }
+    .slide .lb { display: flex; justify-content: space-between; font-size: var(--fs-side, 13px); color: var(--ink-2); }
+    .slide input[type=range] { width: 100%; accent-color: var(--pen-blue); height: 28px; cursor: pointer; }
+
+    /* 진행 단계 */
+    .steps { display: flex; gap: 4px; margin-left: auto; font-size: var(--fs-side, 13px); flex-wrap: wrap; }
+    .steps span { padding: 2px 8px; border-radius: 12px; border: 1.5px solid var(--line); color: var(--ink-2); white-space: nowrap; }
+    .steps span.done { border-color: var(--go); color: var(--go); }
+    .steps span.on { border-color: var(--pen-blue); background: var(--pen-blue); color: #fff; font-weight: 700; }
+
+    /* 배우기 */
+    .prg .lb { display: flex; justify-content: space-between; font-size: var(--fs-side, 13px); }
+    .prg .tr { height: 10px; border-radius: 5px; background: var(--soft); overflow: hidden; }
+    .prg .fl { height: 100%; width: 0; background: var(--go); }
+    #chart { width: 100%; height: 80px; display: block; border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; }
+
+    /* 이어 쓰기 */
+    #seed { flex: 1 1 160px; font-size: 1.1rem; }
+    .answer { border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; padding: 12px 14px; min-height: 96px;
+              font-size: 1.25rem; font-weight: 700; line-height: 1.8; overflow-wrap: anywhere; white-space: pre-wrap; }
+    .answer.idk { display: flex; align-items: center; justify-content: center; font-size: var(--fs-body, 13.5px); font-weight: 400; color: var(--ink-2); }
+    .seedtxt { color: var(--cyan-d); background: var(--cyan-bg); border-radius: 4px; padding: 0 2px; }
+    /* 가르친 글에 없는 문장 = AI 가 지어낸 것 (환각). 빨간펜 물결 밑줄 */
+    .made { text-decoration: underline wavy var(--pen-red); text-underline-offset: 5px; text-decoration-thickness: 1.5px; }
+    .made-note { font-size: var(--fs-side, 13px); color: var(--ink-2); }
+    .made-note .made { color: var(--ink); font-weight: 700; }
+    .duo { flex: 1 1 auto; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: minmax(0, 1fr); gap: 14px; min-height: 0; }
+    .duo > div { display: flex; flex-direction: column; gap: 6px; min-height: 0; }
+    .bar { display: flex; flex-direction: column; gap: 2px; }
+    .bar .bl { display: flex; justify-content: space-between; align-items: baseline; font-size: var(--fs-side, 13px); }
+    .bar .ch { font-size: 1.1rem; font-weight: 700; min-width: 22px; }
+    .bar .bt { height: 10px; border-radius: 5px; background: var(--soft); overflow: hidden; }
+    .bar .bf { height: 100%; background: var(--pen-blue); }
+    .bar.top .bf { background: var(--go); } .bar.top .bl { font-weight: 700; }
+    #hist { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; min-height: 60px; flex: 1 1 auto; }
+    .hi { border: 1.5px solid var(--line); border-radius: var(--r); padding: 5px 9px; background: #fff; }
+    .hi small { display: block; font-size: var(--fs-side, 13px); color: var(--cyan-d); }
+    .hi div { font-size: 1rem; line-height: 1.7; overflow-wrap: anywhere; }
+
+    /* 들여다보기 */
+    .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+    .chip { min-width: 27px; height: 34px; padding: 0 4px; border-radius: var(--r); border: 1.5px solid var(--line);
+            display: inline-flex; align-items: center; justify-content: center; font-size: 1.05rem; font-weight: 700; color: var(--ink-2); background: #fff; }
+    .chip.on { border-color: var(--cyan); background: var(--cyan-bg); color: var(--cyan-d); }
+    .chip.q { border-style: dashed; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 4px; }
+    .tabs button { border: 1.5px solid var(--line-d); background: #fff; border-radius: var(--r); padding: 0 9px; min-height: 36px;
+                   font-size: var(--fs-side, 13px); font-weight: 600; cursor: pointer; }
+    .tabs button.on { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; }
+    .att-wrap { overflow-x: auto; }
+    table.att { border-collapse: collapse; margin: 0 auto; font-size: var(--fs-side, 13px); line-height: 1; }
+    /* 칸 크기(--cell)는 글자 수에 맞춰 page.js 가 정한다 — 16글자면 패널 폭에 딱, 짧으면 크게 */
+    table.att th { font-weight: 600; color: var(--ink-2); width: var(--cell, 15px); height: var(--cell, 15px); text-align: center; padding: 0; }
+    table.att td { width: var(--cell, 15px); height: var(--cell, 15px); padding: 0; border: 1px solid #fff; background: var(--soft); }
+    /* 진하기 = 어텐션 가중치. 칸 안 남색 조각의 불투명도로 그린다 */
+    table.att td i { display: block; width: 100%; height: 100%; background: var(--pen-blue); }
+    table.att td.off { background: #fff; }
+    table.att tr.last th { color: var(--pen-red); font-weight: 800; }
+
+    /* 맞히기 대결 */
+    .duel-q { font-size: 1.15rem; font-weight: 700; padding: 10px 12px; border-radius: var(--r); background: #f4efe4; line-height: 1.6; overflow-wrap: anywhere; }
+    .duel-q .blank { display: inline-block; min-width: 24px; text-align: center; margin-left: 2px; border-bottom: 2.5px solid var(--pen-blue); color: var(--ink-2); }
+    .duel-q .blank.ok { color: var(--go); border-bottom-color: var(--go); }
+    #duelIn { width: 96px; text-align: center; font-size: 1.15rem; }
+    #duelIn::placeholder { font-size: var(--fs-side, 13px); }
+    .score { display: flex; gap: 18px; font-size: var(--fs-body, 13.5px); color: var(--ink-2); font-weight: 600; }
+    .score span { display: inline-flex; align-items: center; gap: 5px; }
+    .score svg { width: 18px; height: 18px; color: var(--cyan); }
+    .score b { font-size: 1.2rem; color: var(--cyan-d); }
+
+    #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 18px;
+             border-radius: 10px; font-size: .95rem; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 5; }
+    #toast.on { opacity: 1; }
+
+    @media (max-width: 1439px) { .panel.side { flex-basis: 260px; } .panel.out { flex-basis: 300px; } }
+    @media (max-width: 1023px) { .main-container { flex-direction: column; } .panel.side, .panel.out, .panel.write { flex: 0 0 auto; }
+                                 .panel, .panel-body { overflow: visible; } body { overflow: auto; height: auto; }
+                                 #hist { max-height: 320px; } }
+    @media (max-width: 639px) { .duo { grid-template-columns: 1fr; grid-template-rows: auto; } }
+  </style>
+  <link rel="stylesheet" href="/lib/ui.css">
+  <link rel="stylesheet" href="/lib/shell.css">
+</head>
+<body data-density="explore">
+  <div class="titlebar">
+    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요"><img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b></a>
+    <span class="tb-sep"></span><span class="tb-app" id="txtTitle"></span>
+    <div class="h-tools"><button id="langButton" title="한국어 / English">EN</button></div>
+  </div>
+  <div class="shell-body"><div class="workbench"><div class="main-container">
+
+    <div class="panel side">
+      <div class="panel-head"><span class="q"><span class="qnum">1</span><span class="qtext" id="txtQ1"></span></span></div>
+      <div class="panel-body">
+        <div class="st" id="txtExamples"></div>
+        <div class="row" id="presetRow"></div>
+        <textarea class="grow" id="corpus" spellcheck="false"></textarea>
+        <div class="hint" id="corpusInfo"></div>
+
+        <div class="sec">
+          <div class="st" id="txtPick"></div>
+          <div class="pick" id="modelPick">
+            <button type="button" data-kind="mlp" class="on"></button>
+            <button type="button" data-kind="gpt"></button>
+          </div>
+          <div class="slide" id="ctxRow">
+            <div class="lb"><span id="txtCtx"></span><span class="num" id="ctxVal">8</span></div>
+            <input type="range" id="ctx" min="1" max="8" step="1" value="8">
+          </div>
+        </div>
+
+        <div class="sec">
+          <button class="btn primary wide" id="trainBtn" type="button"></button>
+          <div class="row">
+            <button class="btn fill" id="moreBtn" type="button" disabled></button>
+            <button class="btn fill" id="stopBtn" type="button" disabled></button>
+          </div>
+          <div class="prg">
+            <div class="lb"><span id="prgLabel"></span><span class="num" id="prgPct"></span></div>
+            <div class="tr"><div class="fl" id="prgFill"></div></div>
+          </div>
+          <canvas id="chart"></canvas>
+          <div class="hint" id="trainInfo"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel write">
+      <div class="panel-head">
+        <span class="q"><span class="qnum">2</span><span class="qtext" id="txtQ2"></span></span>
+        <div class="steps" id="steps"><span data-s="1"></span><span data-s="2"></span><span data-s="3"></span><span data-s="4"></span></div>
+      </div>
+      <div class="panel-body">
+        <div class="st" id="txtSeed"></div>
+        <div class="row">
+          <input class="inp" id="seed" type="text" maxlength="40" autocomplete="off" spellcheck="false">
+          <button class="btn" id="stepBtn" type="button" disabled></button>
+          <button class="btn primary" id="genBtn" type="button" disabled></button>
+        </div>
+        <div class="slide">
+          <div class="lb"><span id="txtTemp"></span><span class="num" id="tempVal">0.8</span></div>
+          <input type="range" id="temp" min="0.1" max="2" step="0.1" value="0.8">
+        </div>
+        <div class="answer idk" id="out"></div>
+        <div class="made-note" id="madeNote" hidden></div>
+        <div class="sec grow">
+          <div class="duo">
+            <div>
+              <div class="st" id="txtProbs"></div>
+              <div id="probs"></div>
+              <div class="hint" id="unkNote" hidden></div>
+            </div>
+            <div>
+              <div class="st" id="txtHist"></div>
+              <div id="hist"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel out">
+      <div class="panel-head"><span class="q"><span class="qnum">3</span><span class="qtext" id="txtQ3"></span></span></div>
+      <div class="panel-body">
+        <div id="look"></div>
+        <div class="sec" id="duelSec">
+          <div class="st" id="txtDuel"></div>
+          <div class="duel-q" id="duelQ"></div>
+          <div class="row">
+            <input class="inp" id="duelIn" type="text" maxlength="2" autocomplete="off" disabled>
+            <button class="btn primary" id="duelGo" type="button" disabled></button>
+            <button class="btn" id="duelNew" type="button" disabled></button>
+          </div>
+          <div class="hint" id="duelMsg"></div>
+          <div class="score" id="score"></div>
+        </div>
+      </div>
+    </div>
+
+  </div></div></div>
+  <div id="toast"></div>
+
+  <script type="module" src="/lib/word/page.js" blocking="render"></script>
+  <script src="/lib/shell.js"></script>
+  <script src="/lib/usage.js" data-page="word"></script>
+  <i id="el-built" hidden></i>
+</body>
+</html>
