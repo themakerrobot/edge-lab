@@ -260,7 +260,7 @@ ALLOW_WHILE_LOADING = ("/ready", "/system", "/lib", "/assets", "/fonts", "/block
 # 화면 주소 — 로딩 중에도 열린다. 새 화면을 만들면 여기에 더한다(빠지면 켜진 직후 1~2분은
 # 그 앱이 JSON 503 으로 뜬다 — 셸에 새 앱을 넣으며 한 번 겪었다).
 PAGE_PATHS = ("/", "/home", "/try", "/blocks", "/train", "/options", "/code", "/talk",
-              "/works", "/drive", "/paint", "/typing", "/calc", "/notes", "/recorder", "/story", "/tasks", "/board", "/store", "/diary", "/piano", "/word", "/eye")
+              "/works", "/drive", "/paint", "/typing", "/calc", "/notes", "/recorder", "/story", "/tasks", "/board", "/store", "/factory", "/sound", "/signal", "/diary", "/piano", "/word", "/eye")
 
 
 @app.middleware("http")
@@ -734,6 +734,27 @@ async def piano_page():
 async def diary_page():
     """일기 — 달력 · 기분 · 날씨 · 한 일 · 글, 이 컴퓨터에만 저장, 읽어 주기(/speech/tts)"""
     with open("view_project/diary.html", encoding="utf-8") as f:
+        return f.read()
+
+
+@app.get("/signal", response_class=HTMLResponse)
+async def signal_page():
+    """AI 신호 놀이 — 카메라로 손 · 얼굴 신호를 보고, 규칙(만약 → 행동)과 동작 암호를 만든다"""
+    with open("view_project/signal.html", encoding="utf-8") as f:
+        return f.read()
+
+
+@app.get("/sound", response_class=HTMLResponse)
+async def sound_page():
+    """소리 가르치기 — 마이크로 소리 종류를 모아 YAMNet 특징으로 브라우저 안에서 학습 (teach-lab 에서 옮김)"""
+    with open("view_project/sound.html", encoding="utf-8") as f:
+        return f.read()
+
+
+@app.get("/factory", response_class=HTMLResponse)
+async def factory_page():
+    """로봇 공장 — 로봇 팔 · 컨베이어를 보드(/board/*)로 움직이고 3D 로 본다. 보드가 없으면 시뮬레이션 (factory-lab 에서 옮김)"""
+    with open("view_project/factory.html", encoding="utf-8") as f:
         return f.read()
 
 

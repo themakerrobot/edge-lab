@@ -202,6 +202,12 @@
         [T("works"), works.map(function (w) { return { ic: w.ic, name: w.name, sub: T("kind")[w.kind], keys: T("kind")[w.kind], href: w.href }; }).filter(hit).slice(0, 6), "f"],
         [T("sets"), settings().filter(hit), "s"]
       ];
+      /* 이름에 찾는 말이 든 것이 있는 묶음을 앞으로 — 설명에만 든 앱이 Enter 를 가로채지 않게
+         ("얼굴" 을 치면 설명에 "얼굴" 이 있는 앱보다 얼굴 인식 기능이 먼저) */
+      var nameHit = function (g) { return g[1].some(function (it) { return String(it.name).toLowerCase().indexOf(qq) >= 0; }); };
+      groups = groups.map(function (g, i) { return [g, i]; }).sort(function (a, b) {
+        return (nameHit(b[0]) - nameHit(a[0])) || (a[1] - b[1]);
+      }).map(function (x) { return x[0]; });
       groups.forEach(function (g) {
         if (!g[1].length) return;
         h += '<div class="sm-h">' + esc(g[0]) + "</div>";

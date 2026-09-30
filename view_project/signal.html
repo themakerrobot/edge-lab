@@ -101,12 +101,12 @@
     .card.mine .ct { color: var(--pen-red); }
     .card .tg { font-size: .82rem; min-height: 32px; padding: 2px 10px; border-radius: 16px; border: 1.5px solid var(--line); background: #fff; cursor: pointer; font-weight: 600; }
     .card .tg.on { background: var(--pen-red); border-color: var(--pen-red); color: #fff; }
-    .fingers { display: flex; gap: 14px; align-items: baseline; }
+    .fingers { display: flex; gap: 8px; align-items: baseline; }
     .fingers span { font-size: 2.2rem; font-weight: 700; line-height: 1.1; }
-    .fingers em { font-style: normal; font-size: .82rem; color: var(--ink-2); margin-right: 2px; }
+    .fingers em { font-style: normal; font-size: 1.3rem; color: var(--ink-2); }
     .meter { height: 8px; border-radius: 4px; background: #ece5d6; overflow: hidden; }
     .meter i { display: block; height: 100%; background: var(--pen-blue); transition: width .15s; }
-    .mrow { display: grid; grid-template-columns: 64px 1fr 34px; gap: 6px; align-items: center; font-size: var(--fs-side, 13px); }
+    .mrow { display: grid; grid-template-columns: minmax(44px, auto) 1fr 34px; white-space: nowrap; gap: 6px; align-items: center; font-size: var(--fs-side, 13px); }
 
     /* AI 가 보는 숫자 */
     .nums { border: 1.5px dashed var(--line); border-radius: 10px; padding: 10px; background: #fffdf8; display: flex; flex-direction: column; gap: 8px; }
@@ -200,7 +200,7 @@
     @media (max-width: 1439px) { .panel.cam { flex-basis: 42%; } }
     @media (max-width: 1023px) { .main-container { flex-direction: column; } .panel.cam, .panel.work { flex: 0 0 auto; }
                                  .panel, .panel-body { overflow: visible; } body { overflow: auto; height: auto; }
-                                 .stage { min-height: 300px; } }
+                                 .stage { min-height: 300px; height: min(62vw, 460px); flex: 0 0 auto; } }
   </style>
   <link rel="stylesheet" href="/lib/ui.css">
   <link rel="stylesheet" href="/lib/shell.css">
@@ -297,9 +297,9 @@
         sigLead: "AI 가 카메라에서 읽어 낸 신호예요. 손과 얼굴을 움직여 보세요.",
         cFingers: "손가락 개수", cGesture: "손 모양", cHandup: "손 들기", cDist: "얼굴 거리", cDir: "얼굴 방향", cExpr: "표정",
         noHand: "손이 안 보여요", noFace: "얼굴이 안 보여요", noCam: "카메라를 켜 주세요",
-        handUpV: "들었어요!", handDownV: "내렸어요", upWhy: "손이 이마보다 위", upWhyNoFace: "손이 화면 위쪽",
+        handUpV: "들었어요!", handDownV: "내렸어요", upWhy: "손이 이마보다 위면 들었어요", upWhyNoFace: "손이 화면 위쪽이면 들었어요", fingersSub: "펴진 손가락",
         nearV: "가까워요", farV: "멀어요", midV: "알맞아요", distUnknown: "눈이 잘 안 보여요",
-        nearSub: "40cm 보다 가까워요", farSub: "75cm 보다 멀어요", midSub: "40~75cm",
+        nearSub: "40cm 안", farSub: "75cm 밖", midSub: "40~75cm",
         smileM: "웃음", mouthM: "입 벌림", exprWait: "표정을 읽는 중…",
         hands: "손 {n}개", sum: "합 {n}",
         myAI: "내 AI", myAIHint: "가르치기에서 AI 를 만들면 여기에 나와요.", openTrain: "가르치기 열기",
@@ -357,7 +357,7 @@
         sigLead: "These are the signals the AI reads from the camera. Move your hands and face.",
         cFingers: "Fingers", cGesture: "Hand shape", cHandup: "Hand up", cDist: "Face distance", cDir: "Face direction", cExpr: "Expression",
         noHand: "No hand seen", noFace: "No face seen", noCam: "Turn on the camera",
-        handUpV: "Raised!", handDownV: "Down", upWhy: "hand above forehead", upWhyNoFace: "hand near the top",
+        handUpV: "Raised!", handDownV: "Down", upWhy: "up = hand above your forehead", upWhyNoFace: "up = hand near the top", fingersSub: "straight fingers",
         nearV: "Close", farV: "Far", midV: "Just right", distUnknown: "Eyes not clear",
         nearSub: "closer than 40 cm", farSub: "farther than 75 cm", midSub: "40–75 cm",
         smileM: "Smile", mouthM: "Mouth open", exprWait: "Reading your face…",
@@ -399,7 +399,7 @@
         v_up: "raised", v_down: "down", v_near: "close", v_mid: "just right", v_far: "far",
         d_front: "front", d_left: "left", d_right: "right", d_up: "up", d_down: "down",
         e_smile: "smiling", e_mouth: "mouth open", e_plain: "neutral",
-        mv_f: "{n} fingers", mv_up: "Hand up", mv_left: "Look left", mv_right: "Look right", mv_upL: "Look up", mv_downL: "Look down",
+        mv_f: "Fingers {n}", mv_up: "Hand up", mv_left: "Look left", mv_right: "Look right", mv_upL: "Look up", mv_downL: "Look down",
         mv_smile: "Smile", mv_mouth: "Open mouth", mv_near: "Come close", mv_far: "Move back",
         mineP: "My AI: {t}", loadingModel: "(loading)"
       }
@@ -820,7 +820,7 @@
       if (camLive() && aiState === "live") {
         if (lastMs.hand != null) ms.push("✋ " + lastMs.hand + "ms");
         if (lastMs.mesh != null) ms.push("☺ " + lastMs.mesh + "ms");
-        ms.push(tf("perSec", { n: fps.toFixed(1) }));
+        if (fps > 0) ms.push(tf("perSec", { n: fps.toFixed(1) }));
       }
       $("stMs").textContent = ms.join(" · ");
       var n = rules.length;
@@ -923,8 +923,8 @@
       else {
         var sum = hs.reduce(function (n, h) { return n + h.fingers; }, 0);
         html.push(card("fingers", IC.fingers, t("cFingers"), '<div class="fingers">' + hs.map(function (h, i) {
-          return "<span>" + (hs.length > 1 ? "<em>" + (i + 1) + "</em>" : "") + h.fingers + "</span>"; }).join("") + "</div>",
-          esc(hs.length > 1 ? tf("hands", { n: hs.length }) + " · " + tf("sum", { n: sum }) : valLabel("fingers", String(hs[0].fingers))), "on"));
+          return (i ? "<em>+</em>" : "") + "<span>" + h.fingers + "</span>"; }).join("") + "</div>",
+          esc(hs.length > 1 ? tf("hands", { n: hs.length }) + " · " + tf("sum", { n: sum }) : t("fingersSub")), "on"));
       }
       // 손 모양
       if (dimMsg || !hs.length) html.push(card("gesture", IC.hand, t("cGesture"), esc(dimMsg || t("noHand")), "", "dim"));
@@ -1084,7 +1084,7 @@
       if (!has && cur) o += '<option value="' + esc(cur) + '" selected>' + esc(valLabel(sig, cur)) + "</option>";
       return o;
     }
-    var boardOk = null;             // 마지막으로 본 보드 연결 상태 (null=모름)
+    var boardOk = null, boardNoticed = false;             // 마지막으로 본 보드 연결 상태 (null=모름)
     function checkBoard() {
       return fetch("/board/status").then(function (r) { return r.json(); }).then(function (j) {
         boardOk = !!(j && j.data && j.data.connected);
@@ -1226,7 +1226,11 @@
         .then(function (r) { return r.json(); }).then(function (j) {
           if (j && j.result === "ok") { boardOk = true; paintBoardHints(); return; }
           boardOk = false; paintBoardHints();
-          toast(t("boardOff") + " " + t("openBoard") + " →");
+          toast(t("boardOff"));
+          if (!boardNoticed && window.EL_WIN) {           // 셸 알림에 [보드 앱 열기] — 한 번만 (규칙이 반복해도 쌓이지 않게)
+            boardNoticed = true;
+            EL_WIN.notify(t("boardOff"), { actions: [{ label: t("openBoard"), href: "/board" }] });
+          }
         }).catch(function (e) { toast(t("boardFail") + ((e && e.message) || e)); });
     }
     var bigTimer = 0;

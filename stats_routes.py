@@ -23,7 +23,7 @@ from paths import STATS_DIR  # noqa: E402
 STATS_PATH = os.path.join(STATS_DIR, "usage.json")
 FLUSH_EVERY = 20          # 이만큼 쌓이면 저장
 FLUSH_SECONDS = 15        # 또는 이만큼 지나면 저장
-PAGES = ("index", "blocks", "code", "train", "talk", "drive", "paint", "typing", "calc", "notes", "recorder", "story", "works", "tasks", "board", "store", "eye", "word", "piano", "diary", "options")
+PAGES = ("index", "blocks", "code", "train", "talk", "drive", "paint", "typing", "calc", "notes", "recorder", "story", "works", "tasks", "board", "store", "eye", "word", "piano", "diary", "signal", "sound", "factory", "options")
 SKIP_PREFIX = ("/stats", "/assets", "/fonts", "/lib", "/blockly", "/docs", "/openapi",
                "/favicon",
                # 아래는 화면이 배경에서 계속 부르는 내부 호출이다 — 아이가 "쓴" 것이
