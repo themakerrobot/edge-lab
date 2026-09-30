@@ -11,10 +11,21 @@
  * 페이지를 오갈 때마다 덮개가 번쩍이면 방해가 된다.
  *
  * 그림은 전부 인라인 SVG — 파일을 더 받지 않는다.
+ *
+ * 켜는 화면(launch.html)에서도 쓴다 — 키오스크 창이 서버보다 먼저 뜨면 이 준비 화면이 처음부터 보이고,
+ * 서버를 기다리는 것부터 모델 올리기까지 한 화면에서 끝낸다. [시작하기] 를 누를 때 바탕화면("/?booted=1")으로
+ * 한 번만 넘어간다 — 전에는 켜는 화면 → 바탕화면 → 준비 화면으로 세 번 바뀌어 깜빡였다.
+ *     window.EL_BOOT = { base: "http://localhost:57711", asset: "assets/", onDone: fn, onServer: fn }
  */
 (function () {
   "use strict";
 
+  var CFG = window.EL_BOOT || {}, BASE = CFG.base || "";
+  /* 켜는 화면에서 준비를 마치고 넘어온 것 — 여기서 다시 띄우지 않는다 */
+  if (/[?&]booted=1/.test(location.search)) {
+    try { sessionStorage.setItem("vapi-ready", "1"); history.replaceState(null, "", location.pathname); } catch (e) {}
+    return;
+  }
   /* 같은 세션에서 이미 로딩이 끝났다면(페이지 이동) 아예 그리지 않는다 */
   var already = false;
   try { already = sessionStorage.getItem("vapi-ready") === "1"; } catch (e) {}
@@ -27,7 +38,7 @@
      바탕색만 준비 화면과 같게 둔다 — 켜는 화면(launch.html)에서 준비 화면으로 바로 이어진다 */
   document.documentElement.classList.add("el-booting");
   var pre = document.createElement("style");
-  pre.textContent = "html.el-booting{background:#fbf7ef}html.el-booting body>*{visibility:hidden!important}";
+  pre.textContent = "html.el-booting{background:#fbf7ef}html.el-booting body>*:not(#boot){visibility:hidden!important}";
   document.head.appendChild(pre);
 
   var LANG = "ko";
@@ -113,7 +124,7 @@
     '<div id="boot">',
     '  <div class="boot-card">',
     '    <div class="boot-brand">',
-    '      <img src="/assets/pibo-prof.png" alt="">',
+    '      <img src="' + (CFG.asset || "/assets/") + 'pibo-prof.png" alt="">',
     '      <span><b>edge-lab</b><i id="bootSub"></i></span>',
     '    </div>',
     '    <div class="boot-slide">',
@@ -152,7 +163,10 @@
   function $(id) { return document.getElementById(id); }
 
   /* 덮개를 body 맨 앞에 심는다 — 화면이 그려지기 전에 덮여 있어야 깜빡이지 않는다 */
+  var mounted = false;
   function mount() {
+    if (mounted) return;
+    mounted = true;
     var st = document.createElement("style");
     st.textContent = CSS;
     document.head.appendChild(st);
@@ -186,8 +200,9 @@
       }, 350);
     }
     function finish() {
-      box.classList.add("done");
       if (timer) clearInterval(timer);
+      if (CFG.onDone) { CFG.onDone(); return; }   // 켜는 화면: 바탕화면으로 넘어간다(덮개는 넘어갈 때까지 둔다)
+      box.classList.add("done");
     }
 
     /* 로딩이 끝난 뒤 다시 들어온 경우에는 안내를 띄우지 않는다.
@@ -214,7 +229,8 @@
     }
 
     function poll() {
-      fetch("/ready").then(function (r) { return r.json(); }).then(function (r) {
+      fetch(BASE + "/ready", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (r) {
+        if (CFG.onServer) { CFG.onServer(); CFG.onServer = null; }
         if (r.ready) { try { sessionStorage.setItem("vapi-ready", "1"); } catch (e) {} }
         if (r.ready && !shown) { finish(); return; }   /* 이미 준비 끝 → 바로 화면 */
         show();
@@ -246,6 +262,12 @@
     poll();
   }
 
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mount);
-  else mount();
+  /* body 가 생기자마자 덮개를 심는다 — DOMContentLoaded 까지 기다리면 그 사이 바탕화면이 한 번 그려진다.
+     MutationObserver 는 그리기 전에 불린다. 덮개는 body 맨 앞이라 뒤에 읽히는 것들은 그 아래로 간다 */
+  if (document.body) mount();
+  else {
+    var mo = new MutationObserver(function () { if (document.body) { mo.disconnect(); mount(); } });
+    mo.observe(document.documentElement, { childList: true });
+    document.addEventListener("DOMContentLoaded", mount);        // 혹시 못 잡았을 때
+  }
 })();

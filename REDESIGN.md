@@ -736,6 +736,15 @@ AI 작업 관리자에 **넣지 않은 것**: NPU·GPU 사용률(드라이버마
 물어 서버가 대답하면 `http://localhost:포트/` 로 넘어가 부팅(모델 올리기) 화면이 이어진다. 켜는 처음부터 키오스크다.
 90초가 지나도 대답이 없으면 Alt+F4 로 닫고 까만 창을 보라고 안내한다. 창 옵션은 `appwin.py` 한 곳에.
 
+- 켤 때 깜빡임: 켜는 화면 → 바탕화면("/") → 준비 화면(DOMContentLoaded 에 붙는 덮개)으로 세 번 바뀌어,
+  바탕화면이 0.5초 보였다 사라졌다. 이제 `launch.html` 이 처음부터 준비 화면(`lib/boot.js`)을 그대로 쓴다
+  (`window.EL_BOOT = {base, asset, onServer, onDone}`). 서버 기다리기·모델 올리기를 한 화면에서 끝내고,
+  [시작하기] 때 `/?booted=1` 로 **한 번만** 넘어간다(boot.js 는 `booted=1` 이면 그리지 않고 주소를 지운다).
+  "/" 를 직접 열 때도 덮개는 body 가 생기자마자(MutationObserver) 붙는다.
+- [끄기] 가 창을 못 닫던 것: 같은 프로필(`APPWIN_DIR`)로 떠 있는 창이 남아 있으면 새 chrome.exe 는 그 창에
+  일을 넘기고 바로 끝나, `PROC.terminate()` 가 헛손질이었다. 윈도우에서는 `taskkill /T` 에 더해 명령줄에
+  그 프로필이 든 chrome/msedge 를 PowerShell(`Get-CimInstance`)로 찾아 닫는다 — 다른 브라우저 창은 안 건드린다. 실기기 확인 필요.
+
 ### 10.14c 블록 편집기 모양
 
 openpibo IDE 의 결로 다시 칠했다(코드는 옮기지 않고 값만 참고). Blockly 13 이라 클래스 이름이 10 과 다르다
