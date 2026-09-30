@@ -260,7 +260,7 @@ ALLOW_WHILE_LOADING = ("/ready", "/system", "/lib", "/assets", "/fonts", "/block
 # 화면 주소 — 로딩 중에도 열린다. 새 화면을 만들면 여기에 더한다(빠지면 켜진 직후 1~2분은
 # 그 앱이 JSON 503 으로 뜬다 — 셸에 새 앱을 넣으며 한 번 겪었다).
 PAGE_PATHS = ("/", "/home", "/try", "/blocks", "/train", "/options", "/code", "/talk",
-              "/works", "/drive", "/paint", "/typing", "/calc", "/notes", "/recorder", "/story", "/tasks", "/board", "/store", "/word", "/eye")
+              "/works", "/drive", "/paint", "/typing", "/calc", "/notes", "/recorder", "/story", "/tasks", "/board", "/store", "/diary", "/piano", "/word", "/eye")
 
 
 @app.middleware("http")
@@ -720,6 +720,20 @@ async def eye_page():
 async def word_page():
     """문장 — 글을 넣어 작은 언어모델(신경망 · Transformer)을 가르치고 이어 쓰기 (브라우저 워커에서 학습)"""
     with open("view_project/word.html", encoding="utf-8") as f:
+        return f.read()
+
+
+@app.get("/piano", response_class=HTMLResponse)
+async def piano_page():
+    """피아노 — 건반 · 드럼 · 메트로놈 · 녹음 · 노래 따라 치기 (Web Audio, 소리 파일 없음)"""
+    with open("view_project/piano.html", encoding="utf-8") as f:
+        return f.read()
+
+
+@app.get("/diary", response_class=HTMLResponse)
+async def diary_page():
+    """일기 — 달력 · 기분 · 날씨 · 한 일 · 글, 이 컴퓨터에만 저장, 읽어 주기(/speech/tts)"""
+    with open("view_project/diary.html", encoding="utf-8") as f:
         return f.read()
 
 
