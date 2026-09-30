@@ -71,6 +71,18 @@ if tts_dir.is_dir():
 else:
     print("WARN models/tts 없음 — 음성 합성(TTS)을 쓸 수 없습니다")
 
+# 실제로 쓰는 것은 int8 양자화판(models/tts-int8)이다 — 있으면 모델 파일 넷이 다 있는지 본다
+q = pathlib.Path("models/tts-int8")
+if q.is_dir():
+    qd = q / "onnx" if (q / "onnx" / "vector_estimator.onnx").exists() else q
+    for name in tts_need[:4]:
+        if not (qd / name).exists():
+            fails += 1
+            print("FAIL", (qd / name).as_posix(), "| 파일 없음")
+    print("OK   읽어 주기는 models/tts-int8 을 씁니다 (원본 models/tts 는 VAPI_TTS=tts 로)")
+else:
+    print("WARN models/tts-int8 없음 — 읽어 주기는 원본 models/tts 로 돕니다")
+
 if not pathlib.Path("models/stt").is_dir():
     print("WARN models/stt 없음 — 음성 인식(STT)을 쓸 수 없습니다")
 

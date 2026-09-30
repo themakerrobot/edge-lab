@@ -13,8 +13,8 @@ if exist "%~dp0venv\Scripts\python.exe" (
   set "PY=python"
 )
 
-rem 읽어 주기(TTS)를 int8 양자화판(models\tts-int8)으로 쓰려면 아래 줄의 rem 을 지운다 - 속도는 tools\tts_bench.py 로 먼저 재 본다
-rem set VAPI_TTS=tts-int8
+rem 읽어 주기(TTS)는 models\tts-int8 이 있으면 그것을 쓴다. 원본(models\tts)으로 돌리려면 아래 줄의 rem 을 지운다
+rem set VAPI_TTS=tts
 
 set HF_HUB_OFFLINE=1
 set TRANSFORMERS_OFFLINE=1
