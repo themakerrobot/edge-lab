@@ -278,7 +278,7 @@
     $("cmd").placeholder = t("ph"); $("sendBtn").textContent = t("send"); $("askBtn").textContent = t("ask");
     $("txtFav").textContent = t("fav"); $("addFav").textContent = t("addFav");
     $("baud").innerHTML = BAUDS.map(function (b) { return '<option value="' + b + '"' + (b === pref.baud ? " selected" : "") + ">" + b + "</option>"; }).join("");
-    $("eol").innerHTML = [["lf", "LF (\\n)"], ["crlf", "CR LF (\\r\\n)"], ["cr", "CR (\\r)"]].map(function (x) {
+    $("eol").innerHTML = [["lf", "LF (\\n)"], ["crlf", "CR LF (\\r\\n)"], ["cr", "CR (\\r)"], ["none", LANG === "en" ? "none" : "없음"]].map(function (x) {
       return '<option value="' + x[0] + '"' + (x[0] === pref.eol ? " selected" : "") + ">" + x[1] + "</option>";
     }).join("");
     paintFavs(); paintState(); loadPorts();

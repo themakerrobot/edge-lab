@@ -36,7 +36,7 @@ MAX_LOG = 2000        # 기억해 두는 줄 수 (보낸 것 · 받은 것 · �
 MAX_WAIT = 10.0       # ask/read 가 기다리는 가장 긴 시간(초)
 IDLE_FLUSH = 0.3      # 줄 끝 없이 멈춘 글을 한 줄로 치기까지(초)
 BAUDS = (9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600)
-EOLS = {"lf": "\n", "crlf": "\r\n", "cr": "\r"}
+EOLS = {"lf": "\n", "crlf": "\r\n", "cr": "\r", "none": ""}   # none: 명령 끝을 펌웨어가 정한 글자(예: "!")로 알아듣는 경우
 
 # USB 칩 제조사(VID) → 보드 앱에서 보여 줄 짧은 설명. 확실한 것만 적는다.
 VID_HINT = {
@@ -104,7 +104,7 @@ class Board:
         if baud not in BAUDS:
             raise BoardError("속도는 %s 중에서 골라 주세요." % ", ".join(map(str, BAUDS)))
         if eol not in EOLS:
-            raise BoardError("줄 끝은 lf · crlf · cr 중 하나예요.")
+            raise BoardError("줄 끝은 lf · crlf · cr · none 중 하나예요.")
         self.disconnect(quiet=True)
         try:
             # serial_for_url: "COM3" 같은 포트 이름도, 시험용 "loop://" 도 연다
