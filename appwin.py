@@ -59,6 +59,9 @@ def launch(url):
     if not os.environ.get("VAPI_NO_KIOSK"):
         edge = os.path.basename(exe).lower() == "msedge.exe"
         args.append("--start-fullscreen" if edge else "--kiosk")
+        # 전체 화면 창은 페이지를 그리기 전에 검은색으로 뜬다. launch=1 이면 셸(os.html)이 첫 프레임을 같은 검정으로
+        # 그리고 준비되면 서서히 밝아진다 — 검정 → 화면으로 "튀지" 않게. 셸은 이 표시를 주소에서 지운다.
+        args[1] = "--app=" + url + ("&" if "?" in url else "?") + "launch=1"
     # [끄기] 가 창을 강제로 닫으므로 다음 실행 때 "복원할까요" 풍선이 뜨지 않게
     args.append("--hide-crash-restore-bubble")
     try:
