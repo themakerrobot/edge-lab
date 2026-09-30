@@ -243,7 +243,9 @@
     if (on) {
       q.value = "";
       paint();
-      setTimeout(function () { q.focus(); }, 0);
+      // 바로 준다 — 한 박자 늦게(setTimeout) 주면 열자마자 친 글자가 사라진다. 혹시 뺏겼으면 한 번 더
+      q.focus();
+      setTimeout(function () { if (!m.hidden && document.activeElement !== q) q.focus(); }, 0);
       loadWorks().then(function () { if (!m.hidden) paint(); });
     } else {
       document.getElementById("osStart").classList.toggle("on", A.active() === null);
