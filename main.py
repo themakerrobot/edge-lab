@@ -7,11 +7,11 @@ import time
 import uuid
 from contextlib import asynccontextmanager
 
-# 무거운 import(cv2 · mediapipe · fastapi …) 전에 키오스크 창부터 띄운다 — 켜는 동안 까만 창만 보이지 않게.
-# 창은 launch.html(서버 없이 열리는 파일)로 시작해 서버가 대답하면 "/" 로 넘어간다 (appwin.py).
+# 창은 서버가 "/" 를 줄 수 있게 된 뒤에 바탕화면으로 바로 연다(open_browser) — 화면이 한 번도 바뀌지 않는다.
+# 전에는 서버보다 먼저 켜는 화면(파일)을 띄우고 준비 화면을 거쳐 바탕화면으로 넘어갔는데, 넘어갈 때마다 깜빡였다.
+# 그 사이(무거운 import) 까만 창에 무엇을 하는 중인지 적어 둔다.
 if __name__ == "__main__":
-    import appwin
-    appwin.early(int(os.environ.get("VAPI_PORT", "57711")))
+    print("edge-lab 을 켜는 중이에요. 준비되면 화면이 저절로 열려요 — 이 까만 창은 닫지 마세요.", flush=True)
 
 
 import cv2
@@ -50,10 +50,10 @@ _SERVER = None     # uvicorn 서버 — [끄기] 가 멈춘다
 
 
 def open_browser():
-    """서버가 뜨자마자 화면을 연다 — 모델 로딩은 뒤에서 계속되고, 화면은 부팅(로딩) 안내를 보여준다.
+    """서버가 대답할 수 있게 되면 바탕화면("/")을 바로 연다.
 
-    보통은 main.py 맨 위에서 appwin.early() 가 이미 창을 띄워 두었다(launch.html → "/").
-    그러지 못했을 때(다른 방법으로 실행 · launch.html 없음)만 여기서 띄운다.
+    모델 로딩은 뒤에서 계속되고, 진행은 바탕화면 상단바의 "AI 준비 중 n/12" 가 보여 준다(끝나면 알림).
+    준비 화면이나 켜는 화면을 거치지 않아 화면이 바뀌지 않는다.
     Chrome/Edge 가 없으면 기본 브라우저로 연다. 창 옵션(키오스크 등)은 appwin.py 에."""
     if os.environ.get("VAPI_NO_BROWSER"):
         return
@@ -64,7 +64,14 @@ def open_browser():
     url = f"http://localhost:{PORT}"
 
     def _open():
-        time.sleep(1.0)  # uvicorn 소켓 바인딩 여유
+        # lifespan 시작은 소켓을 열기 전이다 — 포트가 실제로 받을 때까지 기다린다(최대 60초)
+        import socket
+        for _ in range(300):
+            try:
+                with socket.create_connection(("127.0.0.1", PORT), timeout=0.5):
+                    break
+            except OSError:
+                time.sleep(0.2)
         if appwin.launch(url):
             return
         try:
