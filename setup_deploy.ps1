@@ -78,3 +78,4 @@ if ($LASTEXITCODE -ne 0) { throw "model verification failed" }
 Write-Host ""
 Write-Host "DONE. start with:  .\run.bat" -ForegroundColor Green
 Write-Host "  (PowerShell 은 앞에 .\ 이 필요합니다. 탐색기에서 run.bat 더블클릭도 됩니다)" -ForegroundColor DarkGray
+Write-Host "  코딩 실습(JupyterLab):  .\lab.bat   — 바탕화면 바로가기는  .\lab.bat /shortcut" -ForegroundColor Green

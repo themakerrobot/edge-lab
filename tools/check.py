@@ -105,4 +105,14 @@ except Exception as e:
     print("FAIL opencv GUI |", str(e)[:120])
     print("     고침: pip install --force-reinstall opencv-python  (GUI 있는 것을 마지막에 덮어쓴다)")
 
+# 코딩 실습(lab.bat → JupyterLab) — 없으면 실습만 못 하고 edge-lab 은 그대로 돈다
+try:
+    import jupyterlab
+    import ipykernel  # noqa: F401  (노트북 실행기)
+    print("OK   jupyterlab", jupyterlab.__version__)
+except Exception as e:
+    fails += 1
+    print("FAIL jupyterlab |", str(e)[:120])
+    print("     고침: pip install -r requirements.lock.txt  (코딩 실습 lab.bat 에 필요)")
+
 print("done. fail =", fails)
