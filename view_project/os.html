@@ -15,6 +15,7 @@
     document.documentElement.classList.add("el-wait");
   </script>
   <link rel="stylesheet" href="/lib/tokens.css">
+  <script src="/lib/boot.js"></script>
   <style>
     /* 셸 — edge-lab 을 하나의 컴퓨터처럼 보이게 하는 첫 화면.
      *
@@ -41,7 +42,9 @@
     html.el-wait body { opacity: 0; animation: el-show 0s 3s forwards; }
     @keyframes el-show { to { opacity: 1; } }
     html.el-shown body { transition: opacity .15s ease-out; }
-    html {
+    /* html.el-booting 도 같이 — 준비 화면(lib/boot.js)이 떠 있는 동안에도 배경이 바뀌지 않게.
+       boot.js 의 같은 선택자보다 뒤에 오므로 이것이 이긴다 */
+    html, html.el-booting {
       /* 바탕화면 — 그림 파일 없이 CSS 로만 */
       background:
         radial-gradient(1100px 620px at 8% 0%,   #d4e9f0 0%, rgba(212,233,240,0) 62%),
@@ -49,7 +52,9 @@
         radial-gradient(700px 420px at 78% 18%,  #e3efdd 0%, rgba(227,239,221,0) 58%),
         #f5efe3;
     }
-    html.hc { background: var(--paper); }
+    html.hc, html.hc.el-booting { background: var(--paper); }
+    /* 준비 화면 카드는 바탕화면 배경 위에 뜬다 — 켜는 내내 배경이 한 번도 바뀌지 않는다 */
+    html #boot { background: transparent; }
     button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
     a { color: inherit; text-decoration: none; }
     svg { display: block; }
@@ -565,7 +570,9 @@
       }
       function pollAi() {
         return fetch("/ready").then(function (r) { return r.json(); }).then(function (r) {
-          if (r.ready && aiWasLoading) notify(null, T("aiReady"), [], true);   // 켜 둔 채 기다린 사람에게
+          // 켜 둔 채 기다린 사람에게 — 준비 화면(lib/boot.js)이 떠 있으면 거기서 "준비 끝!" 을 이미 보여 준다
+          if (r.ready && aiWasLoading && !document.documentElement.classList.contains("el-booting"))
+            notify(null, T("aiReady"), [], true);
           aiWasLoading = !r.ready && !r.error;
           var wasReady = !!(aiState && aiState.ready);
           aiState = r; paintAi();
@@ -864,9 +871,10 @@
       /* 첫 화면 — 한 번에 보인다. 배경(html)은 바로 그리고, 내용(body)은 스크립트가 다 돌고(DOMContentLoaded)
          화면에 쓰인 글꼴을 받은 뒤에 보인다 — 대체 글꼴로 그렸다가 Gowun 으로 다시 그려지는 것을 보이지 않게.
          칸의 내용은 기억해 둔 값(DESK_KEY)으로 이미 그려져 있어 서버를 기다리지 않는다.
-         기억한 값이 없는 첫 실행만 첫 자료를 기다린다. 어느 쪽이든 1.5초를 넘기지 않는다. */
+         기억한 값이 없는 첫 실행만 첫 자료를 기다린다 — 준비 화면이 떠 있으면 바탕화면은 가려져 있으니 기다리지 않는다.
+         어느 쪽이든 1.5초를 넘기지 않는다. */
       (function () {
-        var first = !desk.models && !desk.sys;
+        var first = !desk.models && !desk.sys && !document.documentElement.classList.contains("el-booting");
         var parsed = new Promise(function (ok) {
           if (document.readyState !== "loading") ok(); else document.addEventListener("DOMContentLoaded", ok);
         });

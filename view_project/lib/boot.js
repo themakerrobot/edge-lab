@@ -12,9 +12,9 @@
  *
  * 그림은 전부 인라인 SVG — 파일을 더 받지 않는다.
  *
- * 바탕화면(os.html, "/")은 이것을 쓰지 않는다 — 켤 때 준비 화면 → 바탕화면으로 바뀌며 깜빡였다.
- * 바탕화면은 곧바로 뜨고 상단바의 "AI 준비 중 n/12" 가 진행을 보여 준다. 여기는 창 없이 여는 옛 화면
- * (/home, /try) 용이다.
+ * 바탕화면(os.html, "/")에서는 첫 프레임부터 덮여 있어야 한다. 덮개가 붙기 전에 바탕화면이 한 번 그려지면
+ * "바탕화면 0.5초 → 준비 화면" 으로 번쩍인다. 그래서 준비가 끝날 때(finish)까지 html.el-booting 을 두고
+ * body 의 다른 것은 숨기며, 바탕색도 덮개와 같게 칠한다.
  */
 (function () {
   "use strict";
@@ -26,10 +26,11 @@
   /* 셸 안의 창이면 그리지 않는다 — 부팅 안내는 셸이 한 번만 보여 준다 (lib/embed.js) */
   if (document.documentElement.classList.contains("el-win")) return;
 
-  /* 덮개가 붙을 때까지 body 를 숨기고 바탕색만 준비 화면과 같게 둔다 — 화면이 한 번 그려졌다 덮이지 않게 */
+  /* 준비가 끝날 때까지 body 의 다른 것(바탕화면)은 숨기고 바탕은 덮개와 같게 칠한다 — 바탕화면이 먼저 그려졌다 덮이지 않게 */
   document.documentElement.classList.add("el-booting");
   var pre = document.createElement("style");
-  pre.textContent = "html.el-booting{background:#fbf7ef}html.el-booting body>*:not(#boot){visibility:hidden!important}";
+  pre.textContent = "html.el-booting{background:#fbf7ef radial-gradient(rgba(31,95,122,.07) 1px,transparent 1px) 0 0/22px 22px}" +
+                    "html.el-booting body>*:not(#boot){visibility:hidden!important}";
   document.head.appendChild(pre);
 
   var LANG = "ko";
@@ -112,7 +113,7 @@
   ].join("\n");
 
   var HTML = [
-    '<div id="boot">',
+    '<div id="boot" class="done">',        // 첫 대답이 "아직 준비 중" 일 때 보인다(show) — 이미 준비됐으면 한 번도 안 보인다
     '  <div class="boot-card">',
     '    <div class="boot-brand">',
     '      <img src="/assets/pibo-prof.png" alt="">',
@@ -164,7 +165,6 @@
     var wrap = document.createElement("div");
     wrap.innerHTML = HTML;
     document.body.insertBefore(wrap.firstElementChild, document.body.firstChild);
-    document.documentElement.classList.remove("el-booting");   // 이제 덮개가 앞을 가린다
     boot();
   }
 
@@ -193,6 +193,7 @@
     function finish() {
       if (timer) clearInterval(timer);
       box.classList.add("done");
+      document.documentElement.classList.remove("el-booting");  // 이제 바탕화면을 보인다
     }
 
     /* 로딩이 끝난 뒤 다시 들어온 경우에는 안내를 띄우지 않는다.
