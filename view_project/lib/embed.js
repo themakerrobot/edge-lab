@@ -137,7 +137,7 @@
   });
 
   /* ── 앱 화면으로 가는 링크는 셸이 연다 ── */
-  var APP_PATHS = ["/", "/home", "/try", "/blocks", "/code", "/train", "/talk", "/drive", "/paint", "/typing", "/calc", "/notes", "/recorder", "/story", "/works", "/tasks", "/board", "/store", "/eye", "/word", "/options"];
+  var APP_PATHS = ["/", "/home", "/try", "/blocks", "/code", "/train", "/talk", "/drive", "/paint", "/typing", "/calc", "/notes", "/recorder", "/story", "/works", "/tasks", "/board", "/store", "/eye", "/word", "/piano", "/diary", "/options"];
   document.addEventListener("click", function (e) {
     if (e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey) return;
     var a = e.target && e.target.closest ? e.target.closest("a[href]") : null;

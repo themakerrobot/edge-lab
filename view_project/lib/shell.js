@@ -38,6 +38,8 @@
     "/calc":     { ko: "계산기",     en: "Calculator" },
     "/notes":    { ko: "메모장",     en: "Notes" },
     "/board":    { ko: "보드",       en: "Board" },
+    "/diary": { ko: "일기", en: "Diary" },
+    "/piano": { ko: "피아노", en: "Piano" },
     "/word": { ko: "문장", en: "Words" },
     "/eye": { ko: "AI 눈", en: "AI eye" },
     "/store":    { ko: "앱 가게",    en: "App store" },
