@@ -48,13 +48,13 @@
     .num { font-family: Menlo, Consolas, monospace; font-size: var(--fs-mono, 13px); }
 
     /* 트랙 고르기 */
-    .pick { display: flex; flex-direction: column; gap: 6px; }
-    .pick button { display: flex; align-items: center; gap: 8px; min-height: var(--tap, 48px); padding: 6px 10px; text-align: left;
-                   border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; cursor: pointer; font-size: .98rem; }
-    .pick button b { flex: 1; font-weight: 600; }
-    .pick button small { font-size: var(--fs-side, 13px); color: var(--pen-red); }
+    .pick { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .pick button { display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 64px; padding: 6px 4px; text-align: center;
+                   border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; cursor: pointer; font-size: .9rem; position: relative; }
+    .pick button b { font-weight: 600; line-height: 1.2; }
+    .pick button small { position: absolute; top: 3px; right: 5px; font-size: 11px; color: var(--pen-red); font-weight: 700; }
     .pick button.on { border-color: var(--cyan); background: var(--cyan-bg); }
-    .pick svg { width: 44px; height: 30px; flex: 0 0 auto; }
+    .pick svg { width: 48px; height: 30px; flex: 0 0 auto; }
 
     /* 두세 개 중 하나 */
     .seg { display: inline-flex; border: 1.5px solid var(--line-d); border-radius: var(--r); overflow: hidden; }
@@ -606,12 +606,48 @@
         g.beginPath(); g.arc(ex, ey, 2.5, 0, Math.PI * 2); g.fill();
       });
       g.globalAlpha = 1;
-      g.save(); g.translate(car.x, car.y); g.rotate(car.th);
-      g.fillStyle = car.crashed ? css("--bad") : (who === "ai" && !lastByMe ? css("--go") : css("--pen-blue"));
-      g.fillRect(-11, -6, 22, 12);
-      g.fillStyle = "#fff"; g.fillRect(3, -4, 5, 8);                    // 앞유리 = 앞쪽 표시
-      g.restore();
+      drawCar(g, car.crashed ? css("--bad") : (who === "ai" && !lastByMe ? css("--go") : css("--pen-blue")), car.crashed);
       $("lapBadge").textContent = t("laps").replace("{n}", Math.max(0, car.progress).toFixed(1));
+    }
+    /* 차 — 위에서 내려다본 모양. 오른쪽(+x)이 앞이다. 그림만 이 크기고, 부딪힘 판정은 lib/drive.js 그대로
+       (가운데 · 앞 9) — 차 끝이 길 가장자리에 살짝 걸쳐도 괜찮은 것은 그 때문이다 */
+    function mix(hex, k) {                 // k>0 밝게, k<0 어둡게
+      var n = parseInt(String(hex).replace("#", "").slice(0, 6), 16); if (isNaN(n)) return hex;
+      var f = function (c) { return Math.round(k > 0 ? c + (255 - c) * k : c * (1 + k)); };
+      return "rgb(" + f(n >> 16 & 255) + "," + f(n >> 8 & 255) + "," + f(n & 255) + ")";
+    }
+    function rr(g, x, y, w, h, r) {
+      g.beginPath();
+      g.moveTo(x + r, y); g.lineTo(x + w - r, y); g.quadraticCurveTo(x + w, y, x + w, y + r);
+      g.lineTo(x + w, y + h - r); g.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      g.lineTo(x + r, y + h); g.quadraticCurveTo(x, y + h, x, y + h - r);
+      g.lineTo(x, y + r); g.quadraticCurveTo(x, y, x + r, y); g.closePath();
+    }
+    function drawCar(g, color, crashed) {
+      g.save(); g.translate(car.x, car.y); g.rotate(car.th); g.scale(1.3, 1.3);   // 판 800 에 비해 작아 보여 조금 키운다(그림만)
+      g.fillStyle = "rgba(20,20,20,.22)"; rr(g, -12, -6.2, 25, 14, 5); g.fill();          // 그림자
+      g.fillStyle = "#1e2226";                                                             // 바퀴 넷
+      [[-8.5, -7.6], [5, -7.6], [-8.5, 5.2], [5, 5.2]].forEach(function (w) { rr(g, w[0], w[1], 5.2, 2.4, 1); g.fill(); });
+      g.fillStyle = color; g.strokeStyle = mix(color, -0.35); g.lineWidth = 0.9;           // 차체
+      rr(g, -12.5, -6.3, 25, 12.6, 4.6); g.fill(); g.stroke();
+      g.fillStyle = mix(color, 0.18); rr(g, 6.2, -5, 5.2, 10, 2.4); g.fill();              // 보닛
+      g.fillStyle = mix(color, 0.3); rr(g, -6.5, -4.6, 9, 9.2, 2.2); g.fill();              // 지붕
+      g.fillStyle = "#2c3e50";                                                             // 앞유리
+      g.beginPath(); g.moveTo(2.6, -4.6); g.lineTo(6, -5.3); g.lineTo(6, 5.3); g.lineTo(2.6, 4.6); g.closePath(); g.fill();
+      g.fillStyle = "rgba(255,255,255,.35)";
+      g.beginPath(); g.moveTo(3.3, -3.8); g.lineTo(5, -4.2); g.lineTo(5, -1.2); g.lineTo(3.3, -1); g.closePath(); g.fill();
+      g.fillStyle = "#34495e";                                                             // 뒷유리
+      g.beginPath(); g.moveTo(-6.5, -4.2); g.lineTo(-9, -4.8); g.lineTo(-9, 4.8); g.lineTo(-6.5, 4.2); g.closePath(); g.fill();
+      g.fillStyle = "#ffe27a"; rr(g, 11, -5, 1.8, 2.6, 0.8); g.fill(); rr(g, 11, 2.4, 1.8, 2.6, 0.8); g.fill();   // 전조등
+      g.fillStyle = "#e74c3c"; rr(g, -12.8, -5, 1.4, 2.4, 0.6); g.fill(); rr(g, -12.8, 2.6, 1.4, 2.4, 0.6); g.fill(); // 미등
+      if (crashed) {                                                                        // 쾅 — 앞에 번쩍
+        g.strokeStyle = "#f5b301"; g.lineWidth = 1.6; g.lineCap = "round";
+        for (var i = 0; i < 7; i++) {
+          var a = -1.2 + i * 0.4;
+          g.beginPath(); g.moveTo(15 + 2 * Math.cos(a), 5 * Math.sin(a)); g.lineTo(15 + 7 * Math.cos(a), 12 * Math.sin(a)); g.stroke();
+        }
+      }
+      g.restore();
     }
     function overlay(html, kind) {
       var o = $("overlay");
