@@ -114,6 +114,15 @@ if exist %BUILD%\models\stats rmdir /s /q %BUILD%\models\stats
 if exist %BUILD%\models\pycode rmdir /s /q %BUILD%\models\pycode
 if exist %BUILD%\models\blocks rmdir /s /q %BUILD%\models\blocks
 if exist %BUILD%\models\.appwin rmdir /s /q %BUILD%\models\.appwin
+REM 읽어 주기는 tts-int8 을 쓴다 - 원본 tts 는 허깅페이스에만 둔다. int8 에 목소리 파일이 없으면 지우지 않는다(읽어 주기가 멈추지 않게)
+set "TTS8OK="
+if exist %BUILD%\models\tts-int8\voice_styles if exist %BUILD%\models\tts-int8\onnx\tts.json set "TTS8OK=1"
+if exist %BUILD%\models\tts-int8\voice_styles if exist %BUILD%\models\tts-int8\tts.json set "TTS8OK=1"
+if defined TTS8OK (
+  if exist %BUILD%\models\tts rmdir /s /q %BUILD%\models\tts
+) else (
+  echo   [WARN] models\tts-int8 has no voice_styles or tts.json - keeping models\tts
+)
 
 REM bundle launcher (ASCII only, CRLF via echo)
 > %BUILD%\run.bat (

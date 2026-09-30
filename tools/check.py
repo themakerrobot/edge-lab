@@ -60,7 +60,9 @@ for m in targets:
 tts_need = ["duration_predictor.onnx", "text_encoder.onnx", "vector_estimator.onnx",
             "vocoder.onnx", "tts.json", "unicode_indexer.json"]
 tts_dir = pathlib.Path("models/tts/onnx")
-if tts_dir.is_dir():
+if not tts_dir.is_dir() and pathlib.Path("models/tts-int8").is_dir():
+    pass                                      # 원본은 받지 않는다(허깅페이스에만) — 아래 int8 점검만
+elif tts_dir.is_dir():
     for name in tts_need:
         if not (tts_dir / name).exists():
             fails += 1
@@ -75,10 +77,15 @@ else:
 q = pathlib.Path("models/tts-int8")
 if q.is_dir():
     qd = q / "onnx" if (q / "onnx" / "vector_estimator.onnx").exists() else q
-    for name in tts_need[:4]:
-        if not (qd / name).exists():
+    orig = pathlib.Path("models/tts")
+    for name in tts_need:                     # 설정 · 글자표는 원본이 있으면 거기 것을 써도 된다
+        if not (qd / name).exists() and not (name.endswith(".json") and (orig / "onnx" / name).exists()):
             fails += 1
             print("FAIL", (qd / name).as_posix(), "| 파일 없음")
+    vs = list((q / "voice_styles").glob("*.json")) or list((orig / "voice_styles").glob("*.json"))
+    if len(vs) < 10:
+        fails += 1
+        print("FAIL models/tts-int8/voice_styles | 목소리 파일이", len(vs), "개 (10개 기대)")
     print("OK   읽어 주기는 models/tts-int8 을 씁니다 (원본 models/tts 는 VAPI_TTS=tts 로)")
 else:
     print("WARN models/tts-int8 없음 — 읽어 주기는 원본 models/tts 로 돕니다")
