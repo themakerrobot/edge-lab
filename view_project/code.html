@@ -380,6 +380,19 @@ show(img, r)                # 결과를 화면에서 보기 (박스가 그려져
         startCode = sessionStorage.getItem("vapi-py-from-blocks");
         sessionStorage.removeItem("vapi-py-from-blocks");
       }
+      /* 가르치기의 [파이썬] — 그 AI 를 쓰는 코드를 미리 적어 준다. 슬러그는 서버가 만든 이름이라
+         따옴표 안에 그대로 넣어도 되지만, 혹시 몰라 글자를 거른다 */
+      const qs = new URLSearchParams(location.search), slug = (qs.get("model") || "").replace(/[^\w\-가-힣]/g, "");
+      if (slug) {
+        const title = (qs.get("title") || slug).replace(/[\r\n]/g, " ");
+        startCode = LANG === "en"
+          ? "from themaker import *\nimport time\n\n# '" + title + "' — the AI I taught in Train\n" +
+            "for i in range(20):\n    img = camera()\n    r = vision('my:" + slug + "', img)   # [{'name': ..., 'score': ...}, ...] best first\n" +
+            "    if r:\n        print(r[0]['name'], round(r[0]['score'] * 100), '%')\n    time.sleep(0.5)\n"
+          : "from themaker import *\nimport time\n\n# '" + title + "' — 가르치기에서 내가 만든 AI\n" +
+            "for i in range(20):\n    img = camera()\n    r = vision('my:" + slug + "', img)   # [{'name': 이름, 'score': 확률}, ...] 높은 순\n" +
+            "    if r:\n        print(r[0]['name'], round(r[0]['score'] * 100), '%')\n    time.sleep(0.5)\n";
+      }
     } catch (e) {}
     cm.setValue(startCode || localStorage.getItem("pycode-draft") || DEFAULT_CODE);
 
