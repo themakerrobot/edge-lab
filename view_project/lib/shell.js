@@ -32,7 +32,7 @@
     "/code":     { ko: "파이썬",     en: "Python" },
     "/train":    { ko: "가르치기",   en: "Train" },
     "/talk":     { ko: "대화",       en: "Talk" },
-    "/studio":   { ko: "사진 스튜디오", en: "Photo studio" },
+    "/drive":    { ko: "자동차 가르치기", en: "Teach a car" },
     "/recorder": { ko: "녹음기",     en: "Recorder" },
     "/story":    { ko: "이야기 극장", en: "Story theater" },
     "/works":    { ko: "내 작품",    en: "My work" },

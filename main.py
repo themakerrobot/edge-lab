@@ -58,7 +58,8 @@ def open_browser():
 
     Chrome/Edge 가 있으면 앱 모드(--app)로 전용 창을 띄우고, 없으면 기본 브라우저로 연다.
     끄고 싶으면 VAPI_NO_BROWSER=1, 앱 모드만 끄려면 VAPI_NO_APPMODE=1 로 실행한다.
-    VAPI_KIOSK=1 이면 전체 화면(키오스크)으로 띄운다 — 빠져나가는 길은 셸의 [끄기] 다."""
+    기본은 전체 화면(키오스크)이다 — 컴퓨터 전체를 edge-lab 이 차지한다. 빠져나가는 길은 셸의
+    [끄기] 다. 창으로 띄우려면(개발·선생님 PC) VAPI_NO_KIOSK=1."""
     if os.environ.get("VAPI_NO_BROWSER"):
         return
     import subprocess
@@ -84,10 +85,13 @@ def open_browser():
                 zoom = os.environ.get("VAPI_ZOOM", "").strip()
                 if zoom:
                     args.append(f"--force-device-scale-factor={zoom}")
-                # 키오스크: 주소줄·창 틀 없이 화면 전체. 셸의 [끄기] 가 빠져나가는 길이다.
-                # Edge 는 --kiosk 와 --app 을 같이 줄 때의 동작이 Chrome 과 다를 수 있다 — 실기기 확인 필요.
-                if os.environ.get("VAPI_KIOSK"):
-                    args.append("--kiosk")
+                # 키오스크(기본): 주소줄·창 틀 없이 화면 전체. 셸의 [끄기] 가 빠져나가는 길이다.
+                # Chrome 은 --kiosk. Edge 의 --kiosk 는 InPrivate 로 돌아(Microsoft 문서의 키오스크 모드)
+                # 끌 때 localStorage(언어·블록 임시 저장·바탕화면 설정)가 지워질 수 있어서,
+                # Edge 에서는 --start-fullscreen 으로 대신한다 (F11 로 빠져나갈 수 있다). 둘 다 실기기 확인 필요.
+                if not os.environ.get("VAPI_NO_KIOSK"):
+                    edge = os.path.basename(exe).lower() == "msedge.exe"
+                    args.append("--start-fullscreen" if edge else "--kiosk")
                 # [끄기] 가 창을 강제로 닫으므로 다음 실행 때 "복원할까요" 풍선이 뜨지 않게
                 args.append("--hide-crash-restore-bubble")
                 _APP_PROC = subprocess.Popen(args)
@@ -287,7 +291,7 @@ ALLOW_WHILE_LOADING = ("/ready", "/system", "/lib", "/assets", "/fonts", "/block
 # 화면 주소 — 로딩 중에도 열린다. 새 화면을 만들면 여기에 더한다(빠지면 켜진 직후 1~2분은
 # 그 앱이 JSON 503 으로 뜬다 — 셸에 새 앱을 넣으며 한 번 겪었다).
 PAGE_PATHS = ("/", "/home", "/try", "/blocks", "/train", "/options", "/code", "/talk",
-              "/works", "/studio", "/recorder", "/story", "/tasks")
+              "/works", "/drive", "/recorder", "/story", "/tasks")
 
 
 @app.middleware("http")
@@ -698,10 +702,10 @@ async def code_page():
         return f.read()
 
 
-@app.get("/studio", response_class=HTMLResponse)
-async def studio_page():
-    """사진 스튜디오 — 배경 지우기 · 화질 4배 · 깊이 지도 (/gan/*)."""
-    with open("view_project/studio.html", encoding="utf-8") as f:
+@app.get("/drive", response_class=HTMLResponse)
+async def drive_page():
+    """자동차 가르치기 — 내 운전을 보고 배우는 AI (브라우저 안에서 학습, 서버 AI 안 씀)."""
+    with open("view_project/drive.html", encoding="utf-8") as f:
         return f.read()
 
 

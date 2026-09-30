@@ -25,8 +25,9 @@ rem set VAPI_VERBOSE=1
 rem 화면을 처음부터 확대해서 띄우려면 아래 줄의 rem 을 지우고 배율을 조절한다 (예: 1.25 = 125%%)
 rem set VAPI_ZOOM=1.25
 
-rem 전체 화면(키오스크)으로 띄우려면 아래 줄의 rem 을 지운다 — 빠져나갈 때는 오른쪽 위 전원 단추의 [끄기]
-rem set VAPI_KIOSK=1
+rem 기본은 전체 화면(키오스크)이다 — 빠져나갈 때는 오른쪽 위 전원 단추의 [끄기].
+rem 보통 창으로 띄우려면(개발·선생님 PC) 아래 줄의 rem 을 지운다
+rem set VAPI_NO_KIOSK=1
 
 echo Starting edge-lab ... the browser opens right away and shows loading progress.
 "%PY%" main.py
