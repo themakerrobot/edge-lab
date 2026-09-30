@@ -80,23 +80,22 @@
     .panel.arm { flex: 0 0 300px; } .panel.view { flex: 1 1 auto; } .panel.side { flex: 0 0 330px; }
     .panel-head .meta { margin-left: auto; font-size: var(--fs-side, 13px); color: var(--ink-2); }
 
-    /* ── 축 슬라이더 : 윗줄 이름 + 숫자, 아랫줄 − 슬라이더 + ── */
-    .strip { display: grid; grid-template-columns: 32px 1fr 32px; grid-template-areas: "lab lab rd" "minus slider plus";
-             align-items: center; gap: 2px 6px; padding: 4px 6px; border-radius: var(--r); border: 1.5px solid transparent; }
-    .strip label { grid-area: lab; font-weight: 700; font-size: .95rem; }
-    .strip .rd { grid-area: rd; justify-self: end; display: flex; align-items: center; gap: 6px; grid-column: 2 / 4; }
-    .strip .rd .inp { width: 60px; height: 30px; text-align: right; font-variant-numeric: tabular-nums; }
-    .strip .rd .sub { font-size: var(--fs-side, 13px); color: var(--ink-2); font-family: Menlo, Consolas, monospace; white-space: nowrap; }
-    .strip input[type=range] { grid-area: slider; width: 100%; accent-color: var(--pen-blue); height: 28px; }
-    .strip .nb[data-dir="-1"] { grid-area: minus; } .strip .nb[data-dir="1"] { grid-area: plus; }
+    /* ── 축 슬라이더 : 윗줄 이름 + 숫자, 아랫줄 − 슬라이더 + (슬라이더가 칸 폭을 다 쓴다) ── */
+    .strip { display: flex; flex-direction: column; gap: 2px; padding: 4px 6px; border-radius: var(--r); border: 1.5px solid transparent; }
+    .strip .top, .strip .bot { display: flex; align-items: center; gap: 6px; }
+    .strip label { font-weight: 700; font-size: .95rem; flex: 1 1 auto; white-space: nowrap; }
+    .strip .inp { width: 58px; height: 30px; text-align: right; font-variant-numeric: tabular-nums; flex: 0 0 auto; }
+    .strip .sub { font-size: var(--fs-side, 13px); color: var(--ink-2); font-family: Menlo, Consolas, monospace; white-space: nowrap; }
+    .strip input[type=range] { flex: 1 1 auto; min-width: 0; accent-color: var(--pen-blue); height: 28px; }
     .strip.hl { border-color: var(--cyan); background: var(--cyan-bg); }
-    .strip.flat { grid-template-columns: 64px 1fr auto; grid-template-areas: "lab slider rd"; }
-    .strip.flat .rd { grid-column: auto; }
-    .nb { width: 32px; height: 32px; padding: 0; background: #fff; border: 1.5px solid var(--line); border-radius: var(--r);
+    .strip.flat { flex-direction: row; align-items: center; gap: 6px; padding: 2px 0; }
+    .strip.flat label { flex: 0 0 52px; }
+    .strip.flat .sub { min-width: 64px; text-align: right; }
+    .nb { width: 32px; height: 32px; padding: 0; background: #fff; border: 1.5px solid var(--line); border-radius: var(--r); flex: 0 0 auto;
           display: inline-flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; touch-action: none; }
     .nb svg { width: 16px; height: 16px; }
     .nb:hover { border-color: var(--cyan); background: var(--cyan-bg); }
-    body.calib .strip:not([data-ch="4"]) .rd .inp, body.calib .strip[data-ch]:not([data-ch="4"]) .nb { border-color: var(--ok); color: var(--ok); }
+    body.calib .strip[data-ch]:not([data-ch="4"]) .inp, body.calib .strip[data-ch]:not([data-ch="4"]) .nb { border-color: var(--ok); color: var(--ok); }
     body.calib .strip[data-ch]:not([data-ch="4"]) .sub { color: var(--ok); }
     .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
     .grid2 .btn { width: 100%; }
@@ -135,7 +134,7 @@
     .fld { display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-side, 13px); }
 
     /* ── 순서 · 대화 ── */
-    textarea.seq { width: 100%; height: 118px; resize: vertical; background: #fff; border: 1.5px solid var(--line); border-radius: var(--r);
+    textarea.seq { width: 100%; height: 100px; resize: vertical; background: #fff; border: 1.5px solid var(--line); border-radius: var(--r);
                    padding: 6px 8px; font: 13px/1.5 Menlo, Consolas, monospace; }
     .log { font-family: Menlo, Consolas, monospace; font-size: 13px; background: var(--term); color: #e6e8ec; border-radius: var(--r);
            padding: 8px 10px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; min-height: 130px; }
@@ -284,16 +283,15 @@
         <div class="panel-head"><span class="q"><span class="qnum">3</span><span class="qtext" data-i18n="side.title"></span></span></div>
         <div class="panel-body">
           <div class="st" data-ic="factory" data-i18n="conv.title"></div>
-          <div class="strip flat"><label for="roller" data-i18n="conv.roll"></label><input type="range" id="roller" min="15" max="40" value="30">
-            <span class="rd"><input class="inp" id="rollerVal" type="number" min="15" max="40" value="30"><span class="sub" id="u5"></span></span></div>
+          <div class="strip flat" data-i18n-title="conv.rollNote"><label for="roller" data-i18n="conv.roll"></label><input type="range" id="roller" min="15" max="40" value="30">
+            <input class="inp" id="rollerVal" type="number" min="15" max="40" value="30"><span class="sub" id="u5"></span></div>
           <div class="row">
             <button class="btn sm primary grow" type="button" id="btnBeltBack" data-ic="left" data-i18n="conv.back"></button>
             <button class="btn sm" type="button" id="btnRollerStop" data-ic="square" data-i18n="conv.stop"></button>
             <button class="btn sm primary grow" type="button" id="btnBeltFwd" data-ic="right" data-i18n="conv.fwd"></button>
           </div>
-          <div class="hint" data-i18n="conv.rollNote"></div>
           <div class="strip flat"><label for="flag" data-i18n="conv.flag"></label><input type="range" id="flag" min="-90" max="90" value="0">
-            <span class="rd"><input class="inp" id="flagVal" type="number" min="-90" max="90" value="0"><span class="sub" id="u6"></span></span></div>
+            <input class="inp" id="flagVal" type="number" min="-90" max="90" value="0"><span class="sub" id="u6"></span></div>
           <div class="hint" data-i18n="conv.flagNote"></div>
 
           <div class="sec">
@@ -305,13 +303,13 @@
               <button class="btn sm" type="button" id="btnSeqStop" data-ic="square" data-i18n="seq.stop" disabled></button>
               <label class="chk"><input type="checkbox" id="seqLoop"><span data-i18n="seq.loop"></span></label>
             </div>
-            <div class="hint" data-i18n="seq.help"></div>
+            <div class="hint mono" data-i18n="seq.help" data-i18n-title="seq.helpTitle"></div>
           </div>
 
           <div class="sec grow" style="min-height:190px">
             <div class="st" data-ic="term"><span data-i18n="term.title"></span>
               <button class="btn sm" type="button" id="btnPos" data-ic="pin" data-i18n="term.pos"></button>
-              <button class="btn sm" type="button" id="btnClear" data-ic="eraser" data-i18n="term.clear" style="margin-left:0"></button></div>
+              <button class="btn sm ic" type="button" id="btnClear" data-ic="eraser" data-i18n-title="term.clear" style="margin-left:0"></button></div>
             <div class="log grow" id="term" style="flex:1 1 auto"></div>
             <div class="send">
               <input class="inp" id="cmd" type="text" autocomplete="off" spellcheck="false" placeholder="#pos!  #m:90,45,120,90!">
