@@ -224,6 +224,20 @@
         if (n < 0) stop();
         else show(n);
       });
+      /* 안내가 화면 전체를 덮어서, 가리키는 단추("[도움말]을 열어 봐요")를 눌러도 아무 일이 없었다.
+         가리킨 자리를 누르면 그 단추를 실제로 누르고 안내는 다음으로 넘어간다 */
+      box.addEventListener("click", function (e) {
+        if (idx < 0 || (e.target.closest && e.target.closest(".tour-bubble"))) return;
+        var sel = steps[idx][0];
+        var t = sel ? document.querySelector(sel) : null;
+        if (!t || t.offsetParent === null) return;
+        var r = t.getBoundingClientRect();
+        if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
+        var n = nextUsable(idx + 1, 1);
+        if (n < 0) stop(); else show(n);
+        t.click();
+        setTimeout(place, 60);                 // 눌러서 화면이 바뀌었으면(패널이 열림 등) 말풍선 자리를 다시 잡는다
+      });
       document.body.appendChild(box);
       window.addEventListener("resize", place);
     }
