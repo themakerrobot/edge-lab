@@ -131,6 +131,7 @@ AI를 메모리에 올리는 동안 진행 막대가 보이고, 그 사이 파�
 
 **코딩 실습** — `lab.bat` (우분투 `./lab.sh`) 을 실행하면 JupyterLab 이 열립니다. `notebooks\` 의 노트북 12개로
 래퍼 없이 OpenVINO · numpy · OpenCV 를 직접 씁니다 (YOLO 직접 추론, 얼굴 분석, 나만의 분류기, RAG, VLM, 음성, 보드 시리얼 …).
+노트북마다 개념 설명 → 실습 → 자주 나는 오류 → 정리 → **미니 프로젝트**(얼굴 모자이크 카메라, 사람 수 세기, 명함 스캐너, 가위바위보, 문서 Q&A 봇, 음성 비서 …) 순서입니다.
 노트북은 `문서\Edge Lab\notebooks` 에 복사해 쓰므로 새 버전을 깔아도 고친 것이 남습니다.
 
 코드를 고칠 때 규칙은 [DEVELOP.md](DEVELOP.md) 에 있습니다.
@@ -316,6 +317,7 @@ Double-clicking `run.bat` in Explorer works too. The browser opens by itself.
 
 **Coding lab** — run `lab.bat` (Ubuntu: `./lab.sh`) to open JupyterLab. The 12 notebooks in `notebooks\` use
 OpenVINO · numpy · OpenCV directly, no wrapper (raw YOLO inference, face analysis, your own classifier, RAG, VLM, speech, serial board …).
+Each one goes concept → practice → common errors → summary → a **mini project** (face-blur camera, people counter, business-card scanner, rock-paper-scissors, document Q&A bot, voice assistant …).
 They are copied to `Documents\Edge Lab\notebooks`, so your edits survive an upgrade.
 
 Rules for changing the code are in [DEVELOP.md](DEVELOP.md).
