@@ -37,8 +37,9 @@ powershell -ExecutionPolicy Bypass -File setup_deploy.ps1
 `setup` 이 JupyterLab 까지 설치한다(`requirements.lock.txt`). 배포 번들(`tools\make_bundle.bat`)에도 들어간다.
 - 실행: `lab.bat` 더블클릭 (우분투: `./lab.sh`). 전용 창이 열리고, 창을 닫으면 JupyterLab 도 꺼진다.
 - 바탕화면 바로가기: `lab.bat /shortcut` → "AI 코딩 실습"
-- 노트북 원본은 `notebooks\`, 학습자가 쓰는 곳은 `문서\Edge Lab\notebooks` (처음 켤 때 없는 것만 복사 — 고친 것은 덮어쓰지 않는다).
-  원본으로 되돌리려면 그 노트북을 지우고 다시 켠다.
+- 노트북 원본은 `notebooks\`, 학습자가 쓰는 곳은 `문서\Edge Lab\notebooks`. 켤 때마다 맞춘다:
+  없는 것은 복사 · 안 고친 것은 바뀐 교재로 바꿈 · 고친 것(셀을 실행해 저장된 것 포함)은 그대로 두고 새 교재를 `이름 (새 버전).ipynb` 로 옆에 둔다.
+  원본으로 되돌리려면 그 노트북을 지우고 다시 켠다. 교재를 통째로 새로 받으려면 `문서\Edge Lab\notebooks` 를 지우고 켠다.
 - 큰 모델 노트북(08 · 09 · 10)은 edge-lab(`run.bat`)을 끄고 한다 — 모델이 두 벌 올라간다.
 - 이미 설치한 PC 는 `setup.bat` 을 한 번 더 돌리면 JupyterLab 만 더 깔린다.
 - 우분투: 소리는 `sudo apt install libportaudio2`, NPU 는 Intel `linux-npu-driver`, 내장 GPU 는 Intel compute-runtime 이 따로 필요하다.
