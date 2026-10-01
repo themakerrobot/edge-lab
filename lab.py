@@ -4,8 +4,9 @@
     python lab.py [노트북 폴더]        (보통은 lab.bat / lab.sh 를 실행)
 
 - 노트북: 프로그램 폴더의 notebooks/ 는 원본(교재)이다. 켤 때 작업폴더(paths.NOTEBOOK_DIR,
-  기본 문서/Edge Lab/notebooks)에 **없는 것만** 복사하고, 학습자는 그 폴더에서 작업한다.
-  새 버전을 덮어 깔아도 고친 노트북은 그대로 남는다. 원본으로 되돌리려면 그 노트북을 지우고 다시 켠다.
+  기본 문서/Edge Lab/notebooks)에 맞춰 넣고, 학습자는 그 폴더에서 작업한다 (sync_notebooks):
+  없는 것은 복사, 안 고친 것은 바뀐 원본으로 바꾸고, 고친 것은 그대로 두고 새 원본을 "(새 버전)" 으로 옆에 둔다.
+  원본으로 되돌리려면 그 노트북을 지우고 다시 켠다.
 - 노트북에 알려 주는 환경변수: EDGE_ROOT(프로그램 폴더), EDGE_MODELS(프로그램 폴더의 models/).
 - 주소는 127.0.0.1 만 연다(같은 교실 망의 다른 PC 에서 못 들어온다). 토큰은 켤 때마다 새로 만든다.
 - 끌 때는 JupyterLab 에 "끄기" 를 요청한다(/api/shutdown) — 커널까지 정리되어 NPU·GPU 메모리가 남지 않는다.
@@ -66,20 +67,57 @@ def work_folders():
         return ROOT / "notebooks-work", ROOT / ".labwin"
 
 
-def copy_new(src, dst):
-    """원본 노트북 중 작업폴더에 없는 것만 복사한다 (있는 것은 절대 덮어쓰지 않는다)."""
-    n = 0
+MANIFEST = ".originals.json"       # 작업폴더에 둔다 — 노트북마다 "마지막으로 넣어 준 원본" 의 지문(sha256)
+
+
+def _sha(path):
+    import hashlib
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def sync_notebooks(src, dst):
+    """원본(교재) 노트북을 작업폴더에 맞춘다. 돌려주는 값: (새로 넣음, 새 버전으로 바꿈, 옆에 새 버전을 둠)
+
+    - 작업폴더에 없으면 복사한다.
+    - 있고, 학습자가 안 고쳤으면(지난번에 넣어 준 원본과 같으면) 바뀐 원본으로 바꾼다.
+    - 학습자가 고쳤으면(셀을 실행해 결과가 저장된 것도 고친 것이다) 지우지 않고,
+      새 원본을 "이름 (새 버전).ipynb" 로 옆에 한 번만 넣는다.
+    지문 기록이 없는 노트북(이 기능 전에 복사된 것)은 원본과 다르면 고친 것으로 본다 — 지우지 않는 쪽이 안전하다.
+    """
+    import json
+    added = updated = side = 0
     if not src.is_dir():
-        return n
-    for f in src.rglob("*"):
+        return added, updated, side
+    man_path = dst / MANIFEST
+    try:
+        man = json.loads(man_path.read_text(encoding="utf-8"))
+    except Exception:
+        man = {}
+    for f in sorted(src.rglob("*")):
         if f.is_dir() or ".ipynb_checkpoints" in f.parts:
             continue
-        to = dst / f.relative_to(src)
+        rel = f.relative_to(src).as_posix()
+        to = dst / rel
+        new = _sha(f)
+        to.parent.mkdir(parents=True, exist_ok=True)
         if not to.exists():
-            to.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(f, to)
-            n += 1
-    return n
+            added += 1
+        else:
+            have = _sha(to)
+            if have != new:
+                if man.get(rel) == have:                       # 안 고친 옛 원본 → 새 원본으로
+                    shutil.copy2(f, to)
+                    updated += 1
+                elif man.get(rel) != new:                      # 고친 것 → 새 원본은 옆에 (한 번만)
+                    shutil.copy2(f, to.with_name(f"{to.stem} (새 버전){to.suffix}"))
+                    side += 1
+        man[rel] = new
+    try:
+        man_path.write_text(json.dumps(man, ensure_ascii=False, indent=1), encoding="utf-8")
+    except Exception as ex:
+        print("[lab] 원본 기록을 쓰지 못했어요:", ex)
+    return added, updated, side
 
 
 def free_port(start=8888):
@@ -142,9 +180,13 @@ def main():
     if len(sys.argv) > 1:
         nb = Path(sys.argv[1]).resolve()
     nb.mkdir(parents=True, exist_ok=True)
-    added = copy_new(ROOT / "notebooks", nb)
+    added, updated, side = sync_notebooks(ROOT / "notebooks", nb)
     if added:
         print(f"[lab] 새 노트북 {added}개를 작업폴더에 넣었어요.")
+    if updated:
+        print(f"[lab] 교재가 바뀐 노트북 {updated}개를 새 버전으로 바꿨어요.")
+    if side:
+        print(f"[lab] 고친 노트북 {side}개는 그대로 두고, 새 버전을 '(새 버전)' 이름으로 옆에 넣었어요.")
 
     port, token = free_port(), secrets.token_hex(16)
     cmd = [sys.executable, "-m", "jupyterlab", "--no-browser",
