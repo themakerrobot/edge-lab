@@ -137,6 +137,46 @@
       box.insertBefore(bar, list[i + 1]);
       drag(bar, box, list[i], list[i + 1], i, vertical);
     }
+    if (anySaved) fit(box, list, vertical);
+  }
+
+  /* 저장한 크기들이 칸을 넘치면 이번 배치에서만 줄인다(저장값은 그대로 둔다).
+     크기는 "그때 보이던 칸" 기준으로 따로따로 저장된다 — 예: 도움말을 닫고 편집기를 70% 로,
+     도움말을 연 채 결과 칸을 36% 로. 둘 다 줄지 않는(flex-shrink 0) 칸이라 도움말을 다시 열면
+     70 + 36 > 100 이 되어, 마지막 칸(도움말)과 [도움말] 단추까지 화면 오른쪽 밖으로 밀려났다.
+     누르면 잠깐 열렸다가 위의 감시기가 다시 배치하는 순간 사라지는 것처럼 보이던 이유. */
+  function fit(box, list, vertical) {
+    var last = list[list.length - 1];
+    var cs = getComputedStyle(box);
+    var whole = vertical
+      ? box.clientHeight - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0)
+      : box.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
+    if (!(whole > 0)) return;
+    var gap = parseFloat(vertical ? cs.rowGap : cs.columnGap) || 0;
+    var used = 0, shown = 0, fixed = [], sum = 0;
+    Array.prototype.forEach.call(box.children, function (n) {
+      if (n.nodeType !== 1 || getComputedStyle(n).display === "none") return;
+      shown++;
+      if (list.indexOf(n) >= 0) {
+        if (n !== last && n.style.flexShrink === "0" && /%$/.test(n.style.flexBasis)) {
+          fixed.push(n); sum += parseFloat(n.style.flexBasis) * whole / 100;
+        } else if (n !== last) {
+          used += vertical ? n.offsetHeight : n.offsetWidth;     // 크기를 저장하지 않은 칸
+        }
+      } else {
+        used += vertical ? n.offsetHeight : n.offsetWidth;       // 손잡이 · 파일 목록
+      }
+    });
+    if (!fixed.length) return;
+    var lastMin = Math.max(minOf(last),
+      parseFloat(vertical ? getComputedStyle(last).minHeight : getComputedStyle(last).minWidth) || 0);
+    var room = whole - used - gap * Math.max(0, shown - 1) - lastMin;
+    if (sum <= room) return;
+    var k = Math.max(0, room) / sum;
+    fixed.forEach(function (p) {
+      var px = Math.max(minOf(p), parseFloat(p.style.flexBasis) * whole / 100 * k);
+      p.style.flexBasis = (px * 100 / whole).toFixed(2) + "%";
+    });
   }
 
   /* 지금 끌고 있는 중인지.
