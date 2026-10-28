@@ -283,6 +283,18 @@ async def _loading_guard(request: Request, call_next):
     return await call_next(request)
 
 
+# 화면 파일(/lib · /blockly · /assets)은 매번 "바뀌었나" 를 묻게 한다 (Cache-Control: no-cache).
+# 안 그러면 브라우저가 업데이트 뒤에도 옛 lib/*.js 를 캐시에서 그대로 써서, 새 화면(html)과 옛 계산
+# 파일이 섞인다 — 자동차 가르치기의 [고급] 이 안 눌리고 NaN 이 뜬 것이 이것이었다.
+# 같은 PC 안이라 묻는 비용은 없다시피 하고, 안 바뀌었으면 304 로 끝난다.
+@app.middleware("http")
+async def _revalidate_static(request: Request, call_next):
+    resp = await call_next(request)
+    if request.url.path.startswith(("/lib/", "/blockly/", "/assets/")):
+        resp.headers["Cache-Control"] = "no-cache"
+    return resp
+
+
 # 무엇을 언제 불렀는지 — AI 작업 관리자(/tasks)의 "마지막 사용" · "부른 횟수".
 # 사용 통계(stats_routes)는 파일에 쌓는 누적값이고, 이것은 이번에 켠 뒤의 값이다.
 _USED = {}
