@@ -52,6 +52,7 @@ Write-Host "  package versions -> $snap" -ForegroundColor DarkGray
 
 Write-Host "=== [3/5] models from HF ===" -ForegroundColor Cyan
 # 빼는 것: org/ 는 변환용 원본(.pt), yolo/ 는 골라 쓰는 모델, README.md 는 저장소 설명,
+# object/mask-11s-cls 는 예전 마스크 모델(AGPL) — 지금은 mask/(teach-lab 형식)을 쓴다.
 # tts/ 는 읽어 주기 원본(실제로는 tts-int8 을 쓴다 — 원본은 허깅페이스에만 둔다).
 # .md 는 README 만 뺀다 — tts-int8/MODIFICATIONS.md 는 OpenRAIL-M 라이선스의 "바꾼 곳 알림" 이라 함께 받아 배포한다.
 # 교실 PC 는 서버가 읽는 IR 만 있으면 된다.
@@ -60,7 +61,7 @@ Write-Host "=== [3/5] models from HF ===" -ForegroundColor Cyan
 # CLI 로 `--exclude` 를 여러 번 넘기면 PowerShell 을 거치며 플래그가 사라지고
 # 패턴이 "받을 파일 이름"으로 먹힌다 — 실제로 README.md 한 개만 받고 끝났다.
 # 파이썬 목록으로 넘기면 인자 파싱을 아예 거치지 않아 그럴 일이 없다.
-& $PY -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='leeyunjai/edge-lab', local_dir='models', ignore_patterns=['models.7z','org/*','yolo/*','tts/*','README.md','*/README.md'])"
+& $PY -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='leeyunjai/edge-lab', local_dir='models', ignore_patterns=['models.7z','org/*','yolo/*','tts/*','object/mask-11s-cls_openvino_model/*','README.md','*/README.md'])"
 if ($LASTEXITCODE -ne 0) { throw "model download failed (check token / network)" }
 # 사물 찾기 · 자세 · 영역: easydetect (Apache-2.0) — .onnx 만 받는다(파이보 · 파이브레인과 같은 파일, OpenVINO 가 바로 읽는다).
 #   ed-m/ed-m.onnx (+ 이름표)  사물 찾기 · pose/pose-m.onnx  자세(관절 17개) · mobile_sam/  영역(MobileSAM, Apache-2.0)

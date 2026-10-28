@@ -453,44 +453,75 @@ class HeadPose(OVModel):
 
 
 class MaskCls:
-    """mask-11s-cls — 마스크를 썼는지(with_mask / without_mask). 입력 = 얼굴 크롭 224.
+    """마스크를 썼는지 — models/mask/ (teach-lab 형식: 임베더 .tflite + classifier.json · classifier.bin).
 
-    YOLO11s 분류 모델로 학습한 것이지만, 실행은 OpenVINO 로 직접 한다(ultralytics 없이).
-    전처리는 ultralytics 분류와 똑같이: RGB → 짧은 변을 224 로(쌍선형) → 가운데 224×224 → 0~1 → NCHW.
-    모델 끝에 softmax 가 들어 있어 출력이 곧 확률이다. 이름표 순서는 같은 폴더의 metadata.yaml."""
+    MediaPipe mobilenet_v3_small 임베더(Apache-2.0)가 얼굴 사진을 숫자 1024개로 바꾸고, 작은 분류기
+    (Dense 64 relu → softmax)가 마스크 씀 / 맨얼굴을 고른다. 둘 다 OpenVINO · numpy 로 돈다.
+    전처리는 teach-lab(Teachable Machine cropTo)과 같다: 짧은 변을 224 로 줄이고 가운데 224 → 0~1 → L2 정규화.
+    정밀도는 f32 로 고정한다 — CPU 가 bfloat16 으로 계산하면 teach-lab 과 숫자가 어긋났다(코사인 0.99 대).
+    teach-lab 에서 이미지로 학습해 내보낸 모델로 바꿔 넣어도 그대로 돈다(종류 이름이 with_mask · 마스크 등이면)."""
 
-    DIR = MODELS / "object/mask-11s-cls_openvino_model"
+    DIR = MODELS / "mask"
+    MASK_NAMES = {"with_mask", "mask", "마스크", "마스크 씀", "마스크씀"}
 
     def __init__(self, device="CPU"):
-        import yaml
-        xml = next(self.DIR.glob("*.xml"))
-        self.compiled = core.compile_model(core.read_model(xml), device)
-        with open(self.DIR / "metadata.yaml", encoding="utf-8") as f:
-            names = yaml.safe_load(f).get("names") or {0: "with_mask", 1: "without_mask"}
-        self.names = {int(k): str(v) for k, v in names.items()}
+        import json
+        spec = json.loads((self.DIR / "classifier.json").read_text(encoding="utf-8"))
+        flat = np.frombuffer((self.DIR / spec.get("weightsFile", "classifier.bin")).read_bytes(), dtype="<f4")
+        self.layers = []
+        for ly in spec["layers"]:
+            k, b = ly["kernel"], ly["bias"]
+            self.layers.append((flat[k["offset"]:k["offset"] + k["count"]].reshape(k["shape"]),
+                                flat[b["offset"]:b["offset"] + b["count"]].reshape(b["shape"]), ly.get("activation", "relu")))
+        self.classes = [str(c) for c in spec["classes"]]
+        if not any(c.strip().lower() in self.MASK_NAMES for c in self.classes):
+            raise RuntimeError("마스크 모델의 종류 이름에 마스크 쪽이 없어요: %s" % self.classes)
+        tfl = next(self.DIR.glob("*.tflite"))
+        self.embed = core.compile_model(core.read_model(tfl), device, {"INFERENCE_PRECISION_HINT": "f32"})
         self.lock = threading.Lock()
 
     @staticmethod
-    def _prep(face_bgr, size=224):
-        from PIL import Image
-        im = Image.fromarray(cv2.cvtColor(face_bgr, cv2.COLOR_BGR2RGB))
-        w, h = im.size
+    def _resize(rgb, width, height):
+        """teach-lab preprocess.resize_bilinear 와 같은 계산(MIT) — 안티에일리어싱 없는 쌍선형, 픽셀 가운데 기준 · 반올림.
+        cv2.resize 로 하면 반올림이 조금 달라 확신이 낮은 얼굴에서 확률이 6% 까지 어긋났다."""
+        h, w = rgb.shape[:2]
+        x = np.clip((np.arange(width, dtype=np.float32) + 0.5) * (w / width) - 0.5, 0, w - 1)
+        y = np.clip((np.arange(height, dtype=np.float32) + 0.5) * (h / height) - 0.5, 0, h - 1)
+        x0, y0 = np.floor(x).astype(np.int32), np.floor(y).astype(np.int32)
+        x1, y1 = np.minimum(x0 + 1, w - 1), np.minimum(y0 + 1, h - 1)
+        wx, wy = (x - x0)[None, :, None], (y - y0)[:, None, None]
+        src = rgb.astype(np.float32)
+        top = src[y0[:, None], x0[None, :]] * (1 - wx) + src[y0[:, None], x1[None, :]] * wx
+        bot = src[y1[:, None], x0[None, :]] * (1 - wx) + src[y1[:, None], x1[None, :]] * wx
+        return np.clip(top * (1 - wy) + bot * wy + 0.5, 0, 255).astype(np.uint8)
+
+    @classmethod
+    def _prep(cls, face_bgr, size=224):
+        """Teachable Machine 의 cropTo — 짧은 변을 size 로(올림) 줄인 뒤 가운데 size×size → RGB 0~1."""
+        rgb = cv2.cvtColor(face_bgr, cv2.COLOR_BGR2RGB)
+        h, w = rgb.shape[:2]
         s = size / min(w, h)
-        im = im.resize((max(size, round(w * s)), max(size, round(h * s))), Image.BILINEAR)
-        w, h = im.size
-        left, top = int(round((w - size) / 2.0)), int(round((h - size) / 2.0))
-        im = im.crop((left, top, left + size, top + size))
-        return (np.asarray(im, np.float32) / 255.0).transpose(2, 0, 1)[None]
+        sw, sh = int(np.ceil(w * s)), int(np.ceil(h * s))
+        im = rgb if (sw, sh) == (w, h) else cls._resize(rgb, sw, sh)
+        x0, y0 = (sw - size) // 2, (sh - size) // 2
+        return (im[y0:y0 + size, x0:x0 + size].astype(np.float32) / 255.0)[None]
 
     def predict(self, face_bgr, lang="ko"):
         with self.lock:
-            p = np.asarray(self.compiled(self._prep(face_bgr))[0]).reshape(-1)
-        idx = int(p.argmax())
-        on = 1 if self.names.get(idx, "") == "with_mask" else 0
+            v = np.asarray(self.embed(self._prep(face_bgr))[0], np.float32).reshape(-1)
+        x = v / (np.linalg.norm(v) or 1.0)
+        for W, b, act in self.layers:
+            x = x @ W + b
+            if act == "relu":
+                x = np.maximum(x, 0)
+            elif act == "softmax":
+                e = np.exp(x - x.max()); x = e / e.sum()
+        idx = int(x.argmax())
+        on = 1 if self.classes[idx].strip().lower() in self.MASK_NAMES else 0
         ko, en = ("마스크 씀", "mask") if on else ("맨얼굴", "no-mask")
         return {"mask": on, "name": ko if str(lang).startswith("ko") else en,
                 "name_en": en,
-                "score": round(float(p[idx]) * 100, 2)}
+                "score": round(float(x[idx]) * 100, 2)}
 
 class FaceEngine:
     def __init__(self):
