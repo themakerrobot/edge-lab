@@ -692,11 +692,11 @@ if r:
 else:
     print("아직 인식할 대상이 안 보여요")
 ` },
-      { ko: ["내 YOLO 모델 파일 쓰기", "모델 폴더에 넣은 .pt 파일로 찾아요."],
-        en: ["Use your own YOLO file", "Run a .pt model you dropped in the models folder."],
+      { ko: ["내 모델 파일 쓰기", "easydetect-lab 에서 학습한 .onnx 로 찾아요."],
+        en: ["Use your own model file", "Run an .onnx you trained in easydetect-lab."],
         code: `from themaker import *
 
-# .pt 파일은 [설정] > [모델 폴더 열기] 로 열리는 곳에 넣으세요.
+# easydetect-lab 의 [Pibo 로 보내기] 로 받은 .onnx 를 [설정] > [모델 폴더 열기] 로 열리는 곳에 넣으세요.
 print("모델 폴더:", models_folder())
 print("있는 모델:", models())
 
@@ -715,7 +715,7 @@ else:
         code: `from themaker import *
 import time
 
-# .pt 파일은 [설정] > [모델 폴더 열기] 로 열리는 곳에 넣으세요.
+# easydetect-lab 의 [Pibo 로 보내기] 로 받은 .onnx 를 [설정] > [모델 폴더 열기] 로 열리는 곳에 넣으세요.
 if not models():
     print("모델 파일을 먼저 넣어 주세요:", models_folder())
 else:
@@ -1043,9 +1043,9 @@ print(r["answer"])    # 고양이가 앉아 있어요
 print(vision("look", img, lang="en")["answer"])   # 영어로 받기</pre>
 <p style="margin-top:8px;">이름이 헷갈리면 <code>my_models()</code> 로 확인하세요.
 띄어쓴 제목(<code>"my:우리 반 얼굴"</code>)도 그대로 돼요.</p>
-<p style="margin-top:8px;"><b>가져온 모델 파일</b> — YOLO <code>.pt</code> 나 easydetect-lab 에서 받은 <code>.onnx</code> 파일을 [설정]의
+<p style="margin-top:8px;"><b>가져온 모델 파일</b> — easydetect-lab 에서 학습해 [Pibo 로 보내기] 로 받은 <code>.onnx</code> 파일을 [설정]의
 [모델 폴더 열기]로 열리는 폴더에 넣으면 <code>models()</code> 목록에 바로 나와요.
-넣은 이름을 그대로 <code>detect("이름.pt", img)</code> 에 쓰면 돼요 (경로는 안 적어도 돼요).<br>
+넣은 이름을 그대로 <code>detect("이름.onnx", img)</code> 에 쓰면 돼요 (경로는 안 적어도 돼요).<br>
 상대경로 기준 폴더는 <code>models\\pycode</code> 예요. cv2 · numpy 도 쓸 수 있어요.</p>`,
       en: `
 <p style="margin-bottom:6px;"><b>vision() kinds (Korean names also work)</b></p>
@@ -1076,9 +1076,9 @@ print(vision("look", img, lang="en")["answer"])   # 영어로 받기</pre>
 <tr><td>전신 body</td><td>17 full-body joints</td></tr>
 </table>
 <p style="margin-top:8px;">Check names with <code>my_models()</code>.</p>
-<p style="margin-top:8px;"><b>Your own YOLO files</b> — drop a <code>.pt</code> file into the folder that
+<p style="margin-top:8px;"><b>Your own model files</b> — drop the <code>.onnx</code> you got from easydetect-lab ([Send to Pibo]) into the folder that
 [Open models folder] opens in Settings. It shows up in <code>models()</code> right away, and you
-pass the file name straight to <code>detect("name.pt", img)</code> — no path needed.<br>
+pass the file name straight to <code>detect("name.onnx", img)</code> — no path needed.<br>
 Relative paths resolve from <code>models\\pycode</code>. cv2 and numpy work as usual.</p>`,
     };
 
@@ -1327,11 +1327,11 @@ Relative paths resolve from <code>models\\pycode</code>. cv2 and numpy work as u
         en: { d: "classify with your AI", a: "my: + saved name, image", r: "list of {name, score}, best first" },
         x: 'r = vision("my:가위바위보", camera())\nif r:\n    print(r[0]["name"], round(r[0]["score"]*100), "%")' },
       { g: "my", n: "models()", ins: "models()",
-        ko: { d: "가져다 둔 모델 파일 목록 보기 — [설정]의 [모델 폴더 열기]에 넣은 것들", a: "없음", r: "목록 ['cat.pt', 'my-best.pt', ...]" },
+        ko: { d: "가져다 둔 모델 파일 목록 보기 — [설정]의 [모델 폴더 열기]에 넣은 것들", a: "없음", r: "목록 ['cup.onnx', 'my-best.onnx', ...]" },
         en: { d: "list model files you added (via [Open models folder] in Settings)", a: "none", r: "list of file names" },
         x: 'print(models())\nprint(models_folder())   # 어디에 넣는지' },
-      { g: "my", n: 'detect("내모델.pt", img)', ins: 'detect("내모델.pt", img)',
-        ko: { d: "가져다 둔 YOLO 파일로 인식하기 — 모델 폴더의 파일 이름만 적으면 돼요", a: "모델 파일 이름, 사진, conf=낮은 점수 자르기", r: "목록 [{name 이름, score 0~100, box 위치}, ...]" },
+      { g: "my", n: 'detect("내모델.onnx", img)', ins: 'detect("내모델.onnx", img)',
+        ko: { d: "가져다 둔 모델(easydetect-lab .onnx)로 인식하기 — 모델 폴더의 파일 이름만 적으면 돼요", a: "모델 파일 이름, 사진, conf=낮은 점수 자르기", r: "목록 [{name 이름, score 0~100, box 위치}, ...]" },
         en: { d: "run a model file you added — just the file name", a: "model file name, image, conf=", r: "list of {name, score, box}" },
         x: 'for name in models():\n    print(name)\nr = detect(models()[0], img, conf=0.5)\nshow(img, r)' },
 

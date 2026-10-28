@@ -79,7 +79,7 @@ def run(host):
     T.speaker = lambda *a, **k: []                # 출력 장치 목록은 기기마다 다르다
 
     def _no_model(*a, **k):
-        raise AssertionError("이 예제는 가져다 둔 .pt 파일이 있어야 합니다")
+        raise AssertionError("이 예제는 가져다 둔 .onnx 파일이 있어야 합니다")
     T.detect = _no_model
 
     ok = fail = skip = 0

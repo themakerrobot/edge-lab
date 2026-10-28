@@ -304,10 +304,10 @@ def db_find(db, question, top_k=4):
 
 
 def models():
-    """가져다 둔 YOLO 모델 파일 목록 — detect() 에 그대로 넣으면 된다.
+    """가져다 둔 모델 파일 목록(easydetect-lab 에서 학습한 .onnx) — detect() 에 그대로 넣으면 된다.
 
     >>> models()
-    ['cat.pt', 'my-best.pt']
+    ['cup.onnx', 'my-best.onnx']
     >>> r = detect(models()[0], camera())
 
     파일은 [설정·점검]의 [모델 폴더 열기]로 열리는 폴더에 넣는다
@@ -566,9 +566,9 @@ def _play_wav(raw, wait=True):
 
 
 def detect(model_path, image, conf=None):
-    """가져다 둔 YOLO 모델 파일로 인식한다.
+    """가져다 둔 모델 파일(easydetect-lab 에서 학습한 .onnx)로 인식한다.
 
-    >>> r = detect("cat.pt", camera())          # 모델 폴더에 있는 이름
+    >>> r = detect("cup.onnx", camera())        # 모델 폴더에 있는 이름
     >>> r = detect(models()[0], camera())       # 목록에서 골라서
     >>> show(camera(), r)
 

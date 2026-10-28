@@ -18,9 +18,6 @@ rem set VAPI_TTS=tts
 
 set HF_HUB_OFFLINE=1
 set TRANSFORMERS_OFFLINE=1
-set YOLO_OFFLINE=1
-set "YOLO_CONFIG_DIR=%~dp0.ultralytics"
-if not exist "%~dp0.ultralytics" mkdir "%~dp0.ultralytics"
 
 rem 실행 기록(요청 한 줄씩)을 보려면 아래 줄의 rem 을 지운다 — 기본은 조용히 뜬다
 rem set VAPI_VERBOSE=1

@@ -23,15 +23,12 @@ if exist "python\python.exe" (
 )
 set HF_HUB_OFFLINE=1
 set TRANSFORMERS_OFFLINE=1
-set YOLO_OFFLINE=1
-set "YOLO_CONFIG_DIR=%ROOT%.ultralytics"
-if not exist "%ROOT%.ultralytics" mkdir "%ROOT%.ultralytics"
 set VAPI_NO_BROWSER=1
 
 echo.
 echo === [1/4] python / packages ===
 %PY% -c "import sys;print('  python', sys.version.split()[0])" || goto :fail
-%PY% -c "import openvino,cv2,numpy,fastapi,ultralytics,easyocr,openvino_genai,mediapipe;print('  import OK')" || goto :fail
+%PY% -c "import openvino,cv2,numpy,fastapi,easydetect,easyocr,openvino_genai,mediapipe;print('  import OK')" || goto :fail
 
 echo.
 echo === [2/4] model load ===

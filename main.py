@@ -815,7 +815,7 @@ async def works_page():
 
 
 # 어떤 버전으로 돌고 있는지 — 문제 생겼을 때 "언제부터" 를 찾는 근거
-KEY_PACKAGES = ["openvino", "openvino-genai", "onnxruntime", "ultralytics",
+KEY_PACKAGES = ["openvino", "openvino-genai", "onnxruntime", "easydetect",
                 "mediapipe", "opencv-python", "numpy", "easyocr", "fastapi",
                 "sounddevice", "huggingface-hub"]
 

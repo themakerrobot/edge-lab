@@ -14,10 +14,7 @@ targets = list(pathlib.Path("models").rglob("*.xml")) + \
 # xml 이 하나라도 있으면 정상으로 본다. 이름을 박아 두면 내보내기 방식이
 # 바뀔 때마다 헛되이 FAIL 이 난다.
 NEED_DIRS = [
-    "object/yolo11m_openvino_model",
-    "object/yolo11m-pose_openvino_model",
-    "object/yolo11m-seg_openvino_model",
-    "object/mask-11s-cls_openvino_model",
+    "object/mask-11s-cls_openvino_model",   # 마스크 분류 (OpenVINO 로 바로 돌린다)
 ]
 
 NEED = [
@@ -56,12 +53,19 @@ for m in targets:
         fails += 1
         print("FAIL", m, f"({size} bytes)", "|", str(e)[:200])
 
-# 기본 사물 찾기 — easydetect ed-m. 없으면 YOLO11m 으로 돌아서 실패로 치지 않는다(.xml 은 위에서 열어 봤다)
-if (pathlib.Path("models/easydetect/ed-m/ed-m.xml").exists()
-        and pathlib.Path("models/easydetect/ed-m/labels.txt").exists()):
-    print("OK   사물 찾기는 easydetect ed-m 를 씁니다 (YOLO11m 으로 돌리려면 VAPI_DETECT=yolo)")
-else:
-    print("WARN models/easydetect/ed-m 없음 — 사물 찾기는 YOLO11m 으로 돕니다")
+# 사물 찾기 · 자세 · 영역 — easydetect .onnx. 없으면 그 기능이 안 된다. 열리는지도 본다
+for rel in ["easydetect/ed-m/ed-m.onnx", "easydetect/pose/pose-m.onnx",
+            "easydetect/mobile_sam/encoder.onnx", "easydetect/mobile_sam/decoder.onnx"]:
+    f = pathlib.Path("models") / rel
+    if not f.exists():
+        fails += 1
+        print("FAIL models/" + rel, "| 파일 없음 (setup 을 다시 돌려 주세요)")
+        continue
+    try:
+        core.read_model(f)
+    except Exception as e:
+        fails += 1
+        print("FAIL models/" + rel, "|", str(e)[:200])
 
 # TTS(Supertonic)는 OpenVINO 로 읽는 모델이 아니라 파일 존재만 확인한다
 tts_need = ["duration_predictor.onnx", "text_encoder.onnx", "vector_estimator.onnx",
