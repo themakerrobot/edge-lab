@@ -120,9 +120,10 @@ class EdDetector:
             return self.model(image, conf=self.CONF if conf is None else conf)
 
 
-# 기본 사물 찾기: easydetect ed-s (Apache-2.0, 허깅페이스 leeyunjai/easydetect — setup 이 받는다).
+# 기본 사물 찾기: easydetect ed-m (Apache-2.0, 허깅페이스 leeyunjai/easydetect — setup 이 받는다).
+# ed-m: YOLO11m 과 속도가 비슷하고(CPU 81ms 대 90ms) COCO mAP 52.3 대 51.5 — 같은 자리에 바꿔 넣어 손해가 없다.
 # 없거나 VAPI_DETECT=yolo 이면 예전 YOLO11m 으로 돈다. 자세 · 영역은 그대로 YOLO 다.
-ED_XML = MODELS / "easydetect/ed-s/ed-s.xml"
+ED_XML = MODELS / "easydetect/ed-m/ed-m.xml"
 
 
 def _arr(x):
@@ -141,7 +142,7 @@ class ObjectEngine:
                 print("[object] easydetect 를 못 올려 YOLO 로 찾아요:", ex)
         if self.det_kind == "yolo":
             self.det = Yolo(MODELS / "object/yolo11m_openvino_model", task="detect")
-        print("[object] 사물 찾기:", "easydetect ed-s" if self.det_kind == "easydetect" else "YOLO11m")
+        print("[object] 사물 찾기:", "easydetect ed-m" if self.det_kind == "easydetect" else "YOLO11m")
         self.pose = Yolo(MODELS / "object/yolo11m-pose_openvino_model", task="pose")
         self.seg = Yolo(MODELS / "object/yolo11m-seg_openvino_model", task="segment")
         self.image_size = 800
