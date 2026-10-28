@@ -1349,13 +1349,17 @@
             ctx.lineWidth = 2;
             ctx.strokeRect(x1*scaleX, y1*scaleY, (x2 - x1)*scaleX, (y2 - y1)*scaleY);
             const points = item.points;
+            /* 확신 낮은 관절은 그리지 않는다 — 안 보이는 다리도 자리는 짐작해 내는데(확신 0.1~0.3)
+               그것까지 이으면 사진 아래쪽에 선이 뭉친다. 기준은 가르치기 화면과 같은 0.5 */
+            const vis = i => !item.conf || item.conf[i] >= 0.5;
             draw_points.forEach(pair => {
+              if (!vis(pair[0]) || !vis(pair[1])) return;
               const p1 = points[pair[0]];
               const p2 = points[pair[1]];
               drawLine(ctx, p1[0], p1[1], p2[0], p2[1], scaleX, scaleY);
             });
-            points.forEach(point => {
-              drawEllipse(ctx, point[0], point[1], 3, "rgb(217, 65, 65)", scaleX, scaleY);
+            points.forEach((point, i) => {
+              if (vis(i)) drawEllipse(ctx, point[0], point[1], 3, "rgb(217, 65, 65)", scaleX, scaleY);
             });
           });
         }

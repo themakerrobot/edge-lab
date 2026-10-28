@@ -90,7 +90,7 @@
             foot: "NPU·GPU 사용률과 모델별 메모리는 보이지 않아요 — 드라이버가 알려 주지 않는 PC 가 있어서예요. 한 번 올라온 AI 는 끄기 전까지 메모리에 남아요.",
             loading: "AI 를 준비하는 중이에요 — 끝나면 채워져요.",
             M: { vlm: ["말하는 AI · Gemma 3 4B", "대화 · 사진 보고 답하기 · 이야기 이어 쓰기"],
-                 object: ["사물 찾기 · YOLO11m", "사물 · 사람 자세 · 영역"],
+                 object: ["사물 찾기 · easydetect", "사물 · 사람 자세 · 영역"],
                  face: ["얼굴 분석", "찾기 · 나이·성별 · 감정 · 마스크"],
                  gan: ["사진 바꾸기", "배경 지우기 · 화질 4배 · 깊이 지도"],
                  code: ["글자 · QR 읽기", "EasyOCR · QR"],
@@ -99,7 +99,7 @@
                  stt: ["말 → 글자 (Whisper)", "대화 마이크 · 녹음기"],
                  tts: ["글자 → 말 (Supertonic)", "목소리 · 이야기 극장"],
                  embed: ["자료 찾기", "대화의 내 자료에서 답하기"],
-                 user: ["가져온 모델", "models 폴더에 넣은 YOLO"] } },
+                 user: ["가져온 모델", "models 폴더에 넣은 easydetect .onnx"] } },
       en: { title: "edge-lab — AI task manager", lang: "한", q: "AI running on this computer",
             mem: "Memory", memSub: "This program {p} GB · whole PC {u} / {t} GB", models: "{n} models", idle: "idle", none: "none",
             cpuSub: "usage now", thM: "AI", thD: "Device", thS: "State", thL: "Last used", thN: "Calls",
@@ -108,7 +108,7 @@
             foot: "NPU/GPU usage and per-model memory are not shown — some drivers do not report them. A loaded AI stays in memory until shutdown.",
             loading: "The AI is getting ready — this fills in when it is done.",
             M: { vlm: ["Talking AI · Gemma 3 4B", "Talk · ask about photos · story writing"],
-                 object: ["Object detection · YOLO11m", "Objects · human pose · segments"],
+                 object: ["Object detection · easydetect", "Objects · human pose · segments"],
                  face: ["Face analysis", "Find · age/gender · emotion · mask"],
                  gan: ["Photo effects", "Background · 4x upscale · depth"],
                  code: ["Text · QR", "EasyOCR · QR"],
@@ -117,7 +117,7 @@
                  stt: ["Speech → text (Whisper)", "Talk mic · Recorder"],
                  tts: ["Text → speech (Supertonic)", "Voices · Story theater"],
                  embed: ["Notes search", "Answers from your notes in Talk"],
-                 user: ["Imported models", "YOLO files in the models folder"] } }
+                 user: ["Imported models", "easydetect .onnx files in the models folder"] } }
     };
     function t(k) { return I18N[LANG][k] !== undefined ? I18N[LANG][k] : I18N.ko[k]; }
     function $(id) { return document.getElementById(id); }
