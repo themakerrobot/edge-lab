@@ -244,6 +244,13 @@
   (function () {
     "use strict";
     var D = window.EL_DRIVE;
+    /* 브라우저가 옛 lib/drive.js 를 캐시에서 꺼냈다(업데이트 직후) — 새로 받아 다시 연다. 한 번만 */
+    if (!D || !D.Car.prototype.step2) {
+      var again = false;
+      try { again = sessionStorage.getItem("drive-reload") === "1"; sessionStorage.setItem("drive-reload", "1"); } catch (e) {}
+      if (!again) { fetch("/lib/drive.js", { cache: "reload" }).finally(function () { location.reload(); }); return; }
+    }
+    try { sessionStorage.removeItem("drive-reload"); } catch (e) {}
     var LANG = "ko";
     try { LANG = localStorage.getItem("vapiLang") === "en" ? "en" : "ko"; } catch (e) {}
     document.documentElement.lang = LANG;
