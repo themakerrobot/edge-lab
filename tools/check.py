@@ -6,16 +6,15 @@ core = ov.Core()
 print("devices:", core.available_devices)
 
 targets = list(pathlib.Path("models").rglob("*.xml")) + \
-          list(pathlib.Path("models").glob("gan/*.onnx"))
+          list(pathlib.Path("models").glob("gan/*.onnx")) + \
+          list(pathlib.Path("models").glob("mask/*.tflite"))
 
 # 있는 파일만 열어 보면 "모델이 통째로 빠진" 경우를 놓친다(그때도 fail=0).
 # 서버가 반드시 읽는 것들은 이름을 적어 두고 존재부터 확인한다.
 # YOLO 계열은 폴더째 넘긴다(안의 xml 이름은 ultralytics 가 정한다) — 폴더에
 # xml 이 하나라도 있으면 정상으로 본다. 이름을 박아 두면 내보내기 방식이
 # 바뀔 때마다 헛되이 FAIL 이 난다.
-NEED_DIRS = [
-    "object/mask-11s-cls_openvino_model",   # 마스크 분류 (OpenVINO 로 바로 돌린다)
-]
+NEED_DIRS = []
 
 NEED = [
     "face/face-detection-retail-0005.xml",
@@ -26,6 +25,9 @@ NEED = [
     "gan/single-image-super-resolution-1032.xml",
     "gan/depth-v2s.xml",          # 깊이 지도 (상대 깊이 — 보여 주는 용도)
     "backbone/mobilenetv2_feat.xml",   # 가르치기 — 이게 없으면 학습 자체가 안 된다
+    "mask/classifier.json",            # 마스크 분류 (teach-lab 형식 — 임베더 .tflite 는 아래에서 연다)
+    "mask/classifier.bin",
+    "mask/mobilenet_v3_small_embedder.tflite",
     "mediapipe/face_landmarker.task",  # 얼굴 거리·방향
     "mediapipe/gesture_recognizer.task",  # 손동작
 ]
