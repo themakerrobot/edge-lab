@@ -144,7 +144,7 @@ AI를 메모리에 올리는 동안 진행 막대가 보이고, 그 사이 파�
 |---|---|---|
 | 사진 질문 · 대화 | Gemma 3 4B INT4 | GPU |
 | 사물 찾기 · 자세 · 분할 | easydetect ed-m · pose-m · MobileSAM (.onnx) | CPU |
-| 마스크 | MediaPipe mobilenet_v3_small 임베더 + 분류기 (teach-lab 형식) | CPU |
+| 마스크 | MediaPipe mobilenet_v3_small 임베더 + 분류기 (`mask.onnx` 한 개) | CPU |
 | 얼굴 검출 · 나이/성별 · 감정 · 방향 | OpenVINO 프리트레인 | NPU |
 | 얼굴 거리 · 손동작 · 표정 학습 | MediaPipe | CPU |
 | 깊이 지도 | Depth Anything V2 Small | GPU |
@@ -332,7 +332,7 @@ Rules for changing the code are in [DEVELOP.md](DEVELOP.md).
 |---|---|---|
 | Photo questions · chat | Gemma 3 4B INT4 | GPU |
 | Objects · pose · segmentation | easydetect ed-m · pose-m · MobileSAM (.onnx) | CPU |
-| Mask | MediaPipe mobilenet_v3_small embedder + classifier (teach-lab format) | CPU |
+| Mask | MediaPipe mobilenet_v3_small embedder + classifier (one `mask.onnx`) | CPU |
 | Face detection · age/gender · emotion · direction | OpenVINO pretrained | NPU |
 | Face distance · hand gestures · expression training | MediaPipe | CPU |
 | Depth map | Depth Anything V2 Small | GPU |
