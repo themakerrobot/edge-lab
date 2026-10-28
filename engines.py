@@ -453,31 +453,25 @@ class HeadPose(OVModel):
 
 
 class MaskCls:
-    """마스크를 썼는지 — models/mask/ (teach-lab 형식: 임베더 .tflite + classifier.json · classifier.bin).
+    """마스크를 썼는지 — models/mask/mask.onnx 한 개.
 
-    MediaPipe mobilenet_v3_small 임베더(Apache-2.0)가 얼굴 사진을 숫자 1024개로 바꾸고, 작은 분류기
-    (Dense 64 relu → softmax)가 마스크 씀 / 맨얼굴을 고른다. 둘 다 OpenVINO · numpy 로 돈다.
-    전처리는 teach-lab(Teachable Machine cropTo)과 같다: 짧은 변을 224 로 줄이고 가운데 224 → 0~1 → L2 정규화.
-    정밀도는 f32 로 고정한다 — CPU 가 bfloat16 으로 계산하면 teach-lab 과 숫자가 어긋났다(코사인 0.99 대).
-    teach-lab 에서 이미지로 학습해 내보낸 모델로 바꿔 넣어도 그대로 돈다(종류 이름이 with_mask · 마스크 등이면)."""
+    안에 MediaPipe mobilenet_v3_small 임베더(Apache-2.0, 사진 → 숫자 1024개) · L2 정규화 · 분류기
+    (Dense 64 relu → softmax)가 다 들어 있다. 종류 이름은 파일 안 metadata(edge-lab.classes).
+    얼굴 사진(얼굴 찾기 → 30% 여백)으로 학습했다 — 실행도 똑같이 잘라 넣는다(main.py mask_detect).
+    전처리는 teach-lab(Teachable Machine cropTo)과 같다: 짧은 변을 224 로 줄이고 가운데 224. 0~255 그대로 넣는다(/255 는 안에서).
+    정밀도는 f32 로 고정한다 — CPU 가 bfloat16 으로 계산하면 teach-lab 과 숫자가 어긋났다(코사인 0.99 대)."""
 
-    DIR = MODELS / "mask"
+    ONNX = MODELS / "mask/mask.onnx"
     MASK_NAMES = {"with_mask", "mask", "마스크", "마스크 씀", "마스크씀"}
 
     def __init__(self, device="CPU"):
         import json
-        spec = json.loads((self.DIR / "classifier.json").read_text(encoding="utf-8"))
-        flat = np.frombuffer((self.DIR / spec.get("weightsFile", "classifier.bin")).read_bytes(), dtype="<f4")
-        self.layers = []
-        for ly in spec["layers"]:
-            k, b = ly["kernel"], ly["bias"]
-            self.layers.append((flat[k["offset"]:k["offset"] + k["count"]].reshape(k["shape"]),
-                                flat[b["offset"]:b["offset"] + b["count"]].reshape(b["shape"]), ly.get("activation", "relu")))
-        self.classes = [str(c) for c in spec["classes"]]
+        from easydetect.predictor import onnx_metadata          # 머리 부분만 읽는다
+        meta = onnx_metadata(self.ONNX)
+        self.classes = [str(c) for c in json.loads(meta.get("edge-lab.classes", '["with_mask", "without_mask"]'))]
         if not any(c.strip().lower() in self.MASK_NAMES for c in self.classes):
             raise RuntimeError("마스크 모델의 종류 이름에 마스크 쪽이 없어요: %s" % self.classes)
-        tfl = next(self.DIR.glob("*.tflite"))
-        self.embed = core.compile_model(core.read_model(tfl), device, {"INFERENCE_PRECISION_HINT": "f32"})
+        self.compiled = core.compile_model(core.read_model(self.ONNX), device, {"INFERENCE_PRECISION_HINT": "f32"})
         self.lock = threading.Lock()
 
     @staticmethod
@@ -497,31 +491,25 @@ class MaskCls:
 
     @classmethod
     def _prep(cls, face_bgr, size=224):
-        """Teachable Machine 의 cropTo — 짧은 변을 size 로(올림) 줄인 뒤 가운데 size×size → RGB 0~1."""
+        """Teachable Machine 의 cropTo — 짧은 변을 size 로(올림) 줄인 뒤 가운데 size×size → RGB 0~255 float."""
         rgb = cv2.cvtColor(face_bgr, cv2.COLOR_BGR2RGB)
         h, w = rgb.shape[:2]
         s = size / min(w, h)
         sw, sh = int(np.ceil(w * s)), int(np.ceil(h * s))
         im = rgb if (sw, sh) == (w, h) else cls._resize(rgb, sw, sh)
         x0, y0 = (sw - size) // 2, (sh - size) // 2
-        return (im[y0:y0 + size, x0:x0 + size].astype(np.float32) / 255.0)[None]
+        return im[y0:y0 + size, x0:x0 + size].astype(np.float32)[None]
 
     def predict(self, face_bgr, lang="ko"):
         with self.lock:
-            v = np.asarray(self.embed(self._prep(face_bgr))[0], np.float32).reshape(-1)
-        x = v / (np.linalg.norm(v) or 1.0)
-        for W, b, act in self.layers:
-            x = x @ W + b
-            if act == "relu":
-                x = np.maximum(x, 0)
-            elif act == "softmax":
-                e = np.exp(x - x.max()); x = e / e.sum()
+            x = np.asarray(self.compiled(self._prep(face_bgr))[0], np.float32).reshape(-1)
         idx = int(x.argmax())
         on = 1 if self.classes[idx].strip().lower() in self.MASK_NAMES else 0
         ko, en = ("마스크 씀", "mask") if on else ("맨얼굴", "no-mask")
         return {"mask": on, "name": ko if str(lang).startswith("ko") else en,
                 "name_en": en,
                 "score": round(float(x[idx]) * 100, 2)}
+
 
 class FaceEngine:
     def __init__(self):
