@@ -130,7 +130,7 @@ AI를 메모리에 올리는 동안 진행 막대가 보이고, 그 사이 파�
 탐색기에서 `run.bat` 을 더블클릭해도 됩니다. 브라우저가 자동으로 열립니다.
 
 **코딩 실습** — `lab.bat` (우분투 `./lab.sh`) 을 실행하면 JupyterLab 이 열립니다. `notebooks\` 의 노트북 12개로
-래퍼 없이 OpenVINO · numpy · OpenCV 를 직접 씁니다 (YOLO 직접 추론, 얼굴 분석, 나만의 분류기, RAG, VLM, 음성, 보드 시리얼 …).
+래퍼 없이 OpenVINO · numpy · OpenCV 를 직접 씁니다 (사물 찾기 직접 추론, 얼굴 분석, 나만의 분류기, RAG, VLM, 음성, 보드 시리얼 …).
 노트북마다 개념 설명 → 실습 → 자주 나는 오류 → 정리 → **미니 프로젝트**(얼굴 모자이크 카메라, 사람 수 세기, 명함 스캐너, 가위바위보, 문서 Q&A 봇, 음성 비서 …) 순서입니다.
 노트북은 `문서\Edge Lab\notebooks` 에 복사해 쓰므로 새 버전을 깔아도 고친 것이 남습니다.
 
@@ -159,23 +159,27 @@ AI를 메모리에 올리는 동안 진행 막대가 보이고, 그 사이 파�
 
 ## 라이선스
 
-이 프로젝트는 **AGPL-3.0** 으로 배포합니다 (`LICENSE`). YOLO(ultralytics, AGPL-3.0)를 포함하므로
-전체를 같은 조건으로 공개하며, 소스·모델을 받아 사용/수정/재배포할 수 있습니다.
+이 프로젝트의 **코드는 Apache-2.0** 으로 배포합니다 (`LICENSE`, `NOTICE`).
+함께 받는 **모델 · 라이브러리는 각자의 라이선스**를 따릅니다 — 아래 표. 대부분 Apache-2.0 · MIT 이지만
+**Gemma 3(VLM)와 Supertonic 3(읽어 주기)는 사용 제한이 있는 별도 라이선스**입니다.
+(2026-10 까지의 버전은 YOLO(ultralytics)를 포함해 AGPL-3.0 이었습니다. 이제 ultralytics 와 그 가중치는 쓰지 않습니다.)
 
 | 구성 요소 | 라이선스 |
 |---|---|
-| Gemma 3 | Gemma Terms of Use |
-| YOLO11 가중치 (노트북 02 실습용 IR — ultralytics 로 만든 것, 실행에는 ultralytics 를 쓰지 않는다) | AGPL-3.0 |
-| 마스크 분류 (MediaPipe mobilenet_v3_small 임베더 · 분류기) | Apache-2.0 (학습 사진 권리는 별도 확인) |
-| easydetect (코드 · ed-m · pose-m 가중치) · MobileSAM | Apache-2.0 |
-| OpenVINO / open_model_zoo 얼굴 모델 | Apache-2.0 |
-| MediaPipe · U2Net · easyocr · Whisper(OpenVINO 변환본) | Apache-2.0 |
-| Supertonic 3 (모델 가중치) | OpenRAIL-M |
-| Supertonic 추론 절차 (speech_routes.py) | 공식 예제(supertone-inc/supertonic) MIT 기반 이식 |
-| Blockly / TensorFlow.js / JSZip | Apache-2.0 / Apache-2.0 / MIT |
+| edge-lab 코드 · 노트북 | Apache-2.0 |
+| easydetect (코드 · ed-m · pose-m 가중치) · MobileSAM — 사물 찾기 · 자세 · 영역 | Apache-2.0 |
+| 마스크 분류 `mask/mask.onnx` (MediaPipe mobilenet_v3_small 임베더 + 분류기) | Apache-2.0 — 학습 사진(공개 데이터셋 chandrikadeb7/Face-Mask-Detection: Bing 검색 · Kaggle · RMFD 수집)의 원본 권리는 확인되지 않았다 |
+| OpenVINO / open_model_zoo 얼굴 모델 · 화질 개선(SR-1032) | Apache-2.0 |
+| MediaPipe (손 · 얼굴 점, YAMNet) · U2Net · easyocr · Depth Anything V2 Small · MobileNetV2 | Apache-2.0 |
+| Whisper (받아쓰기) · multilingual-e5-small (자료 찾기) | MIT |
+| Gemma 3 (VLM) | **Gemma Terms of Use** (사용 제한 정책 포함) |
+| Supertonic 3 (읽어 주기 모델 가중치) | **OpenRAIL-M** (사용 제한 — 아래) |
+| Supertonic 추론 절차 (speech_routes.py) · ml-lab · teach-lab 에서 옮긴 코드 | MIT |
+| Blockly / TensorFlow.js / Swagger UI / CodeMirror / JSZip | Apache-2.0 / Apache-2.0 / Apache-2.0 / MIT / MIT |
+| 글꼴 Pretendard · Gowun Dodum · Gowun Batang | SIL OFL 1.1 |
 
 **TTS 모델(OpenRAIL-M)을 남에게 넘길 때** — 상업 사용·재배포·서비스 호스팅은 허용됩니다. 다만
-① 라이선스 사본(`models/tts/LICENSE`)을 함께 주고, ② 이용 약관에 **Attachment A의 사용 제한**을 그대로 넣어
+① 라이선스 사본(`models/tts-int8/LICENSE-OpenRAIL-M.txt`)을 함께 주고, ② 이용 약관에 **Attachment A의 사용 제한**을 그대로 넣어
 받는 쪽에 알리고, ③ 모델 파일을 고쳤다면 고쳤다는 표시를 남깁니다.
 주요 제한(발췌): 미성년자 착취·가해, 허위정보 유포, 동의 없는 인물 사칭, 기계 생성물임을 밝히지 않은 배포,
 의료 조언·판독, 법집행·출입국 자동판정 등. 이 제한은 **TTS 모델 가중치에만** 적용됩니다.
@@ -318,7 +322,7 @@ For installation see [INSTALL.md](INSTALL.md). Once installed:
 Double-clicking `run.bat` in Explorer works too. The browser opens by itself.
 
 **Coding lab** — run `lab.bat` (Ubuntu: `./lab.sh`) to open JupyterLab. The 12 notebooks in `notebooks\` use
-OpenVINO · numpy · OpenCV directly, no wrapper (raw YOLO inference, face analysis, your own classifier, RAG, VLM, speech, serial board …).
+OpenVINO · numpy · OpenCV directly, no wrapper (raw object detection, face analysis, your own classifier, RAG, VLM, speech, serial board …).
 Each one goes concept → practice → common errors → summary → a **mini project** (face-blur camera, people counter, business-card scanner, rock-paper-scissors, document Q&A bot, voice assistant …).
 They are copied to `Documents\Edge Lab\notebooks`, so your edits survive an upgrade.
 
@@ -347,24 +351,27 @@ Rules for changing the code are in [DEVELOP.md](DEVELOP.md).
 
 ## License
 
-This project is distributed under **AGPL-3.0** (`LICENSE`). It includes YOLO (ultralytics, AGPL-3.0),
-so the whole thing is published on the same terms — you may take the source and models and use,
-modify and redistribute them.
+The **code of this project is Apache-2.0** (`LICENSE`, `NOTICE`).
+The **models and libraries that come with it keep their own licenses** — see the table. Most are Apache-2.0 or MIT,
+but **Gemma 3 (VLM) and Supertonic 3 (text to speech) have separate licenses with use restrictions**.
+(Versions up to 2026-10 included YOLO (ultralytics) and were AGPL-3.0. ultralytics and its weights are no longer used.)
 
 | Component | License |
 |---|---|
-| Gemma 3 | Gemma Terms of Use |
-| YOLO11 weights (notebook 02 IR — made with ultralytics; ultralytics itself is not used to run them) | AGPL-3.0 |
-| Mask classifier (MediaPipe mobilenet_v3_small embedder · classifier) | Apache-2.0 (training photo rights to be checked) |
-| easydetect (code · ed-m · pose-m weights) · MobileSAM | Apache-2.0 |
-| OpenVINO / open_model_zoo face models | Apache-2.0 |
-| MediaPipe · U2Net · easyocr · Whisper (OpenVINO conversion) | Apache-2.0 |
-| Supertonic 3 (model weights) | OpenRAIL-M |
-| Supertonic inference procedure (speech_routes.py) | ported from the official MIT example (supertone-inc/supertonic) |
-| Blockly / TensorFlow.js / JSZip | Apache-2.0 / Apache-2.0 / MIT |
+| edge-lab code · notebooks | Apache-2.0 |
+| easydetect (code · ed-m · pose-m weights) · MobileSAM — objects · pose · segmentation | Apache-2.0 |
+| Mask classifier `mask/mask.onnx` (MediaPipe mobilenet_v3_small embedder + classifier) | Apache-2.0 — rights to the training photos (public dataset chandrikadeb7/Face-Mask-Detection, gathered from Bing search · Kaggle · RMFD) are not confirmed |
+| OpenVINO / open_model_zoo face models · upscaling (SR-1032) | Apache-2.0 |
+| MediaPipe (hand · face points, YAMNet) · U2Net · easyocr · Depth Anything V2 Small · MobileNetV2 | Apache-2.0 |
+| Whisper (speech to text) · multilingual-e5-small (document search) | MIT |
+| Gemma 3 (VLM) | **Gemma Terms of Use** (with a prohibited use policy) |
+| Supertonic 3 (TTS model weights) | **OpenRAIL-M** (use restrictions — below) |
+| Supertonic inference procedure (speech_routes.py) · code ported from ml-lab · teach-lab | MIT |
+| Blockly / TensorFlow.js / Swagger UI / CodeMirror / JSZip | Apache-2.0 / Apache-2.0 / Apache-2.0 / MIT / MIT |
+| Fonts Pretendard · Gowun Dodum · Gowun Batang | SIL OFL 1.1 |
 
 **When you pass the TTS model (OpenRAIL-M) on to someone else** — commercial use, redistribution and
-hosting as a service are allowed. But you must ① include a copy of the license (`models/tts/LICENSE`),
+hosting as a service are allowed. But you must ① include a copy of the license (`models/tts-int8/LICENSE-OpenRAIL-M.txt`),
 ② carry **the use restrictions in Attachment A** into your terms and make the recipient aware of them,
 and ③ state that you changed the model files if you did.
 Restrictions (excerpt): exploiting or harming minors, spreading disinformation, impersonating people

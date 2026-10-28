@@ -168,27 +168,25 @@ Remove-Item conv.py, depth-v2s.xml, depth-v2s.bin
 
 ## HF 모델 저장소 다시 만들기
 배포·개발 PC 는 모두 HF 에서 받아 쓴다. 이 절은 **모델을 새로 만들어 HF 에 올릴 때만** 쓴다 (30~50분).
-`models/org/mask-11s-cls.pt` 하나만 있으면 나머지는 전부 원본 저장소에서 받아 오므로,
-HF 저장소가 비어도 다시 만들 수 있다 — 다만 **변환 PC 는 인터넷이 필요하다**.
+나머지는 전부 원본 저장소에서 받아 오므로 HF 저장소가 비어도 다시 만들 수 있다 — 다만 **변환 PC 는 인터넷이 필요하다**.
+사물 찾기 · 자세 · 영역(easydetect, `leeyunjai/easydetect`)과 마스크(`mask/mask.onnx`)는 이 스크립트가 만들지 않는다 — 있는 파일을 그대로 쓴다.
 VLM(gemma3)·깊이 지도는 요구 버전이 달라 전용 venv 에서 따로 변환한다 (위 두 절).
 ```
 git clone https://github.com/themakerrobot/edge-lab.git
 cd edge-lab
 python -m venv venv && venv\Scripts\activate      # linux: source venv/bin/activate
-:: mask-11s-cls.pt 를 models\org\ 에 복사 (표준 YOLO11m 3종은 자동으로 받아온다)
 powershell -ExecutionPolicy Bypass -File tools\setup.ps1   # linux: bash tools/setup.sh
 python tools\check.py                                 # fail = 0 이어야 함
 ```
 변환이 끝나면 결과를 올린다 — `hf upload leeyunjai/edge-lab models .`
-`models/org/mask-11s-cls.pt` 도 함께 올려 두어야 이 저장소만으로 전부 다시 만들 수 있다.
 이후 기기는 `setup_deploy.ps1` 로 내려받기만 하면 된다.
 
 ### 저장소 구성
 | 폴더 | 설치본에 | 무엇 |
 |---|---|---|
-| `object/` `face/` `mediapipe/` `gan/` `vlm/` `embed/` `backbone/` `code/` `stt/` `tts/` | 들어감 | 서버가 읽는 IR·모델 |
-| `org/` | 빠짐 | 변환용 원본(.pt) |
-| `yolo/` | 빠짐 | 골라 쓰는 사물 찾기 모델 — 쓸 사람이 직접 받아 `문서\Edge Lab\models` 에 넣는다 |
+| `face/` `mediapipe/` `gan/` `vlm/` `embed/` `backbone/` `code/` `stt/` `tts-int8/` `mask/` | 들어감 | 서버가 읽는 IR·모델 |
+| (`leeyunjai/easydetect`) `ed-m/` `pose/` `mobile_sam/` | 들어감 → `models/easydetect/` | 사물 찾기 · 자세 · 영역 (.onnx) |
+| `object/` `org/` `yolo/` | 빠짐 | 예전 YOLO 모델(ultralytics, AGPL) — 쓰지 않는다. 지워도 된다 |
 | `*.md` | 빠짐 | 저장소 설명 |
 
 빼는 것은 `setup_deploy.ps1` 의 `--exclude` 로 정한다. 값을 이어 쓰지 말고

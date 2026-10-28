@@ -1,0 +1,10 @@
+edge-lab
+Copyright 2026 themakerrobot
+
+This product's code is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+It is distributed together with third-party models and libraries that keep their own
+licenses — see the "라이선스 / License" section of README.md. In particular:
+  - Gemma 3 (models/vlm) is provided under the Gemma Terms of Use.
+  - Supertonic 3 (models/tts-int8) is provided under the BigScience OpenRAIL-M license,
+    including the use restrictions in its Attachment A.
