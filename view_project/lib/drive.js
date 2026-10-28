@@ -149,11 +149,19 @@
   var DT = 1 / 60;             // 한 번 움직이는 시간
   var ACTIONS = [-1, 0, 1];    // 왼쪽 · 곧게 · 오른쪽 (화면 y 가 아래쪽이라 왼쪽이 -)
 
+  /* AI 속도(대회): 차가 실제로 k 배 빠르게 달린다 — 사람은 늘 1배로 가르친다.
+   * 회전은 √k 배까지만 는다(빠를수록 크게 돈다 · 타이어가 버티는 만큼). 그대로 두면 2~3배부터
+   * 규칙대로 운전해도 커브를 못 돌아 "가르친 실력" 이 아니라 물리 한계로 순위가 갈린다.
+   * 판단(센서 → 운전)은 1/60초마다 한 번이고, 움직임만 ceil(k) 번으로 잘게 나눠 길을 건너뛰지 않게 한다.
+   * k = 1 이면 예전 계산과 똑같다. */
+  var SPEEDS = [1, 1.5, 2, 2.5, 3, 4, 5, 6];
+
   function Car(track) { this.reset(track); }
   Car.prototype.reset = function (track) {
     this.track = track;
     this.x = track.start.x; this.y = track.start.y; this.th = track.start.th;
     this.idx = 0; this.laps = 0; this.dist = 0; this.crashed = false;
+    this.t = 0; this.lapAt = [];          // 달린 시간(초, 게임 시간) · 바퀴를 넘은 시각들
   };
   Car.prototype.sense = function () {
     var self = this;
@@ -163,22 +171,33 @@
       return Math.min(r, RAY_MAX) / RAY_MAX;
     });
   };
-  /* action: 0/1/2. 돌려주는 값: 부딪혔는지 */
-  Car.prototype.step = function (action) {
+  /* action: 0/1/2, k: 속도 배수(없으면 1). 돌려주는 값: 부딪혔는지 */
+  Car.prototype.step = function (action, k) {
     if (this.crashed) return true;
-    this.th += ACTIONS[action] * TURN * DT;
-    this.x += Math.cos(this.th) * SPEED * DT;
-    this.y += Math.sin(this.th) * SPEED * DT;
-    this.dist += SPEED * DT;
-    /* 차 앞머리와 가운데가 도로 위에 있어야 한다 */
-    var fx = this.x + Math.cos(this.th) * 9, fy = this.y + Math.sin(this.th) * 9;
-    if (!onRoad(this.track, this.x, this.y) || !onRoad(this.track, fx, fy)) this.crashed = true;
-    /* 진행도: 중심선 번호가 끝에서 처음으로 넘어가면 한 바퀴 */
-    var n = this.track.n, prev = this.idx;
-    this.idx = nearestIdx(this.track, this.x, this.y, prev);
-    if (prev > n * 0.8 && this.idx < n * 0.2) this.laps++;
-    else if (prev < n * 0.2 && this.idx > n * 0.8) this.laps--;
-    return this.crashed;
+    k = k || 1;
+    var sub = Math.ceil(k), turn = ACTIONS[action] * TURN * Math.sqrt(k) * DT / sub, move = SPEED * k * DT / sub;
+    this.t += DT;
+    for (var q = 0; q < sub; q++) {
+      this.th += turn;
+      this.x += Math.cos(this.th) * move;
+      this.y += Math.sin(this.th) * move;
+      this.dist += move;
+      /* 차 앞머리와 가운데가 도로 위에 있어야 한다 */
+      var fx = this.x + Math.cos(this.th) * 9, fy = this.y + Math.sin(this.th) * 9;
+      if (!onRoad(this.track, this.x, this.y) || !onRoad(this.track, fx, fy)) { this.crashed = true; return true; }
+      /* 진행도: 중심선 번호가 끝에서 처음으로 넘어가면 한 바퀴 */
+      var n = this.track.n, prev = this.idx;
+      this.idx = nearestIdx(this.track, this.x, this.y, prev);
+      if (prev > n * 0.8 && this.idx < n * 0.2) { this.laps++; if (this.laps > this.lapAt.length) this.lapAt.push(this.t); }
+      else if (prev < n * 0.2 && this.idx > n * 0.8) this.laps--;
+    }
+    return false;
+  };
+  /* 바퀴마다 걸린 시간(초). 출발선에서 첫 바퀴 끝까지가 첫 값 */
+  Car.prototype.lapTimes = function () {
+    var out = [], prev = 0;
+    for (var i = 0; i < this.lapAt.length; i++) { out.push(this.lapAt[i] - prev); prev = this.lapAt[i]; }
+    return out;
   };
   /* 지금까지 간 정도 (바퀴 단위, 1.5 = 한 바퀴 반) */
   Object.defineProperty(Car.prototype, "progress", {
@@ -294,10 +313,52 @@
     return b;
   }
 
+  /* ════════ AI 파일 ════════
+   * 배운 AI 를 JSON 으로 — 다른 PC 에서 불러와도 같은 운전을 한다(계산에 난수가 없다). */
+  function savePolicy(pol, info) {
+    var o = { kind: "edge-lab-drive", v: 1, nIn: pol.nIn, hid: pol.hid, nOut: pol.nOut, p: {} };
+    for (var k in pol.p) o.p[k] = Array.prototype.map.call(pol.p[k], function (v) { return +v.toPrecision(7); });
+    for (var key in (info || {})) o[key] = info[key];
+    return o;
+  }
+  function loadPolicy(o) {
+    if (!o || o.kind !== "edge-lab-drive" || !o.p) throw new Error("자동차 가르치기 AI 파일이 아니에요");
+    var pol = new Policy(o.nIn, { hid: o.hid, nOut: o.nOut });
+    for (var k in pol.p) {
+      if (!o.p[k] || o.p[k].length !== pol.p[k].length) throw new Error("AI 파일이 망가졌어요 (" + k + ")");
+      pol.p[k].set(o.p[k]);
+    }
+    return pol;
+  }
+
+  /* ════════ 도전 ════════
+   * drive: AI 만 운전해 laps 바퀴를 도는지 (화면 없이). 사람은 끼어들 수 없다.
+   * ladder: 1배부터 속도를 올려 가며 완주한 가장 빠른 배수 — 처음 실패한 곳에서 멈춘다. */
+  function drive(track, pol, k, laps, maxSec) {
+    laps = laps || 3; maxSec = maxSec || 240;
+    var car = new Car(track);
+    while (car.t < maxSec) {
+      if (car.step(argmax(pol.predict(car.sense())), k)) return { ok: false, k: k, prog: Math.max(0, car.progress), t: car.t };
+      if (car.progress >= laps) return { ok: true, k: k, t: car.t, laps: car.lapTimes() };
+    }
+    return { ok: false, k: k, prog: Math.max(0, car.progress), t: car.t };
+  }
+  function ladder(track, pol, laps) {
+    var best = null, tries = [];
+    for (var i = 0; i < SPEEDS.length; i++) {
+      var r = drive(track, pol, SPEEDS[i], laps);
+      tries.push(r);
+      if (!r.ok) break;
+      best = r;
+    }
+    return { best: best ? best.k : 0, bestRun: best, tries: tries };
+  }
+
   var API = {
     WORLD_W: WORLD_W, WORLD_H: WORLD_H, TRACKS: TRACKS, buildTrack: buildTrack, onRoad: onRoad,
-    RAY_DEG: RAY_DEG, RAY_MAX: RAY_MAX, SPEED: SPEED, TURN: TURN, DT: DT,
-    Car: Car, teacher: teacher, Policy: Policy, argmax: argmax
+    RAY_DEG: RAY_DEG, RAY_MAX: RAY_MAX, SPEED: SPEED, TURN: TURN, DT: DT, SPEEDS: SPEEDS,
+    Car: Car, teacher: teacher, Policy: Policy, argmax: argmax,
+    savePolicy: savePolicy, loadPolicy: loadPolicy, drive: drive, ladder: ladder
   };
   if (typeof module === "object" && module.exports) module.exports = API;
   else root.EL_DRIVE = API;
