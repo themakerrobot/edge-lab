@@ -1124,18 +1124,19 @@
     const g = cv.getContext("2d");
     g.clearRect(0, 0, w, h);
     if (!points || !points.length) return;
-    const vis = p => p && p[2] >= 0.5;
+    /* 얼굴·어깨·팔(0~10)은 0.4, 엉덩이·다리(11~16)는 0.5 — 상반신만 보이면 다리는 화면 밖에 짐작해 찍는다 */
+    const vis = (p, i) => p && p[2] >= (i <= 10 ? 0.4 : 0.5);
     g.strokeStyle = "rgba(31, 95, 122,.95)";
     g.lineWidth = 3; g.lineCap = "round";
     (edges || []).forEach(([a, b]) => {
-      if (!vis(points[a]) || !vis(points[b])) return;
+      if (!vis(points[a], a) || !vis(points[b], b)) return;
       g.beginPath();
       g.moveTo(points[a][0] * w, points[a][1] * h);
       g.lineTo(points[b][0] * w, points[b][1] * h);
       g.stroke();
     });
-    points.forEach(p => {
-      if (!vis(p)) return;
+    points.forEach((p, i) => {
+      if (!vis(p, i)) return;
       g.beginPath(); g.arc(p[0] * w, p[1] * h, 4, 0, Math.PI * 2);
       g.fillStyle = "#fff"; g.fill();
       g.lineWidth = 2; g.strokeStyle = "rgba(15,147,192,.9)"; g.stroke();
