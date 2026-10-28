@@ -143,7 +143,8 @@ AI를 메모리에 올리는 동안 진행 막대가 보이고, 그 사이 파�
 | 하는 일 | 모델 | 도는 곳 |
 |---|---|---|
 | 사진 질문 · 대화 | Gemma 3 4B INT4 | GPU |
-| 사물 · 자세 · 분할 | YOLO11m (+pose/seg) | CPU |
+| 사물 찾기 | easydetect ed-s (없으면 YOLO11m) | CPU |
+| 자세 · 분할 | YOLO11m-pose / -seg | CPU |
 | 마스크 | YOLO11s-cls | CPU |
 | 얼굴 검출 · 나이/성별 · 감정 · 방향 | OpenVINO 프리트레인 | NPU |
 | 얼굴 거리 · 손동작 · 표정 학습 | MediaPipe | CPU |
@@ -166,6 +167,7 @@ AI를 메모리에 올리는 동안 진행 막대가 보이고, 그 사이 파�
 |---|---|
 | Gemma 3 | Gemma Terms of Use |
 | YOLO11 (ultralytics) | AGPL-3.0 |
+| easydetect (코드 · ed-s 가중치) | Apache-2.0 |
 | OpenVINO / open_model_zoo 얼굴 모델 | Apache-2.0 |
 | MediaPipe · U2Net · easyocr · Whisper(OpenVINO 변환본) | Apache-2.0 |
 | Supertonic 3 (모델 가중치) | OpenRAIL-M |
@@ -329,7 +331,8 @@ Rules for changing the code are in [DEVELOP.md](DEVELOP.md).
 | Task | Model | Runs on |
 |---|---|---|
 | Photo questions · chat | Gemma 3 4B INT4 | GPU |
-| Objects · pose · segmentation | YOLO11m (+pose/seg) | CPU |
+| Object detection | easydetect ed-s (YOLO11m if missing) | CPU |
+| Pose · segmentation | YOLO11m-pose / -seg | CPU |
 | Mask | YOLO11s-cls | CPU |
 | Face detection · age/gender · emotion · direction | OpenVINO pretrained | NPU |
 | Face distance · hand gestures · expression training | MediaPipe | CPU |
@@ -353,6 +356,7 @@ modify and redistribute them.
 |---|---|
 | Gemma 3 | Gemma Terms of Use |
 | YOLO11 (ultralytics) | AGPL-3.0 |
+| easydetect (code · ed-s weights) | Apache-2.0 |
 | OpenVINO / open_model_zoo face models | Apache-2.0 |
 | MediaPipe · U2Net · easyocr · Whisper (OpenVINO conversion) | Apache-2.0 |
 | Supertonic 3 (model weights) | OpenRAIL-M |

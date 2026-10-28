@@ -91,7 +91,7 @@ class UserYolo:
         except Exception:
             return []
 
-    def predict(self, name, path, conf=0.3):
+    def predict(self, name, path, conf=None):
         base = os.path.basename(str(name or "").strip())
         if not base:
             raise ValueError("모델 이름이 비었어요.")

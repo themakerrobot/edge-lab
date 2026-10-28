@@ -1043,7 +1043,7 @@ print(r["answer"])    # 고양이가 앉아 있어요
 print(vision("look", img, lang="en")["answer"])   # 영어로 받기</pre>
 <p style="margin-top:8px;">이름이 헷갈리면 <code>my_models()</code> 로 확인하세요.
 띄어쓴 제목(<code>"my:우리 반 얼굴"</code>)도 그대로 돼요.</p>
-<p style="margin-top:8px;"><b>가져온 YOLO 모델 파일</b> — <code>.pt</code> 파일을 [설정]의
+<p style="margin-top:8px;"><b>가져온 모델 파일</b> — YOLO <code>.pt</code> 나 easydetect-lab 에서 받은 <code>.onnx</code> 파일을 [설정]의
 [모델 폴더 열기]로 열리는 폴더에 넣으면 <code>models()</code> 목록에 바로 나와요.
 넣은 이름을 그대로 <code>detect("이름.pt", img)</code> 에 쓰면 돼요 (경로는 안 적어도 돼요).<br>
 상대경로 기준 폴더는 <code>models\\pycode</code> 예요. cv2 · numpy 도 쓸 수 있어요.</p>`,
