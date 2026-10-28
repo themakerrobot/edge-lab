@@ -56,6 +56,13 @@ for m in targets:
         fails += 1
         print("FAIL", m, f"({size} bytes)", "|", str(e)[:200])
 
+# 기본 사물 찾기 — easydetect ed-s. 없으면 YOLO11m 으로 돌아서 실패로 치지 않는다(.xml 은 위에서 열어 봤다)
+if (pathlib.Path("models/easydetect/ed-s/ed-s.xml").exists()
+        and pathlib.Path("models/easydetect/ed-s/labels.txt").exists()):
+    print("OK   사물 찾기는 easydetect ed-s 를 씁니다 (YOLO11m 으로 돌리려면 VAPI_DETECT=yolo)")
+else:
+    print("WARN models/easydetect/ed-s 없음 — 사물 찾기는 YOLO11m 으로 돕니다")
+
 # TTS(Supertonic)는 OpenVINO 로 읽는 모델이 아니라 파일 존재만 확인한다
 tts_need = ["duration_predictor.onnx", "text_encoder.onnx", "vector_estimator.onnx",
             "vocoder.onnx", "tts.json", "unicode_indexer.json"]
@@ -114,5 +121,14 @@ except Exception as e:
     fails += 1
     print("FAIL jupyterlab |", str(e)[:120])
     print("     고침: pip install -r requirements.lock.txt  (코딩 실습 lab.bat 에 필요)")
+
+# 가져온 모델 중 easydetect(easydetect-lab 에서 학습한 .onnx) — 없으면 그 모델만 못 쓴다
+try:
+    import easydetect
+    print("OK   easydetect", easydetect.__version__)
+except Exception as e:
+    fails += 1
+    print("FAIL easydetect |", str(e)[:120])
+    print("     고침: pip install -r requirements.lock.txt  (easydetect-lab 모델을 쓰려면 필요)")
 
 print("done. fail =", fails)

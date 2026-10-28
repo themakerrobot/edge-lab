@@ -565,7 +565,7 @@ def _play_wav(raw, wait=True):
         sd.wait()
 
 
-def detect(model_path, image, conf=0.3):
+def detect(model_path, image, conf=None):
     """가져다 둔 YOLO 모델 파일로 인식한다.
 
     >>> r = detect("cat.pt", camera())          # 모델 폴더에 있는 이름
@@ -574,15 +574,18 @@ def detect(model_path, image, conf=0.3):
 
     model_path : 모델 폴더의 파일 이름. models() 로 목록을 볼 수 있다.
                  파일은 [설정·점검]의 [모델 폴더 열기]로 열리는 곳에 넣는다.
-    conf       : 이 확신도보다 낮은 결과는 버린다 (0~1).
+    conf       : 이 확신도보다 낮은 결과는 버린다 (0~1). 안 주면 모델이 추천하는 값
+                 (easydetect-lab 에서 받은 .onnx 에 든 것), 그것도 없으면 0.3.
     돌려주는 것: [{"name": 이름, "score": 0~100, "box": [x1,y1,x2,y2]}, ...]
 
     블록의 "모델 파일로 찾기" 와 같은 것을 부른다 — 서버가 모델을 한 번만
     올려 두고 함께 쓰므로, 학생 코드가 모델을 또 읽지 않는다.
     """
     name = os.path.basename(str(model_path).strip())
-    url = "/object/detect_file?" + urllib.parse.urlencode(
-        {"model": name, "conf": conf, "lang": LANG})
+    q = {"model": name, "lang": LANG}
+    if conf is not None:
+        q["conf"] = conf
+    url = "/object/detect_file?" + urllib.parse.urlencode(q)
     j = _post(url, files={"uploadFile": ("input.jpg", _to_jpg(image), "image/jpeg")})
     if j.get("result") != "ok":
         raise TheMakerError(str(j.get("data")))

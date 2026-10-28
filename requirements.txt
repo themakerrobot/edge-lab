@@ -18,6 +18,7 @@ onnxruntime==1.28.*            # requirements.lock.txt(실제 설치·번들에 
 ultralytics
 mediapipe
 easyocr
+easydetect          # easydetect-lab 에서 학습한 사물 찾기 모델(.onnx)을 [모델 폴더]에 넣어 쓴다
 
 # --- 서버 ---
 fastapi

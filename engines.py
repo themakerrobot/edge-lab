@@ -101,9 +101,47 @@ COCO_KO = [
 ]
 
 
+class EdDetector:
+    """easydetect 사물 찾기(ed-*) — 결과 모양은 ultralytics 와 같다(r.boxes.xyxy · conf · cls, numpy).
+
+    ed 는 같은 물체에 상자를 하나만 내도록 학습된 모델이라 NMS 를 고를 일이 없다.
+    확신도는 YOLO 보다 낮게 나온다 — 안 맞는 상자가 YOLO 는 0.25 아래, ed 는 0.3~0.5 에
+    몰린다(easydetect 문서). 그래서 기준을 따로 둔다(CONF)."""
+
+    CONF = 0.5
+
+    def __init__(self, xml, device="CPU"):
+        from easydetect import Detector
+        self.model = Detector(str(xml), device=device, verbose=False, backend="openvino")
+        self.lock = threading.Lock()
+
+    def __call__(self, image, conf=None, **kw):
+        with self.lock:
+            return self.model(image, conf=self.CONF if conf is None else conf)
+
+
+# 기본 사물 찾기: easydetect ed-s (Apache-2.0, 허깅페이스 leeyunjai/easydetect — setup 이 받는다).
+# 없거나 VAPI_DETECT=yolo 이면 예전 YOLO11m 으로 돈다. 자세 · 영역은 그대로 YOLO 다.
+ED_XML = MODELS / "easydetect/ed-s/ed-s.xml"
+
+
+def _arr(x):
+    """torch 텐서(ultralytics) · numpy(easydetect) 둘 다 numpy 로."""
+    return x.cpu().numpy() if hasattr(x, "cpu") else np.asarray(x)
+
+
 class ObjectEngine:
     def __init__(self):
-        self.det = Yolo(MODELS / "object/yolo11m_openvino_model", task="detect")
+        self.det_kind = "yolo"
+        if ED_XML.exists() and os.environ.get("VAPI_DETECT", "").lower() != "yolo":
+            try:
+                self.det = EdDetector(ED_XML)
+                self.det_kind = "easydetect"
+            except Exception as ex:
+                print("[object] easydetect 를 못 올려 YOLO 로 찾아요:", ex)
+        if self.det_kind == "yolo":
+            self.det = Yolo(MODELS / "object/yolo11m_openvino_model", task="detect")
+        print("[object] 사물 찾기:", "easydetect ed-s" if self.det_kind == "easydetect" else "YOLO11m")
         self.pose = Yolo(MODELS / "object/yolo11m-pose_openvino_model", task="pose")
         self.seg = Yolo(MODELS / "object/yolo11m-seg_openvino_model", task="segment")
         self.image_size = 800
@@ -121,15 +159,17 @@ class ObjectEngine:
         나눌 이유가 없었다. 사람만 세고 싶으면 name_en == "person" 으로 거른다."""
         image = cv2.imread(image_path)
         h, w = image.shape[:2]
-        r = self.det(image, conf=0.7)[0]
+        # 기준: YOLO 는 0.7, easydetect 는 0.5 (점수 매기는 버릇이 다르다 — EdDetector 설명)
+        r = self.det(image, conf=EdDetector.CONF if self.det_kind == "easydetect" else 0.7)[0]
         names = COCO_KO if str(lang).startswith("ko") else COCO_EN
         found = []
-        for box in (r.boxes or []):
+        b = r.boxes
+        if b is None or len(b) == 0:
+            return found
+        for (x1, y1, x2, y2), conf, cls_id in zip(_arr(b.xyxy), _arr(b.conf), _arr(b.cls)):
             if len(found) >= 15:
                 break
-            cls_id = int(box.cls[0])
-            conf = float(box.conf[0])
-            x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
+            cls_id, conf = int(cls_id), float(conf)
             nx1, ny1 = x1 * self.image_size / w, y1 * self.image_size / h
             nx2, ny2 = x2 * self.image_size / w, y2 * self.image_size / h
             found.append({
@@ -185,16 +225,26 @@ class ObjectEngine:
 # 개별 인식 모델이 내는 영문 클래스 이름 -> 한국어. 없으면 영문을 그대로 쓴다
 # (숫자 모델의 "0"~"9", "+" 같은 것은 번역할 게 없다)
 class UserYolo:
-    """사람이 가져다 둔 YOLO 모델 파일(.pt)로 인식한다.
+    """사람이 가져다 둔 사물 찾기 모델로 인식한다 — YOLO(ultralytics) 와 easydetect 둘 다.
 
     프로그램이 들고 오는 모델과 다른 점 둘:
       - 기동 때 안 올린다. 처음 쓸 때 올리고 그대로 들고 있는다(_cache).
       - 이름은 파일 이름 그대로 — 번역표가 없으므로 name 과 name_en 이 같다.
     파일은 작업폴더의 models 칸(paths.YOLO_DIR)에서만 찾는다. 바깥 경로를
     받지 않는 것은 화면에서 고른 이름이 그대로 파일 경로가 되기 때문이다.
+
+    넣을 수 있는 것:
+      - YOLO : .pt · .onnx · xxx_openvino_model 폴더 (ultralytics 가 내보낸 그대로)
+      - easydetect : easydetect-lab 의 [Pibo 로 보내기] 로 받은 .onnx 하나.
+        파이보 · 파이브레인에 넣는 그 파일 그대로다. 이름표와 추천 확신도가 파일 안에 들어 있고,
+        여기서는 OpenVINO 로 돌린다.
+    같은 .onnx 라도 어느 쪽인지는 파일 안의 easydetect 표시(easydetect.names)로 가른다.
     """
 
     EXTS = (".pt", ".onnx")
+    ED_NAMES_KEY = "easydetect.names"      # easydetect 가 .onnx 안에 넣는 이름표
+    ED_CONF_KEY = "easydetect.conf"        # lab 이 검증 사진으로 고른 추천 확신도
+    DEFAULT_CONF = 0.3
 
     def __init__(self):
         self._cache = {}
@@ -239,30 +289,82 @@ class UserYolo:
         raise FileNotFoundError(
             "모델 파일이 없어요: %s\n모델 폴더: %s\n지금 있는 것: %s" % (base, d, have))
 
+    @staticmethod
+    def _onnx_meta(path):
+        """.onnx 안의 metadata — 모델 전체를 읽지 않고 머리 부분만 본다. easydetect 가 없으면 빈 것."""
+        try:
+            from easydetect.predictor import onnx_metadata
+            return onnx_metadata(Path(path))
+        except Exception:
+            return {}
+
+    @classmethod
+    def _is_easydetect(cls, full, meta):
+        """.onnx 가 easydetect 것인가.
+
+        lab 이 내보낸 것은 안에 easydetect.names 가 있다. ultralytics 가 내보낸 것은 stride · task 가 있다.
+        둘 다 없으면(허깅페이스의 ed-s.onnx 처럼 이름표를 옆 파일에 둔 것) 출력 모양으로 가른다 —
+        easydetect 는 상자(…, 4) 와 점수 두 개, YOLO 는 하나다."""
+        if not full.lower().endswith(".onnx"):
+            return False
+        if cls.ED_NAMES_KEY in meta:
+            return True
+        if "stride" in meta or "task" in meta or "Ultralytics" in meta.get("author", ""):
+            return False
+        try:
+            outs = core.read_model(full).outputs
+            return len(outs) == 2 and any(o.get_partial_shape()[-1].get_length() == 4 for o in outs
+                                          if o.get_partial_shape()[-1].is_static)
+        except Exception:
+            return False
+
     def _model(self, name):
         full = self._resolve(name)
         with self.lock:
             m = self._cache.get(full)
-            if m is None:
-                m = Yolo(full)                 # 처음 쓸 때만 올린다
+            if m is None:                              # 처음 쓸 때만 올린다
+                meta = self._onnx_meta(full) if full.lower().endswith(".onnx") else {}
+                if self._is_easydetect(full, meta):
+                    from easydetect import Detector
+                    try:
+                        conf = float(meta.get(self.ED_CONF_KEY))
+                    except (TypeError, ValueError):
+                        conf = None
+                    net = Detector(full, device="CPU", verbose=False, backend="openvino")
+                    m = {"kind": "easydetect", "lock": threading.Lock(), "net": net,
+                         "conf": conf if conf is not None else EdDetector.CONF}
+                else:
+                    m = {"kind": "yolo", "conf": None, "net": Yolo(full)}
                 self._cache[full] = m
             return m
 
-    def predict(self, name, image_path, conf=0.3):
-        r = self._model(name)(image_path)[0]
+    def predict(self, name, image_path, conf=None):
+        """conf 를 안 주면 모델이 추천하는 값(easydetect .onnx 안의 것). 없으면 easydetect 0.5, YOLO 0.3."""
+        m = self._model(name)
+        if conf is None:
+            conf = m["conf"] if m["conf"] is not None else self.DEFAULT_CONF
+        if m["kind"] == "easydetect":
+            with m["lock"]:
+                r = m["net"](image_path, conf=conf)[0]
+        else:
+            r = m["net"](image_path)[0]
+        b = r.boxes
+        if b is None or len(b) == 0:
+            return []
+        arr = lambda x: x.cpu().numpy() if hasattr(x, "cpu") else np.asarray(x)   # torch · numpy 둘 다
+        names = r.names or {}
         out = []
-        for box in (r.boxes or []):
-            score = float(box.conf[0])
+        for (x1, y1, x2, y2), score, c in zip(arr(b.xyxy), arr(b.conf), arr(b.cls)):
+            score = float(score)
             if score < conf:
                 continue
-            x1, y1, x2, y2 = map(int, box.xyxy[0])
-            names = r.names
-            raw = names.get(int(box.cls[0]), "?") if isinstance(names, dict) \
-                else names[int(box.cls[0])]
+            raw = names.get(int(c)) if isinstance(names, dict) else names[int(c)]
+            if raw is None:              # 이름표 없는 .onnx (허깅페이스의 ed-*.onnx 를 그대로 넣은 것) — COCO 80종 순서다
+                raw = COCO_EN[int(c)] if int(c) < len(COCO_EN) else str(int(c))
             en = str(raw).strip()
             out.append({"name": en, "name_en": en,
                         "percent": int(score * 100), "score": int(score * 100),
-                        "box": (x1, y1, x2, y2)})
+                        "box": (int(x1), int(y1), int(x2), int(y2))})
         return out
 
 # ---------------------------------------------------------------- 얼굴 스위트 (OV 프리트레인 + YOLO mask cls)

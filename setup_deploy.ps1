@@ -62,6 +62,10 @@ Write-Host "=== [3/5] models from HF ===" -ForegroundColor Cyan
 # 파이썬 목록으로 넘기면 인자 파싱을 아예 거치지 않아 그럴 일이 없다.
 & $PY -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='leeyunjai/edge-lab', local_dir='models', ignore_patterns=['models.7z','org/*','yolo/*','tts/*','README.md','*/README.md'])"
 if ($LASTEXITCODE -ne 0) { throw "model download failed (check token / network)" }
+# 기본 사물 찾기 모델: easydetect ed-s (Apache-2.0) — OpenVINO IR 과 이름표만 받는다(.pt · .onnx 는 학습·라즈베리파이용).
+# 못 받아도 설치는 계속한다 — 그때 사물 찾기는 예전 YOLO11m 으로 돈다.
+& $PY -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='leeyunjai/easydetect', local_dir='models/easydetect', allow_patterns=['ed-s/ed-s.xml','ed-s/ed-s.bin','ed-s/ed-s.names.json','ed-s/labels.txt'])"
+if ($LASTEXITCODE -ne 0) { Write-Host "  [WARN] easydetect ed-s download failed - object search falls back to YOLO11m" -ForegroundColor Yellow }
 
 Write-Host "=== [4/5] fonts ===" -ForegroundColor Cyan
 if (Test-Path "view_project\fonts\fonts.css") {

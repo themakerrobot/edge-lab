@@ -6,6 +6,7 @@ import sys
 import time
 import uuid
 from contextlib import asynccontextmanager
+from typing import Optional
 
 # 창은 서버가 "/" 를 줄 수 있게 된 뒤에 바탕화면으로 바로 연다(open_browser) — 화면이 한 번도 바뀌지 않는다.
 # 전에는 서버보다 먼저 켜는 화면(파일)을 띄우고 준비 화면을 거쳐 바탕화면으로 넘어갔는데, 넘어갈 때마다 깜빡였다.
@@ -422,8 +423,9 @@ async def model_files():
 
 @app.post("/object/detect_file", tags=["object"], summary="가져온 모델로 인식")
 async def detect_file(request: Request, uploadFile: UploadFile = File(...),
-                      model: str = "", conf: float = 0.3, lang: str = "ko"):
-    """model 은 /object/model_files 가 준 이름 하나 (경로가 아니라 이름)."""
+                      model: str = "", conf: Optional[float] = None, lang: str = "ko"):
+    """model 은 /object/model_files 가 준 이름 하나 (경로가 아니라 이름).
+    conf 를 안 주면 모델이 추천하는 확신도(easydetect-lab 이 .onnx 안에 넣은 값), 없으면 0.3."""
     name = "detect_file"
     path = save_upload(uploadFile, name)
     t0 = time.perf_counter()
