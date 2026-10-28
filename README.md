@@ -168,7 +168,7 @@ AI를 메모리에 올리는 동안 진행 막대가 보이고, 그 사이 파�
 |---|---|
 | edge-lab 코드 · 노트북 | Apache-2.0 |
 | easydetect (코드 · ed-m · pose-m 가중치) · MobileSAM — 사물 찾기 · 자세 · 영역 | Apache-2.0 |
-| 마스크 분류 `mask/mask.onnx` (MediaPipe mobilenet_v3_small 임베더 + 분류기) | Apache-2.0 — 학습 사진(공개 데이터셋 chandrikadeb7/Face-Mask-Detection: Bing 검색 · Kaggle · RMFD 수집)의 원본 권리는 확인되지 않았다 |
+| 마스크 분류 `mask/mask.onnx` (MediaPipe mobilenet_v3_small 임베더 + 분류기) | Apache-2.0 |
 | OpenVINO / open_model_zoo 얼굴 모델 · 화질 개선(SR-1032) | Apache-2.0 |
 | MediaPipe (손 · 얼굴 점, YAMNet) · U2Net · easyocr · Depth Anything V2 Small · MobileNetV2 | Apache-2.0 |
 | Whisper (받아쓰기) · multilingual-e5-small (자료 찾기) | MIT |
@@ -360,7 +360,7 @@ but **Gemma 3 (VLM) and Supertonic 3 (text to speech) have separate licenses wit
 |---|---|
 | edge-lab code · notebooks | Apache-2.0 |
 | easydetect (code · ed-m · pose-m weights) · MobileSAM — objects · pose · segmentation | Apache-2.0 |
-| Mask classifier `mask/mask.onnx` (MediaPipe mobilenet_v3_small embedder + classifier) | Apache-2.0 — rights to the training photos (public dataset chandrikadeb7/Face-Mask-Detection, gathered from Bing search · Kaggle · RMFD) are not confirmed |
+| Mask classifier `mask/mask.onnx` (MediaPipe mobilenet_v3_small embedder + classifier) | Apache-2.0 |
 | OpenVINO / open_model_zoo face models · upscaling (SR-1032) | Apache-2.0 |
 | MediaPipe (hand · face points, YAMNet) · U2Net · easyocr · Depth Anything V2 Small · MobileNetV2 | Apache-2.0 |
 | Whisper (speech to text) · multilingual-e5-small (document search) | MIT |
