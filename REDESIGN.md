@@ -123,7 +123,7 @@
 
 - **`view_project/assets/svg/` 47개 — 어디서도 참조하지 않는다.** 완전 사장.
   그중 **42개 파일 헤더가 `Font Awesome Pro 6.4.0`** 이다.
-  이 저장소는 AGPL-3.0 으로 재배포한다. Pro 아이콘 파일을 그대로 담아 배포하는 것은
+  이 저장소는 공개로 재배포한다. Pro 아이콘 파일을 그대로 담아 배포하는 것은
   Font Awesome 상용 라이선스 위반 소지가 있다. **런처 아이콘으로 이걸 쓰면 안 된다.**
 - **`view_project/lib/fa/` — Font Awesome Free 6.2.0** (`Icons: CC BY 4.0, Fonts: OFL 1.1, Code: MIT`).
   CSS + `fa-solid-900.woff2` + `fa-brands-400.woff2` 가 다 있는데 **역시 아무 페이지도 안 쓴다.**
@@ -381,7 +381,7 @@ Chromium 1366×768, 튜토리얼 끈 상태. 바꾸기 전은 같은 커밋의 �
   글리프 스무 개 때문에 CSS 101KB + 웹폰트 155KB 를 교실 노트북에서 페이지마다
   읽는 것이 아까웠다. 원·네모·선으로만 그려 다 합쳐 4KB 다.
   `assets/svg/` 의 Font Awesome Pro 헤더 파일 47개는 여전히 미사용이며 삭제 대상이다
-  (§1.8 — AGPL 재배포에 걸린다).
+  (§1.8 — 공개 재배포에 걸린다). → 2026-10 지웠다 (lib/fa 도 함께).
 - **`themaker.py`·`tools/*` 의 "엣지 랩" 은 그대로 뒀다** (결정 항목 4번 미정).
   화면 22곳만 `edge-lab` 으로 바꿨다.
 
