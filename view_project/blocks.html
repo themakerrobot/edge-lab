@@ -412,7 +412,7 @@
       ex_mymodel: "내가 가르친 AI 로 맞히기",
       ex_mymodel_d: "[가르치기]에서 학습한 AI 로 분류하고 말해 줘요. (나만의 AI)",
       ex_modelfile: "모델 파일로 찾기",
-      ex_modelfile_d: "모델 폴더에 넣은 .pt 파일로 찾아 박스를 그려요. (가져온 모델)",
+      ex_modelfile_d: "모델 폴더에 넣은 .onnx(easydetect-lab)로 찾아 박스를 그려요. (가져온 모델)",
       ex_basics: "기본 블록 익히기 (AI 없이)",
       ex_basics_d: "목록·반복·수학·글자·참거짓 블록만으로 만들어요. AI 는 쓰지 않아요.",
       ex_selfie: "흑백 셀카 만들기",
@@ -634,7 +634,7 @@
       ex_mymodel: "Use the AI I trained",
       ex_mymodel_d: "Classify with an AI trained in [Train] and say the answer. (your own AI)",
       ex_modelfile: "Find with a model file",
-      ex_modelfile_d: "Use a .pt file from the models folder and draw boxes. (added model)",
+      ex_modelfile_d: "Use an .onnx (easydetect-lab) from the models folder and draw boxes. (added model)",
       ex_basics: "Core blocks practice (no AI)",
       ex_basics_d: "Lists, loops, math, text and booleans only — no AI here.",
       ex_selfie: "Black-and-white selfie",
@@ -1854,7 +1854,7 @@ def texts_of(result):
           B("st_say", { inputs: { TEXT: { block: B("variables_get",
             { fields: { VAR: { name: "답" } } }) } } }),
         ]) ] } } },
-      /* 가져다 둔 모델 파일(.pt) 로 찾기 — [설정]의 [모델 폴더 열기]에 넣은 것 */
+      /* 가져다 둔 모델 파일(.onnx, easydetect-lab) 로 찾기 — [설정]의 [모델 폴더 열기]에 넣은 것 */
       { id: "modelfile", name: t("ex_modelfile"), desc: t("ex_modelfile_d"),
         state: { blocks: { languageVersion: 0, blocks: [ chain([
           CLEAR(),

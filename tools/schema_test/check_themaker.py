@@ -35,11 +35,11 @@ def run(host):
     # 가져온 모델 — models() 로 보고, 그 이름으로 detect()
     import os as _os, paths as _p
     _os.makedirs(_p.YOLO_DIR, exist_ok=True)
-    _probe = _os.path.join(_p.YOLO_DIR, "_tmcheck.pt")
+    _probe = _os.path.join(_p.YOLO_DIR, "_tmcheck.onnx")
     open(_probe, "wb").write(b"x")
     try:
-        case("models()", lambda: T.models(), lambda r: "_tmcheck.pt" in r)
-        case("detect(이름만)", lambda: T.detect("_tmcheck.pt", img),
+        case("models()", lambda: T.models(), lambda r: "_tmcheck.onnx" in r)
+        case("detect(이름만)", lambda: T.detect("_tmcheck.onnx", img),
              lambda r: r[0]["name"] == "cat")
     finally:
         _os.path.exists(_probe) and _os.remove(_probe)

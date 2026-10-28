@@ -138,9 +138,6 @@ REM bundle launcher (ASCII only, CRLF via echo)
   echo set PYTHONPATH=%%~dp0pylib
   echo set HF_HUB_OFFLINE=1
   echo set TRANSFORMERS_OFFLINE=1
-  echo set YOLO_OFFLINE=1
-  echo set YOLO_CONFIG_DIR=%%~dp0.ultralytics
-  echo if not exist "%%~dp0.ultralytics" mkdir "%%~dp0.ultralytics"
   echo echo Starting edge-lab ... browser opens automatically when ready ^(1-2 min^).
   echo python\python.exe main.py
   echo if errorlevel 1 pause

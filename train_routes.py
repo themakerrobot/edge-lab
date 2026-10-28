@@ -46,7 +46,7 @@ POSE_DIM = 63                       # 21점 × (x,y,z)
 FACE_DIM = 52                       # MediaPipe 블렌드셰이프 계수
 BODY_UP_DIM = 22                    # 상반신 11점 × (x,y)
 BODY_DIM = 34                       # 전신 17점 × (x,y)
-KP_CONF = 0.5                       # 이 값보다 흐린 관절은 "안 보임"으로 본다
+KP_CONF = 0.3                       # 이 값보다 흐린 관절은 "안 보임"으로 본다 (easydetect 관절은 YOLO 보다 낮게 나온다 — 보이는 손목·엉덩이도 0.4~0.5)
 SIZE = 224
 MAX_ZIP = 128 * 1024 * 1024         # 업로드 zip 상한
 MAX_IMAGES = 600                    # zip 1회 처리 상한
@@ -239,19 +239,13 @@ def _body_keypoints(bgr):
     eng = hub.engines(required=False)                  # 이미 올라온 것을 그대로 쓴다
     if eng is None:
         raise SoftError("AI를 준비하는 중이에요. 조금만 기다려 주세요.")
-    r = eng.object.pose(bgr)[0]
+    r = eng.object.pose(bgr)[0]                      # easydetect — 결과는 numpy
     if r.keypoints is None or r.boxes is None or len(r.boxes) == 0:
         return None
-    areas = []
-    for i in range(len(r.boxes)):
-        x1, y1, x2, y2 = r.boxes.xyxy[i].cpu().numpy()
-        areas.append((x2 - x1) * (y2 - y1))
-    i = int(np.argmax(areas))                          # 화면에서 가장 큰 사람
-    xy = r.keypoints.xy[i].cpu().numpy()
-    if r.keypoints.conf is not None:
-        cf = r.keypoints.conf[i].cpu().numpy()
-    else:
-        cf = np.ones(len(xy), dtype=np.float32)
+    b = np.asarray(r.boxes.xyxy)
+    i = int(np.argmax((b[:, 2] - b[:, 0]) * (b[:, 3] - b[:, 1])))   # 화면에서 가장 큰 사람
+    xy = np.asarray(r.keypoints.xy[i])
+    cf = np.asarray(r.keypoints.conf[i]) if r.keypoints.conf is not None else np.ones(len(xy), dtype=np.float32)
     return [(float(p[0]), float(p[1]), float(c)) for p, c in zip(xy, cf)]
 
 

@@ -163,19 +163,19 @@ def run(host):
     try:
         import paths as _p
         os.makedirs(_p.YOLO_DIR, exist_ok=True)
-        probe = os.path.join(_p.YOLO_DIR, "_schematest.pt")
+        probe = os.path.join(_p.YOLO_DIR, "_schematest.onnx")
         open(probe, "wb").write(b"not-a-real-model")
         try:
             with urllib.request.urlopen(host + "/object/model_files", timeout=10) as r:
                 d = json.loads(r.read().decode())
-            assert "_schematest.pt" in d["data"]["files"], d
+            assert "_schematest.onnx" in d["data"]["files"], d
             print("  PASS  %-20s %s" % ("모델 목록에 나옴", "/object/model_files")); ok += 1
 
-            d = _post(host, "/object/detect_file", {"model": "_schematest.pt"})
+            d = _post(host, "/object/detect_file", {"model": "_schematest.onnx"})
             assert d["result"] == "ok" and d["data"]["object"][0]["name"] == "cat", d
             print("  PASS  %-20s %s" % ("가져온 모델로 인식", "/object/detect_file")); ok += 1
 
-            for bad in ["../secret.pt", "없는모델.pt", ""]:
+            for bad in ["../secret.onnx", "없는모델.onnx", ""]:
                 d = _post(host, "/object/detect_file", {"model": urllib.parse.quote(bad)})
                 assert d["result"] == "fail", (bad, d)
             print("  PASS  %-20s %s" % ("폴더 밖·없는 이름 막음", "detect_file")); ok += 1

@@ -73,7 +73,7 @@ class _Object:
 class UserYolo:
     """가져온 모델 파일 — 진짜와 같은 규칙(폴더 안에서만 찾기)으로 흉내 낸다."""
 
-    EXTS = (".pt", ".onnx")
+    EXTS = (".onnx",)
 
     @staticmethod
     def folder():
@@ -85,9 +85,7 @@ class UserYolo:
     def files(cls):
         d = cls.folder()
         try:
-            return sorted(n for n in os.listdir(d)
-                          if n.lower().endswith(cls.EXTS)
-                          or n.endswith("_openvino_model"))
+            return sorted(n for n in os.listdir(d) if n.lower().endswith(cls.EXTS))
         except Exception:
             return []
 

@@ -44,7 +44,7 @@ Write-Host "  $backup"
 Write-Host ""
 Write-Host "=== [2/3] 최신 버전으로 올리기 ===" -ForegroundColor Cyan
 # 추론 런타임은 사고 이력이 있어 기본으로 제외한다 (-Runtime 을 줘야 올라간다)
-$pkgs = @("ultralytics", "mediapipe", "easyocr", "fastapi", "uvicorn[standard]",
+$pkgs = @("easydetect", "mediapipe", "easyocr", "fastapi", "uvicorn[standard]",
           "python-multipart", "huggingface_hub", "opencv-python", "pillow",
           "numpy", "sounddevice")
 if ($Runtime) {

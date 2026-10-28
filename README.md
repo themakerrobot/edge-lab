@@ -143,9 +143,8 @@ AI를 메모리에 올리는 동안 진행 막대가 보이고, 그 사이 파�
 | 하는 일 | 모델 | 도는 곳 |
 |---|---|---|
 | 사진 질문 · 대화 | Gemma 3 4B INT4 | GPU |
-| 사물 찾기 | easydetect ed-m (없으면 YOLO11m) | CPU |
-| 자세 · 분할 | YOLO11m-pose / -seg | CPU |
-| 마스크 | YOLO11s-cls | CPU |
+| 사물 찾기 · 자세 · 분할 | easydetect ed-m · pose-m · MobileSAM (.onnx) | CPU |
+| 마스크 | YOLO11s-cls 로 학습한 분류 모델 (OpenVINO 로 직접 실행) | CPU |
 | 얼굴 검출 · 나이/성별 · 감정 · 방향 | OpenVINO 프리트레인 | NPU |
 | 얼굴 거리 · 손동작 · 표정 학습 | MediaPipe | CPU |
 | 깊이 지도 | Depth Anything V2 Small | GPU |
@@ -166,8 +165,8 @@ AI를 메모리에 올리는 동안 진행 막대가 보이고, 그 사이 파�
 | 구성 요소 | 라이선스 |
 |---|---|
 | Gemma 3 | Gemma Terms of Use |
-| YOLO11 (ultralytics) | AGPL-3.0 |
-| easydetect (코드 · ed-m 가중치) | Apache-2.0 |
+| YOLO11 가중치 (마스크 분류 · 노트북 02 실습용 IR — ultralytics 로 만든 것, 실행에는 ultralytics 를 쓰지 않는다) | AGPL-3.0 |
+| easydetect (코드 · ed-m · pose-m 가중치) · MobileSAM | Apache-2.0 |
 | OpenVINO / open_model_zoo 얼굴 모델 | Apache-2.0 |
 | MediaPipe · U2Net · easyocr · Whisper(OpenVINO 변환본) | Apache-2.0 |
 | Supertonic 3 (모델 가중치) | OpenRAIL-M |
@@ -331,9 +330,8 @@ Rules for changing the code are in [DEVELOP.md](DEVELOP.md).
 | Task | Model | Runs on |
 |---|---|---|
 | Photo questions · chat | Gemma 3 4B INT4 | GPU |
-| Object detection | easydetect ed-m (YOLO11m if missing) | CPU |
-| Pose · segmentation | YOLO11m-pose / -seg | CPU |
-| Mask | YOLO11s-cls | CPU |
+| Objects · pose · segmentation | easydetect ed-m · pose-m · MobileSAM (.onnx) | CPU |
+| Mask | classifier trained with YOLO11s-cls (run on OpenVINO directly) | CPU |
 | Face detection · age/gender · emotion · direction | OpenVINO pretrained | NPU |
 | Face distance · hand gestures · expression training | MediaPipe | CPU |
 | Depth map | Depth Anything V2 Small | GPU |
@@ -355,8 +353,8 @@ modify and redistribute them.
 | Component | License |
 |---|---|
 | Gemma 3 | Gemma Terms of Use |
-| YOLO11 (ultralytics) | AGPL-3.0 |
-| easydetect (code · ed-m weights) | Apache-2.0 |
+| YOLO11 weights (mask classifier · notebook 02 IR — made with ultralytics; ultralytics itself is not used to run them) | AGPL-3.0 |
+| easydetect (code · ed-m · pose-m weights) · MobileSAM | Apache-2.0 |
 | OpenVINO / open_model_zoo face models | Apache-2.0 |
 | MediaPipe · U2Net · easyocr · Whisper (OpenVINO conversion) | Apache-2.0 |
 | Supertonic 3 (model weights) | OpenRAIL-M |

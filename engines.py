@@ -57,18 +57,18 @@ def to_b64_jpg(bgr):
     return base64.b64encode(buf).decode()
 
 
-# ---------------------------------------------------------------- YOLO 계열
-class Yolo:
-    """ultralytics + OpenVINO export 디렉토리 공용 래퍼."""
-
-    def __init__(self, ov_dir, task=None):
-        from ultralytics import YOLO
-        self.model = YOLO(str(ov_dir), task=task)
-        self.lock = threading.Lock()
-
-    def __call__(self, image, **kw):
-        with self.lock:
-            return self.model(image, verbose=False, **kw)
+# ---------------------------------------------------------------- 사물 · 자세 · 영역 (easydetect)
+# 셋 다 easydetect(Apache-2.0) 한 벌로 한다 — 허깅페이스 leeyunjai/easydetect 의 .onnx 를 setup 이
+# models/easydetect 에 받고, OpenVINO 가 .onnx 를 바로 읽어 돌린다(파이보 · 파이브레인과 같은 파일).
+#   사물 찾기  ed-m/ed-m.onnx        COCO 80종. YOLO11m 과 속도가 비슷하고(CPU 81ms 대 90ms) mAP 52.3 대 51.5
+#   자세       pose/pose-m.onnx      찾은 사람마다 관절 17개(COCO 순서 — YOLO-pose 와 같다)
+#   영역       mobile_sam/*.onnx     찾은 상자마다 MobileSAM 으로 윤곽 — 영역 이름표 없이도 칠한다
+# easydetect 는 받을 파일을 EASYDETECT_HOME 에서 찾는다. 여기로 맞춰 두면 인터넷 없이 돈다.
+ED_HOME = os.path.abspath(str(MODELS / "easydetect"))
+os.environ.setdefault("EASYDETECT_HOME", ED_HOME)
+ED_DET = MODELS / "easydetect/ed-m/ed-m.onnx"
+ED_POSE = MODELS / "easydetect/pose/pose-m.onnx"
+ED_SAM = [MODELS / "easydetect/mobile_sam/encoder.onnx", MODELS / "easydetect/mobile_sam/decoder.onnx"]
 
 
 COCO_EN = [
@@ -101,51 +101,47 @@ COCO_KO = [
 ]
 
 
-class EdDetector:
-    """easydetect 사물 찾기(ed-*) — 결과 모양은 ultralytics 와 같다(r.boxes.xyxy · conf · cls, numpy).
+class EdModels:
+    """easydetect 하나로 사물 찾기 · 자세 · 영역을 한다 — 찾는 모델(ed-m)은 한 번만 올리고 같이 쓴다.
 
+    결과 모양은 ultralytics 와 같다(r.boxes.xyxy · conf · cls, r.keypoints.xy · conf, r.masks.data) — 모두 numpy.
     ed 는 같은 물체에 상자를 하나만 내도록 학습된 모델이라 NMS 를 고를 일이 없다.
     확신도는 YOLO 보다 낮게 나온다 — 안 맞는 상자가 YOLO 는 0.25 아래, ed 는 0.3~0.5 에
-    몰린다(easydetect 문서). 그래서 기준을 따로 둔다(CONF)."""
+    몰린다(easydetect 문서). 그래서 기준을 0.5 로 둔다(CONF)."""
 
     CONF = 0.5
 
-    def __init__(self, xml, device="CPU"):
+    def __init__(self, device="CPU"):
+        need = [ED_DET, ED_POSE] + ED_SAM
+        miss = [str(p) for p in need if not p.exists()]
+        if miss:
+            raise RuntimeError("easydetect 모델이 없어요 — setup 을 다시 돌려 주세요: " + ", ".join(miss))
         from easydetect import Detector
-        self.model = Detector(str(xml), device=device, verbose=False, backend="openvino")
+        self.model = Detector(str(ED_DET), device=device, verbose=False, backend="openvino")
+        self.model.pose_model = str(ED_POSE)
         self.lock = threading.Lock()
 
-    def __call__(self, image, conf=None, **kw):
+    def __call__(self, image, task="detect", conf=None, classes=None):
+        """task: detect · pose · segment. 한 Detector 를 돌려 쓰므로 잠그고 바꾼다."""
         with self.lock:
-            return self.model(image, conf=self.CONF if conf is None else conf)
-
-
-# 기본 사물 찾기: easydetect ed-m (Apache-2.0, 허깅페이스 leeyunjai/easydetect — setup 이 받는다).
-# ed-m: YOLO11m 과 속도가 비슷하고(CPU 81ms 대 90ms) COCO mAP 52.3 대 51.5 — 같은 자리에 바꿔 넣어 손해가 없다.
-# 없거나 VAPI_DETECT=yolo 이면 예전 YOLO11m 으로 돈다. 자세 · 영역은 그대로 YOLO 다.
-ED_XML = MODELS / "easydetect/ed-m/ed-m.xml"
-
-
-def _arr(x):
-    """torch 텐서(ultralytics) · numpy(easydetect) 둘 다 numpy 로."""
-    return x.cpu().numpy() if hasattr(x, "cpu") else np.asarray(x)
+            self.model.task = task
+            return self.model(image, conf=self.CONF if conf is None else conf, classes=classes)
 
 
 class ObjectEngine:
     def __init__(self):
-        self.det_kind = "yolo"
-        if ED_XML.exists() and os.environ.get("VAPI_DETECT", "").lower() != "yolo":
-            try:
-                self.det = EdDetector(ED_XML)
-                self.det_kind = "easydetect"
-            except Exception as ex:
-                print("[object] easydetect 를 못 올려 YOLO 로 찾아요:", ex)
-        if self.det_kind == "yolo":
-            self.det = Yolo(MODELS / "object/yolo11m_openvino_model", task="detect")
-        print("[object] 사물 찾기:", "easydetect ed-m" if self.det_kind == "easydetect" else "YOLO11m")
-        self.pose = Yolo(MODELS / "object/yolo11m-pose_openvino_model", task="pose")
-        self.seg = Yolo(MODELS / "object/yolo11m-seg_openvino_model", task="segment")
+        self.ed = EdModels()
         self.image_size = 800
+
+    # 미리 컴파일(warmup) · 몸동작 학습(train_routes)이 부르는 이름
+    def det(self, image, conf=None):
+        return self.ed(image, "detect", conf)
+
+    def pose(self, image, conf=None):
+        return self.ed(image, "pose", conf, classes=[0])          # 사람만 찾고 관절을 얹는다
+
+    def seg(self, image, conf=None):
+        return self.ed(image, "segment", conf)
 
     @staticmethod
     def _pos(cx, cy):
@@ -160,14 +156,10 @@ class ObjectEngine:
         나눌 이유가 없었다. 사람만 세고 싶으면 name_en == "person" 으로 거른다."""
         image = cv2.imread(image_path)
         h, w = image.shape[:2]
-        # 기준: YOLO 는 0.7, easydetect 는 0.5 (점수 매기는 버릇이 다르다 — EdDetector 설명)
-        r = self.det(image, conf=EdDetector.CONF if self.det_kind == "easydetect" else 0.7)[0]
+        b = self.det(image)[0].boxes
         names = COCO_KO if str(lang).startswith("ko") else COCO_EN
         found = []
-        b = r.boxes
-        if b is None or len(b) == 0:
-            return found
-        for (x1, y1, x2, y2), conf, cls_id in zip(_arr(b.xyxy), _arr(b.conf), _arr(b.cls)):
+        for (x1, y1, x2, y2), conf, cls_id in zip(b.xyxy, b.conf, b.cls):
             if len(found) >= 15:
                 break
             cls_id, conf = int(cls_id), float(conf)
@@ -186,66 +178,60 @@ class ObjectEngine:
         h, w = frame.shape[:2]
         r = self.pose(frame)[0]
         out = []
-        if r.keypoints is not None and r.boxes is not None:
-            for i in range(len(r.boxes)):
-                score = float(r.boxes.conf[i])
-                if score < 0.7 or len(out) >= 5:
-                    continue
-                x1, y1, x2, y2 = r.boxes.xyxy[i].cpu().numpy()
-                kpts = r.keypoints.xy[i].cpu().numpy()
-                out.append({
-                    "score": int(score * 100), "percent": int(score * 100),
-                    "box": [int(max(0, x1 + .5)), int(max(0, y1 + .5)),
-                            int(min(w, x2 + .5)), int(min(h, y2 + .5))],
-                    "points": [(int(k[0]), int(k[1])) for k in kpts],
-                })
+        if r.keypoints is None:
+            return out
+        for i in range(len(r.boxes)):
+            if len(out) >= 5:
+                break
+            score = float(r.boxes.conf[i])
+            x1, y1, x2, y2 = r.boxes.xyxy[i]
+            out.append({
+                "score": int(score * 100), "percent": int(score * 100),
+                "box": [int(max(0, x1 + .5)), int(max(0, y1 + .5)),
+                        int(min(w, x2 + .5)), int(min(h, y2 + .5))],
+                "points": [(int(k[0]), int(k[1])) for k in r.keypoints.xy[i]],
+            })
         return out
 
     def segment(self, image_path, lang="ko"):
         """영역을 칠한 그림 + 무엇을 칠했는지 이름·박스.
 
-        seg 모델은 박스·이름·점수를 다 내므로 그림만 돌려주면 아까웠다.
-        화면의 "풀이" 문장도 이 이름 목록으로 만든다."""
-        r = self.seg(image_path)[0]
+        화면의 "풀이" 문장도 이 이름 목록으로 만든다.
+        라벨 · 박스는 그리지 않는다 — 그림에 새기는 글씨는 영문 클래스 이름이라 화면 언어와 어긋난다.
+        색칠만 하고, 이름은 화면 · 라이브러리가 그린다."""
+        from easydetect.plotting import draw_masks
+        image = cv2.imread(image_path)
+        r = self.seg(image)[0]
         names = COCO_KO if str(lang).startswith("ko") else COCO_EN
         found = []
-        for box in (r.boxes or []):
-            score = float(box.conf[0])
-            if score < 0.3:
-                continue
-            x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
-            cls_id = int(box.cls[0])
+        for (x1, y1, x2, y2), score, cls_id in zip(r.boxes.xyxy, r.boxes.conf, r.boxes.cls):
+            cls_id = int(cls_id)
             found.append({"name": names[cls_id], "name_en": COCO_EN[cls_id],
-                          "score": int(score * 100),
+                          "score": int(float(score) * 100),
                           "box": [int(x1), int(y1), int(x2), int(y2)]})
-        # 라벨·박스는 그리지 않는다 — Ultralytics 가 새기는 글씨는 영문 클래스 이름이라
-        # 화면 언어와 어긋난다. 색칠만 받고, 이름은 화면·라이브러리가 그린다.
-        return {"image": to_b64_jpg(r.plot(labels=False, boxes=False)), "object": found}
+        painted = draw_masks(image, r.masks.data, r.boxes.cls) if r.masks is not None and len(r.masks) else image
+        return {"image": to_b64_jpg(painted), "object": found}
 
 
 # 개별 인식 모델이 내는 영문 클래스 이름 -> 한국어. 없으면 영문을 그대로 쓴다
 # (숫자 모델의 "0"~"9", "+" 같은 것은 번역할 게 없다)
 class UserYolo:
-    """사람이 가져다 둔 사물 찾기 모델로 인식한다 — YOLO(ultralytics) 와 easydetect 둘 다.
+    """사람이 가져다 둔 사물 찾기 모델로 인식한다 — easydetect-lab 에서 학습한 .onnx.
+
+    easydetect-lab 의 [Pibo 로 보내기] 로 받은 .onnx 하나를 [모델 폴더]에 넣는다.
+    파이보 · 파이브레인에 넣는 그 파일 그대로다. 이름표와 추천 확신도가 파일 안에 들어 있고,
+    여기서는 OpenVINO 로 돌린다. (이름은 예전 그대로 UserYolo — 화면 · 서버가 이 이름으로 부른다.)
 
     프로그램이 들고 오는 모델과 다른 점 둘:
       - 기동 때 안 올린다. 처음 쓸 때 올리고 그대로 들고 있는다(_cache).
-      - 이름은 파일 이름 그대로 — 번역표가 없으므로 name 과 name_en 이 같다.
+      - 이름은 파일 안의 이름표 그대로 — 번역표가 없으므로 name 과 name_en 이 같다.
     파일은 작업폴더의 models 칸(paths.YOLO_DIR)에서만 찾는다. 바깥 경로를
     받지 않는 것은 화면에서 고른 이름이 그대로 파일 경로가 되기 때문이다.
-
-    넣을 수 있는 것:
-      - YOLO : .pt · .onnx · xxx_openvino_model 폴더 (ultralytics 가 내보낸 그대로)
-      - easydetect : easydetect-lab 의 [Pibo 로 보내기] 로 받은 .onnx 하나.
-        파이보 · 파이브레인에 넣는 그 파일 그대로다. 이름표와 추천 확신도가 파일 안에 들어 있고,
-        여기서는 OpenVINO 로 돌린다.
-    같은 .onnx 라도 어느 쪽인지는 파일 안의 easydetect 표시(easydetect.names)로 가른다.
     """
 
-    EXTS = (".pt", ".onnx")
+    EXTS = (".onnx",)
     ED_NAMES_KEY = "easydetect.names"      # easydetect 가 .onnx 안에 넣는 이름표
     ED_CONF_KEY = "easydetect.conf"        # lab 이 검증 사진으로 고른 추천 확신도
-    DEFAULT_CONF = 0.3
 
     def __init__(self):
         self._cache = {}
@@ -264,13 +250,10 @@ class UserYolo:
         out = []
         try:
             for n in sorted(os.listdir(d)):
-                full = os.path.join(d, n)
-                if os.path.isfile(full) and n.lower().endswith(cls.EXTS):
-                    out.append(n)
-                elif os.path.isdir(full) and n.endswith("_openvino_model"):
+                if os.path.isfile(os.path.join(d, n)) and n.lower().endswith(cls.EXTS):
                     out.append(n)
         except Exception as ex:
-            print("[user-yolo] 폴더를 읽지 못했어요:", ex)
+            print("[user-model] 폴더를 읽지 못했어요:", ex)
         return out
 
     def _resolve(self, name):
@@ -279,12 +262,9 @@ class UserYolo:
         if not base:
             raise ValueError("모델 이름이 비었어요.")
         d = self.folder()
-        cand = [base] if (base.lower().endswith(self.EXTS)
-                          or base.endswith("_openvino_model")) else \
-               [base + e for e in self.EXTS] + [base + "_openvino_model"]
-        for c in cand:
+        for c in ([base] if base.lower().endswith(self.EXTS) else []) + [base + e for e in self.EXTS]:
             full = os.path.join(d, c)
-            if os.path.exists(full):
+            if os.path.isfile(full):
                 return full
         have = ", ".join(self.files()) or "(아직 없어요)"
         raise FileNotFoundError(
@@ -292,7 +272,7 @@ class UserYolo:
 
     @staticmethod
     def _onnx_meta(path):
-        """.onnx 안의 metadata — 모델 전체를 읽지 않고 머리 부분만 본다. easydetect 가 없으면 빈 것."""
+        """.onnx 안의 metadata — 모델 전체를 읽지 않고 머리 부분만 본다."""
         try:
             from easydetect.predictor import onnx_metadata
             return onnx_metadata(Path(path))
@@ -303,19 +283,17 @@ class UserYolo:
     def _is_easydetect(cls, full, meta):
         """.onnx 가 easydetect 것인가.
 
-        lab 이 내보낸 것은 안에 easydetect.names 가 있다. ultralytics 가 내보낸 것은 stride · task 가 있다.
-        둘 다 없으면(허깅페이스의 ed-s.onnx 처럼 이름표를 옆 파일에 둔 것) 출력 모양으로 가른다 —
-        easydetect 는 상자(…, 4) 와 점수 두 개, YOLO 는 하나다."""
-        if not full.lower().endswith(".onnx"):
-            return False
+        lab 이 내보낸 것은 안에 easydetect.names 가 있다. ultralytics(YOLO) 가 내보낸 것은 stride · task 가 있다.
+        둘 다 없으면(허깅페이스의 ed-*.onnx 처럼 이름표를 옆 파일에 둔 것) 출력 모양으로 가른다 —
+        easydetect 는 상자(…, 4) 와 점수 두 개를 낸다."""
         if cls.ED_NAMES_KEY in meta:
             return True
         if "stride" in meta or "task" in meta or "Ultralytics" in meta.get("author", ""):
             return False
         try:
             outs = core.read_model(full).outputs
-            return len(outs) == 2 and any(o.get_partial_shape()[-1].get_length() == 4 for o in outs
-                                          if o.get_partial_shape()[-1].is_static)
+            return len(outs) == 2 and any(o.get_partial_shape()[-1].is_static
+                                          and o.get_partial_shape()[-1].get_length() == 4 for o in outs)
         except Exception:
             return False
 
@@ -324,51 +302,41 @@ class UserYolo:
         with self.lock:
             m = self._cache.get(full)
             if m is None:                              # 처음 쓸 때만 올린다
-                meta = self._onnx_meta(full) if full.lower().endswith(".onnx") else {}
-                if self._is_easydetect(full, meta):
-                    from easydetect import Detector
-                    try:
-                        conf = float(meta.get(self.ED_CONF_KEY))
-                    except (TypeError, ValueError):
-                        conf = None
-                    net = Detector(full, device="CPU", verbose=False, backend="openvino")
-                    m = {"kind": "easydetect", "lock": threading.Lock(), "net": net,
-                         "conf": conf if conf is not None else EdDetector.CONF}
-                else:
-                    m = {"kind": "yolo", "conf": None, "net": Yolo(full)}
+                meta = self._onnx_meta(full)
+                if not self._is_easydetect(full, meta):
+                    raise ValueError("easydetect-lab 에서 받은 .onnx 만 쓸 수 있어요: %s\n"
+                                     "(YOLO 모델은 더 이상 읽지 않아요 — easydetect-lab 에서 학습해 [Pibo 로 보내기] 로 받아 주세요)"
+                                     % os.path.basename(full))
+                from easydetect import Detector
+                try:
+                    conf = float(meta.get(self.ED_CONF_KEY))
+                except (TypeError, ValueError):
+                    conf = None
+                m = {"lock": threading.Lock(), "conf": conf if conf is not None else EdModels.CONF,
+                     "net": Detector(full, device="CPU", verbose=False, backend="openvino")}
                 self._cache[full] = m
             return m
 
     def predict(self, name, image_path, conf=None):
-        """conf 를 안 주면 모델이 추천하는 값(easydetect .onnx 안의 것). 없으면 easydetect 0.5, YOLO 0.3."""
+        """conf 를 안 주면 모델이 추천하는 값(.onnx 안의 것), 없으면 0.5."""
         m = self._model(name)
         if conf is None:
-            conf = m["conf"] if m["conf"] is not None else self.DEFAULT_CONF
-        if m["kind"] == "easydetect":
-            with m["lock"]:
-                r = m["net"](image_path, conf=conf)[0]
-        else:
-            r = m["net"](image_path)[0]
-        b = r.boxes
-        if b is None or len(b) == 0:
-            return []
-        arr = lambda x: x.cpu().numpy() if hasattr(x, "cpu") else np.asarray(x)   # torch · numpy 둘 다
+            conf = m["conf"]
+        with m["lock"]:
+            r = m["net"](image_path, conf=conf)[0]
         names = r.names or {}
         out = []
-        for (x1, y1, x2, y2), score, c in zip(arr(b.xyxy), arr(b.conf), arr(b.cls)):
-            score = float(score)
-            if score < conf:
-                continue
-            raw = names.get(int(c)) if isinstance(names, dict) else names[int(c)]
+        for (x1, y1, x2, y2), score, c in zip(r.boxes.xyxy, r.boxes.conf, r.boxes.cls):
+            raw = names.get(int(c))
             if raw is None:              # 이름표 없는 .onnx (허깅페이스의 ed-*.onnx 를 그대로 넣은 것) — COCO 80종 순서다
                 raw = COCO_EN[int(c)] if int(c) < len(COCO_EN) else str(int(c))
             en = str(raw).strip()
             out.append({"name": en, "name_en": en,
-                        "percent": int(score * 100), "score": int(score * 100),
+                        "percent": int(float(score) * 100), "score": int(float(score) * 100),
                         "box": (int(x1), int(y1), int(x2), int(y2))})
         return out
 
-# ---------------------------------------------------------------- 얼굴 스위트 (OV 프리트레인 + YOLO mask cls)
+# ---------------------------------------------------------------- 얼굴 스위트 (OV 프리트레인 + 마스크 분류)
 class OVModel:
     def __init__(self, xml_path, device):
         model = core.read_model(xml_path)
@@ -485,21 +453,44 @@ class HeadPose(OVModel):
 
 
 class MaskCls:
-    """mask-11s-cls (YOLO classification, 입력=얼굴 크롭 224)."""
+    """mask-11s-cls — 마스크를 썼는지(with_mask / without_mask). 입력 = 얼굴 크롭 224.
 
-    def __init__(self):
-        self.model = Yolo(MODELS / "object/mask-11s-cls_openvino_model", task="classify")
+    YOLO11s 분류 모델로 학습한 것이지만, 실행은 OpenVINO 로 직접 한다(ultralytics 없이).
+    전처리는 ultralytics 분류와 똑같이: RGB → 짧은 변을 224 로(쌍선형) → 가운데 224×224 → 0~1 → NCHW.
+    모델 끝에 softmax 가 들어 있어 출력이 곧 확률이다. 이름표 순서는 같은 폴더의 metadata.yaml."""
+
+    DIR = MODELS / "object/mask-11s-cls_openvino_model"
+
+    def __init__(self, device="CPU"):
+        import yaml
+        xml = next(self.DIR.glob("*.xml"))
+        self.compiled = core.compile_model(core.read_model(xml), device)
+        with open(self.DIR / "metadata.yaml", encoding="utf-8") as f:
+            names = yaml.safe_load(f).get("names") or {0: "with_mask", 1: "without_mask"}
+        self.names = {int(k): str(v) for k, v in names.items()}
+        self.lock = threading.Lock()
+
+    @staticmethod
+    def _prep(face_bgr, size=224):
+        from PIL import Image
+        im = Image.fromarray(cv2.cvtColor(face_bgr, cv2.COLOR_BGR2RGB))
+        w, h = im.size
+        s = size / min(w, h)
+        im = im.resize((max(size, round(w * s)), max(size, round(h * s))), Image.BILINEAR)
+        w, h = im.size
+        left, top = int(round((w - size) / 2.0)), int(round((h - size) / 2.0))
+        im = im.crop((left, top, left + size, top + size))
+        return (np.asarray(im, np.float32) / 255.0).transpose(2, 0, 1)[None]
 
     def predict(self, face_bgr, lang="ko"):
-        r = self.model(face_bgr, imgsz=224)[0]
-        idx = int(r.probs.top1)
-        name = r.names[idx] if not isinstance(r.names, dict) else r.names.get(idx, "")
-        on = 1 if name == "with_mask" else 0
+        with self.lock:
+            p = np.asarray(self.compiled(self._prep(face_bgr))[0]).reshape(-1)
+        idx = int(p.argmax())
+        on = 1 if self.names.get(idx, "") == "with_mask" else 0
         ko, en = ("마스크 씀", "mask") if on else ("맨얼굴", "no-mask")
         return {"mask": on, "name": ko if str(lang).startswith("ko") else en,
                 "name_en": en,
-                "score": round(float(r.probs.top1conf) * 100, 2)}
-
+                "score": round(float(p[idx]) * 100, 2)}
 
 class FaceEngine:
     def __init__(self):
