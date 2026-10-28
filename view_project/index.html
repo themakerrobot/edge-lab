@@ -1350,8 +1350,9 @@
             ctx.strokeRect(x1*scaleX, y1*scaleY, (x2 - x1)*scaleX, (y2 - y1)*scaleY);
             const points = item.points;
             /* 확신 낮은 관절은 그리지 않는다 — 안 보이는 다리도 자리는 짐작해 내는데(확신 0.1~0.3)
-               그것까지 이으면 사진 아래쪽에 선이 뭉친다. 기준은 가르치기 화면과 같은 0.5 */
-            const vis = i => !item.conf || item.conf[i] >= 0.5;
+               그것까지 이으면 사진 아래쪽에 선이 뭉친다. 얼굴·어깨·팔(0~10)은 팔짱처럼 가려져도
+               0.4~0.5 로 제자리에 나오므로 0.4, 엉덩이·다리(11~16)는 0.5. 가르치기 화면과 같은 기준 */
+            const vis = i => !item.conf || item.conf[i] >= (i <= 10 ? 0.4 : 0.5);
             draw_points.forEach(pair => {
               if (!vis(pair[0]) || !vis(pair[1])) return;
               const p1 = points[pair[0]];
