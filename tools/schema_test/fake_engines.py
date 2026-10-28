@@ -61,7 +61,7 @@ class _Object:
 
     def points(self, path):
         return [{"score": 90, "box": [10, 20, 120, 200],
-                 "points": [(i, i) for i in range(17)]}]
+                 "points": [(i, i) for i in range(17)], "conf": [0.9] * 17}]
 
     def segment(self, path, lang="ko"):
         names = COCO_KO if str(lang).startswith("ko") else COCO_EN

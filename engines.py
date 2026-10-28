@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # edge-lab : on-device inference engines (Intel Meteor Lake / OpenVINO)
-# 디바이스 배정: VLM/YOLO/gan=GPU, 얼굴 스위트=NPU(없으면 GPU→CPU), ocr/qr=CPU
+# 디바이스 배정: VLM/gan=GPU, easydetect=CPU, 얼굴 스위트=NPU(없으면 GPU→CPU), ocr/qr=CPU
 import base64
 import os
 import threading
@@ -190,6 +190,9 @@ class ObjectEngine:
                 "box": [int(max(0, x1 + .5)), int(max(0, y1 + .5)),
                         int(min(w, x2 + .5)), int(min(h, y2 + .5))],
                 "points": [(int(k[0]), int(k[1])) for k in r.keypoints.xy[i]],
+                # 관절마다 확신도(0~1). 안 보이는 관절(상반신만 찍힌 사진의 다리 등)도 자리는 짐작해 내지만
+                # 확신이 0.1~0.3 으로 낮다 — 그리는 쪽이 낮은 것을 빼고 그린다(가르치기 화면과 같은 0.5).
+                "conf": [round(float(c), 2) for c in r.keypoints.conf[i]],
             })
         return out
 

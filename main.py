@@ -133,7 +133,7 @@ def build_device_map():
 
     print(f"[devices] face={DEVICE_OF.get('face_analyze')} "
           f"gan={DEVICE_OF.get('portrait')} vlm={DEVICE_OF.get('look')} "
-          f"yolo={DEVICE_OF.get('object_search')} code=CPU  (런타임 보고값)")
+          f"detect={DEVICE_OF.get('object_search')} code=CPU  (런타임 보고값)")
 
 
 # ---------------------------------------------------------------- 준비 상태
@@ -206,7 +206,7 @@ NPU(없으면 GPU→CPU), 말로 답하는 AI·사물 인식·사진 바꾸기�
 # 묶음 설명 — 안 적으면 옆 목록에 "custom", "gan" 같은 이름만 뜬다
 TAGS = [
     {"name": "face", "description": "얼굴 — 찾기 · 나이/성별 · 감정 · 거리와 방향 · 마스크"},
-    {"name": "object", "description": "사물 · 몸 · 손 — 80가지 사물, 사람 포즈, 손동작, 영역 칠하기. 가져온 YOLO 모델도 여기서 쓴다"},
+    {"name": "object", "description": "사물 · 몸 · 손 — 80가지 사물, 사람 포즈, 손동작, 영역 칠하기. 가져온 easydetect 모델도 여기서 쓴다"},
     {"name": "vlm", "description": "말로 답하는 AI — 사진에 대해 묻고 말로 답을 받는다 (몇 초 걸린다)"},
     {"name": "gan", "description": "사진 바꾸기 — 배경 제거 · 화질 4배 · 깊이 지도"},
     {"name": "code", "description": "글자 · QR — 문자 인식(OCR)과 QR/바코드"},
@@ -424,7 +424,7 @@ def object_seg(path, lang: str = "ko"):
 
 @app.get("/object/model_files", tags=["object"], summary="가져온 모델 목록")
 async def model_files():
-    """작업폴더의 models 칸에 있는 YOLO 모델 파일 이름을 돌려준다.
+    """작업폴더의 models 칸에 있는 easydetect 모델 파일(.onnx) 이름을 돌려준다.
 
     화면(블록 드롭다운·파이썬 도움말)이 이 목록을 그대로 보여 준다 —
     아이가 경로를 적을 일이 없게 하려는 것이다."""
@@ -456,7 +456,7 @@ async def detect_file(request: Request, uploadFile: UploadFile = File(...),
 
 @app.post("/system/open_models", tags=["system"], summary="모델 폴더 열기")
 async def open_models():
-    """가져온 YOLO 모델을 넣어 두는 폴더를 탐색기로 띄운다."""
+    """가져온 easydetect 모델을 넣어 두는 폴더를 탐색기로 띄운다."""
     import subprocess
     import engines as E
     target = E.UserYolo.folder()
@@ -1198,7 +1198,7 @@ async def system():
         "device_of": DEVICE_OF,          # 서비스명 -> 실행 디바이스 (프론트 HUD용)
         "models": {
             "vlm": "Gemma 3 4B INT4",
-            "detect": "YOLO11m (+pose/seg)",
+            "detect": "easydetect ed-m (+pose-m/MobileSAM)",
             "user": len(E.UserYolo.files()),   # 사람이 가져다 둔 모델 파일 수
             "face": 5, "transform": 4, "ocr": "easyocr ko/en",
         },

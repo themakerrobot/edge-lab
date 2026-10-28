@@ -161,7 +161,7 @@ STATS_DIR = os.path.join(WORK_ROOT, "stats")
 # 블록으로 만든 작품(.json). 파이썬 작품(pycode)과 같은 급이라 나란히 둔다.
 BLOCKS_DIR = os.path.join(WORK_ROOT, "blocks")
 
-# 학생·강사가 가져온 YOLO 모델 파일(.pt). 프로그램이 들고 온 models/ 와 달리
+# 학생·강사가 가져온 easydetect 모델 파일(.onnx). 프로그램이 들고 온 models/ 와 달리
 # 사람이 넣고 빼는 자리라 작업폴더에 둔다 — USB 로 옮기면 모델도 따라간다.
 YOLO_DIR = os.path.join(WORK_ROOT, "models")
 
