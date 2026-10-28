@@ -53,6 +53,8 @@
                    border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; cursor: pointer; font-size: .9rem; position: relative; }
     .pick button b { font-weight: 600; line-height: 1.2; }
     .pick button small { position: absolute; top: 3px; right: 5px; font-size: 11px; color: var(--pen-red); font-weight: 700; }
+    .pick button small.race { color: var(--cyan-d); }
+    .pick .ph { grid-column: 1 / -1; font-size: var(--fs-side, 13px); font-weight: 700; color: var(--ink-2); padding-top: 4px; }
     .pick button.on { border-color: var(--cyan); background: var(--cyan-bg); }
     .pick svg { width: 48px; height: 30px; flex: 0 0 auto; }
 
@@ -62,6 +64,8 @@
     .seg button + button { border-left: 1.5px solid var(--line-d); }
     .seg button.on { background: var(--pen-blue); color: #fff; }
     .seg.big { display: flex; } .seg.big button { flex: 1; min-height: var(--tap, 48px); font-size: 1rem; }
+    .seg button:disabled { opacity: .4; cursor: not-allowed; }
+    .grp { font-size: var(--fs-side, 13px); font-weight: 700; color: var(--ink-2); margin-top: 2px; }
 
     /* 막대 */
     .bar { display: flex; flex-direction: column; gap: 2px; }
@@ -92,6 +96,14 @@
     .pad svg { width: 30px; height: 30px; }
     .pad.on { background: var(--pen-blue); color: #fff; }
     .padrow .hint { flex: 1; text-align: center; }
+    .pads2 { display: flex; flex-direction: column; gap: 6px; } .pads2 .pad { height: 40px; }
+    .pads2[hidden] { display: none; }
+    .board { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-side, 13px); }
+    .board .ln { display: grid; grid-template-columns: 18px 1fr; column-gap: 6px; align-items: center; }
+    .board .ln b { font-weight: 600; } .board .ln .d { grid-column: 2; color: var(--ink-2); }
+    .board svg { width: 16px; height: 16px; display: block; }
+    .board .tot { font-weight: 700; color: var(--cyan-d); padding-top: 4px; border-top: 1px dashed var(--line); }
+    .board .ok { color: var(--go); } .board .no { color: var(--bad); }
 
     /* 배우기 */
     .prg .lb { display: flex; justify-content: space-between; font-size: var(--fs-side, 13px); }
@@ -129,6 +141,11 @@
     <div class="panel side">
       <div class="panel-head"><span class="q"><span class="qnum">1</span><span class="qtext" id="txtQ1"></span></span></div>
       <div class="panel-body">
+        <div class="seg big" id="modeSeg">
+          <button type="button" data-mode="basic" class="on"></button>
+          <button type="button" data-mode="pro"></button>
+        </div>
+        <div class="hint" id="modeHint"></div>
         <div class="pick" id="trackPick"></div>
         <div class="sec">
           <div class="st" id="txtWho"></div>
@@ -171,6 +188,10 @@
         <div class="padrow">
           <button class="pad" id="padL" type="button"></button>
           <div class="hint" id="keyHint"></div>
+          <div class="pads2" id="padsUD" hidden>
+            <button class="pad" id="padU" type="button"></button>
+            <button class="pad" id="padD" type="button"></button>
+          </div>
           <button class="pad" id="padR" type="button"></button>
         </div>
       </div>
@@ -185,6 +206,11 @@
           <div class="lb"><span id="prgLabel"></span><span class="num" id="prgPct"></span></div>
           <div class="tr"><div class="fl" id="prgFill"></div></div>
         </div>
+        <div class="row">
+          <button class="btn" id="saveAiBtn" type="button" disabled></button>
+          <button class="btn" id="loadAiBtn" type="button"></button>
+          <input type="file" id="aiFile" accept=".json,application/json" hidden>
+        </div>
         <canvas id="chart"></canvas>
         <div class="legend"><span><i style="background:var(--pen-blue)"></i><span id="txtAcc"></span></span><span><i style="background:var(--pen-red)"></i><span id="txtLoss"></span></span></div>
         <div class="sec">
@@ -195,6 +221,12 @@
         <div class="sec">
           <div class="st" id="txtChoice"></div>
           <div id="choice"></div>
+        </div>
+        <div class="sec">
+          <div class="st" id="txtRace"></div>
+          <button class="btn wide" id="raceBtn" type="button" disabled></button>
+          <div class="board" id="raceBoard"></div>
+          <div class="hint" id="txtRaceHint"></div>
         </div>
         <div class="sec">
           <div class="st" id="txtRuns"></div>
@@ -217,77 +249,125 @@
     document.documentElement.lang = LANG;
     var I18N = {
       ko: { title: "edge-lab — 자동차 가르치기", lang: "EN", q1: "운전 교실", q3: "배우기 · AI",
-            s1: "① 운전하기", s2: "② 배우기", s3: "③ AI 운전", s4: "④ 새 트랙", forTest: "시험용",
+            s1: "① 운전하기", s2: "② 배우기", s3: "③ AI 운전", s4: "④ 새 트랙", forTest: "시험용", forRace: "대회",
+            basic: "초급", pro: "고급",
+            basicHint: "방향만 가르쳐요. 차는 늘 같은 빠르기로 달려요.",
+            proHint: "방향과 빠르기를 함께 가르쳐요. ↑ 가속 · ↓ 감속. 빠를수록 크게 돌아서, 커브 앞에서 줄여야 해요.",
+            practice: "연습 트랙", raceTracks: "대회 트랙 — AI만 달려요",
             who: "누가 운전할까요?", me: "나", ai: "AI",
             whoMe: "내가 운전하는 동안 AI가 보고 배워요.", whoAi: "AI가 운전해요. 키를 누르면 내가 끼어들어 고쳐 가르쳐요.",
+            whoRace: "대회 트랙에서는 AI만 달려요. 끼어들 수 없어요 — 연습 트랙에서 가르친 실력 그대로예요.",
             data: "AI에게 보여 준 운전", total: "모두 {n}장면", clear: "지우기", clearAsk: "보여 준 운전을 모두 지울까요?",
-            left: "왼쪽", straight: "곧게", right: "오른쪽",
-            rEmpty: "운전을 시작하면 장면이 쌓여요.", rOk: "양쪽으로 도는 장면이 넉넉해요. 배우기를 눌러 봐요!",
-            rNeed: "{dir}으로 도는 장면이 더 필요해요 ({n}/{need})",
+            left: "왼쪽", straight: "곧게", right: "오른쪽", gDir: "방향", gThr: "빠르기",
+            brake: "감속", keep: "그대로", accel: "가속",
+            rEmpty: "운전을 시작하면 장면이 쌓여요.", rOk: "넉넉해요. 배우기를 눌러 봐요!",
+            rNeed: "{dir} 장면이 더 필요해요 ({n}/{need})",
             tip: "바퀴 수보다 왼쪽·오른쪽으로 도는 장면이 골고루 있는 게 중요해요. 둥근 트랙은 한쪽으로만 돌아요.",
-            go: "출발", stop: "멈춤", fast: "AI 3배", fastTip: "AI 운전을 3배 빠르게", speed: "속도", slow: "느리게", normal: "보통", quick: "빠르게",
-            laps: "{n}바퀴", keys: "← → 키(또는 A D)로 운전해요. 아무것도 안 누르면 곧게 가요. 스페이스 = 출발/멈춤",
-            crash: "쾅! 길 밖으로 나갔어요", finish: "{n}바퀴 완주!",
+            tipPro: "직선에서 가속, 커브 앞에서 감속하는 장면을 골고루 보여 주세요. 감속을 안 보여 주면 AI도 안 줄여요.",
+            go: "출발", stop: "멈춤", fast: "빨리 감기 ×3", fastTip: "AI 운전을 3배 빨리 감아 봐요 (기록은 그대로)", speed: "보기 속도", slow: "느리게", normal: "보통", quick: "빠르게",
+            laps: "{n}바퀴", sec: "{n}초", times: "{n}배",
+            keys: "← → 키(또는 A D)로 운전해요. 아무것도 안 누르면 곧게 가요. 스페이스 = 출발/멈춤",
+            keysPro: "← → 방향 · ↑ ↓ 가속/감속 (또는 A D W S). 스페이스 = 출발/멈춤",
+            crash: "쾅! 길 밖으로 나갔어요", finish: "{n}바퀴 완주!", finishPro: "{n}바퀴 완주! 가장 빠른 바퀴 {t}초",
             train: "배우기 시작", trainAgain: "다시 배우기", trainHint: "운전을 조금 보여 준 뒤에 눌러요.",
             notYet: "아직 안 배웠어요", learning: "배우는 중", learned: "다 배웠어요 · 맞힌 비율 {p}%",
             learnedHint: "장면 {n}개로 배웠어요. 이제 AI에게 운전을 맡겨 봐요.",
             needTurn: "왼쪽이나 오른쪽으로 도는 운전도 보여 주세요", needTrain: "먼저 배우기를 해 주세요",
+            needThr: "가속이나 감속하는 운전도 보여 주세요",
             acc: "맞힌 비율", loss: "틀린 정도",
-            sens: "AI가 보는 숫자 — 센서 7개", sensHint: "AI는 트랙 그림이 아니라 이 숫자만 봐요. 1에 가까울수록 길이 멀리 열려 있어요.",
+            sens: "AI가 보는 숫자 — 센서 7개", sensPro: "AI가 보는 숫자 — 센서 7개 + 빠르기",
+            sensHint: "AI는 트랙 그림이 아니라 이 숫자만 봐요. 1에 가까울수록 길이 멀리 열려 있어요.",
+            vName: "빠르기",
             choice: "AI라면 이렇게 해요", afterTrain: "배운 뒤에 보여요", cutting: "지금은 내가 끼어들어 운전 중이에요",
-            runs: "AI 운전 기록", none: "아직 없어요", done: "완주", stopAt: "{n}바퀴에서 멈춤", cut: "끼어들기 {n}" },
+            saveAi: "AI 저장", loadAi: "AI 불러오기", loaded: "{mode} AI를 불러왔어요 (장면 {n}개로 배운 것)", badFile: "불러오지 못했어요: {e}",
+            race: "대회 기록", raceRun: "대회 트랙 3개 달리기", raceRunning: "달리는 중…",
+            raceHint: "대회 트랙마다 AI만 3바퀴 달려요. 같은 AI면 어느 컴퓨터에서 해도 결과가 같아요.",
+            raceNone: "AI를 배운 뒤 눌러 봐요.",
+            raceTotBasic: "간 거리 {p} / 9바퀴 · 배운 장면 {n}개",
+            raceTotPro: "완주 {c} / 3 · 걸린 시간 합 {t}초 · 최고 속도 {v}배",
+            raceTieBasic: "순위: 간 거리가 길수록 · 같으면 배운 장면이 적을수록",
+            raceTiePro: "순위: 완주가 많을수록 · 같으면 걸린 시간 합이 짧을수록",
+            runs: "AI 운전 기록", none: "아직 없어요", done: "완주", stopAt: "{n}바퀴에서 멈춤", cut: "끼어들기 {n}",
+            best: "가장 빠른 바퀴 {t}초", avg: "평균 {t}초", top: "최고 속도 {v}배" },
       en: { title: "edge-lab — Teach a car", lang: "한", q1: "Driving class", q3: "Learn · AI",
-            s1: "① Drive", s2: "② Learn", s3: "③ AI drives", s4: "④ New track", forTest: "test",
+            s1: "① Drive", s2: "② Learn", s3: "③ AI drives", s4: "④ New track", forTest: "test", forRace: "race",
+            basic: "Basic", pro: "Advanced",
+            basicHint: "Teach steering only. The car always runs at the same speed.",
+            proHint: "Teach steering and speed. ↑ faster · ↓ slower. The faster, the wider it turns — slow down before corners.",
+            practice: "Practice tracks", raceTracks: "Race tracks — AI only",
             who: "Who drives?", me: "Me", ai: "AI",
             whoMe: "While you drive, the AI watches and learns.", whoAi: "The AI drives. Press a key to take over and correct it.",
+            whoRace: "Only the AI drives on race tracks, no take-overs — it shows what you taught on the practice tracks.",
             data: "Driving shown to the AI", total: "{n} scenes in all", clear: "Clear", clearAsk: "Clear all the driving you showed?",
-            left: "Left", straight: "Straight", right: "Right",
-            rEmpty: "Scenes pile up once you start driving.", rOk: "Plenty of turns both ways. Press Learn!",
-            rNeed: "Needs more {dir} turns ({n}/{need})",
+            left: "Left", straight: "Straight", right: "Right", gDir: "Steering", gThr: "Speed",
+            brake: "Slower", keep: "Keep", accel: "Faster",
+            rEmpty: "Scenes pile up once you start driving.", rOk: "Plenty. Press Learn!",
+            rNeed: "Needs more {dir} ({n}/{need})",
             tip: "Balanced left and right turns matter more than the number of laps. The round track only turns one way.",
-            go: "Go", stop: "Stop", fast: "AI ×3", fastTip: "Run the AI three times faster", speed: "Speed", slow: "Slow", normal: "Normal", quick: "Fast",
-            laps: "{n} laps", keys: "Drive with ← → (or A D). Nothing pressed = straight. Space = go/stop",
-            crash: "Crash! Off the road", finish: "{n} laps done!",
+            tipPro: "Show speeding up on straights and slowing before corners. If you never slow down, neither will the AI.",
+            go: "Go", stop: "Stop", fast: "Fast-forward ×3", fastTip: "Watch the AI three times faster (times are unchanged)", speed: "View", slow: "Slow", normal: "Normal", quick: "Fast",
+            laps: "{n} laps", sec: "{n}s", times: "×{n}",
+            keys: "Drive with ← → (or A D). Nothing pressed = straight. Space = go/stop",
+            keysPro: "← → steer · ↑ ↓ faster/slower (or A D W S). Space = go/stop",
+            crash: "Crash! Off the road", finish: "{n} laps done!", finishPro: "{n} laps done! Best lap {t}s",
             train: "Start learning", trainAgain: "Learn again", trainHint: "Show some driving first, then press.",
             notYet: "Not learned yet", learning: "Learning", learned: "Done · {p}% right",
             learnedHint: "Learned from {n} scenes. Now let the AI drive.",
             needTurn: "Show some left or right turns too", needTrain: "Press Learn first",
+            needThr: "Show some speeding up or slowing down too",
             acc: "Right answers", loss: "How wrong",
-            sens: "What the AI sees — 7 sensors", sensHint: "The AI never sees the picture, only these numbers. Near 1 means the road is open far ahead.",
+            sens: "What the AI sees — 7 sensors", sensPro: "What the AI sees — 7 sensors + speed",
+            sensHint: "The AI never sees the picture, only these numbers. Near 1 means the road is open far ahead.",
+            vName: "speed",
             choice: "What the AI would do", afterTrain: "Shows up after learning", cutting: "You are driving now (taking over)",
-            runs: "AI runs", none: "None yet", done: "Finished", stopAt: "Stopped at {n} laps", cut: "take-overs {n}" }
+            saveAi: "Save AI", loadAi: "Load AI", loaded: "Loaded the {mode} AI (learned from {n} scenes)", badFile: "Couldn't load it: {e}",
+            race: "Race record", raceRun: "Run the 3 race tracks", raceRunning: "Running…",
+            raceHint: "On each race track only the AI drives, 3 laps. The same AI gets the same result on any computer.",
+            raceNone: "Teach the AI first, then press.",
+            raceTotBasic: "Distance {p} / 9 laps · learned from {n} scenes",
+            raceTotPro: "Finished {c} / 3 · total time {t}s · top speed ×{v}",
+            raceTieBasic: "Ranking: longer distance · then fewer scenes",
+            raceTiePro: "Ranking: more finishes · then shorter total time",
+            runs: "AI runs", none: "None yet", done: "Finished", stopAt: "Stopped at {n} laps", cut: "take-overs {n}",
+            best: "best lap {t}s", avg: "avg {t}s", top: "top speed ×{v}" }
     };
     function t(k) { return I18N[LANG][k] !== undefined ? I18N[LANG][k] : I18N.ko[k]; }
     function $(id) { return document.getElementById(id); }
     function css(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+    function f1(v) { return (+v).toFixed(1); }
     var IC = {
       left: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>',
       right: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
       up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
+      down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>',
       play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l12.5-7.5Z"/></svg>',
       stop: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>',
       fast: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.5v13l9-6.5Zm9 0v13l9-6.5Z"/></svg>',
       flag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 21V4M5 4h13l-3 4.5 3 4.5H5"/></svg>',
       boom: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 2 2.2 5.5L20 5l-2.5 5.8L22 14l-5.8.8L17 21l-5-3.8L7 21l.8-6.2L2 14l4.5-3.2L4 5l5.8 2.5Z"/></svg>',
       trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',
-      learn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 4 22 8.6 12 13.2 2 8.6 12 4Z"/><path d="M6 10.6v4.9c0 1.7 2.7 3.1 6 3.1s6-1.4 6-3.1v-4.9"/></svg>'
+      learn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 4 22 8.6 12 13.2 2 8.6 12 4Z"/><path d="M6 10.6v4.9c0 1.7 2.7 3.1 6 3.1s6-1.4 6-3.1v-4.9"/></svg>',
+      save: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>',
+      open: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V9M7 14l5-5 5 5M5 4h14"/></svg>',
+      trophy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0V4ZM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8"/></svg>'
     };
-    var ACT = ["left", "straight", "right"], ACT_IC = [IC.left, IC.up, IC.right];
+    var ACT = ["left", "straight", "right"], ACT_IC = [IC.left, IC.up, IC.right], THR = ["brake", "keep", "accel"];
 
     /* ml-lab DEVELOP.md 에서 잰 값 그대로 — 바꾸면 "양쪽 30장면이면 세 트랙 완주" 가 깨진다 */
     var RECORD_EVERY = 3;        // 3걸음마다 한 장면 (초당 20장)
     var REACT_STEPS = 6;         // 누른 키를 0.1초(6걸음) 전 센서와 짝짓는다 — 사람의 반응 지연
-    var AI_LAPS = 3, EPOCHS = 60, MIN_SAMPLES = 30, READY_TURNS = 30;
+    var AI_LAPS = 3, EPOCHS = 60, MIN_SAMPLES = 30, READY_TURNS = 30, READY_THR = 20;
 
-    /* ── 상태 ── */
+    /* ── 상태 ──
+     * 초급(basic)과 고급(pro)은 AI 가 보는 숫자 개수가 달라(7 · 8) 모은 운전과 AI 를 따로 둔다 */
     var built = D.TRACKS.map(D.buildTrack), ti = 0, track = built[0];
     var car = new D.Car(track);
+    function newMode() { return { data: { X: [], Y: [] }, policy: null, lastAcc: null, hist: [], runs: [], trainedOn: 0, race: null }; }
+    var MODES = { basic: newMode(), pro: newMode() }, mode = "basic", M = MODES.basic;
     var who = "me", running = false, fast = false, speed = 0.55, step = 1, tick = 0;
-    var keys = { left: false, right: false };
-    var data = { X: [], Y: [] };
-    var policy = null, training = false, lastAcc = null, hist = [];
+    var keys = { left: false, right: false, up: false, down: false };
+    var training = false, racing = false;
     var lastSense = car.sense(), lastByMe = false, cutIns = 0, senseHist = [];
-    var runs = [];
 
     var toastTimer = 0;
     function toast(msg) {
@@ -302,28 +382,56 @@
       });
     }
     function tname(tr) { return LANG === "en" ? tr.def.en : tr.def.ko; }
+    function pro() { return mode === "pro"; }
+    function race() { return !!track.def.contest; }
+    function sense() { return pro() ? car.sense2() : car.sense(); }
 
     /* ── 글자 ── */
     function paintText() {
       document.title = t("title"); $("langButton").textContent = t("lang");
       $("txtQ1").textContent = t("q1"); $("txtQ3").textContent = t("q3");
       Array.prototype.forEach.call($("steps").children, function (el) { el.textContent = t("s" + el.getAttribute("data-s")); });
+      $("modeSeg").children[0].textContent = t("basic"); $("modeSeg").children[1].textContent = t("pro");
       $("txtWho").textContent = t("who");
       $("whoSeg").children[0].textContent = t("me"); $("whoSeg").children[1].textContent = t("ai");
-      $("txtData").textContent = t("data"); $("txtTip").textContent = t("tip");
+      $("txtData").textContent = t("data");
       $("clearBtn").innerHTML = IC.trash + " " + t("clear");
       $("goBtn").innerHTML = IC.play + " " + t("go"); $("stopBtn").innerHTML = IC.stop + " " + t("stop");
       $("fastBtn").innerHTML = IC.fast + " " + t("fast"); $("fastBtn").title = t("fastTip");
       $("txtSpeed").textContent = t("speed");
       var sp = $("speedSeg").children; sp[0].textContent = t("slow"); sp[1].textContent = t("normal"); sp[2].textContent = t("quick");
-      $("padL").innerHTML = IC.left; $("padR").innerHTML = IC.right; $("keyHint").textContent = t("keys");
+      $("padL").innerHTML = IC.left; $("padR").innerHTML = IC.right; $("padU").innerHTML = IC.up; $("padD").innerHTML = IC.down;
       $("txtAcc").textContent = t("acc"); $("txtLoss").textContent = t("loss");
-      $("txtSens").textContent = t("sens"); $("txtSensHint").textContent = t("sensHint");
+      $("txtSensHint").textContent = t("sensHint");
       $("txtChoice").textContent = t("choice"); $("txtRuns").textContent = t("runs");
       $("trainHint").textContent = t("trainHint");
-      paintTrain(); paintPick(); paintWho(); paintCounts(); paintRuns(); paintLive();
+      $("saveAiBtn").innerHTML = IC.save + " " + t("saveAi"); $("loadAiBtn").innerHTML = IC.open + " " + t("loadAi");
+      $("txtRace").textContent = t("race"); $("txtRaceHint").textContent = t("raceHint");
+      paintMode(); paintTrain(); paintPick(); paintWho(); paintCounts(); paintRuns(); paintRace(); paintLive();
       if (window.navRepaint) window.navRepaint();
     }
+
+    /* ── 초급 · 고급 ── */
+    function paintMode() {
+      Array.prototype.forEach.call($("modeSeg").children, function (b) { b.classList.toggle("on", b.getAttribute("data-mode") === mode); });
+      $("modeHint").textContent = pro() ? t("proHint") : t("basicHint");
+      $("txtTip").textContent = pro() ? t("tipPro") : t("tip");
+      $("keyHint").textContent = pro() ? t("keysPro") : t("keys");
+      $("txtSens").textContent = pro() ? t("sensPro") : t("sens");
+      $("padsUD").hidden = !pro();
+    }
+    $("modeSeg").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-mode]"); if (!b || training || racing) return;
+      var m = b.getAttribute("data-mode"); if (m === mode) return;
+      if (running) stop();
+      mode = m; M = MODES[mode];
+      if (who === "ai" && !M.policy && !race()) who = "me";
+      car.reset(track); lastSense = sense(); overlay("");
+      $("prgFill").style.width = M.policy ? "100%" : "0%"; $("prgPct").textContent = "";
+      $("trainHint").textContent = M.policy ? t("learnedHint").replace("{n}", M.trainedOn) : t("trainHint");
+      setStep(M.policy ? 3 : 1);
+      paintMode(); paintTrain(); paintWho(); paintCounts(); paintRuns(); paintRace(); paintLive(); drawChart(); draw();
+    });
 
     /* ── 트랙 고르기 — 목록 옆에 트랙 모양을 작게 그린다 ── */
     function thumb(tr) {
@@ -333,61 +441,75 @@
       return '<svg viewBox="0 0 44 30"><path d="' + d + '" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/></svg>';
     }
     function paintPick() {
-      $("trackPick").innerHTML = built.map(function (tr, i) {
-        return '<button type="button" data-i="' + i + '"' + (i === ti ? ' class="on"' : "") + ">" + thumb(tr) +
-          "<b>" + tname(tr) + "</b>" + (tr.def.unseen ? "<small>" + t("forTest") + "</small>" : "") + "</button>";
-      }).join("");
+      var html = "", head = false;
+      built.forEach(function (tr, i) {
+        if (tr.def.contest && !head) { html += '<div class="ph">' + t("raceTracks") + "</div>"; head = true; }
+        html += '<button type="button" data-i="' + i + '"' + (i === ti ? ' class="on"' : "") + ">" + thumb(tr) +
+          "<b>" + tname(tr) + "</b>" +
+          (tr.def.unseen ? "<small>" + t("forTest") + "</small>" : tr.def.contest ? '<small class="race">' + t("forRace") + "</small>" : "") +
+          "</button>";
+      });
+      $("trackPick").innerHTML = '<div class="ph">' + t("practice") + "</div>" + html;
       $("panTitle").textContent = tname(track);
     }
     $("trackPick").addEventListener("click", function (e) {
-      var b = e.target.closest("[data-i]"); if (!b) return;
+      var b = e.target.closest("[data-i]"); if (!b || racing) return;
       if (running) stop();
       ti = +b.getAttribute("data-i"); track = built[ti]; car.reset(track);
-      if (track.def.unseen && policy) setStep(4);
-      roadCache = null; overlay(""); paintPick(); paintLive(); draw();
+      if (race()) who = "ai";                             // 대회 트랙은 AI 만
+      if ((track.def.unseen || race()) && M.policy) setStep(4);
+      roadCache = null; overlay(""); paintPick(); paintWho(); paintLive(); draw();
     });
 
     /* ── 누가 운전할까 ── */
     function paintWho() {
-      Array.prototype.forEach.call($("whoSeg").children, function (b) { b.classList.toggle("on", b.getAttribute("data-who") === who); });
-      $("whoHint").textContent = who === "me" ? t("whoMe") : t("whoAi");
+      Array.prototype.forEach.call($("whoSeg").children, function (b) {
+        b.classList.toggle("on", b.getAttribute("data-who") === who);
+        b.disabled = race() && b.getAttribute("data-who") === "me";
+      });
+      $("whoHint").textContent = race() ? t("whoRace") : who === "me" ? t("whoMe") : t("whoAi");
     }
     $("whoSeg").addEventListener("click", function (e) {
-      var b = e.target.closest("[data-who]"); if (!b) return;
-      if (b.getAttribute("data-who") === "ai" && !policy) { toast(t("needTrain")); return; }
+      var b = e.target.closest("[data-who]"); if (!b || b.disabled) return;
+      if (b.getAttribute("data-who") === "ai" && !M.policy) { toast(t("needTrain")); return; }
       if (running) stop();
       who = b.getAttribute("data-who"); car.reset(track); overlay(""); paintWho(); draw();
     });
 
     /* ── 모은 운전 ── */
-    function paintCounts() {
-      var c = [0, 0, 0];
-      data.Y.forEach(function (y) { c[y]++; });
-      var max = Math.max(1, c[0], c[1], c[2]);
-      $("counts").innerHTML = c.map(function (n, k) {
-        return '<div class="bar"><div class="bl"><span>' + t(ACT[k]) + '</span><span class="num">' + n + "</span></div>" +
+    function bars(counts, names) {
+      var max = Math.max.apply(null, [1].concat(counts));
+      return counts.map(function (n, k) {
+        return '<div class="bar"><div class="bl"><span>' + t(names[k]) + '</span><span class="num">' + n + "</span></div>" +
           '<div class="bt"><div class="bf" style="width:' + (n / max * 100) + '%"></div></div></div>';
       }).join("");
-      $("totalCnt").textContent = t("total").replace("{n}", data.Y.length);
-      $("trainBtn").disabled = training || data.Y.length < MIN_SAMPLES;
-      $("clearBtn").disabled = !data.Y.length;
-      var short = [0, 2].filter(function (k) { return c[k] < READY_TURNS; }), r = $("readyHint");
-      if (!data.Y.length) { r.className = "ready"; r.textContent = t("rEmpty"); }
-      else if (!short.length) { r.className = "ready ok"; r.textContent = t("rOk"); }
-      else {
-        r.className = "ready";
-        r.textContent = short.map(function (k) {
-          return t("rNeed").replace("{dir}", t(ACT[k])).replace("{n}", c[k]).replace("{need}", READY_TURNS);
-        }).join(" ");
-      }
+    }
+    function paintCounts() {
+      var Y = M.data.Y, c = [0, 0, 0], v = [0, 0, 0];
+      Y.forEach(function (y) { c[y % 3]++; v[(y / 3) | 0]++; });
+      $("counts").innerHTML = pro()
+        ? '<div class="grp">' + t("gDir") + "</div>" + bars(c, ACT) + '<div class="grp">' + t("gThr") + "</div>" + bars(v, THR)
+        : bars(c, ACT);
+      $("totalCnt").textContent = t("total").replace("{n}", Y.length);
+      $("trainBtn").disabled = training || racing || Y.length < MIN_SAMPLES;
+      $("clearBtn").disabled = !Y.length;
+      var need = [0, 2].filter(function (k) { return c[k] < READY_TURNS; })
+                       .map(function (k) { return t("rNeed").replace("{dir}", t(ACT[k])).replace("{n}", c[k]).replace("{need}", READY_TURNS); });
+      if (pro()) need = need.concat([0, 2].filter(function (k) { return v[k] < READY_THR; })
+                       .map(function (k) { return t("rNeed").replace("{dir}", t(THR[k])).replace("{n}", v[k]).replace("{need}", READY_THR); }));
+      var r = $("readyHint");
+      if (!Y.length) { r.className = "ready"; r.textContent = t("rEmpty"); }
+      else if (!need.length) { r.className = "ready ok"; r.textContent = t("rOk"); }
+      else { r.className = "ready"; r.textContent = need.join(" "); }
     }
     $("clearBtn").addEventListener("click", function () {
-      if (!data.Y.length || !confirm(t("clearAsk"))) return;
-      data.X = []; data.Y = []; paintCounts();
+      if (!M.data.Y.length || !confirm(t("clearAsk"))) return;
+      M.data.X = []; M.data.Y = []; paintCounts();
     });
 
     /* ── 운전 입력 (키보드 · 화면 단추) ── */
-    var KEYMAP = { ArrowLeft: "left", KeyA: "left", ArrowRight: "right", KeyD: "right" };
+    var KEYMAP = { ArrowLeft: "left", KeyA: "left", ArrowRight: "right", KeyD: "right",
+                   ArrowUp: "up", KeyW: "up", ArrowDown: "down", KeyS: "down" };
     function typing(e) { return e.target && e.target.matches && e.target.matches("input, textarea, select"); }
     addEventListener("keydown", function (e) {
       if (typing(e) || e.ctrlKey || e.altKey || e.metaKey) return;
@@ -399,35 +521,37 @@
       if (e.code === "Space" && !typing(e)) e.preventDefault();       // 단추에 포커스가 있어도 한 번만 눌리게
     });
     function releaseKeys() {
-      keys.left = keys.right = false;
-      $("padL").classList.remove("on"); $("padR").classList.remove("on");
+      keys.left = keys.right = keys.up = keys.down = false;
+      ["padL", "padR", "padU", "padD"].forEach(function (id) { $(id).classList.remove("on"); });
     }
     addEventListener("blur", releaseKeys);
-    [["padL", "left"], ["padR", "right"]].forEach(function (p) {
+    [["padL", "left"], ["padR", "right"], ["padU", "up"], ["padD", "down"]].forEach(function (p) {
       var b = $(p[0]);
       b.addEventListener("pointerdown", function (e) { e.preventDefault(); keys[p[1]] = true; b.classList.add("on"); });
       ["pointerup", "pointerleave", "pointercancel"].forEach(function (ev) {
         b.addEventListener(ev, function () { keys[p[1]] = false; b.classList.remove("on"); });
       });
     });
+    /* 내가 고른 운전: 초급 0~2, 고급 빠르기 × 3 + 방향 (아무것도 안 누르면 곧게 · 그대로) */
     function myAction() {
-      if (keys.left && !keys.right) return 0;
-      if (keys.right && !keys.left) return 2;
-      return 1;
+      var dir = keys.left && !keys.right ? 0 : keys.right && !keys.left ? 2 : 1;
+      if (!pro()) return dir;
+      var thr = keys.up && !keys.down ? 2 : keys.down && !keys.up ? 0 : 1;
+      return thr * 3 + dir;
     }
-    function pressing() { return keys.left !== keys.right; }
+    function pressing() { return keys.left !== keys.right || (pro() && keys.up !== keys.down); }
 
     /* ── 달리기 ── */
     var last = 0, acc = 0;
     function go() {
-      if (training) return;
-      if (who === "ai" && !policy) { toast(t("needTrain")); return; }
+      if (training || racing) return;
+      if (who === "ai" && !M.policy) { toast(t("needTrain")); return; }
       if (car.crashed || (who === "ai" && car.progress >= AI_LAPS)) car.reset(track);
       senseHist = [];
       if (car.progress === 0) cutIns = 0;
       running = true; overlay("");
       $("goBtn").disabled = true; $("stopBtn").disabled = false;
-      if (who === "ai") setStep(track.def.unseen ? 4 : 3);
+      if (who === "ai") setStep(track.def.unseen || race() ? 4 : 3);
       last = performance.now(); acc = 0;
       requestAnimationFrame(loop);
     }
@@ -438,7 +562,7 @@
     $("goBtn").addEventListener("click", go);
     $("stopBtn").addEventListener("click", stop);
     $("fastBtn").addEventListener("click", function () { fast = !fast; this.classList.toggle("on", fast); });
-    /* 속도: 게임 시간만 느리게 흘린다. 차의 물리·센서·학습은 그대로라 배운 AI 도 똑같이 달린다 */
+    /* 보기 속도 · 빨리 감기: 화면에 흘리는 시간만 바꾼다. 차의 물리 · 센서 · 기록(바퀴 시간)은 그대로다 */
     $("speedSeg").addEventListener("click", function (e) {
       var b = e.target.closest("[data-s]"); if (!b) return;
       speed = +b.getAttribute("data-s");
@@ -458,69 +582,88 @@
     }
 
     function stepOnce() {
-      var s = car.sense(), a, byMe;
+      var s = sense(), a, byMe;
       senseHist.push(s);
       if (senseHist.length > REACT_STEPS + 1) senseHist.shift();
-      if (who === "me" || pressing()) { a = myAction(); byMe = true; }
-      else { a = D.argmax(policy.predict(s)); byMe = false; }
+      /* 대회 트랙에서는 끼어들 수 없다 — 키를 눌러도 AI 가 운전하고, 장면도 모이지 않는다 */
+      if (who === "me" || (pressing() && !race())) { a = myAction(); byMe = true; }
+      else { a = M.policy.act(s); byMe = false; }
       if (byMe && tick % RECORD_EVERY === 0) {
-        data.X.push(senseHist[0]); data.Y.push(a);        // 0.1초 전 장면 + 지금 누른 키
+        M.data.X.push(senseHist[0]); M.data.Y.push(a);        // 0.1초 전 장면 + 지금 누른 키
         if (who === "ai") cutIns++;
         paintCounts();
       }
       tick++;
       lastSense = s; lastByMe = byMe;
-      if (car.step(a)) {
+      if (pro() ? car.step2(a) : car.step(a)) {
         stop();
         overlay(IC.boom + " " + t("crash"), "bad");
         if (who === "ai") logRun(false);
       } else if (who === "ai" && car.progress >= AI_LAPS) {
         stop();
-        overlay(IC.flag + " " + t("finish").replace("{n}", AI_LAPS), "good");
+        var lt = car.lapTimes();
+        overlay(IC.flag + " " + (pro() ? t("finishPro").replace("{n}", AI_LAPS).replace("{t}", f1(Math.min.apply(null, lt)))
+                                       : t("finish").replace("{n}", AI_LAPS)), "good");
         logRun(true);
       }
     }
 
     function logRun(done) {
-      runs.unshift({ ti: ti, done: done, prog: Math.max(0, car.progress), cutIns: cutIns });
-      runs.length = Math.min(runs.length, 6);
+      var lt = car.lapTimes();
+      M.runs.unshift({ ti: ti, done: done, prog: Math.max(0, car.progress), cutIns: cutIns,
+                       best: lt.length ? Math.min.apply(null, lt) : null,
+                       avg: lt.length ? lt.reduce(function (a, b) { return a + b; }, 0) / lt.length : null, vMax: car.vMax });
+      M.runs.length = Math.min(M.runs.length, 6);
       paintRuns();
       if (window.vapiStat) vapiStat(done ? "drive_finish" : "drive_crash");
     }
+    function runText(r) {
+      var parts = [r.done ? t("done") : t("stopAt").replace("{n}", f1(r.prog))];
+      if (r.best != null) parts.push(t("best").replace("{t}", f1(r.best)));
+      if (r.avg != null && r.done) parts.push(t("avg").replace("{t}", f1(r.avg)));
+      if (pro()) parts.push(t("top").replace("{v}", f1(r.vMax)));
+      if (r.cutIns) parts.push(t("cut").replace("{n}", r.cutIns));
+      return parts.join(" · ");
+    }
     function paintRuns() {
-      $("runLog").innerHTML = runs.length ? runs.map(function (r) {
+      $("runLog").innerHTML = M.runs.length ? M.runs.map(function (r) {
         return '<div class="run"><span class="' + (r.done ? "ok" : "no") + '">' + (r.done ? IC.flag : IC.boom) + "</span><b>" + tname(built[r.ti]) + "</b>" +
-          "<span>" + (r.done ? t("done") : t("stopAt").replace("{n}", r.prog.toFixed(1))) +
-          (r.cutIns ? " · " + t("cut").replace("{n}", r.cutIns) : "") + "</span></div>";
+          "<span>" + runText(r) + "</span></div>";
       }).join("") : '<div class="hint">' + t("none") + "</div>";
     }
 
     /* ── 배우기 ── */
     function paintTrain() {
-      $("trainBtn").innerHTML = IC.learn + " " + (policy ? t("trainAgain") : t("train"));
+      $("trainBtn").innerHTML = IC.learn + " " + (M.policy ? t("trainAgain") : t("train"));
+      $("saveAiBtn").disabled = !M.policy || training;
+      $("raceBtn").disabled = !M.policy || training || racing;
+      $("raceBtn").innerHTML = IC.trophy + " " + (racing ? t("raceRunning") : t("raceRun"));
       if (training) return;
-      $("prgLabel").textContent = policy ? t("learned").replace("{p}", lastAcc) : t("notYet");
+      $("prgLabel").textContent = M.policy ? t("learned").replace("{p}", M.lastAcc) : t("notYet");
     }
     $("trainBtn").addEventListener("click", function () {
-      if (new Set(data.Y).size < 2) { toast(t("needTurn")); return; }
+      var Y = M.data.Y;
+      if (new Set(Y.map(function (y) { return y % 3; })).size < 2) { toast(t("needTurn")); return; }
+      if (pro() && new Set(Y.map(function (y) { return (y / 3) | 0; })).size < 2) { toast(t("needThr")); return; }
       if (running) stop();
-      training = true; paintCounts(); $("goBtn").disabled = true;
+      var m = M;                                      // 배우는 중에 모드를 못 바꾸지만, 바뀌어도 이 모드에 넣는다
+      training = true; paintCounts(); paintTrain(); $("goBtn").disabled = true;
       $("prgLabel").textContent = t("learning"); setStep(2);
-      var p = new D.Policy(), X = data.X.slice(), Y = data.Y.slice(), e = 0, r = null;
-      hist = [];
+      var isPro = pro(), p = isPro ? new D.Policy(8, { heads: [3, 3] }) : new D.Policy(), X = m.data.X.slice(), YY = Y.slice(), e = 0, r = null;
+      m.hist = [];
       (function epoch() {
         /* 세 에폭마다 화면에 한 번 돌려준다 — 막대와 그래프가 차오르는 게 보이게 */
-        for (var k = 0; k < 3 && e < EPOCHS; k++, e++) { r = p.fitEpoch(X, Y); hist.push(r); }
+        for (var k = 0; k < 3 && e < EPOCHS; k++, e++) { r = p.fitEpoch(X, YY, { balance: isPro }); m.hist.push(r); }
         var pct = Math.round(e / EPOCHS * 100);
         $("prgFill").style.width = pct + "%"; $("prgPct").textContent = pct + "%";
         drawChart();
         if (e < EPOCHS) { requestAnimationFrame(epoch); return; }
-        policy = p; training = false; lastAcc = Math.round(r.acc * 100);
+        m.policy = p; m.trainedOn = X.length; m.race = null; training = false; m.lastAcc = Math.round(r.acc * 100);
         $("prgPct").textContent = ""; $("goBtn").disabled = running;
         $("trainHint").textContent = t("learnedHint").replace("{n}", X.length);
-        paintTrain(); paintCounts(); setStep(3); paintLive();
+        paintTrain(); paintCounts(); paintRace(); setStep(3); paintLive();
         if (window.vapiStat) vapiStat("drive_train");
-        if (window.EL_WIN && EL_WIN.hidden) EL_WIN.notify(t("learned").replace("{p}", lastAcc), { actions: [{ label: t("title").replace(/^edge-lab — /, ""), href: "/drive" }] });
+        if (window.EL_WIN && EL_WIN.hidden) EL_WIN.notify(t("learned").replace("{p}", m.lastAcc), { actions: [{ label: t("title").replace(/^edge-lab — /, ""), href: "/drive" }] });
       })();
     });
 
@@ -529,6 +672,7 @@
       if (!W || !H) return;
       c.width = W * dpr; c.height = H * dpr;
       var g = c.getContext("2d"); g.scale(dpr, dpr); g.clearRect(0, 0, W, H);
+      var hist = M.hist;
       if (hist.length < 2) return;
       var maxL = Math.max.apply(null, hist.map(function (h) { return h.loss; }));
       function line(vals, color) {
@@ -543,20 +687,95 @@
       line(hist.map(function (h) { return h.loss / maxL; }), css("--pen-red"));
     }
 
+    /* ── AI 파일 — 저장하면 다른 컴퓨터에서 불러와도 똑같이 운전한다 ── */
+    $("saveAiBtn").addEventListener("click", function () {
+      if (!M.policy) return;
+      var now = new Date(), pad = function (n) { return (n < 10 ? "0" : "") + n; };
+      var stamp = now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate()) + "-" + pad(now.getHours()) + pad(now.getMinutes());
+      var o = D.savePolicy(M.policy, { mode: mode, scenes: M.trainedOn, acc: M.lastAcc, saved: now.toISOString() });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(o)], { type: "application/json" }));
+      a.download = "car-ai-" + mode + "-" + stamp + ".json";     // 이름은 영문 — 한글 이름을 버리는 브라우저가 있다
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+    });
+    $("loadAiBtn").addEventListener("click", function () { if (!training && !racing) $("aiFile").click(); });
+    $("aiFile").addEventListener("change", function () {
+      var f = this.files && this.files[0]; this.value = "";
+      if (!f) return;
+      f.text().then(function (txt) {
+        var o = JSON.parse(txt), pol = D.loadPolicy(o), m = o.mode === "pro" ? "pro" : "basic";
+        if ((m === "pro") !== (pol.nIn === 8)) throw new Error("mode");
+        if (running) stop();
+        MODES[m].policy = pol; MODES[m].trainedOn = o.scenes | 0; MODES[m].lastAcc = o.acc != null ? o.acc : "—";
+        MODES[m].hist = []; MODES[m].race = null;
+        if (mode !== m) { mode = m; M = MODES[m]; }
+        car.reset(track); lastSense = sense(); overlay("");
+        $("prgFill").style.width = "100%"; $("prgPct").textContent = "";
+        $("trainHint").textContent = t("learnedHint").replace("{n}", M.trainedOn);
+        setStep(3); paintMode(); paintTrain(); paintWho(); paintCounts(); paintRuns(); paintRace(); paintLive(); drawChart(); draw();
+        toast(t("loaded").replace("{mode}", t(m)).replace("{n}", M.trainedOn));
+      }).catch(function (e) { toast(t("badFile").replace("{e}", e && e.message || e)); });
+    });
+
+    /* ── 대회 — 대회 트랙 3개를 화면 없이 AI 만 3바퀴씩. 트랙 하나마다 화면에 한 번 돌려준다 ── */
+    var RACE = built.map(function (tr, i) { return i; }).filter(function (i) { return built[i].def.contest; });
+    $("raceBtn").addEventListener("click", function () {
+      if (!M.policy || training || racing) return;
+      if (running) stop();
+      racing = true; paintTrain(); paintCounts();
+      var m = M, md = mode, out = [], k = 0;
+      (function next() {
+        if (k < RACE.length) {
+          out.push({ ti: RACE[k], r: D.drive(built[RACE[k]], m.policy, md, AI_LAPS) });
+          k++; setTimeout(next, 0); return;
+        }
+        m.race = out; racing = false;
+        paintTrain(); paintCounts(); paintRace();
+        if (window.vapiStat) vapiStat("drive_race");
+      })();
+    });
+    function paintRace() {
+      var b = $("raceBoard");
+      $("txtRaceHint").textContent = M.race ? (pro() ? t("raceTiePro") : t("raceTieBasic")) : t("raceHint");
+      if (!M.race) { b.innerHTML = '<div class="hint">' + (M.policy ? "" : t("raceNone")) + "</div>"; return; }
+      var html = M.race.map(function (x) {
+        var r = x.r, txt = r.ok ? t("done") : t("stopAt").replace("{n}", f1(r.prog));
+        if (pro() && r.ok) txt += " · " + t("sec").replace("{n}", f1(r.t)) + " · " + t("best").replace("{t}", f1(r.best));
+        if (pro()) txt += " · " + t("top").replace("{v}", f1(r.vMax));
+        return '<div class="ln"><span class="' + (r.ok ? "ok" : "no") + '">' + (r.ok ? IC.flag : IC.boom) + "</span><b>" + tname(built[x.ti]) + '</b><span class="d">' + txt + "</span></div>";
+      }).join("");
+      var rs = M.race.map(function (x) { return x.r; });
+      var tot = pro()
+        ? t("raceTotPro").replace("{c}", rs.filter(function (r) { return r.ok; }).length)
+            .replace("{t}", f1(rs.filter(function (r) { return r.ok; }).reduce(function (a, r) { return a + r.t; }, 0)))
+            .replace("{v}", f1(Math.max.apply(null, rs.map(function (r) { return r.vMax; }))))
+        : t("raceTotBasic").replace("{p}", f1(rs.reduce(function (a, r) { return a + r.prog; }, 0))).replace("{n}", M.trainedOn);
+      b.innerHTML = html + '<div class="tot">' + tot + "</div>";
+    }
+
     /* ── 오른쪽 실시간 ── */
     function paintLive() {
-      if (!running) lastSense = car.sense();
+      if (!running) lastSense = sense();
       $("sensors").innerHTML = lastSense.map(function (v, i) {
-        var d = D.RAY_DEG[i];
-        return '<div class="sensor"><span class="num">' + (d > 0 ? "+" : "") + d + '°</span><div class="bt"><div class="bf" style="width:' +
+        var label = i < D.RAY_DEG.length ? ((D.RAY_DEG[i] > 0 ? "+" : "") + D.RAY_DEG[i] + "°") : t("vName");
+        return '<div class="sensor"><span class="num">' + label + '</span><div class="bt"><div class="bf" style="width:' +
           (v * 100) + '%"></div></div><span class="num">' + v.toFixed(2) + "</span></div>";
       }).join("");
-      if (!policy) { $("choice").innerHTML = '<div class="hint">' + t("afterTrain") + "</div>"; return; }
-      var P = policy.predict(lastSense), best = D.argmax(P);
-      $("choice").innerHTML = Array.prototype.map.call(P, function (v, k) {
-        return '<div class="bar' + (k === best ? " top" : "") + '"><div class="bl"><span>' + t(ACT[k]) + '</span><span class="num">' +
-          Math.round(v * 100) + '%</span></div><div class="bt"><div class="bf" style="width:' + (v * 100) + '%"></div></div></div>';
-      }).join("") + (running && who === "ai" && lastByMe ? '<div class="hint">' + t("cutting") + "</div>" : "");
+      if (!M.policy) { $("choice").innerHTML = '<div class="hint">' + t("afterTrain") + "</div>"; return; }
+      var P = M.policy.predict(lastSense);
+      function group(off, names) {
+        var best = 0;
+        for (var k = 1; k < 3; k++) if (P[off + k] > P[off + best]) best = k;
+        return names.map(function (nm, k) {
+          var v = P[off + k];
+          return '<div class="bar' + (k === best ? " top" : "") + '"><div class="bl"><span>' + t(nm) + '</span><span class="num">' +
+            Math.round(v * 100) + '%</span></div><div class="bt"><div class="bf" style="width:' + (v * 100) + '%"></div></div></div>';
+        }).join("");
+      }
+      $("choice").innerHTML = (pro() ? '<div class="grp">' + t("gDir") + "</div>" + group(0, ACT) + '<div class="grp">' + t("gThr") + "</div>" + group(3, THR)
+                                     : group(0, ACT)) +
+        (running && who === "ai" && lastByMe ? '<div class="hint">' + t("cutting") + "</div>" : "");
     }
 
     /* ── 그리기 ── 트랙은 바뀔 때만 따로 그려 두고 매 장면에는 복사만 한다 (교실 노트북 배려) */
@@ -599,7 +818,7 @@
       g.drawImage(roadCache, 0, 0);
       g.setTransform(scale, 0, 0, scale, 0, 0);
       g.strokeStyle = css("--go"); g.fillStyle = css("--go"); g.lineWidth = 1.2; g.globalAlpha = 0.7;   // 센서 광선
-      lastSense.forEach(function (v, i) {
+      lastSense.slice(0, D.RAY_DEG.length).forEach(function (v, i) {
         var a = car.th + D.RAY_DEG[i] * Math.PI / 180, r = v * D.RAY_MAX;
         var ex = car.x + Math.cos(a) * r, ey = car.y + Math.sin(a) * r;
         g.beginPath(); g.moveTo(car.x, car.y); g.lineTo(ex, ey); g.stroke();
@@ -607,7 +826,9 @@
       });
       g.globalAlpha = 1;
       drawCar(g, car.crashed ? css("--bad") : (who === "ai" && !lastByMe ? css("--go") : css("--pen-blue")), car.crashed);
-      $("lapBadge").textContent = t("laps").replace("{n}", Math.max(0, car.progress).toFixed(1));
+      /* 배지: 바퀴 · 달린 시간(게임 시간) · 고급은 지금 빠르기 */
+      $("lapBadge").textContent = [t("laps").replace("{n}", f1(Math.max(0, car.progress))), t("sec").replace("{n}", f1(car.t))]
+        .concat(pro() ? [t("times").replace("{n}", f1(car.v))] : []).join(" · ");
     }
     /* 차 — 위에서 내려다본 모양. 오른쪽(+x)이 앞이다. 그림만 이 크기고, 부딪힘 판정은 lib/drive.js 그대로
        (가운데 · 앞 9) — 차 끝이 길 가장자리에 살짝 걸쳐도 괜찮은 것은 그 때문이다 */
@@ -664,7 +885,9 @@
       location.reload();
     });
     setStep(1); paintText(); sizeCanvas(); draw();
-    window.EL_DRIVE_PAGE = { data: data, car: car, repaint: paintCounts, get policy() { return policy; }, get running() { return running; }, get step() { return step; } };
+    window.EL_DRIVE_PAGE = { get data() { return M.data; }, car: car, repaint: paintCounts, get policy() { return M.policy; },
+                             get running() { return running; }, get step() { return step; }, get mode() { return mode; },
+                             get race() { return M.race; } };
   })();
   </script>
   <script src="/lib/shell.js"></script>

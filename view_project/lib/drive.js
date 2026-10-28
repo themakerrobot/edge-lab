@@ -80,7 +80,16 @@
              [710, 400], [540, 450], [420, 380], [270, 450], [120, 420]] },
     { id: "test2", ko: "처음 보는 트랙 2", en: "New track 2", width: 70, unseen: true,
       ctrl: [[120, 150], [300, 95], [470, 140], [620, 95], [710, 200], [650, 330], [700, 430],
-             [470, 440], [330, 360], [190, 440], [100, 330]] }
+             [470, 440], [330, 360], [190, 440], [100, 330]] },
+    /* 대회 트랙 — AI 만 달린다(사람 운전 · 끼어들기 없음). 그래서 이 트랙의 장면은 배울 수 없고, 연습 트랙에서
+       가르친 실력이 그대로 드러난다. node 로 확인했다: 판 안 · 스스로 안 겹침 · 다른 구간 사이 98 이상 ·
+       선생님 운전이 1배로 완주, 고급 선생님 운전도 완주(최고 2.8배). 연습 트랙에서 배운 AI 는 운전 버릇에 따라 갈린다. */
+    { id: "c1", ko: "대회 1 · 머리핀", en: "Race 1 · Hairpin", width: 66, contest: true,
+      ctrl: [[110, 430], [100, 250], [130, 100], [260, 90], [340, 130], [350, 250], [360, 320], [415, 350], [470, 315], [470, 220], [480, 120], [560, 90], [690, 110], [705, 260], [690, 430], [540, 450], [380, 455], [230, 450]] },
+    { id: "c2", ko: "대회 2 · 계곡", en: "Race 2 · Valley", width: 64, contest: true,
+      ctrl: [[100, 100], [230, 90], [300, 170], [240, 250], [300, 330], [420, 300], [470, 200], [560, 100], [690, 110], [710, 250], [620, 300], [700, 380], [640, 450], [480, 440], [360, 440], [220, 450], [100, 420], [90, 260]] },
+    { id: "c3", ko: "대회 3 · 갈림길", en: "Race 3 · Chicane", width: 64, contest: true,
+      ctrl: [[120, 90], [320, 90], [520, 90], [700, 100], [710, 210], [590, 235], [480, 215], [400, 295], [500, 355], [690, 355], [700, 450], [500, 455], [300, 450], [180, 380], [260, 280], [180, 210], [95, 200]] }
   ];
 
   function spline(ctrl, per) {
@@ -149,12 +158,14 @@
   var DT = 1 / 60;             // 한 번 움직이는 시간
   var ACTIONS = [-1, 0, 1];    // 왼쪽 · 곧게 · 오른쪽 (화면 y 가 아래쪽이라 왼쪽이 -)
 
-  /* AI 속도(대회): 차가 실제로 k 배 빠르게 달린다 — 사람은 늘 1배로 가르친다.
-   * 회전은 √k 배까지만 는다(빠를수록 크게 돈다 · 타이어가 버티는 만큼). 그대로 두면 2~3배부터
-   * 규칙대로 운전해도 커브를 못 돌아 "가르친 실력" 이 아니라 물리 한계로 순위가 갈린다.
+  /* 속도 k 배(고급 모드): 차가 실제로 k 배 빠르게 달린다.
+   * 회전은 √k 배까지만 는다(빠를수록 크게 돈다 · 타이어가 버티는 만큼). 그래서 직선에서 밟고
+   * 커브 앞에서 줄여야 빨라진다 — 바퀴 시간에 실력이 드러난다.
    * 판단(센서 → 운전)은 1/60초마다 한 번이고, 움직임만 ceil(k) 번으로 잘게 나눠 길을 건너뛰지 않게 한다.
-   * k = 1 이면 예전 계산과 똑같다. */
-  var SPEEDS = [1, 1.5, 2, 2.5, 3, 4, 5, 6];
+   * k = 1 이면 예전 계산과 똑같다 — 초급 모드는 늘 1배다. */
+  var V_MIN = 0.5, V_MAX = 3, V0 = 1;   // 고급 모드 속도 범위 · 출발 속도 (배)
+  var ACCEL = 1, BRAKE = 2;             // 초당 +1배 · -2배 (브레이크가 더 세다)
+  var THR = [-1, 0, 1];                 // 감속 · 그대로 · 가속
 
   function Car(track) { this.reset(track); }
   Car.prototype.reset = function (track) {
@@ -162,6 +173,21 @@
     this.x = track.start.x; this.y = track.start.y; this.th = track.start.th;
     this.idx = 0; this.laps = 0; this.dist = 0; this.crashed = false;
     this.t = 0; this.lapAt = [];          // 달린 시간(초, 게임 시간) · 바퀴를 넘은 시각들
+    this.v = V0; this.vMax = V0;          // 고급 모드의 지금 속도 · 가장 빨랐던 속도 (배)
+  };
+  /* 고급 모드 센서: 센서 7개 + 지금 속도(0~1) */
+  Car.prototype.sense2 = function () {
+    var s = this.sense();
+    s.push((this.v - V_MIN) / (V_MAX - V_MIN));
+    return s;
+  };
+  /* 고급 모드 한 걸음: a2 = 속도 × 3 + 방향 (0~8). 속도를 바꾼 뒤 그 속도로 간다 */
+  Car.prototype.step2 = function (a2) {
+    var thr = THR[(a2 / 3) | 0];
+    this.v += (thr > 0 ? ACCEL : thr < 0 ? -BRAKE : 0) * DT;
+    this.v = Math.max(V_MIN, Math.min(V_MAX, this.v));
+    if (this.v > this.vMax) this.vMax = this.v;
+    return this.step(a2 % 3, this.v);
   };
   Car.prototype.sense = function () {
     var self = this;
@@ -214,12 +240,16 @@
   }
 
   /* ════════ AI 운전사 ════════
-   * 센서 7개 → Dense(24, tanh) → Dense(3) → softmax → 왼쪽 / 곧게 / 오른쪽.
+   * 초급: 센서 7개 → Dense(24, tanh) → Dense(3) → softmax → 왼쪽 / 곧게 / 오른쪽.
+   * 고급: 센서 7개 + 속도 → Dense(24, tanh) → 출력 두 갈래(heads [3, 3]) — 방향 3 · 속도 3 을 따로 softmax.
+   *       한 갈래 9개(방향 × 속도)로 하면 "감속하며 왼쪽" 같은 드문 짝을 따로 배워야 해서 잘 안 배운다.
+   * 답(Y)은 한 숫자: 갈래가 둘이면 속도 × 3 + 방향.
    * 한 번 학습에 1초도 안 걸려 워커 없이 화면 스레드에서 한 에폭씩 끊어 돌린다(fitEpoch). */
   function Policy(nIn, opt) {
     nIn = nIn || 7; opt = opt || {};
-    var hid = opt.hid || 24, nOut = opt.nOut || 3, s = (opt.seed || 1) >>> 0;
-    this.nIn = nIn; this.hid = hid; this.nOut = nOut;
+    var heads = opt.heads || [opt.nOut || 3];
+    var hid = opt.hid || 24, nOut = heads.reduce(function (a, b) { return a + b; }, 0), s = (opt.seed || 1) >>> 0;
+    this.nIn = nIn; this.hid = hid; this.nOut = nOut; this.heads = heads.slice();
     var rnd = function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296 - 0.5; };
     var U = function (n, sc) { var a = new Float32Array(n); for (var i = 0; i < n; i++) a[i] = rnd() * 2 * sc; return a; };
     this.p = { W1: U(nIn * hid, 1 / Math.sqrt(nIn)), b1: new Float32Array(hid),
@@ -233,6 +263,11 @@
   Policy.prototype.numParams = function () {
     var n = 0; for (var k in this.p) n += this.p[k].length; return n;
   };
+  /* 답 하나(y) → 갈래마다 정답 칸 번호 (출력 전체에서의 자리) */
+  Policy.prototype.targets = function (y) {
+    if (this.heads.length === 1) return [y];
+    return [y % 3, this.heads[0] + ((y / 3) | 0)];
+  };
   Policy.prototype.forward = function (x) {
     var nIn = this.nIn, hid = this.hid, nOut = this.nOut, p = this.p;
     var h = new Float32Array(hid), P = new Float32Array(nOut), j, i, k, s;
@@ -241,34 +276,46 @@
       for (i = 0; i < nIn; i++) s += x[i] * p.W1[i * hid + j];
       h[j] = Math.tanh(s);
     }
-    var mx = -Infinity;
     for (k = 0; k < nOut; k++) {
       s = p.b2[k];
       for (j = 0; j < hid; j++) s += h[j] * p.W2[j * nOut + k];
-      P[k] = s; if (s > mx) mx = s;
+      P[k] = s;
     }
-    var sum = 0;
-    for (k = 0; k < nOut; k++) { P[k] = Math.exp(P[k] - mx); sum += P[k]; }
-    for (k = 0; k < nOut; k++) P[k] /= sum;
+    for (var o = 0, q = 0; q < this.heads.length; o += this.heads[q], q++) {    // 갈래마다 따로 softmax
+      var e = o + this.heads[q], mx = -Infinity, sum = 0;
+      for (k = o; k < e; k++) if (P[k] > mx) mx = P[k];
+      for (k = o; k < e; k++) { P[k] = Math.exp(P[k] - mx); sum += P[k]; }
+      for (k = o; k < e; k++) P[k] /= sum;
+    }
     return { h: h, P: P };
   };
   Policy.prototype.predict = function (x) { return this.forward(x).P; };
-  /* 배치 기울기를 this.g 에 쌓고 평균 loss 를 돌려준다 */
-  Policy.prototype.grad = function (X, Y, idx) {
+  /* 고를 행동 하나 — 초급은 0~2, 고급은 속도 × 3 + 방향 (0~8) */
+  Policy.prototype.act = function (x) {
+    var P = this.predict(x);
+    if (this.heads.length === 1) return argmax(P);
+    return argmax(P.subarray(3, 6)) * 3 + argmax(P.subarray(0, 3));
+  };
+  /* 배치 기울기를 this.g 에 쌓고 평균 loss 를 돌려준다. w: 출력 칸마다 무게(드문 행동을 크게) — 없으면 1 */
+  Policy.prototype.grad = function (X, Y, idx, w) {
     var nIn = this.nIn, hid = this.hid, nOut = this.nOut, p = this.p, g = this.g, key;
     for (key in g) g[key].fill(0);
-    var B = idx.length, dh = new Float32Array(hid), loss = 0;
+    var B = idx.length, dh = new Float32Array(hid), dz = new Float32Array(nOut), loss = 0;
     for (var q = 0; q < B; q++) {
-      var n = idx[q], x = X[n], y = Y[n], f = this.forward(x), h = f.h, P = f.P, j, k, i, d, s;
-      loss -= Math.log(P[y] + 1e-9);
+      var n = idx[q], x = X[n], f = this.forward(x), h = f.h, P = f.P, T = this.targets(Y[n]), j, k, i, s;
+      dz.set(P);
+      for (var o = 0, hq = 0; hq < this.heads.length; o += this.heads[hq], hq++) {
+        var c = T[hq], wt = w ? w[c] : 1;
+        loss -= wt * Math.log(P[c] + 1e-9);
+        for (k = o; k < o + this.heads[hq]; k++) dz[k] = wt * (P[k] - (k === c ? 1 : 0)) / B;
+      }
       for (k = 0; k < nOut; k++) {
-        d = (P[k] - (k === y ? 1 : 0)) / B;
-        g.b2[k] += d;
-        for (j = 0; j < hid; j++) g.W2[j * nOut + k] += h[j] * d;
+        g.b2[k] += dz[k];
+        for (j = 0; j < hid; j++) g.W2[j * nOut + k] += h[j] * dz[k];
       }
       for (j = 0; j < hid; j++) {
         s = 0;
-        for (k = 0; k < nOut; k++) s += p.W2[j * nOut + k] * ((P[k] - (k === y ? 1 : 0)) / B);
+        for (k = 0; k < nOut; k++) s += p.W2[j * nOut + k] * dz[k];
         dh[j] = s * (1 - h[j] * h[j]);
       }
       for (j = 0; j < hid; j++) {
@@ -291,19 +338,32 @@
       }
     }
   };
-  /* 한 에폭: 섞어서 batch 씩. 돌려주는 값 { loss, acc } (acc = 이번 에폭 전체에서 맞힌 비율) */
+  /* 출력 칸마다 무게: 그 갈래에서 드물수록 크게 (전체 / (칸 수 × 그 칸 개수)), 최대 5배.
+     고급 모드의 "감속" 은 전체의 5% 남짓이라 그대로 배우면 AI 가 거의 줄이지 않고 커브로 들어간다. */
+  Policy.prototype.balance = function (Y) {
+    var cnt = new Float32Array(this.nOut), w = new Float32Array(this.nOut), self = this;
+    Y.forEach(function (y) { self.targets(y).forEach(function (c) { cnt[c]++; }); });
+    for (var o = 0, q = 0; q < this.heads.length; o += this.heads[q], q++) {
+      for (var k = o; k < o + this.heads[q]; k++)
+        w[k] = cnt[k] ? Math.min(5, Y.length / (this.heads[q] * cnt[k])) : 1;
+    }
+    return w;
+  };
+  /* 한 에폭: 섞어서 batch 씩. 돌려주는 값 { loss, acc } (acc = 이번 에폭 전체에서 맞힌 비율 — 고급은 방향 · 속도 둘 다 맞아야 맞힌 것)
+     opt.balance: 드문 행동에 무게(고급 모드) */
   Policy.prototype.fitEpoch = function (X, Y, opt) {
     opt = opt || {};
     var batch = opt.batch || 32, lr = opt.lr || 0.01, N = X.length, order = [], i, j, tmp;
+    var w = opt.balance ? this.balance(Y) : null;
     for (i = 0; i < N; i++) order.push(i);
     for (i = N - 1; i > 0; i--) { j = (Math.random() * (i + 1)) | 0; tmp = order[i]; order[i] = order[j]; order[j] = tmp; }
     var tot = 0, nb = 0;
     for (var s = 0; s < N; s += batch) {
-      tot += this.grad(X, Y, order.slice(s, s + batch)); nb++;
+      tot += this.grad(X, Y, order.slice(s, s + batch), w); nb++;
       this.adam(lr);
     }
     var ok = 0;
-    for (var n = 0; n < N; n++) if (argmax(this.predict(X[n])) === Y[n]) ok++;
+    for (var n = 0; n < N; n++) if (this.act(X[n]) === Y[n]) ok++;
     return { loss: tot / nb, acc: ok / N };
   };
 
@@ -316,14 +376,14 @@
   /* ════════ AI 파일 ════════
    * 배운 AI 를 JSON 으로 — 다른 PC 에서 불러와도 같은 운전을 한다(계산에 난수가 없다). */
   function savePolicy(pol, info) {
-    var o = { kind: "edge-lab-drive", v: 1, nIn: pol.nIn, hid: pol.hid, nOut: pol.nOut, p: {} };
+    var o = { kind: "edge-lab-drive", v: 1, nIn: pol.nIn, hid: pol.hid, heads: pol.heads, p: {} };
     for (var k in pol.p) o.p[k] = Array.prototype.map.call(pol.p[k], function (v) { return +v.toPrecision(7); });
     for (var key in (info || {})) o[key] = info[key];
     return o;
   }
   function loadPolicy(o) {
     if (!o || o.kind !== "edge-lab-drive" || !o.p) throw new Error("자동차 가르치기 AI 파일이 아니에요");
-    var pol = new Policy(o.nIn, { hid: o.hid, nOut: o.nOut });
+    var pol = new Policy(o.nIn, { hid: o.hid, heads: o.heads || [o.nOut || 3] });
     for (var k in pol.p) {
       if (!o.p[k] || o.p[k].length !== pol.p[k].length) throw new Error("AI 파일이 망가졌어요 (" + k + ")");
       pol.p[k].set(o.p[k]);
@@ -331,34 +391,37 @@
     return pol;
   }
 
-  /* ════════ 도전 ════════
-   * drive: AI 만 운전해 laps 바퀴를 도는지 (화면 없이). 사람은 끼어들 수 없다.
-   * ladder: 1배부터 속도를 올려 가며 완주한 가장 빠른 배수 — 처음 실패한 곳에서 멈춘다. */
-  function drive(track, pol, k, laps, maxSec) {
-    laps = laps || 3; maxSec = maxSec || 240;
-    var car = new Car(track);
-    while (car.t < maxSec) {
-      if (car.step(argmax(pol.predict(car.sense())), k)) return { ok: false, k: k, prog: Math.max(0, car.progress), t: car.t };
-      if (car.progress >= laps) return { ok: true, k: k, t: car.t, laps: car.lapTimes() };
-    }
-    return { ok: false, k: k, prog: Math.max(0, car.progress), t: car.t };
+  /* 시험용 고급 선생님 — 방향은 teacher, 속도는 앞이 트였으면 밟고 막혀 오면 줄인다 */
+  function teacher2(s) {
+    var dir = teacher(s), v = s[7], f = s[3];
+    var thr = f > 0.9 && v < 0.9 ? 2 : (f < 0.55 && v > 0.15 ? 0 : 1);
+    return thr * 3 + dir;
   }
-  function ladder(track, pol, laps) {
-    var best = null, tries = [];
-    for (var i = 0; i < SPEEDS.length; i++) {
-      var r = drive(track, pol, SPEEDS[i], laps);
-      tries.push(r);
-      if (!r.ok) break;
-      best = r;
+
+  /* ════════ 대회 ════════
+   * AI 만 운전해 laps 바퀴를 도는지 (화면 없이). 사람은 끼어들 수 없다.
+   * mode: "basic"(1배, 방향만) · "pro"(가속 · 감속도). 계산에 난수가 없어 어느 PC 에서나 같다. */
+  function drive(track, pol, mode, laps, maxSec) {
+    laps = laps || 3; maxSec = maxSec || 300;
+    var car = new Car(track), pro = mode === "pro";
+    while (car.t < maxSec) {
+      var crash = pro ? car.step2(pol.act(car.sense2())) : car.step(pol.act(car.sense()));
+      if (crash) break;
+      if (car.progress >= laps) break;
     }
-    return { best: best ? best.k : 0, bestRun: best, tries: tries };
+    var times = car.lapTimes(), done = car.progress >= laps;
+    return { ok: done, prog: Math.min(laps, Math.max(0, car.progress)), t: car.t, laps: times,
+             best: times.length ? Math.min.apply(null, times) : null,
+             avg: times.length ? times.reduce(function (a, b) { return a + b; }, 0) / times.length : null,
+             vMax: car.vMax };
   }
 
   var API = {
     WORLD_W: WORLD_W, WORLD_H: WORLD_H, TRACKS: TRACKS, buildTrack: buildTrack, onRoad: onRoad,
-    RAY_DEG: RAY_DEG, RAY_MAX: RAY_MAX, SPEED: SPEED, TURN: TURN, DT: DT, SPEEDS: SPEEDS,
-    Car: Car, teacher: teacher, Policy: Policy, argmax: argmax,
-    savePolicy: savePolicy, loadPolicy: loadPolicy, drive: drive, ladder: ladder
+    RAY_DEG: RAY_DEG, RAY_MAX: RAY_MAX, SPEED: SPEED, TURN: TURN, DT: DT,
+    V_MIN: V_MIN, V_MAX: V_MAX, V0: V0,
+    Car: Car, teacher: teacher, teacher2: teacher2, Policy: Policy, argmax: argmax,
+    savePolicy: savePolicy, loadPolicy: loadPolicy, drive: drive
   };
   if (typeof module === "object" && module.exports) module.exports = API;
   else root.EL_DRIVE = API;
