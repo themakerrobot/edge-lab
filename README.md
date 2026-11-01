@@ -201,7 +201,7 @@ and the photos you take and the things you make never leave this PC.
 
 Work is split across the CPU, GPU and NPU of an Intel AI PC. No cloud, no account, no bills.
 
-![Home](docs/img/home.png)
+![Home](docs/img/en/home.png)
 
 ---
 
@@ -223,7 +223,7 @@ Turn on **Live** to keep recognizing straight from the webcam.
 | Change the photo | Remove background · 4× upscale · depth map (near and far as color) |
 | Text & QR | Read text (KO/EN) · read QR codes |
 
-![Try it](docs/img/try.png)
+![Try it](docs/img/en/try.png)
 
 ### Blocks — snap blocks together to run the AI
 
@@ -231,7 +231,7 @@ Image · AI recognition · sound · AI language · event blocks snap together wi
 logic, loops and variables. Load an **Example** and run it right away; save your work and reopen it later.
 See **what your blocks look like as Python** side by side, and carry it straight over to the Python screen.
 
-![Blocks](docs/img/blocks.png)
+![Blocks](docs/img/en/blocks.png)
 
 ### Python — one line is enough
 
@@ -246,7 +246,7 @@ show(vision("depth", photo))          # near and far as color
 speak("Hello")                        # say it out loud
 ```
 
-![Python](docs/img/code.png)
+![Python](docs/img/en/code.png)
 
 ### Train — teach an AI yourself
 
@@ -257,7 +257,7 @@ train, and test it immediately. Instead of photos it can also learn from
 It shows how well it learned with accuracy and a learning curve, and shows you the ones it got wrong.
 Save your AI and **use it from Try it, Blocks and Python.**
 
-![Train](docs/img/train.png)
+![Train](docs/img/en/train.png)
 
 ### Talk — ask by voice or text
 
@@ -266,7 +266,7 @@ Speak into the mic or type. Turn on **Read aloud** and it answers with a voice; 
 **Add your own notes and it answers from inside them.** Paste in class material, ask a question,
 and it also shows you where the answer came from.
 
-![Talk](docs/img/talk.png)
+![Talk](docs/img/en/talk.png)
 
 ### Settings — check before class
 

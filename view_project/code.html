@@ -364,6 +364,14 @@ r = vision("object", img)   # AI 로 사물 인식 (vision("사물", img) 도 �
 print(r["object"])          # 찾은 사물 목록
 show(img, r)                # 결과를 화면에서 보기 (박스가 그려져요)
 `;
+    const DEFAULT_CODE_EN = `from themaker import *
+
+img = camera()              # take one webcam photo
+r = vision("object", img)   # find objects with AI
+print(r["object"])          # list of objects found
+show(img, r)                # show the result (boxes are drawn)
+`;
+    const START_CODE = LANG === "en" ? DEFAULT_CODE_EN : DEFAULT_CODE;
     const cm = CodeMirror.fromTextArea(document.getElementById("editor"), {
       mode: "python", lineNumbers: true, indentUnit: 4,
       matchBrackets: true, autoCloseBrackets: true,
@@ -394,7 +402,7 @@ show(img, r)                # 결과를 화면에서 보기 (박스가 그려져
             "    if r:\n        print(r[0]['name'], round(r[0]['score'] * 100), '%')\n    time.sleep(0.5)\n";
       }
     } catch (e) {}
-    cm.setValue(startCode || localStorage.getItem("pycode-draft") || DEFAULT_CODE);
+    cm.setValue(startCode || localStorage.getItem("pycode-draft") || START_CODE);
 
       cm.on("change", () => localStorage.setItem("pycode-draft", cm.getValue()));
 
@@ -540,7 +548,7 @@ show(img, r)                # 결과를 화면에서 보기 (박스가 그려져
       const r = await (await fetch(`/pycode/work?name=${encodeURIComponent(name)}`)).json();
       if (r.result !== "ok") return;
       const now = cm.getValue().trim();
-      if (now && now !== DEFAULT_CODE.trim() && now !== EMPTY_CODE.trim() && now !== r.data.code.trim() &&
+      if (now && now !== DEFAULT_CODE.trim() && now !== DEFAULT_CODE_EN.trim() && now !== EMPTY_CODE.trim() && now !== r.data.code.trim() &&
           LAST_NAME !== name && !confirm(t("askOpen").replace("{n}", name))) return;
       cm.setValue(r.data.code); LAST_NAME = name; showFile();
     })();
