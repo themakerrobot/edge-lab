@@ -16,7 +16,9 @@ Intel AI PC의 CPU·GPU·NPU에 일을 나눠 실행합니다. 클라우드도, 
 
 ## 무엇을 할 수 있나
 
-홈에서 아이콘을 누르면 열리고, 오른쪽 위 **× 닫기**로 돌아옵니다. 여섯 가지가 있습니다.
+홈은 AI · 개발 · 도구 묶음으로 아이콘이 놓여 있습니다. 누르면 열리고, 오른쪽 위 **× 닫기**로 돌아옵니다.
+아래는 중심이 되는 여섯 가지입니다. 그 밖에 자동차 가르치기 · AI 눈 · 문장 · AI 신호 놀이 · 소리 가르치기와
+그림판 · 타자 연습 · 피아노 같은 도구가 있고, **앱 가게**에서 수업에 쓸 것만 넣고 뺍니다.
 
 ### 체험하기 — AI 16가지를 눌러 봐요
 
@@ -207,7 +209,9 @@ Work is split across the CPU, GPU and NPU of an Intel AI PC. No cloud, no accoun
 
 ## What you can do
 
-Press an icon on the Home screen to open it, and **× Close** at the top right to come back. There are six.
+The Home screen groups icons into AI, Develop and Tools. Press one to open it, and **× Close** at the top right to come back.
+Below are the six core ones. There are also Teach a car, AI eye, Words, AI signals and Teach sounds,
+plus tools such as Paint, Typing and Piano — add or remove them in the **App store** to fit your class.
 
 ### Try it — 16 kinds of AI, one press away
 
