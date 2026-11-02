@@ -154,7 +154,7 @@ AI를 메모리에 올리는 동안 진행 막대가 보이고, 그 사이 파�
 | 글자 인식 | easyocr (한/영) | CPU |
 | QR 인식 | OpenCV QRCodeDetector | CPU |
 | 가르치기 특징 추출 | MobileNetV2 1280d | NPU |
-| 말을 글자로 | Whisper Small INT8 | CPU |
+| 말을 글자로 | Whisper Small INT8 | GPU (없으면 CPU) |
 | 글자를 말로 | Supertonic 3 | CPU |
 
 ---
@@ -348,7 +348,7 @@ Rules for changing the code are in [DEVELOP.md](DEVELOP.md).
 | Text recognition | easyocr (KO/EN) | CPU |
 | QR recognition | OpenCV QRCodeDetector | CPU |
 | Feature extraction for Train | MobileNetV2 1280d | NPU |
-| Speech to text | Whisper Small INT8 | CPU |
+| Speech to text | Whisper Small INT8 | GPU (CPU if none) |
 | Text to speech | Supertonic 3 | CPU |
 
 ---
