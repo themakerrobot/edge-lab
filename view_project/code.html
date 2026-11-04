@@ -657,6 +657,14 @@ r = vision("object", img)
 for it in r["object"]:                # 사람도 여기 함께 들어 있어요
     print(it["name"], it["score"])
 show(img, r)
+`,
+        code_en: `from themaker import *
+
+img = camera()
+r = vision("object", img)
+for it in r["object"]:                # people are in this list too
+    print(it["name"], it["score"])
+show(img, r)
 ` },
       { ko: ["사진에게 질문하기", "VLM 에게 사진에 대해 물어봐요."],
         en: ["Ask about a photo", "Ask the VLM a question about the photo."],
@@ -664,6 +672,12 @@ show(img, r)
 
 img = camera()
 r = vision("look", img, prompt="사람이 몇 명이야?")
+print(r["answer"])
+`,
+        code_en: `from themaker import *
+
+img = camera()
+r = vision("look", img, prompt="How many people are there?")
 print(r["answer"])
 ` },
       { ko: ["얼굴 세기", "얼굴을 찾아 몇 명인지 세요."],
@@ -673,6 +687,13 @@ print(r["answer"])
 img = camera()
 faces = vision("face", img)
 print("얼굴 수:", len(faces))
+show(img, faces)
+`,
+        code_en: `from themaker import *
+
+img = camera()
+faces = vision("face", img)
+print("Faces:", len(faces))
 show(img, faces)
 ` },
       { ko: ["배경 지우기", "사진에서 배경을 지워 보고 저장해요."],
@@ -685,6 +706,15 @@ cut = vision("bg_remove", img)   # 배경이 지워진 사진
 show(cut)                        # 화면에서 확인
 save(cut, "no_bg.png")           # png 로 저장하면 투명하게 남아요
 print("저장했어요: no_bg.png")
+`,
+        code_en: `from themaker import *
+
+img = camera()
+cut = vision("bg_remove", img)   # the photo with the background removed
+
+show(cut)                        # check it on screen
+save(cut, "no_bg.png")           # saved as png, the background stays transparent
+print("Saved: no_bg.png")
 ` },
       { ko: ["내가 가르친 AI 쓰기", "가르치기에서 저장한 모델로 분류해요."],
         en: ["Use my trained AI", "Classify with a model saved in Train."],
@@ -699,6 +729,18 @@ if r:
     print("1등:", r[0]["name"], round(r[0]["score"] * 100), "%")
 else:
     print("아직 인식할 대상이 안 보여요")
+`,
+        code_en: `from themaker import *
+
+for m in my_models():              # see the models you saved
+    print(m["name"], "·", m["kind"], "·", m["classes"])
+
+img = camera()
+r = vision("my:your-model-name", img)
+if r:
+    print("Top:", r[0]["name"], round(r[0]["score"] * 100), "%")
+else:
+    print("Nothing to recognize yet")
 ` },
       { ko: ["내 모델 파일 쓰기", "easydetect-lab 에서 학습한 .onnx 로 찾아요."],
         en: ["Use your own model file", "Run an .onnx you trained in easydetect-lab."],
@@ -712,6 +754,22 @@ if not models():
     print("모델 파일을 먼저 넣어 주세요")
 else:
     MODEL = models()[0]            # 첫 번째 모델로 해 볼게요
+    img = camera()
+    r = detect(MODEL, img, conf=0.5)
+    for it in r:
+        print(it["name"], it["score"], "%")
+    show(img, r)
+`,
+        code_en: `from themaker import *
+
+# Put the .onnx you got from [Send to Pibo] in easydetect-lab into the folder that [Settings] > [Open model folder] opens.
+print("Model folder:", models_folder())
+print("Models:", models())
+
+if not models():
+    print("Please add a model file first")
+else:
+    MODEL = models()[0]            # try the first model
     img = camera()
     r = detect(MODEL, img, conf=0.5)
     for it in r:
@@ -737,6 +795,24 @@ else:
             break
         print(i + 1, "번째 — 아무것도 없음")
         time.sleep(2)
+`,
+        code_en: `from themaker import *
+import time
+
+# Put the .onnx you got from [Send to Pibo] in easydetect-lab into the folder that [Settings] > [Open model folder] opens.
+if not models():
+    print("Please add a model file first:", models_folder())
+else:
+    MODEL = models()[0]
+    for i in range(10):
+        img = camera()
+        r = detect(MODEL, img)
+        if r:
+            print("Found it!", r[0]["name"])
+            show(img, r)
+            break
+        print("Try", i + 1, "— nothing yet")
+        time.sleep(2)
 ` },
       { ko: ["사진 꾸미기", "효과를 넣고 글자·도형을 그려 저장해요."],
         en: ["Decorate a photo", "Add an effect, text and shapes, then save."],
@@ -751,6 +827,18 @@ img = draw_rect(img, "mc", "line", "red")  # 가운데 네모
 show(img)
 save(img, "꾸민사진.jpg")
 print("저장했어요")
+`,
+        code_en: `from themaker import *
+
+img = camera()
+
+img = img_filter(img, "sepia")            # old-photo look
+img = draw_text(img, "Photo of the day", "bc", 46, "white")
+img = draw_rect(img, "mc", "line", "red")  # a box in the middle
+
+show(img)
+save(img, "my_photo.jpg")
+print("Saved")
 ` },
       { ko: ["얼굴만 오려내기", "찾은 얼굴을 오려 크게 붙여요."],
         en: ["Cut out the face", "Crop the found face and show it big."],
@@ -766,6 +854,20 @@ if faces:
     show(both)
 else:
     print("얼굴을 못 찾았어요")
+    beep("error")
+`,
+        code_en: `from themaker import *
+
+img = camera()
+faces = vision("face", img)
+
+if faces:
+    face = crop_found(img, faces)          # the first face only
+    face = resize(face, 0.5)               # make it smaller if it is too big
+    both = attach(img, face, "h")           # side by side with the original
+    show(both)
+else:
+    print("No face found")
     beep("error")
 ` },
       { ko: ["색 맞히기 놀이", "가운데 색을 말하고 소리로 알려 줘요."],
@@ -784,6 +886,21 @@ for i in range(5):
     time.sleep(2)
 
 beep("ding")
+`,
+        code_en: `from themaker import *
+import time
+
+for i in range(5):
+    img = camera()
+    img = draw_rect(img, "mc", "line", "yellow")   # show where we look
+    show(img)
+
+    color = color_at(img, "mc")
+    print("Round", i + 1, ":", color)
+    speak("It is " + color, lang="en")
+    time.sleep(2)
+
+beep("ding")
 ` },
       { ko: ["멜로디 연주하기", "계이름으로 노래하고 주파수도 들어 봐요."],
         en: ["Play a melody", "Play notes, then hear the same pitch as Hz."],
@@ -792,6 +909,17 @@ beep("ding")
 play_melody("도미솔 솔 도2", 120)
 
 # 같은 소리를 주파수로도 내 봐요 (소리는 떨림이에요)
+for f in [262, 294, 330, 349, 392]:
+    print(f, "Hz")
+    play_hz(f, 0.4)
+
+beep("ok")
+`,
+        code_en: `from themaker import *
+
+play_melody("ceg g c2", 120)
+
+# Play the same notes as frequencies too (sound is vibration)
 for f in [262, 294, 330, 349, 392]:
     print(f, "Hz")
     play_hz(f, 0.4)
@@ -808,6 +936,15 @@ print("들은 말:", text)
 if "사진" in text:              # 말로 시키기
     img = camera()
     print(vision("look", img)["answer"])
+`,
+        code_en: `from themaker import *
+
+text = listen(4, lang="en")    # listen for 4 seconds
+print("I heard:", text)
+
+if "photo" in text.lower():     # give an order by voice
+    img = camera()
+    print(vision("look", img)["answer"])
 ` },
       { ko: ["말로 묻고 말로 답하기", "듣고 → AI 로 보고 → 소리로 읽어 줘요."],
         en: ["Ask and answer by voice", "Listen, look, then speak the answer."],
@@ -821,6 +958,17 @@ img = camera()
 answer = vision("look", img, prompt=question)["answer"]
 print("대답:", answer)
 speak(answer)
+`,
+        code_en: `from themaker import *
+
+speak("What would you like to know?", lang="en")
+question = listen(4, lang="en")
+print("Question:", question)
+
+img = camera()
+answer = vision("look", img, prompt=question)["answer"]
+print("Answer:", answer)
+speak(answer, lang="en")
 ` },
       { ko: ["반복해서 인식하기", "3초마다 한 번씩, 5번 인식해요."],
         en: ["Repeat detection", "Detect every 3 seconds, 5 times."],
@@ -832,6 +980,16 @@ for i in range(5):
     r = vision("object", img)
     names = [it["name"] for it in r["object"]]
     print(i + 1, "번째:", names)
+    time.sleep(3)
+`,
+        code_en: `from themaker import *
+import time
+
+for i in range(5):
+    img = camera()
+    r = vision("object", img)
+    names = [it["name"] for it in r["object"]]
+    print("Round", i + 1, ":", names)
     time.sleep(3)
 ` },
       { ko: ["자료에서 찾아 답하기",
@@ -872,6 +1030,41 @@ print(chat("공룡은 왜 사라졌어?", db="우리자료"))
 
 # 다 해 봤으면 지워요
 # db_delete("우리자료")
+`,
+        code_en: `from themaker import *
+
+# Answer from your own material — ask the same question two ways and compare.
+
+notes = """A rainbow forms when light bends in water drops. When the sun comes out after rain,
+it appears in the sky as a half circle. It has seven colors: red, orange, yellow, green, blue, indigo and violet.
+
+The Moon is a satellite that goes around the Earth. About once a month it grows full and then shrinks again.
+On the Moon you would weigh about one sixth of what you weigh on Earth.
+
+Our class rules: walk in the hallway. Don't leave food at lunch.
+Open the classroom windows during breaks to let fresh air in."""
+
+db_add("our-notes", notes)          # make the material (once is enough)
+print("Materials:", [d["title"] for d in db_list()])
+
+question = "Why do rainbows appear?"
+
+print("\\n[1] The AI answers from what it knows")
+print(chat(question))
+
+print("\\n[2] Answer from our notes")
+print(chat(question, db="our-notes"))
+
+print("\\n[3] Where the answer came from")
+for h in db_find("our-notes", question, 2):   # material name comes first
+    print(" ", h["score"], h["text"][:40], "...")
+
+# What happens if you ask something that is not in the notes?
+print("\\n[4] A question that is not in the notes")
+print(chat("Why did the dinosaurs disappear?", db="our-notes"))
+
+# Delete it when you are done
+# db_delete("our-notes")
 ` },
       { ko: ["전체 점검 (모든 기능)",
              "모든 기능을 한 번씩 써 봐요. 새 컴퓨터에서 잘 도는지 확인할 때 쓰세요."],
@@ -990,6 +1183,120 @@ print("저장된 모델:", mine)
 # print(r)
 
 print("전체 점검 끝!")
+`,
+        code_en: `from themaker import *
+
+# A check that uses every function once.
+# Run it to make sure a new computer works. One round takes about 1-2 minutes.
+
+print("=== 1. Photo ===")
+img = camera()                      # one shot from the webcam
+print("Size:", size_of(img, "w"), "x", size_of(img, "h"))
+print("Center color:", color_at(img, "mc"), "/ most common color:", main_color(img))
+show(img)
+
+print("=== 2. What can you see ===")
+r = vision("object", img)           # objects and people (people are in this list too)
+print("Found:", [it["name"] for it in r["object"]])
+people = [it for it in r["object"] if it["name_en"] == "person"]
+print("People:", len(people))
+show(img, r)                        # show it with boxes
+
+faces = vision("face", img)
+print("Faces:", len(faces))
+info = vision("face_attr", img)
+if info:
+    f = info[0]
+    print("Face:", f["gender"], f["age"], "years", f["emotion"], f["pos"]["direction"])
+
+near = vision("distance", img)
+if near:
+    print("Distance to face:", near[0]["distance"], "cm", near[0]["direction"])
+
+hands = vision("hand", img)
+print("Hand gestures:", [h["gesture"] for h in hands])
+print("Body joints:", len(vision("pose", img)), "people")
+print("Text:", [t["text"] for t in vision("ocr", img)])
+print("QR:", [q["data"] for q in vision("qr", img)])
+print("Mask:", [m["name"] for m in vision("mask", img)])
+
+print("=== 3. Models you added ===")
+print("Model folder:", models_folder())
+for name in models():
+    print(" ", name, "->", [it["name"] for it in detect(name, img)])
+
+print("=== 4. AI that answers in words (a bit slow) ===")
+print("Describe:", vision("look", img)["answer"])
+print("Question:", vision("look", img, prompt="What is in this photo?")["answer"])
+print("Choose:", vision("look", img, prompt="Is it a person, an animal or a thing? One word.")["answer"])
+
+print("=== 5. Change the photo ===")
+cut = vision("bg_remove", img)      # remove background
+big = vision("sr", img)             # better quality
+seg = vision("seg", img)            # color the areas + what was colored
+print("Colored:", [it["name"] for it in seg["object"]])
+show(seg["image"], seg["object"])
+
+print("=== 6. Edit the photo ===")
+pic = resize(img, 0.6)
+pic = rotate(pic, 90)
+pic = flip(pic, "h")
+pic = crop(pic, "mc")
+pic = attach(pic, pic, "h")             # put side by side
+pic = put_on(pic, cut, "small", "br")   # place on top (size, spot)
+pic = put_sticker(pic, cut)
+pic = adjust(pic, "bright", 20)
+pic = img_filter(pic, "sepia")
+pic = draw_rect(pic, "mc", "line", "red")
+pic = draw_circle(pic, "tl", "fill", "blue")
+pic = draw_line(pic, "tl", "br", "green")
+pic = draw_text(pic, "Check", "bc", 30, "black")
+show(pic)
+
+print("=== 7. Edit with coordinates (for older students) ===")
+pic = crop_xy(img, 0, 0, 320, 240)
+pic = draw_rect_xy(pic, 10, 10, 80, 60, "line", "red")
+pic = draw_circle_xy(pic, 60, 60, 20, "fill", "blue")
+pic = draw_line_xy(pic, 0, 0, 100, 80, "green")
+pic = draw_text_xy(pic, "Check", 10, 30, 24, "black")
+pic = put_on_xy(pic, cut, 5, 5, 0.3)
+print("Color at that spot:", color_at_xy(pic, 10, 10))
+show(pic)
+save(pic, "check_result.jpg")
+
+print("=== 8. Sound ===")
+play_note("g", 1)
+play_melody("ceg c2", 120)
+play_hz(440, 0.3)
+beep("ok")
+speak("The full check is done", voice="F1", lang="en", speed=1.05)
+
+print("=== 9. Mark what was found and cut it out ===")
+found = vision("object", img)
+show(draw(img, found))            # show boxes and names
+if found:
+    show(crop_found(img, found))  # cut out just one thing that was found
+
+print("=== 10. Ask in text, and search my material ===")
+print(chat("Why do rainbows appear?"))
+db_add("check-notes", "A rainbow forms when light bends in water drops.")
+print("Materials:", [d["title"] for d in db_list()])
+for h in db_find("check-notes", "rainbow", 1):
+    print(" Found in:", h["text"][:20])
+print(chat("Why do rainbows appear?", db="check-notes"))
+db_delete("check-notes")
+
+print("=== 11. Choose a speaker ===")
+speaker()                          # only lists the speakers you can use
+
+print("=== 12. AI I trained ===")
+mine = my_models()
+print("Saved models:", mine)
+# If there is a model, try the first one
+# r = vision("my:" + mine[0]["title"], img)
+# print(r)
+
+print("Full check done!")
 ` },
     ];
 
@@ -1003,7 +1310,7 @@ print("전체 점검 끝!")
         div.innerHTML = `<b>${title}</b><div class="d">${desc}</div>`;
         div.onclick = () => {
           if (!confirm(t("confirmReplace"))) return;
-          cm.setValue(ex.code);
+          cm.setValue(LANG === "en" && ex.code_en ? ex.code_en : ex.code);
           document.getElementById("exModal").classList.remove("show");
         };
         box.appendChild(div);

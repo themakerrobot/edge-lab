@@ -1129,13 +1129,15 @@ def main_color(image):
 
 
 def _name_of(bgr):
-    """BGR 값에 가장 가까운 색 이름 (한국어)."""
+    """BGR 값에 가장 가까운 색 이름 — 한국어, language("en") 이면 영어."""
     b, g, r = [float(v) for v in bgr[:3]]
     best, dist = "black", 1e9
     for name, (cb, cg, cr) in _COLORS.items():
         d = (b - cb) ** 2 + (g - cg) ** 2 + (r - cr) ** 2
         if d < dist:
             best, dist = name, d
+    if LANG == "en":
+        return best
     for ko, en in _COLORS_KO.items():
         if en == best:
             return ko

@@ -34,8 +34,13 @@ def _examples():
     처음부터 끝까지 도는가" 다.
     """
     html = io.open(os.path.join(ROOT, "view_project/code.html"), encoding="utf-8").read()
-    return [(m.group(1), m.group(2)) for m in re.finditer(
-        r'\{ ko: \["([^"]+)",[^\]]*\],\s*\n\s*en: \[[^\]]*\],\s*\n\s*code: `(.*?)`', html, re.S)]
+    out = []
+    for m in re.finditer(r'\{ ko: \["([^"]+)",[^\]]*\],\s*\n\s*en: \[[^\]]*\],\s*\n\s*code: `(.*?)`'
+                         r'(?:,\s*\n\s*code_en: `(.*?)`)?', html, re.S):
+        out.append((m.group(1), m.group(2), "ko"))
+        if m.group(3):                    # 영어 화면에서 넣는 영문판 예제도 똑같이 돌려 본다
+            out.append((m.group(1) + " (en)", m.group(3), "en"))
+    return out
 
 
 def _skip_reason(src):
@@ -83,7 +88,8 @@ def run(host):
     T.detect = _no_model
 
     ok = fail = skip = 0
-    for name, src in _examples():
+    for name, src, lang in _examples():
+        T.language(lang)                  # 영문판은 영어 화면에서 도는 것과 같게
         why = _skip_reason(src)
         if why:
             skip += 1
@@ -102,5 +108,6 @@ def run(host):
             print("  FAIL  예제 실행  %s | %d번째 줄 %s: %s"
                   % (name[:40], line, type(ex).__name__, ex))
             fail += 1
+    T.language("ko")
     print("  (사람 손이 필요해 건너뛴 예제 %d개)" % skip)
     return ok, fail
