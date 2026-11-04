@@ -123,7 +123,7 @@ AI를 메모리에 올리는 동안 진행 막대가 보이고, 그 사이 파�
 
 화면 하나하나 어디가 무엇을 하는 곳인지는 **[사용 설명서](docs/MANUAL.md)** 에 그림으로 있습니다.
 
-**설치는 `setup_deploy.bat` 더블클릭**으로 끝납니다 (venv · 패키지 · 모델 · 글꼴 · 점검까지). 자세한 것은 [INSTALL.md](INSTALL.md). 설치가 끝나면:
+**설치는 `setup.bat` 더블클릭**으로 끝납니다 (venv · 패키지 · 모델 · 글꼴 · 점검까지). 자세한 것은 [INSTALL.md](INSTALL.md). 설치가 끝나면:
 
 ```
 .\run.bat
@@ -317,7 +317,7 @@ to point at it; your name, work and records all carry over.
 
 What each part of every screen does is spelled out with pictures in the **[User guide](docs/MANUAL.md#edge-lab-user-guide)**.
 
-**To install, double-click `setup_deploy.bat`** (venv, packages, models, fonts and a check). Details are in [INSTALL.md](INSTALL.md). Once installed:
+**To install, double-click `setup.bat`** (venv, packages, models, fonts and a check). Details are in [INSTALL.md](INSTALL.md). Once installed:
 
 ```
 .\run.bat
