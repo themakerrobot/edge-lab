@@ -50,3 +50,6 @@ portable.txt
 
 # 코딩 실습 노트북 자동 저장본
 .ipynb_checkpoints/
+# 가르치기 특징 모델(로봇과 같은 파일이어야 한다 — teachlab/__init__.py) 은 저장소에 둔다
+!teachlab/models/
+!teachlab/models/*.onnx

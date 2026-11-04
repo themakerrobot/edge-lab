@@ -66,6 +66,8 @@ speak("안녕하세요")                     # 말하기
 
 얼마나 잘 배웠는지 정확도와 학습 곡선으로 보여 주고, 틀린 사진도 함께 보여 줍니다.
 만든 AI를 저장하면 **체험하기 · 블록 · 파이썬에서 그대로 불러 씁니다.**
+특징 계산과 저장 형식이 로봇(파이보 · PiBrain)과 같아서, [로봇으로 보내기] 로 같은 공유기에 있는 로봇에 보내면
+로봇에서도 같은 답을 냅니다(로봇 IDE 에서 [분류기] 를 켜 둘 것).
 
 ![가르치기](docs/img/train.png)
 
@@ -153,7 +155,7 @@ AI를 메모리에 올리는 동안 진행 막대가 보이고, 그 사이 파�
 | 배경 제거 · 화질 개선 | U2Net · SR-1032 | GPU |
 | 글자 인식 | easyocr (한/영) | CPU |
 | QR 인식 | OpenCV QRCodeDetector | CPU |
-| 가르치기 특징 추출 | MobileNetV2 1280d | NPU |
+| 가르치기 특징 | mobilenet_v3_small 1024d (OpenVINO f32) · MediaPipe 손 · 표정 · 자세 — 로봇과 같은 파일(`teachlab/`) | CPU |
 | 말을 글자로 | Whisper Small INT8 | GPU (없으면 CPU) |
 | 글자를 말로 | Supertonic 3 | CPU |
 
@@ -172,7 +174,7 @@ AI를 메모리에 올리는 동안 진행 막대가 보이고, 그 사이 파�
 | easydetect (코드 · ed-m · pose-m 가중치) · MobileSAM — 사물 찾기 · 자세 · 영역 | Apache-2.0 |
 | 마스크 분류 `mask/mask.onnx` (MediaPipe mobilenet_v3_small 임베더 + 분류기) | Apache-2.0 |
 | OpenVINO / open_model_zoo 얼굴 모델 · 화질 개선(SR-1032) | Apache-2.0 |
-| MediaPipe (손 · 얼굴 점, YAMNet) · U2Net · easyocr · Depth Anything V2 Small · MobileNetV2 | Apache-2.0 |
+| MediaPipe (손 · 얼굴 · 자세 점, mobilenet_v3_small 임베더, YAMNet) · U2Net · easyocr · Depth Anything V2 Small · MobileNetV2(예전 가르치기 모델용) | Apache-2.0 |
 | Whisper (받아쓰기) · multilingual-e5-small (자료 찾기) | MIT |
 | Gemma 3 (VLM) | **Gemma Terms of Use** (사용 제한 정책 포함) |
 | Supertonic 3 (읽어 주기 모델 가중치) | **OpenRAIL-M** (사용 제한 — 아래) |
@@ -260,6 +262,8 @@ train, and test it immediately. Instead of photos it can also learn from
 
 It shows how well it learned with accuracy and a learning curve, and shows you the ones it got wrong.
 Save your AI and **use it from Try it, Blocks and Python.**
+Features and the file format are the same as on the robots (piBo · PiBrain), so [Send to robot] puts it on a robot
+on the same Wi-Fi and it gives the same answers there (turn on [Classifier] in the robot IDE).
 
 ![Train](docs/img/en/train.png)
 
@@ -347,7 +351,7 @@ Rules for changing the code are in [DEVELOP.md](DEVELOP.md).
 | Background removal · upscaling | U2Net · SR-1032 | GPU |
 | Text recognition | easyocr (KO/EN) | CPU |
 | QR recognition | OpenCV QRCodeDetector | CPU |
-| Feature extraction for Train | MobileNetV2 1280d | NPU |
+| Features for Train | mobilenet_v3_small 1024d (OpenVINO f32) · MediaPipe hand · face · pose — same files as the robots (`teachlab/`) | CPU |
 | Speech to text | Whisper Small INT8 | GPU (CPU if none) |
 | Text to speech | Supertonic 3 | CPU |
 
@@ -366,7 +370,7 @@ but **Gemma 3 (VLM) and Supertonic 3 (text to speech) have separate licenses wit
 | easydetect (code · ed-m · pose-m weights) · MobileSAM — objects · pose · segmentation | Apache-2.0 |
 | Mask classifier `mask/mask.onnx` (MediaPipe mobilenet_v3_small embedder + classifier) | Apache-2.0 |
 | OpenVINO / open_model_zoo face models · upscaling (SR-1032) | Apache-2.0 |
-| MediaPipe (hand · face points, YAMNet) · U2Net · easyocr · Depth Anything V2 Small · MobileNetV2 | Apache-2.0 |
+| MediaPipe (hand · face · pose points, mobilenet_v3_small embedder, YAMNet) · U2Net · easyocr · Depth Anything V2 Small · MobileNetV2 (old Train models only) | Apache-2.0 |
 | Whisper (speech to text) · multilingual-e5-small (document search) | MIT |
 | Gemma 3 (VLM) | **Gemma Terms of Use** (with a prohibited use policy) |
 | Supertonic 3 (TTS model weights) | **OpenRAIL-M** (use restrictions — below) |

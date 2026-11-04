@@ -108,6 +108,10 @@ xcopy /e /i /q /y notebooks %BUILD%\notebooks >nul
 if errorlevel 1 (echo [ERROR] notebooks copy failed & exit /b 1)
 if exist %BUILD%\notebooks\.ipynb_checkpoints rmdir /s /q %BUILD%\notebooks\.ipynb_checkpoints
 xcopy /e /i /q /y view_project %BUILD%\view_project >nul
+REM 가르치기 특징 계산 - 로봇과 같은 코드와 모델 파일(teachlab\models)
+xcopy /e /i /q /y teachlab %BUILD%\teachlab >nul
+if errorlevel 1 (echo [ERROR] teachlab copy failed & exit /b 1)
+if exist %BUILD%\teachlab\__pycache__ rmdir /s /q %BUILD%\teachlab\__pycache__
 echo   copying models\ (several GB, takes a few minutes) ...
 xcopy /e /i /q /y models %BUILD%\models >nul
 if errorlevel 1 (echo [ERROR] models copy failed & exit /b 1)
@@ -172,8 +176,9 @@ for %%D in (fonts assets) do (
   if not exist %BUILD%\view_project\%%D\ (echo [ERROR] missing in bundle: view_project\%%D\ & exit /b 1)
 )
 if not exist %BUILD%\view_project\fonts\fonts.css (echo [ERROR] missing in bundle: view_project\fonts\fonts.css & exit /b 1)
-for %%F in (mobilenetv2_feat.xml mobilenetv2_feat.bin mobilenetv2_feat.json) do (
-  if not exist %BUILD%\models\backbone\%%F (echo [ERROR] missing in bundle: models\backbone\%%F & exit /b 1)
+REM 가르치기 특징 모델 - 리포 안 teachlab\models (로봇과 같은 파일). 예전 backbone 은 예전 모델용이라 없어도 된다
+for %%F in (mobilenet_v3_small_embedder.onnx hand_landmarker.task face_landmarker.task pose_landmarker_lite.task) do (
+  if not exist %BUILD%\teachlab\models\%%F (echo [ERROR] missing in bundle: teachlab\models\%%F & exit /b 1)
 )
 %BUILD%\python\python.exe -c "import openvino,cv2,numpy;print('  import OK  openvino',openvino.__version__.split('-')[0])"
 if errorlevel 1 (echo [ERROR] import failed inside bundle & exit /b 1)

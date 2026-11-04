@@ -363,7 +363,7 @@
             <span class="q"><span class="qnum">3</span><span class="qtext" id="txtQ3">AI를 학습시켜요</span></span>
             <span class="right">
               <label class="hint" for="epochs" id="txtEpochs">반복 학습 횟수</label>
-              <input type="number" id="epochs" value="15" min="1" max="100" style="width:66px;">
+              <input type="number" id="epochs" value="40" min="1" max="100" style="width:66px;">
               <label class="hint"><input type="checkbox" id="useHoldout" checked> <span id="txtHoldout">시험지 따로 두기(20%)</span></label>
               <button class="btn primary" id="trainBtn"><span id="txtTrain">학습 시작</span></button>
             </span>
@@ -414,6 +414,12 @@
             사진은 들어 있지 않아서 이어서 학습할 수는 없어요 — 그건 아래 6번이에요.
           </div>
           <div class="saved" id="savedList"></div>
+          <div id="robotRow" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:10px;">
+            <b id="txtRobotT">로봇으로 보내기</b>
+            <input type="text" id="robotHost" placeholder="192.168.0.12" style="width:130px;">
+            <button class="btn sm" id="robotPing"><span id="txtRobotPing">연결 확인</span></button>
+            <span class="hint" id="robotMsg"></span>
+          </div>
         </div>
 
         <!-- 7 : 작품 저장 / 이어서 하기 -->
@@ -453,12 +459,20 @@
   "use strict";
   /**********************************************************************
    * edge-lab — 나만의 AI 만들기 (티처블 머신)
-   *   특징 추출 : 서버 OpenVINO (/custom/embed, /custom/embed_zip) — 1280차원
-   *   학습      : 브라우저 TF.js (Dense 128 relu -> Dropout .3 -> Dense N softmax)
-   *   저장      : /custom/upload  (web-classifier 와 동일한 zip 포맷)
-   * 특징을 학습·추론 모두 서버에서 뽑으므로 브라우저/서버 결과가 원리상 같다.
+   *   특징 추출 : 서버 teachlab (/custom/embed, /custom/embed_batch) — 로봇(파이보·PiBrain)과 같은 계산
+   *               사진 1024 · 손 63 · 표정 52 · 상반신 75 · 전신 99
+   *   학습      : 브라우저 TF.js — 로봇 분류기(teach-lab trainer.js)와 같은 머리
+   *               Dense 64 relu -> Dropout .2 -> Dense N softmax, adam 0.001, 반복 40, 묶음 16
+   *   저장      : /custom/upload  — 로봇 형식(project.json · classifier.json · classifier.bin · labels.txt · samples.json)
+   *   보내기    : /custom/robot/send — 저장한 AI 를 로봇 분류기(50010)로 (같은 망 안에서만)
+   * 예전(TF.js zip) 모델은 서버에서 계속 쓸 수 있지만, 여기로 다시 불러오지는 않는다(특징이 달라졌다).
    **********************************************************************/
-  const DIM_OF = { image: 1280, pose: 63, face: 52, body_up: 22, body: 34 };
+  const DIM_OF = { image: 1024, pose: 63, face: 52, body_up: 75, body: 99 };
+  /* 로봇 project.json 의 source/variant (서버 train_routes.KINDS 와 같다) */
+  const KINDS = { image: ["image", null], pose: ["hand", "one"], face: ["face", null],
+                  body_up: ["pose", "upper"], body: ["pose", "full"] };
+  const HIDDEN = 64, DROPOUT = 0.2, LR = 0.001;          /* 로봇 분류기(teach-lab trainer.js)와 같은 머리 */
+  const PROJECT_V = 3;                                    /* 작품 파일 형식 — 3 부터 로봇과 같은 특징 */
   const SKELETON = ["pose", "face", "body_up", "body"];   // 골격/선을 그리는 모드
   let FEAT_KIND = "image";                 // image(사진) | pose(손모양)
   const FEAT_DIM = () => DIM_OF[FEAT_KIND];
@@ -477,8 +491,8 @@
       langBtn: "EN",
       modeImage: "사진", modePose: "손모양", modeFace: "표정",
       modeUp: "상반신", modeBody: "전신",
-      upHint: "책상에 앉은 채로 해요. 얼굴·어깨·팔 관절 11개만 학습해서 옷 색이나 배경에 흔들리지 않아요.",
-      bodyHint: "온몸이 보이도록 뒤로 물러서 주세요. 관절 17개 위치만 학습해요.",
+      upHint: "책상에 앉은 채로 해요. 얼굴·어깨·팔 등 상반신 관절 25개 위치만 학습해서 옷 색이나 배경에 흔들리지 않아요.",
+      bodyHint: "온몸이 보이도록 뒤로 물러서 주세요. 관절 33개 위치만 학습해요.",
       bodyOk: "자세 인식됨", bodyNo: "사람 없음",
       bodyPart: "전신이 안 보여요", upPart: "어깨가 안 보여요",
       skippedBody: "자세가 안 잡혀서 %1장은 건너뛰었어요.",
@@ -520,7 +534,7 @@
       q1hint: "이름을 정하고, 오른쪽 2번에서 사진을 모아요. 클래스는 2개 이상이어야 학습할 수 있어요.",
       q2hint: "클래스마다 30장쯤 모으면 좋아요",
       q2count: "사진 %1장 · 클래스 %2개 (클래스마다 30장쯤 모으면 좋아요)",
-      noBackbone: "특징 추출 모델(models/backbone)이 없어요. 서버 관리자에게 문의하세요.",
+      noBackbone: "특징 추출 모델(teachlab/models)이 없어요. 서버 관리자에게 문의하세요.",
       errShot: "사진을 넣지 못했어요 — %1",
       q2guide: "모을 클래스를 먼저 고르고, [연속 촬영]을 <b>누르고 있는 동안</b> 사진이 계속 찍혀요.",
       q2upload: "사진 파일이나 압축파일(zip)로도 넣을 수 있어요. 클래스 카드의 버튼을 눌러 주세요.",
@@ -563,6 +577,17 @@
       aServer: "서버 오류: ",
       aReset: "지금까지 모은 사진과 클래스를 모두 지울까요?",
       restored: "이전에 만들던 내용을 불러왔어요.",
+      oldModel: "예전 방식으로 만든 AI 예요. [체험하기]·[블록]·[파이썬]에서는 그대로 쓸 수 있지만, 여기서 다시 확인하거나 로봇으로 보내려면 다시 가르쳐 주세요.",
+      oldProject: "예전 방식으로 모은 작품이라 클래스 이름만 가져왔어요. 사진을 다시 모아 주세요 (로봇과 같은 방식으로 바뀌었어요).",
+      oldDraft: "예전 방식으로 모은 사진은 다시 모아야 해요 (로봇과 같은 방식으로 바뀌었어요). 클래스 이름만 남겼어요.",
+      robotT: "로봇으로 보내기", robotPing: "연결 확인", modelRobot: "로봇으로",
+      robotNeedHost: "로봇 주소를 적어 주세요 (로봇 화면에 나오는 IP, 예: 192.168.0.12).",
+      robotOk: "로봇과 연결됐어요. 로봇에 있는 AI %1개.",
+      robotSending: "로봇으로 보내는 중…",
+      robotSent: "로봇에 ‘%1’ 로 보냈어요. 로봇 블록 [분류기 모델 불러오기] 에서 이 이름을 쓰세요.",
+      robotExists: "로봇에 ‘%1’ 이(가) 이미 있어요. 덮어쓸까요?",
+      robotOld: "예전 방식 AI 는 로봇으로 보낼 수 없어요. 다시 가르쳐 저장해 주세요.",
+      robotHint: "로봇 IDE 에서 [분류기] 를 켜 두고, 같은 공유기에 연결된 상태에서 보내요.",
     },
     en: {
       titleTag: "edge-lab — Train", title: "edge-lab",
@@ -572,8 +597,8 @@
       langBtn: "한",
       modeImage: "Photo", modePose: "Hand", modeFace: "Face",
       modeUp: "Upper body", modeBody: "Full body",
-      upHint: "You can stay seated. Only 11 joints (face, shoulders, arms) are learned, so clothes and background matter less.",
-      bodyHint: "Step back so your whole body is visible. Only the 17 joint positions are learned.",
+      upHint: "You can stay seated. Only 25 upper-body joints (face, shoulders, arms…) are learned, so clothes and background matter less.",
+      bodyHint: "Step back so your whole body is visible. Only the 33 joint positions are learned.",
       bodyOk: "pose detected", bodyNo: "no person",
       bodyPart: "full body not visible", upPart: "shoulders not visible",
       skippedBody: "Skipped %1 photos with no pose.",
@@ -615,7 +640,7 @@
       q1hint: "Name each class, then collect photos in step 2 on the right. You need at least 2 classes.",
       q2hint: "About 30 photos per class works well",
       q2count: "%1 photos · %2 classes (about 30 per class works well)",
-      noBackbone: "The feature model (models/backbone) is missing. Ask your administrator.",
+      noBackbone: "The feature model (teachlab/models) is missing. Ask your administrator.",
       errShot: "Could not add the photo — %1",
       q2guide: "Pick a class first, then <b>hold</b> [Burst capture] to keep taking photos.",
       q2upload: "You can also add image files or a zip. Use the buttons on each class card.",
@@ -658,6 +683,17 @@
       aServer: "Server error: ",
       aReset: "Delete every class and photo collected so far?",
       restored: "Restored what you were working on.",
+      oldModel: "This AI was made the old way. You can still use it in [Use]·[Blocks]·[Python], but to check it here or send it to a robot, please train it again.",
+      oldProject: "This work was collected the old way, so only the class names were loaded. Please collect the photos again (it now works the same way as the robot).",
+      oldDraft: "Photos collected the old way need to be collected again (it now works the same way as the robot). Only the class names were kept.",
+      robotT: "Send to robot", robotPing: "Check connection", modelRobot: "To robot",
+      robotNeedHost: "Enter the robot's address (the IP on the robot screen, e.g. 192.168.0.12).",
+      robotOk: "Connected to the robot. AIs on the robot: %1.",
+      robotSending: "Sending to the robot…",
+      robotSent: "Sent to the robot as ‘%1’. Use this name in the robot block [load classifier model].",
+      robotExists: "The robot already has ‘%1’. Overwrite it?",
+      robotOld: "An AI made the old way cannot be sent to a robot. Please train it again and save.",
+      robotHint: "Turn on [Classifier] in the robot IDE, and stay on the same Wi-Fi.",
     },
   };
   const t = (k, ...a) => {
@@ -709,6 +745,7 @@
       if (j.result === "ok") {
         FEAT_DEV = (j.data.device || "").toUpperCase();
         BACKBONE_OK = true;
+        renderClasses();          /* 확인 전에 그린 카드의 [사진 넣기] 가 꺼진 채로 남지 않게 */
       } else { backboneMissing(); }
     } catch (e) { backboneMissing(); }
   })();
@@ -1558,13 +1595,9 @@
       const Y = tf.oneHot(tf.tensor1d(trY, "int32"), useable.length);
 
       if (model) { model.dispose(); model = null; }
-      model = tf.sequential();
-      model.add(tf.layers.dense({ inputShape: [dim], units: 128, activation: "relu" }));
-      model.add(tf.layers.dropout({ rate: 0.3 }));
-      model.add(tf.layers.dense({ units: useable.length, activation: "softmax" }));
-      model.compile({ optimizer: "adam", loss: "categoricalCrossentropy", metrics: ["accuracy"] });
+      model = buildModel(dim, useable.length);
 
-      const epochs = Math.max(1, Math.min(100, parseInt($("epochs").value, 10) || 15));
+      const epochs = Math.max(1, Math.min(100, parseInt($("epochs").value, 10) || 40));
       const hist = { train: [], val: [] };
       let VX = null, VY = null;
       if (vaX.length) {
@@ -1700,47 +1733,137 @@
     }
   });
 
+  /* ---------------- 머리(분류기) — 로봇 teach-lab 과 같은 구조·같은 저장 형식 ---------------- */
+  function buildModel(dim, n) {
+    const m = tf.sequential();
+    m.add(tf.layers.dense({ inputShape: [dim], units: HIDDEN, activation: "relu" }));
+    m.add(tf.layers.dropout({ rate: DROPOUT }));
+    m.add(tf.layers.dense({ units: n, activation: "softmax" }));
+    m.compile({ optimizer: tf.train.adam(LR), loss: "categoricalCrossentropy", metrics: ["accuracy"] });
+    return m;
+  }
+  /* TF.js 모델 → classifier.json + classifier.bin (로봇 classifier/static/tl/classifier.js serialize 와 같다) */
+  async function serializeHead() {
+    const layers = [], chunks = [];
+    let offset = 0;
+    const dense = model.layers.filter(l => l.getClassName() === "Dense");
+    for (let i = 0; i < dense.length; i++) {
+      const [k, b] = dense[i].getWeights();
+      const kd = await k.data(), bd = await b.data();
+      layers.push({
+        type: "dense", activation: i === dense.length - 1 ? "softmax" : "relu",
+        kernel: { shape: k.shape.slice(), offset: offset, count: kd.length },
+        bias: { shape: b.shape.slice(), offset: offset + kd.length, count: bd.length },
+      });
+      chunks.push(Float32Array.from(kd), Float32Array.from(bd));
+      offset += kd.length + bd.length;
+    }
+    const bin = new Float32Array(offset);
+    let at = 0;
+    chunks.forEach(c => { bin.set(c, at); at += c.length; });
+    return {
+      json: { format: "teachlab-classifier", version: 1, inputDim: FEAT_DIM(), classes: trainedLabels.slice(),
+              dtype: "float32-le", weightsFile: "classifier.bin", totalCount: offset, layers: layers },
+      bin: bin,
+    };
+  }
+  /* classifier.json + bin → TF.js 모델 (불러와서 4번에서 확인할 때) */
+  function headFromFiles(json, bin) {
+    if (!json || json.format !== "teachlab-classifier") throw new Error("not a teachlab classifier");
+    const all = new Float32Array(bin.buffer, bin.byteOffset, bin.byteLength / 4);
+    const m = buildModel(json.inputDim, json.classes.length);
+    const ws = [];
+    json.layers.forEach(l => {
+      ws.push(tf.tensor(all.slice(l.kernel.offset, l.kernel.offset + l.kernel.count), l.kernel.shape));
+      ws.push(tf.tensor(all.slice(l.bias.offset, l.bias.offset + l.bias.count), l.bias.shape));
+    });
+    m.setWeights(ws);
+    ws.forEach(w => w.dispose());
+    return m;
+  }
+  /* 모델 폴더의 project.json 에 들어가는 "특징 뽑는 법" — 로봇 classifier/static/app.js extractorSpec 과 같은 값 */
+  function extractorSpec(kind) {
+    const [src, v] = KINDS[kind];
+    if (src === "image") return { type: "image-embedding", source: "image", variant: null,
+      name: "mediapipe/mobilenet_v3_small", file: "mobilenet_v3_small_embedder.tflite", inputSize: 224,
+      dim: 1024, l2Normalize: true, quantize: false, preprocess: "tm-crop-to", mirror: false };
+    const file = { hand: "hand_landmarker.task", face: "face_landmarker.task", pose: "pose_landmarker_lite.task" }[src];
+    const norm = src === "hand" ? "wrist-origin/middle-mcp-scale" : src === "face" ? "blendshapes"
+               : v === "full" ? "hip-origin/torso-length-scale" : "shoulder-origin/shoulder-width-scale";
+    return { type: "landmark", source: src, variant: v, name: "mediapipe/" + src + "_landmarker",
+             file: file, dim: DIM_OF[kind], normalize: norm, mirror: false };
+  }
+  /* 로봇 [이어서 배우기] 용 — 로봇 분류기 samples.json 과 같은 모양. 로봇은 종류마다 200장까지라 뒤쪽 200장만 */
+  const ROBOT_MAX_SAMPLES = 200;
+  function samplesJson() {
+    const dim = FEAT_DIM();
+    return JSON.stringify({ dim: dim, classes: CLASSES.filter(c => trainedLabels.includes(c.name)).map(c => {
+      const feats = c.feats.slice(-ROBOT_MAX_SAMPLES);
+      const thumbs = c.thumbs.slice(0, c.feats.length).slice(-ROBOT_MAX_SAMPLES);
+      const flat = new Float32Array(feats.length * dim);
+      feats.forEach((f, i) => flat.set(f, i * dim));
+      return { name: c.name, count: feats.length, vecs: b64(flat), thumbs: thumbs };
+    }) });
+  }
+  /* 모델 파일들을 zip 안에 넣는다(prefix: 작품 파일 안이면 "model/") */
+  async function putModel(zip, prefix) {
+    const head = await serializeHead();
+    const [src, v] = KINDS[FEAT_KIND];
+    const counts = trainedLabels.map(n => { const c = CLASSES.find(x => x.name === n); return c ? c.feats.length : 0; });
+    zip.file(prefix + "project.json", JSON.stringify({
+      name: $("modelTitle").value.trim() || trainedLabels.join(" / "),
+      kind: src, source: src, variant: v, classes: trainedLabels.slice(), sampleCounts: counts,
+      accuracy: REPORT && REPORT.total ? REPORT.correct / REPORT.total : null,
+      embedder: extractorSpec(FEAT_KIND), trainedAt: new Date().toISOString(), app: "edge-lab",
+    }, null, 2));
+    zip.file(prefix + "classifier.json", JSON.stringify(head.json, null, 2));
+    zip.file(prefix + "classifier.bin", new Uint8Array(head.bin.buffer));
+    zip.file(prefix + "labels.txt", trainedLabels.join("\n") + "\n");
+    if (REPORT) zip.file(prefix + "report.json", JSON.stringify(REPORT));
+    // 모델 파일(로봇으로 보내는 것)에만 — 작품 파일은 classN/features.bin 에 이미 있다
+    if (!prefix && CLASSES.some(c => trainedLabels.includes(c.name) && c.feats.length))
+      zip.file("samples.json", samplesJson());
+  }
+  /* 모델 폴더 zip 에서 머리를 되살린다. 예전(TF.js) 모델이면 null */
+  async function readModel(zip, prefix) {
+    if (!zip.file(prefix + "classifier.json")) return null;
+    const pj = JSON.parse(await zip.file(prefix + "project.json").async("string"));
+    const json = JSON.parse(await zip.file(prefix + "classifier.json").async("string"));
+    const bin = await zip.file(prefix + "classifier.bin").async("uint8array");
+    const kind = Object.keys(KINDS).find(k => KINDS[k][0] === pj.source &&
+                   (KINDS[k][1] || null) === (pj.source === "image" ? null : (pj.variant || null)));
+    if (!kind) throw new Error("source=" + pj.source + "/" + pj.variant);
+    const report = zip.file(prefix + "report.json")
+      ? JSON.parse(await zip.file(prefix + "report.json").async("string")) : null;
+    return { kind: kind, labels: json.classes.slice(), model: headFromFiles(json, bin), report: report };
+  }
+  function setKind(kind) {
+    FEAT_KIND = kind;
+    document.querySelectorAll("#modeSw button")
+      .forEach(x => x.classList.toggle("on", x.dataset.kind === FEAT_KIND));
+  }
+
   /* ---------------- 저장 ---------------- */
   async function buildZip() {
-    const artifacts = await model.save(tf.io.withSaveHandler(async a => a));
     const zip = new JSZip();
-    zip.file("model.json", JSON.stringify(artifacts.modelTopology));
-    zip.file("weightsSpecs.json", JSON.stringify(artifacts.weightSpecs));
-    zip.file("weights.bin", new Uint8Array(artifacts.weightData));
-    zip.file("labels.txt", trainedLabels.join("\n"));
-    zip.file("kind.txt", FEAT_KIND);        // 서버가 어떤 특징으로 추론할지 알아야 한다
-    if (REPORT) zip.file("report.json", JSON.stringify(REPORT));
+    await putModel(zip, "");
     return await zip.generateAsync({ type: "blob" });
   }
   /* 저장한 모델을 다시 불러온다 — 사진은 들어 있지 않아 확인·시험만 할 수 있다 */
   async function loadModelZip(blob) {
     const zip = await JSZip.loadAsync(blob);
-    const need = ["model.json", "weightsSpecs.json", "weights.bin", "labels.txt"];
-    for (const n of need) {
-      if (!zip.file(n)) throw new Error("모델 파일이 아니에요: " + n);
-    }
-    const topology = JSON.parse(await zip.file("model.json").async("string"));
-    const specs = JSON.parse(await zip.file("weightsSpecs.json").async("string"));
-    const u8 = await zip.file("weights.bin").async("uint8array");
-    const labels = (await zip.file("labels.txt").async("string"))
-      .split("\n").map(x => x.trim()).filter(Boolean);
-    const kind = zip.file("kind.txt")
-      ? (await zip.file("kind.txt").async("string")).trim() : "image";
-
-    if (DIM_OF[kind]) {                       // 학습에 쓴 특징 종류로 맞춘다
-      FEAT_KIND = kind;
-      document.querySelectorAll("#modeSw button")
-        .forEach(x => x.classList.toggle("on", x.dataset.kind === FEAT_KIND));
-    }
+    const got = await readModel(zip, "");
+    if (!got) { alert(t("oldModel")); return false; }
+    setKind(got.kind);
     if (model) { try { model.dispose(); } catch (e) {} }
-    model = await tf.loadLayersModel(tf.io.fromMemory(topology, specs,
-                                                      u8.slice().buffer));
-    trainedLabels = labels;
-    HOLDOUT = null; REPORT = null;
+    model = got.model;
+    trainedLabels = got.labels;
+    HOLDOUT = null; REPORT = got.report;
     $("score").style.display = $("wrong").style.display = "none";
     $("testOnce").disabled = $("testLive").disabled = false;
     $("saveBtn").disabled = $("downloadBtn").disabled = false;
-    log(t("modelLoaded", labels.join(", ")));
+    log(t("modelLoaded", got.labels.join(", ")));
+    return true;
   }
 
   $("saveBtn").addEventListener("click", async () => {
@@ -1799,8 +1922,7 @@
           const r = await fetch("/custom/models/" + encodeURIComponent(m.slug) + "/file");
           const blob = await r.blob();
           if (blob.type.includes("json")) throw new Error(await blob.text());
-          await loadModelZip(blob);
-          $("modelTitle").value = m.title || "";
+          if (await loadModelZip(blob)) $("modelTitle").value = m.title || "";
         } catch (err) { alert(t("aServer") + cleanErr(err)); }
       });
       /* 파이썬으로 — 이 AI 를 쓰는 코드가 미리 적힌 파이썬 창을 연다 (code.html 의 ?model=) */
@@ -1815,11 +1937,54 @@
         await fetch("/custom/models/" + encodeURIComponent(m.slug), { method: "DELETE" });
         loadSaved();
       });
-      el.appendChild(open); el.appendChild(py); el.appendChild(b);
+      el.appendChild(open); el.appendChild(py);
+      /* 로봇으로 — 로봇 형식(지금 방식)으로 저장한 것만 */
+      if (m.format === "teachlab") {
+        const rb = document.createElement("button");
+        rb.className = "btn sm"; rb.textContent = t("modelRobot");
+        rb.addEventListener("click", () => sendToRobot(m.slug, m.title));
+        el.appendChild(rb);
+      }
+      el.appendChild(b);
       $("savedList").appendChild(el);
     });
   }
   loadSaved();
+
+  /* ---------------- 로봇으로 보내기 (같은 망 안에서만, 인증 없음) ---------------- */
+  const ROBOT_KEY = "vapiRobotHost";
+  try { $("robotHost").value = localStorage.getItem(ROBOT_KEY) || ""; } catch (e) {}
+  function robotHost() {
+    const h = $("robotHost").value.trim();
+    if (!h) { $("robotMsg").textContent = t("robotNeedHost"); $("robotHost").focus(); return ""; }
+    try { localStorage.setItem(ROBOT_KEY, h); } catch (e) {}
+    return h;
+  }
+  $("robotPing").addEventListener("click", async () => {
+    const h = robotHost(); if (!h) return;
+    $("robotMsg").textContent = "…";
+    try {
+      const j = await (await fetch("/custom/robot/ping?host=" + encodeURIComponent(h))).json();
+      $("robotMsg").textContent = j.result === "ok" ? t("robotOk", j.data.models.length) : j.data;
+    } catch (e) { $("robotMsg").textContent = t("aServer") + cleanErr(e); }
+  });
+  async function sendToRobot(slug, title, overwrite) {
+    const h = robotHost(); if (!h) return;
+    $("robotMsg").textContent = t("robotSending");
+    try {
+      const j = await (await fetch("/custom/robot/send", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug: slug, host: h, name: title || slug, overwrite: !!overwrite }),
+      })).json();
+      if (j.result !== "ok") { $("robotMsg").textContent = j.data; return; }
+      if (j.data.exists) {
+        if (confirm(t("robotExists", j.data.name))) return sendToRobot(slug, title, true);
+        $("robotMsg").textContent = ""; return;
+      }
+      $("robotMsg").textContent = t("robotSent", j.data.name);
+      if (window.vapiStat) vapiStat("model_to_robot");
+    } catch (e) { $("robotMsg").textContent = t("aServer") + cleanErr(e); }
+  }
 
   /* AI 눈 — 같은 "가르치기" 를 작은 CNN 으로, 속을 들여다보며 한다 (/eye). 가르치기의 짝 앱이라 여기서 바로 건너간다 */
   document.getElementById("eyeLink").addEventListener("click", () => {
@@ -1830,19 +1995,11 @@
   async function buildProjectZip() {
     const zip = new JSZip();
     zip.file("project.json", JSON.stringify({
-      v: 2, kind: FEAT_KIND, trained: !!model,
+      v: PROJECT_V, kind: FEAT_KIND, trained: !!model,
       classes: CLASSES.map(c => ({ name: c.name, count: c.feats.length })),
     }, null, 2));
     /* 학습까지 마쳤으면 그 결과도 함께 넣는다 — 불러오면 바로 확인할 수 있게 */
-    if (model) {
-      const art = await model.save(tf.io.withSaveHandler(async a => a));
-      zip.file("model/model.json", JSON.stringify(art.modelTopology));
-      zip.file("model/weightsSpecs.json", JSON.stringify(art.weightSpecs));
-      zip.file("model/weights.bin", new Uint8Array(art.weightData));
-      zip.file("model/labels.txt", trainedLabels.join("\n"));
-      zip.file("model/kind.txt", FEAT_KIND);
-      if (REPORT) zip.file("model/report.json", JSON.stringify(REPORT));
-    }
+    if (model) await putModel(zip, "model/");
     CLASSES.forEach((c, ci) => {
       const buf = new Float32Array(c.feats.length * FEAT_DIM());
       c.feats.forEach((f, i) => buf.set(f, i * FEAT_DIM()));
@@ -1859,14 +2016,13 @@
   async function loadProjectZip(blob) {
     const zip = await JSZip.loadAsync(blob);
     const meta = JSON.parse(await zip.file("project.json").async("string"));
-    FEAT_KIND = DIM_OF[meta.kind] ? meta.kind : "image";
-    document.querySelectorAll("#modeSw button")
-      .forEach(x => x.classList.toggle("on", x.dataset.kind === FEAT_KIND));
+    setKind(DIM_OF[meta.kind] ? meta.kind : "image");
+    const old = (meta.v || 1) < PROJECT_V;       /* 예전 특징 — 그대로 쓸 수 없다 */
     const dim = FEAT_DIM();
     CLASSES = [];
     for (let ci = 0; ci < meta.classes.length; ci++) {
       const c = { name: meta.classes[ci].name, thumbs: [], feats: [] };
-      const fb = zip.file("class" + ci + "/features.bin");
+      const fb = old ? null : zip.file("class" + ci + "/features.bin");
       if (fb) {
         const u8 = await fb.async("uint8array");
         const all = new Float32Array(u8.buffer, u8.byteOffset, u8.byteLength / 4);
@@ -1877,6 +2033,7 @@
       for (const n of thumbs) {
         c.thumbs.push("data:image/jpeg;base64," + await zip.file(n).async("base64"));
       }
+      if (old) c.thumbs = [];
       while (c.thumbs.length < c.feats.length) c.thumbs.push("");
       CLASSES.push(c);
     }
@@ -1885,21 +2042,14 @@
     $("testOnce").disabled = $("testLive").disabled = true;
     $("score").style.display = $("wrong").style.display = "none";
     renderClasses(); saveDraft();
-    log(t("projLoaded"));
+    log(t(old ? "oldProject" : "projLoaded"));
+    if (old) return;
 
     /* 학습 결과가 같이 들어 있으면 되살린다 — 다시 학습하지 않아도 된다 */
-    if (zip.file("model/model.json")) {
+    if (zip.file("model/classifier.json")) {
       try {
-        const topology = JSON.parse(await zip.file("model/model.json").async("string"));
-        const specs = JSON.parse(await zip.file("model/weightsSpecs.json").async("string"));
-        const u8 = await zip.file("model/weights.bin").async("uint8array");
-        trainedLabels = (await zip.file("model/labels.txt").async("string"))
-          .split("\n").map(x => x.trim()).filter(Boolean);
-        model = await tf.loadLayersModel(tf.io.fromMemory(topology, specs,
-                                                          u8.slice().buffer));
-        if (zip.file("model/report.json")) {
-          REPORT = JSON.parse(await zip.file("model/report.json").async("string"));
-        }
+        const got = await readModel(zip, "model/");
+        model = got.model; trainedLabels = got.labels; REPORT = got.report;
         $("testOnce").disabled = $("testLive").disabled = false;
         $("saveBtn").disabled = $("downloadBtn").disabled = false;
         log(t("projModel"));
@@ -2003,7 +2153,7 @@
   }
   function saveDraft() {
     try {
-      const d = { v: 2, kind: FEAT_KIND, classes: CLASSES.map(c => ({
+      const d = { v: PROJECT_V, kind: FEAT_KIND, classes: CLASSES.map(c => ({
         name: c.name, thumbs: c.thumbs.slice(-40), feats: c.feats.map(b64) })) };
       const s = JSON.stringify(d);
       if (s.length > 4 * 1024 * 1024) return;     // 용량 초과 시 임시저장은 건너뛴다
@@ -2016,13 +2166,11 @@
       if (!s) return false;
       const d = JSON.parse(s);
       if (!d || !Array.isArray(d.classes) || !d.classes.length) return false;
-      if (d.kind && DIM_OF[d.kind]) {
-        FEAT_KIND = d.kind;
-        document.querySelectorAll("#modeSw button")
-          .forEach(x => x.classList.toggle("on", x.dataset.kind === FEAT_KIND));
-      }
+      if (d.kind && DIM_OF[d.kind]) setKind(d.kind);
+      const old = (d.v || 1) < PROJECT_V;
       CLASSES = d.classes.map(c => ({
-        name: c.name, thumbs: c.thumbs || [], feats: (c.feats || []).map(unb64) }));
+        name: c.name, thumbs: old ? [] : (c.thumbs || []), feats: old ? [] : (c.feats || []).map(unb64) }));
+      if (old) setTimeout(() => log(t("oldDraft")), 0);
       return true;
     } catch (e) { return false; }
   }
@@ -2039,6 +2187,8 @@
     set("txtProjSave", t("projSave2")); set("txtProjFile", t("projFile"));
     set("txtProjDown", t("projDown")); set("txtProjListT", t("projListT"));
     html("txtQ5Hint", t("q5hint")); html("txtQ7Hint", t("q7hintFull"));
+    set("txtRobotT", t("robotT")); set("txtRobotPing", t("robotPing"));
+    $("robotMsg").textContent = t("robotHint");
     set("langButton", t("langBtn"));
     set("txtQ1", t("q1")); set("txtQ2", t("q2")); set("txtQ3", t("q3"));
     set("txtQ4", t("q4")); set("txtQ5", t("q5"));
