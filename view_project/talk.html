@@ -594,7 +594,7 @@
     const state = $("dbState");
     try {
       state.textContent = T("dbSaving");
-      const text = await (await fetch("/assets/sample-db.txt")).text();
+      const text = await (await fetch(LANG === "en" ? "/assets/sample-db.en.txt" : "/assets/sample-db.txt")).text();
       $("dbTitle").value = T("sampleTitle");   // 내용을 보여 주고 [만들기]를 누르게 한다
       $("dbText").value = text;
       state.textContent = T("sampleFilled");
