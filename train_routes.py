@@ -5,6 +5,7 @@
 #   특징  teachlab/ (로봇 openpibo/modules/teachlab 과 같은 코드·같은 모델 파일)
 #         image   mobilenet_v3_small 1024 (L2)            — teachlab/models/mobilenet_v3_small_embedder.onnx, OpenVINO f32
 #         pose    손 21점 world 좌표 63 (손목 원점·중지 MCP 길이)   — MediaPipe hand_landmarker
+#         hand2   두 손 126 (왼손 63 + 오른손 63, 없는 손은 0)
 #         face    표정 blendshape 52                       — MediaPipe face_landmarker
 #         body_up 상반신 25점 world 좌표 75 (어깨 원점·어깨 너비) — MediaPipe pose_landmarker_lite
 #         body    전신 33점 world 좌표 99 (엉덩이 원점·몸통 길이)
@@ -57,12 +58,13 @@ IMAGE_DIR = TMP_DIR + os.sep
 KINDS = {
     "image": ("image", None),
     "pose": ("hand", "one"),
+    "hand2": ("hand", "two"),
     "face": ("face", None),
     "body_up": ("pose", "upper"),
     "body": ("pose", "full"),
 }
 KIND_OF = {v: k for k, v in KINDS.items()}
-DIM_OF = {"image": 1024, "pose": 63, "face": 52, "body_up": 75, "body": 99}
+DIM_OF = {"image": 1024, "pose": 63, "hand2": 126, "face": 52, "body_up": 75, "body": 99}
 STREAM_SHORT_SIDE = 240             # 로봇 분류기가 추론 전에 줄이는 짧은 변(vision_classify.STREAM_SHORT_SIDE)
 
 # 예전 모델(TF.js zip)의 특징 차원
@@ -138,6 +140,7 @@ def _detect(kind, rgb):
 
 NOT_SEEN = {
     "pose": "손이 보이지 않아요. 손을 화면 안에 보여 주세요.",
+    "hand2": "손이 보이지 않아요. 손을 화면 안에 보여 주세요.",
     "face": "얼굴이 보이지 않아요. 얼굴을 화면 안에 보여 주세요.",
     "body_up": "사람이 보이지 않아요. 몸을 화면 안에 보여 주세요.",
     "body": "사람이 보이지 않아요. 온몸이 보이게 뒤로 물러서 주세요.",
@@ -225,7 +228,8 @@ def _hand_landmarks(bgr):
         gesture = res.gestures[0][0].category_name
     norm = [[round(float(p.x), 4), round(float(p.y), 4)] for p in lms]
     px = np.array([[p.x * w, p.y * h, p.z * w] for p in lms], dtype=np.float32)
-    return {"norm": norm, "px": px, "handed": handed, "gesture": gesture}
+    hands = [[[round(float(p.x), 4), round(float(p.y), 4)] for p in hl] for hl in res.hand_landmarks]
+    return {"norm": norm, "px": px, "handed": handed, "gesture": gesture, "hands": hands}
 
 
 def _legacy_embed_pose(bgr):
@@ -563,8 +567,8 @@ async def custom_pose(request: Request, uploadFile: UploadFile = File(...)):
     def fn():
         hand = _hand_landmarks(_decode(raw))
         if hand is None:
-            return {"found": False, "points": []}
-        return {"found": True, "points": hand["norm"],
+            return {"found": False, "points": [], "hands": []}
+        return {"found": True, "points": hand["norm"], "hands": hand["hands"],
                 "hand": hand["handed"], "gesture": hand["gesture"]}
     return _run("custom_pose", fn, device="CPU")
 

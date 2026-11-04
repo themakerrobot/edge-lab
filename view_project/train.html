@@ -307,6 +307,7 @@
           <span class="modeSw" id="modeSw">
             <button data-kind="image" class="on" id="txtModeImage">사진</button>
             <button data-kind="pose" id="txtModePose">손모양</button>
+            <button data-kind="hand2" id="txtModeHand2">두 손</button>
             <button data-kind="face" id="txtModeFace">표정</button>
             <button data-kind="body_up" id="txtModeUp">상반신</button>
             <button data-kind="body" id="txtModeBody">전신</button>
@@ -467,13 +468,13 @@
    *   보내기    : /custom/robot/send — 저장한 AI 를 로봇 분류기(50010)로 (같은 망 안에서만)
    * 예전(TF.js zip) 모델은 서버에서 계속 쓸 수 있지만, 여기로 다시 불러오지는 않는다(특징이 달라졌다).
    **********************************************************************/
-  const DIM_OF = { image: 1024, pose: 63, face: 52, body_up: 75, body: 99 };
+  const DIM_OF = { image: 1024, pose: 63, hand2: 126, face: 52, body_up: 75, body: 99 };
   /* 로봇 project.json 의 source/variant (서버 train_routes.KINDS 와 같다) */
-  const KINDS = { image: ["image", null], pose: ["hand", "one"], face: ["face", null],
+  const KINDS = { image: ["image", null], pose: ["hand", "one"], hand2: ["hand", "two"], face: ["face", null],
                   body_up: ["pose", "upper"], body: ["pose", "full"] };
   const HIDDEN = 64, DROPOUT = 0.2, LR = 0.001;          /* 로봇 분류기(teach-lab trainer.js)와 같은 머리 */
   const PROJECT_V = 3;                                    /* 작품 파일 형식 — 3 부터 로봇과 같은 특징 */
-  const SKELETON = ["pose", "face", "body_up", "body"];   // 골격/선을 그리는 모드
+  const SKELETON = ["pose", "hand2", "face", "body_up", "body"];   // 골격/선을 그리는 모드
   let FEAT_KIND = "image";                 // image(사진) | pose(손모양)
   const FEAT_DIM = () => DIM_OF[FEAT_KIND];
   const LS_KEY = "vapiTrainDraft";
@@ -489,7 +490,8 @@
       nSaved: "‘{n}’ AI 를 저장했어요. 이제 블록·체험하기에서 쓸 수 있어요.", nToBlocks: "블록에 넣기", nToTry: "체험하기에서 써 보기", nToPy: "파이썬으로", modelPy: "파이썬",
       eyebrow: "내가 직접 AI를 학습시켜요 · 인터넷 없이 내 컴퓨터에서",
       langBtn: "EN",
-      modeImage: "사진", modePose: "손모양", modeFace: "표정",
+      modeImage: "사진", modePose: "손모양", modeHand2: "두 손", modeFace: "표정",
+      hand2Hint: "두 손을 함께 화면에 보여 주세요. 왼손·오른손 관절 21개씩 위치만 학습해요 (한 손만 보여도 돼요).",
       modeUp: "상반신", modeBody: "전신",
       upHint: "책상에 앉은 채로 해요. 얼굴·어깨·팔 등 상반신 관절 25개 위치만 학습해서 옷 색이나 배경에 흔들리지 않아요.",
       bodyHint: "온몸이 보이도록 뒤로 물러서 주세요. 관절 33개 위치만 학습해요.",
@@ -595,7 +597,8 @@
       nSaved: "Saved the ‘{n}’ AI. You can use it in Blocks and Try it now.", nToBlocks: "Put in Blocks", nToTry: "Try it", nToPy: "In Python", modelPy: "Python",
       eyebrow: "train your very own AI · runs on this computer",
       langBtn: "한",
-      modeImage: "Photo", modePose: "Hand", modeFace: "Face",
+      modeImage: "Photo", modePose: "Hand", modeHand2: "Two hands", modeFace: "Face",
+      hand2Hint: "Show both hands. Only 21 joint positions of each hand (left and right) are learned. One hand is also fine.",
       modeUp: "Upper body", modeBody: "Full body",
       upHint: "You can stay seated. Only 25 upper-body joints (face, shoulders, arms…) are learned, so clothes and background matter less.",
       bodyHint: "Step back so your whole body is visible. Only the 33 joint positions are learned.",
@@ -1136,6 +1139,7 @@
   const isBody = k => (k || FEAT_KIND).startsWith("body");
   function modeHint(k) {
     if (k === "pose") return t("poseHint");
+    if (k === "hand2") return t("hand2Hint");
     if (k === "face") return t("faceHint");
     if (k === "body_up") return t("upHint");
     if (k === "body") return t("bodyHint");
@@ -1209,21 +1213,26 @@
     const g = cv.getContext("2d");
     g.clearRect(0, 0, w, h);
     if (!points || !points.length) return;
-    const P = points.map(p => [p[0] * w, p[1] * h]);
-    g.strokeStyle = "rgba(31, 95, 122,.95)";
-    g.lineWidth = 2.5; g.lineCap = "round";
-    HAND_LINKS.forEach(([a, b]) => {
-      if (!P[a] || !P[b]) return;
-      g.beginPath(); g.moveTo(P[a][0], P[a][1]); g.lineTo(P[b][0], P[b][1]); g.stroke();
-    });
-    P.forEach(([x, y], i) => {
-      g.beginPath();
-      g.arc(x, y, i === 0 ? 5 : 3.5, 0, Math.PI * 2);
-      g.fillStyle = (i === 0) ? "#b4451c" : "#fff";
-      g.fill();
-      g.lineWidth = 1.5; g.strokeStyle = "rgba(15,147,192,.9)"; g.stroke();
+    /* 한 손: [[x,y]×21], 두 손: [[[x,y]×21], …] */
+    const hands = Array.isArray(points[0][0]) ? points : [points];
+    hands.forEach(hp => {
+      const P = hp.map(p => [p[0] * w, p[1] * h]);
+      g.strokeStyle = "rgba(31, 95, 122,.95)";
+      g.lineWidth = 2.5; g.lineCap = "round";
+      HAND_LINKS.forEach(([a, b]) => {
+        if (!P[a] || !P[b]) return;
+        g.beginPath(); g.moveTo(P[a][0], P[a][1]); g.lineTo(P[b][0], P[b][1]); g.stroke();
+      });
+      P.forEach(([x, y], i) => {
+        g.beginPath();
+        g.arc(x, y, i === 0 ? 5 : 3.5, 0, Math.PI * 2);
+        g.fillStyle = (i === 0) ? "#b4451c" : "#fff";
+        g.fill();
+        g.lineWidth = 1.5; g.strokeStyle = "rgba(15,147,192,.9)"; g.stroke();
+      });
     });
   }
+
 
   /* 골격 표시용 프레임은 작게 — 인코딩/전송 비용이 인식 시간만큼 크다. */
   const PROBE_W = 256, PROBE_H = 192;
@@ -1274,7 +1283,7 @@
     const j = await (await fetch("/custom/pose", { method: "POST", body: fd })).json();
     if (j.device) sysEl.exec.textContent = j.device;
     if (j.result !== "ok") { drawHand(null); return false; }
-    drawHand(j.data.points);
+    drawHand(FEAT_KIND === "hand2" && j.data.hands && j.data.hands.length ? j.data.hands : j.data.points);
     return !!j.data.found;
   }
   /* 응답이 오는 대로 다음 프레임을 보낸다 (요청 중복 없음).
@@ -2180,7 +2189,7 @@
     const set = (id, v) => { const el = $(id); if (el) el.textContent = v; };
     const html = (id, v) => { const el = $(id); if (el) el.innerHTML = v; };
     document.title = t("titleTag");
-    set("txtModeImage", t("modeImage")); set("txtModePose", t("modePose"));
+    set("txtModeImage", t("modeImage")); set("txtModePose", t("modePose")); set("txtModeHand2", t("modeHand2"));
     set("txtModeFace", t("modeFace"));
     set("txtModeUp", t("modeUp")); set("txtModeBody", t("modeBody"));
     set("txtHoldout", t("holdout")); set("txtQ7", t("q7"));

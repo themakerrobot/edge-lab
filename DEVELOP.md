@@ -109,7 +109,7 @@ edge-lab(PC)에서 가르친 AI 가 파이보 · PiBrain 에서 **같은 답**�
 | | 지금 | 기준(로봇) |
 |---|---|---|
 | 사진 | mobilenet_v3_small 1024 (L2) — `teachlab/models/mobilenet_v3_small_embedder.onnx` 를 OpenVINO **f32** | 같은 ONNX 를 onnxruntime |
-| 손 · 표정 · 상반신 · 전신 | MediaPipe world 좌표 63 · blendshape 52 · 75 · 99 (`teachlab/landmarks.py`) | 같은 파일 |
+| 손 · 두 손 · 표정 · 상반신 · 전신 | MediaPipe world 좌표 63 · 126 · blendshape 52 · 75 · 99 (`teachlab/landmarks.py`) | 같은 파일 |
 | 입력 크기 | 짧은 변 240 으로 줄인 뒤 뽑는다(`train_routes._stream_rgb`) | `vision_classify._as_stream_rgb` |
 | 머리 | Dense 64 relu → Dropout 0.2 → Dense N softmax, adam 0.001, 반복 40, 묶음 16 | teach-lab `trainer.js` |
 | 저장 | `model.zip` 안에 `project.json` · `classifier.json` · `classifier.bin` · `labels.txt` · `samples.json` (+ `report.json`) | 로봇 `/home/pi/mymodel/<이름>/` |
