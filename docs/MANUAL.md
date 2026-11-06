@@ -127,7 +127,7 @@ show(img, r)                   # 박스가 그려진 채로 보기
 | **3** | 소리 시험 |
 | **4** | 마이크 시험 — 3초 녹음해 그대로 들려줘요 |
 | **5** | 이름 — 결과물에 함께 남아요 |
-| **6** | 또렷하게 보기 — 밝은 교실에서 화면이 잘 안 보일 때 |
+| **6** | 밝은 곳 모드 — 밝은 교실에서 화면이 잘 안 보일 때 |
 
 ---
 
@@ -152,7 +152,7 @@ USB로 옮기려면 이 폴더를 통째로 복사하고, 다른 PC에서 설정
 |---|---|
 | 카메라가 안 켜져요 | 주소창 왼쪽 자물쇠·카메라 아이콘 → **허용**. 화상회의 앱이 쓰고 있으면 닫기 |
 | 소리가 안 나요 | 설정 → **소리 시험**. 안 들리면 **윈도우 소리 설정 열기** 에서 기본 장치 확인 |
-| 화면이 눈부셔요 | 설정 → **또렷하게 보기** |
+| 밝은 곳에서 글씨가 흐려요 | 설정 → **밝은 곳 모드** |
 | 다시 안내를 보고 싶어요 | 오른쪽 위 **?** |
 
 **웹캠은 없어도 됩니다** — 사진을 올려서 하면 됩니다.
@@ -291,7 +291,7 @@ show(img, r)                   # see it with boxes drawn
 | **3** | Sound test |
 | **4** | Mic test — records 3 seconds and plays it straight back |
 | **5** | Name — stays with your work |
-| **6** | High contrast — when the screen is hard to read in a bright room |
+| **6** | Bright room — when the screen is hard to read in a bright room |
 
 ---
 
@@ -316,7 +316,7 @@ To move it to a USB stick, copy the whole folder, then on another PC use **[Chan
 |---|---|
 | The camera won't turn on | Lock/camera icon left of the address bar → **Allow**. Close video-call apps that may be using it |
 | No sound | Settings → **Sound test**. If still silent, **Open Windows sound settings** and check the default device |
-| The screen is too bright | Settings → **High contrast** |
+| Text looks faint in a bright room | Settings → **Bright room** |
 | I want the walkthrough again | **?** at the top right |
 
 **You do not need a webcam** — just upload a photo instead.

@@ -81,7 +81,7 @@ speak("안녕하세요")                     # 말하기
 ### 설정 — 수업 전 점검
 
 **카메라 · 소리 · 마이크**가 되는지 한 번에 확인합니다. 마이크 시험은 3초 녹음해 그대로 되들려 주므로
-마이크와 스피커가 함께 확인됩니다. 밝은 교실에서 화면이 잘 안 보이면 **또렷하게 보기**로 바꿉니다.
+마이크와 스피커가 함께 확인됩니다. 밝은 교실에서 화면이 잘 안 보이면 **밝은 곳 모드**를 켭니다.
 
 ---
 
@@ -276,7 +276,7 @@ and it also shows you where the answer came from.
 
 Confirm **camera · sound · microphone** all at once. The mic test records 3 seconds and plays it straight back,
 so mic and speaker are both verified together. If the screen is hard to read in a bright classroom,
-switch to **High contrast**.
+turn on **Bright room**.
 
 ---
 
