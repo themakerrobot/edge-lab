@@ -24,7 +24,7 @@ NEED = [
     "gan/u2net.onnx",
     "gan/single-image-super-resolution-1032.xml",
     "gan/depth-v2s.xml",          # 깊이 지도 (상대 깊이 — 보여 주는 용도)
-    "backbone/mobilenetv2_feat.xml",   # 가르치기 — 이게 없으면 학습 자체가 안 된다
+    # backbone/mobilenetv2_feat.xml 은 예전(261104 전) 가르치기 모델을 쓸 때만 — 없어도 된다
     "mask/mask.onnx",                  # 마스크 분류 (임베더 + 분류기가 한 파일 — 아래에서 연다)
     "mediapipe/face_landmarker.task",  # 얼굴 거리·방향
     "mediapipe/gesture_recognizer.task",  # 손동작
@@ -66,6 +66,20 @@ for rel in ["easydetect/ed-m/ed-m.onnx", "easydetect/pose/pose-m.onnx",
     except Exception as e:
         fails += 1
         print("FAIL models/" + rel, "|", str(e)[:200])
+
+# 가르치기 특징 — 리포 안 teachlab/models (로봇과 같은 파일). 임베더는 OpenVINO 로 열리는지까지 본다
+for rel in ["mobilenet_v3_small_embedder.onnx", "hand_landmarker.task", "face_landmarker.task", "pose_landmarker_lite.task"]:
+    f = pathlib.Path("teachlab/models") / rel
+    if not f.exists():
+        fails += 1
+        print("FAIL teachlab/models/" + rel, "| 파일 없음 (git 으로 받은 폴더가 맞는지 확인)")
+        continue
+    if f.suffix == ".onnx":
+        try:
+            core.read_model(f)
+        except Exception as e:
+            fails += 1
+            print("FAIL teachlab/models/" + rel, "|", str(e)[:200])
 
 # TTS(Supertonic)는 OpenVINO 로 읽는 모델이 아니라 파일 존재만 확인한다
 tts_need = ["duration_predictor.onnx", "text_encoder.onnx", "vector_estimator.onnx",

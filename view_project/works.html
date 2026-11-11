@@ -466,8 +466,8 @@
             var fd = new FormData();
             fd.append("uploadFile", f, f.name);
             fd.append("title", nm);
-            /* 가르치기 작품은 project.json 을, 내 AI 는 model.json 을 담고 있다 */
-            return fetch(z.file("project.json") ? "/custom/project/save" : "/custom/upload", { method: "POST", body: fd });
+            /* 가르치기 작품은 project.json 만, 내 AI 는 classifier.json(로봇 형식 — project.json 도 있다)이나 예전 model.json 을 담고 있다 */
+            return fetch(z.file("project.json") && !z.file("classifier.json") ? "/custom/project/save" : "/custom/upload", { method: "POST", body: fd });
           });
         }
         return Promise.reject(new Error(t("impBad")));

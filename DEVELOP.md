@@ -11,7 +11,8 @@
 | `engines.py` | OpenVINO 추론 엔진 + 백그라운드 로딩 |
 | `prompts.py` | VLM 프롬프트 템플릿·파서 |
 | `mp_routes.py` | MediaPipe — 얼굴 거리·방향, 손 제스처 |
-| `train_routes.py` | 나만의 AI 학습 API — 특징 추출(5모드)·모델 저장·작품·성적표 |
+| `train_routes.py` | 나만의 AI 학습 API — 특징 추출(5모드)·모델 저장·작품·성적표·[로봇으로 보내기] |
+| `teachlab/` | 가르치기 특징 계산 — 로봇(openpibo-os.pibo `openpibo/modules/teachlab`)과 같은 코드·같은 모델 파일(`teachlab/models/`). 고칠 때는 로봇과 같이 |
 | `stats_routes.py` | 사용 통계 수집 |
 | `code_routes.py` | 파이썬 IDE API — 실행·정지·출력·작품 저장 |
 | `speech_routes.py` | 음성 인식(STT)·음성 합성(TTS) API |
@@ -100,3 +101,21 @@
 낱말을 더하거나 빼려면 `prompts.py` 의 표만 고치면 된다 — 프롬프트·파서·프론트가
 모두 그 표를 따라간다.
 
+
+## 가르치기 = 로봇과 같은 계산 (261104)
+
+edge-lab(PC)에서 가르친 AI 가 파이보 · PiBrain 에서 **같은 답**을 내도록, 특징 계산 · 머리(분류기) · 저장 형식을 로봇과 하나로 맞췄다.
+
+| | 지금 | 기준(로봇) |
+|---|---|---|
+| 사진 | mobilenet_v3_small 1024 (L2) — `teachlab/models/mobilenet_v3_small_embedder.onnx` 를 OpenVINO **f32** | 같은 ONNX 를 onnxruntime |
+| 손 · 두 손 · 표정 · 상반신 · 전신 | MediaPipe world 좌표 63 · 126 · blendshape 52 · 75 · 99 (`teachlab/landmarks.py`) | 같은 파일 |
+| 입력 크기 | 짧은 변 240 으로 줄인 뒤 뽑는다(`train_routes._stream_rgb`) | `vision_classify._as_stream_rgb` |
+| 머리 | Dense 64 relu → Dropout 0.2 → Dense N softmax, adam 0.001, 반복 40, 묶음 16 | teach-lab `trainer.js` |
+| 저장 | `model.zip` 안에 `project.json` · `classifier.json` · `classifier.bin` · `labels.txt` · `samples.json` (+ `report.json`) | 로봇 `/home/pi/mymodel/<이름>/` |
+
+- **[로봇으로 보내기]**: `POST /custom/robot/send {slug, host, name, overwrite}` → 로봇 분류기 `http://<host>:50010/api/models`. 인증은 없다(사용자 결정) — 대신 사설 IP·링크 로컬만 받는다(`_robot_host`). 로봇에 같은 이름이 있으면 `exists` 로 돌려주고 화면이 덮어쓸지 묻는다. `GET /custom/robot/ping?host=` 은 연결 확인
+- **예전 모델(TF.js zip)** 은 서버에서 계속 추론한다(`LegacyHead` · `_legacy_*` — MobileNetV2 1280 · 화면 좌표 손 · easydetect 몸). 가르치기 화면으로 다시 불러오기와 로봇 보내기는 안 된다(다시 가르치라고 안내). 예전 작품(v2 이하)은 클래스 이름만 가져온다
+- 확인(컨테이너, openvino 2024.5 · mediapipe 0.10.18): 같은 사진 17장에서 로봇 계산과 특징 차이 1.5e-6 이하(5종 모두), 브라우저로 학습 → 저장 → 가짜 로봇에 보내기 → 로봇 `CustomClassifier` 의 답·확률이 `/custom/predict` 와 17/17 같음, 작품 저장·열기, 예전 모델 올리기·추론, 로봇 주소 검사
+- **같은 점수 점검**: `tools/score_check.py`(로봇 `system/score_check.py` 와 같은 파일). `python tools\score_check.py run <저장한 AI 이름 또는 model.zip> <사진 폴더> --out pc.json` → 로봇·브라우저(`http://<로봇 IP>:50010/static/check.html`) 결과와 `python tools\score_check.py compare robot.json pc.json browser.json`. 로봇 vs PC 는 특징 차이 1e-5 안쪽이어야 한다
+- `teachlab/models/` 의 네 파일은 로봇과 **sha256 이 같아야** 한다. 로봇 쪽을 바꾸면 여기도 바꾼다
