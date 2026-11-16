@@ -104,10 +104,23 @@
        그러면 프레임이 안 와서 「사진 찍기」 가 검은 사진을 찍는다. */
     .stage video { visibility: hidden; }
     #bigText {
-      position: absolute; left: 0; right: 0; bottom: 10%; text-align: center;
+      position: absolute; left: 0; right: 0; top: 4%; text-align: center; pointer-events: none;
       font-family: "Gowun Batang", serif; font-size: 2rem; font-weight: 700; color: #fff;
       text-shadow: 0 2px 8px rgba(0,0,0,.75); padding: 0 12px; word-break: keep-all;
     }
+    /* 캐릭터 — 무대 좌표(가로 640 · 세로 480, 사진 좌표와 같다)를 % 로 바꿔 놓는다.
+       크기는 무대 너비에 맞춰 함께 줄어든다(cqw) */
+    .stage { container-type: size; }
+    #sprites { position: absolute; inset: 0; pointer-events: none; }
+    #sprites .sp { position: absolute; transform: translate(-50%, -50%); line-height: 1; white-space: nowrap;
+                   user-select: none; filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); }
+    #sprites .sp img { display: block; }
+    #askBox { position: absolute; left: 6%; right: 6%; bottom: 6%; display: none; flex-direction: column; gap: 6px;
+              background: #fff; border: 2px solid var(--line-d); border-radius: 12px; padding: 10px 12px; }
+    #askBox.on { display: flex; }
+    #askQ { font-size: 1rem; font-weight: 700; }
+    #askIn { flex: 1 1 auto; min-width: 0; font: inherit; font-size: 1rem; padding: 6px 10px;
+             border: 1.5px solid var(--line); border-radius: 8px; }
     #bubble {
       position: absolute; top: 10px; left: 10px; max-width: 75%;
       background: #fff; border: 2px solid var(--line-d); border-radius: 12px; border-bottom-left-radius: 2px;
@@ -188,8 +201,16 @@
           <video id="cam" autoplay playsinline muted></video>
           <img class="shot" id="shotImg" alt="">
           <canvas id="overlay" width="640" height="480"></canvas>
+          <div id="sprites"></div>
           <div id="bigText"></div>
           <div id="bubble"></div>
+          <form id="askBox" autocomplete="off">
+            <div id="askQ"></div>
+            <div style="display:flex;gap:6px;">
+              <input id="askIn" type="text">
+              <button id="askOk" type="submit">OK</button>
+            </div>
+          </form>
         </div>
         <div class="stage-tools">
           <button id="uploadButton">사진 올리기</button>
@@ -228,7 +249,7 @@
   <div id="exModal" style="display:none;position:fixed;inset:0;background:rgba(38,48,60,.45);
        z-index:50;align-items:center;justify-content:center;">
     <div style="background:#fff;border:2px solid var(--line-d);border-radius:6px;
-         max-width:460px;width:92%;padding:16px;">
+         max-width:460px;width:92%;padding:16px;max-height:88vh;display:flex;flex-direction:column;">
       <div style="display:flex;align-items:center;margin-bottom:4px;">
         <b id="txtExTitle" style="font-size:1.05rem;">예제 프로그램</b>
         <button id="exClose" style="margin-left:auto;border:1.5px solid var(--line);
@@ -236,7 +257,7 @@
       </div>
       <div class="hint" id="txtExHint" style="font-size:.82rem;color:var(--ink-2);
            margin-bottom:10px;">누르면 지금 블록이 예제로 바뀌어요.</div>
-      <div id="exList" style="display:flex;flex-direction:column;gap:8px;"></div>
+      <div id="exList" style="display:flex;flex-direction:column;gap:8px;overflow-y:auto;min-height:0;"></div>
     </div>
   </div>
   <script>window.MSG_EN = Object.assign({}, Blockly.Msg);</script>
@@ -268,7 +289,7 @@
 
       cat_image: "이미지", cat_img_edit: "이미지 바꾸기", cat_img_draw: "이미지 그리기",
       cat_vision: "AI 인식", cat_sound: "소리",
-      cat_lang: "AI 언어", cat_event: "이벤트", cat_board: "보드",
+      cat_lang: "AI 언어", cat_event: "이벤트 · 입력", cat_board: "보드",
       cat_logic: "논리", cat_loop: "반복", cat_math: "수학", cat_text: "텍스트",
       cat_list: "목록", cat_var: "변수", cat_func: "함수",
       lbl_img_ask: "— 사진에게 물어보기 —", lbl_basic: "— 기본 인식 —",
@@ -288,6 +309,34 @@
       b_face: "%1 얼굴의 %2", b_face_tip: "첫 번째 얼굴의 정보를 알려줘요. 나이는 숫자예요.",
       b_face_count: "%1 에서 얼굴 개수",
       b_ocr: "%1 의 글자 읽기", b_qr: "%1 의 QR 읽기",
+      cat_stage: "무대 · 캐릭터", lbl_stage_show: "— 무대에 보이기 —", lbl_sprite: "— 캐릭터 (무대 좌표: 가로 0~640, 세로 0~480) —",
+      lbl_ev_wait: "— 기다리기 —", lbl_ev_input: "— 키보드 · 마우스 · 대답 —",
+      b_show_text: "무대에 큰 글자 %1 보이기", b_show_text_tip: "점수 · 안내를 무대 아래쪽에 크게 보여 줘요.",
+      b_cam_view: "카메라 화면 %1", b_cam_view_tip: "무대에 카메라 화면을 계속 보여 줘요. 거울처럼 보이면 찍는 사진도 거울처럼 찍혀서 손 · 얼굴 위치가 화면과 같은 쪽이 돼요. 글자 읽기는 '그대로' 로.",
+      o_cmMirror: "거울처럼 보이기", o_cmNormal: "그대로 보이기", o_cmOff: "숨기기",
+      b_sp_put: "캐릭터 %1 을(를) %2 모양으로 x %3 y %4 에 놓기", b_sp_put_tip: "같은 이름이 있으면 모양과 자리만 바꿔요. 왼쪽 위가 x 0, y 0 이에요.",
+      b_sp_goto: "캐릭터 %1 을(를) x %2 y %3 (으)로 옮기기",
+      b_sp_move: "캐릭터 %1 을(를) x 로 %2 , y 로 %3 만큼 움직이기", b_sp_move_tip: "오른쪽 · 아래로 가려면 +, 왼쪽 · 위로 가려면 - 를 넣어요.",
+      b_sp_size: "캐릭터 %1 크기를 %2 (으)로", b_sp_size_tip: "무대 좌표 기준 크기예요. 기본 60.",
+      b_sp_show: "캐릭터 %1 %2",
+      o_svShow: "보이기", o_svHide: "숨기기", o_svRemove: "지우기",
+      b_sp_xy: "캐릭터 %1 의 %2",
+      b_sp_touch: "캐릭터 %1 이(가) 캐릭터 %2 에 닿았나?",
+      b_sp_edge: "캐릭터 %1 이(가) 무대 끝에 닿았나?",
+      o_lkStar: "⭐ 별", o_lkBall: "⚽ 공", o_lkApple: "🍎 사과", o_lkSmile: "😀 웃는 얼굴", o_lkCat: "🐱 고양이",
+      o_lkRocket: "🚀 로켓", o_lkHeart: "❤️ 하트", o_lkRobot: "🤖 로봇", o_lkPibo: "파이보", o_lkCrown: "👑 왕관",
+      b_forever: "계속 반복하기 (1초에 %1 번)", b_forever_tip: "[정지] 를 누를 때까지 계속 돌아요. 게임 · 계속 지켜보기에 써요. 1초에 몇 번 돌지 정해요(최대 30).",
+      b_key: "%1 키를 누르고 있나?", b_key_tip: "무대를 한 번 누른 뒤 키보드를 쓰세요.",
+      o_kySpace: "스페이스", o_kyLeft: "← 왼쪽", o_kyRight: "→ 오른쪽", o_kyUp: "↑ 위", o_kyDown: "↓ 아래",
+      b_clicked: "무대를 눌렀나?", b_clicked_tip: "지난번에 물어본 뒤로 무대를 한 번이라도 눌렀으면 참이에요.",
+      b_mouse: "마우스 %1", b_mouse_tip: "무대 위 마우스 자리 (무대 좌표).",
+      b_ev_ask: "%1 묻고 대답 기다리기", b_ev_ask_tip: "무대에 입력 칸이 나와요. 대답한 것을 돌려줘요 — 숫자로 대답하면 숫자가 돼요.",
+      sh_askQ: "이름이 뭐예요?", sh_player: "나", sh_target: "별", sh_score: "점수", sh_answer: "정답", sh_tries: "횟수",
+      sh_guess: "1부터 100 사이 숫자를 맞혀 보세요", sh_up: "더 큰 수예요", sh_down: "더 작은 수예요", sh_ok: "맞았어요! 횟수: ",
+      sh_scoreLbl: "점수 ", sh_handHint: "손을 카메라에 보여 주세요", sh_myAns: "내답", sh_hand: "손",
+      ex_guess: "숫자 맞히기 게임 (AI 없이)", ex_guess_d: "컴퓨터가 고른 수를 대답으로 맞혀요. 변수 · 반복 · 조건 · 입력을 연습해요.",
+      ex_catch: "키보드로 별 모으기", ex_catch_d: "화살표 키로 캐릭터를 움직여 별에 닿으면 점수가 올라요. 계속 반복 · 좌표 · 닿았나를 연습해요.",
+      ex_handgame: "손으로 별 잡기", ex_handgame_d: "카메라에 손을 보이면 캐릭터가 손을 따라가요. 별에 닿으면 점수! (AI 결과 + 게임)",
       cat_result: "결과", cat_data: "시간 · 기록",
       lbl_res_get: "— 결과 가져오기 —", lbl_res_use: "— 결과에서 꺼내기 —", lbl_pose: "— 자세 점 —",
       b_res_of: "%1 에서 %2 찾은 결과", b_res_of_tip: "찾은 것들을 통째로 줘요. 아래 '꺼내기' 블록으로 개수 · 이름 · 확률 · 위치를 꺼내 써요.",
@@ -431,7 +480,7 @@
       btn_examples: "예제",
       btn_clear: "지우기",
       pyCopy: "복사", pyCopied: "복사했어요", pyOpen: "파이썬 페이지에서 열기",
-      ex_title: "예제 프로그램",
+      ex_title: "예제 프로그램", ex_grpProject: "만들어 보기 (프로젝트)", ex_grpBasic: "기능 익히기",
       ex_hint: "누르면 지금 블록이 예제로 바뀌어요. 저장하지 않은 블록은 사라져요.",
       ex_greet: "얼굴 보이면 인사하기",
       ex_greet_d: "얼굴이 나타날 때까지 기다렸다가 인사해요. (이벤트 대기)",
@@ -517,7 +566,7 @@
 
       cat_image: "Image", cat_img_edit: "Change image", cat_img_draw: "Draw on image",
       cat_vision: "AI Vision", cat_sound: "Sound",
-      cat_lang: "AI Language", cat_event: "Events", cat_board: "Board",
+      cat_lang: "AI Language", cat_event: "Events · Input", cat_board: "Board",
       cat_logic: "Logic", cat_loop: "Loops", cat_math: "Math", cat_text: "Text",
       cat_list: "Lists", cat_var: "Variables", cat_func: "Functions",
       lbl_img_ask: "— ask about the photo —", lbl_basic: "— basic detection —",
@@ -537,6 +586,34 @@
       b_face: "%2 of the face in %1", b_face_tip: "Info about the first face. Age is a number.",
       b_face_count: "number of faces in %1",
       b_ocr: "read the text in %1", b_qr: "read the QR code in %1",
+      cat_stage: "Stage · Characters", lbl_stage_show: "— show on the stage —", lbl_sprite: "— characters (stage: x 0–640, y 0–480) —",
+      lbl_ev_wait: "— wait —", lbl_ev_input: "— keyboard · mouse · answers —",
+      b_show_text: "show big text %1 on the stage", b_show_text_tip: "Shows a score or a message at the bottom of the stage.",
+      b_cam_view: "camera view %1", b_cam_view_tip: "Keeps the camera on the stage. In mirror mode photos are mirrored too, so hands and faces are on the same side as on screen. Use 'as is' for reading text.",
+      o_cmMirror: "mirror", o_cmNormal: "as is", o_cmOff: "hide",
+      b_sp_put: "put character %1 as %2 at x %3 y %4", b_sp_put_tip: "If the name exists, only its look and place change. Top-left is x 0, y 0.",
+      b_sp_goto: "move character %1 to x %2 y %3",
+      b_sp_move: "move character %1 by x %2 , y %3", b_sp_move_tip: "+ goes right/down, - goes left/up.",
+      b_sp_size: "set size of character %1 to %2", b_sp_size_tip: "Size in stage units. Default 60.",
+      b_sp_show: "character %1 %2",
+      o_svShow: "show", o_svHide: "hide", o_svRemove: "remove",
+      b_sp_xy: "%2 of character %1",
+      b_sp_touch: "character %1 touching character %2?",
+      b_sp_edge: "character %1 touching the edge?",
+      o_lkStar: "⭐ star", o_lkBall: "⚽ ball", o_lkApple: "🍎 apple", o_lkSmile: "😀 smile", o_lkCat: "🐱 cat",
+      o_lkRocket: "🚀 rocket", o_lkHeart: "❤️ heart", o_lkRobot: "🤖 robot", o_lkPibo: "Pibo", o_lkCrown: "👑 crown",
+      b_forever: "repeat forever (%1 times a second)", b_forever_tip: "Runs until you press [Stop]. For games and watching. Sets how many times a second (max 30).",
+      b_key: "%1 key held down?", b_key_tip: "Click the stage once, then use the keyboard.",
+      o_kySpace: "space", o_kyLeft: "← left", o_kyRight: "→ right", o_kyUp: "↑ up", o_kyDown: "↓ down",
+      b_clicked: "stage clicked?", b_clicked_tip: "True if the stage was clicked since you last asked.",
+      b_mouse: "mouse %1", b_mouse_tip: "Mouse position on the stage (stage units).",
+      b_ev_ask: "ask %1 and wait", b_ev_ask_tip: "An answer box appears on the stage. Gives back the answer — a number if you type a number.",
+      sh_askQ: "What's your name?", sh_player: "me", sh_target: "star", sh_score: "score", sh_answer: "answer", sh_tries: "tries",
+      sh_guess: "Guess a number from 1 to 100", sh_up: "Bigger", sh_down: "Smaller", sh_ok: "Correct! Tries: ",
+      sh_scoreLbl: "Score ", sh_handHint: "Show your hand to the camera", sh_myAns: "guess", sh_hand: "hand",
+      ex_guess: "Number guessing game (no AI)", ex_guess_d: "Guess the computer's number by answering. Practice variables, loops, ifs and input.",
+      ex_catch: "Collect stars with the keyboard", ex_catch_d: "Move with the arrow keys; touch the star to score. Practice repeat forever, coordinates and touching.",
+      ex_handgame: "Catch stars with your hand", ex_handgame_d: "Show your hand and the character follows it. Touch the star to score! (AI result + game)",
       cat_result: "Results", cat_data: "Time · Records",
       lbl_res_get: "— get a result —", lbl_res_use: "— take values out —", lbl_pose: "— body points —",
       b_res_of: "result of finding %2 in %1", b_res_of_tip: "Gives everything that was found. Use the blocks below to take out count, names, scores and positions.",
@@ -679,7 +756,7 @@
       btn_examples: "Examples",
       btn_clear: "Clear",
       pyCopy: "Copy", pyCopied: "Copied", pyOpen: "Open in Python page",
-      ex_title: "Example programs",
+      ex_title: "Example programs", ex_grpProject: "Make a project", ex_grpBasic: "Learn the features",
       ex_hint: "Loading replaces your current blocks. Unsaved work is lost.",
       ex_greet: "Greet when a face appears",
       ex_greet_d: "Waits for a face, then says hello. (event wait)",
@@ -906,6 +983,14 @@
       },
       lists_sort: b => "sorted(" + val(b, "LIST", "[]") + ")",
 
+      /* ---- 무대 · 입력 — 무대 캐릭터는 블록 화면 전용 ---- */
+      ev_ask: b => "input(" + val(b, "Q", "''") + ")",
+      ev_key: () => "False  # 키보드: 블록 화면 전용",
+      ev_clicked: () => "False  # 무대 클릭: 블록 화면 전용",
+      ev_mouse: () => "0  # 마우스: 블록 화면 전용",
+      sp_xy: () => "0  # 캐릭터: 블록 화면 전용",
+      sp_touch: () => "False  # 캐릭터: 블록 화면 전용",
+      sp_edge: () => "False  # 캐릭터: 블록 화면 전용",
       /* ---- 결과 · 기록 (themaker 의 같은 이름 함수) ---- */
       res_of: b => "vision(" + q(field(b, "KIND")) + ", " + img(b, "IMG") + ")",
       res_custom: b => "vision(" + q("my:" + field(b, "MODEL")) + ", " + img(b, "IMG") + ")",
@@ -1068,6 +1153,18 @@
         }
       } else if (T === "st_clear") {
         return "";                       // 파이썬에는 화면 칸이 없다 — 조용히 건너뛴다
+      } else if (T === "st_show_text") {
+        out.push(p + "print(" + val(b, "TEXT", "''") + ")");
+      } else if (T === "ev_forever") {
+        needTime = true;
+        const fps = Math.max(0.1, Math.min(30, Number(num(b, "FPS", 10)) || 10));
+        out.push(p + "while True:");
+        const inner = b.getInputTargetBlock("DO");
+        if (inner) out.push(chain(inner, ind + 4));
+        out.push(p + "    time.sleep(" + (Math.round(1000 / fps) / 1000) + ")");
+      } else if (T === "sp_put" || T === "sp_goto" || T === "sp_move" || T === "sp_size" ||
+                 T === "sp_show" || T === "st_cam_view") {
+        out.push(p + "# " + T + " — 무대 캐릭터 · 카메라 화면은 블록 화면 전용");
       } else if (T === "tm_reset") {
         out.push(p + "reset_timer()");
       } else if (T === "dt_record") {
@@ -1308,6 +1405,11 @@ def texts_of(result):
         C_BOARD = "#2F7FD1", C_EDIT = "#1B8FB5", C_EDITX = "#3C7DD9";
   const C_CORE = { logic: "#5566D9", loop: "#2E9E6B", math: "#7A56C9", text: "#C2477B", list: "#D15A3A",
                    var: "#D9772B", func: "#6C7A8C" };
+  const C_STAGE = "#D9534F";
+  /* 캐릭터 모양 — 값은 키(o_lk…). 그림은 SP_GLYPH. 파이보는 assets 의 그림 */
+  const SP_LOOKS = ["lkStar", "lkBall", "lkApple", "lkSmile", "lkCat", "lkRocket", "lkHeart", "lkRobot", "lkCrown", "lkPibo"];
+  const SP_GLYPH = { lkStar: "⭐", lkBall: "⚽", lkApple: "🍎", lkSmile: "😀", lkCat: "🐱", lkRocket: "🚀",
+                     lkHeart: "❤️", lkRobot: "🤖", lkCrown: "👑", lkPibo: "/assets/pibo-hello.png" };
   const IMG = { type: "input_value", name: "IMG", check: "String" };
   const opt = keys => keys.map(k => [t("o_" + k), k]);
   const POS9 = () => opt(["tl", "tc", "tr", "ml", "mc", "mr", "bl", "bc", "br"]);
@@ -1589,6 +1691,54 @@ def texts_of(result):
         colour: C_AI, tooltip: t("b_boxes_tip") },
       { type: "st_clear", message0: t("b_clear"), previousStatement: null, nextStatement: null,
         colour: C_EDIT },
+      /* --- 무대 · 캐릭터 · 입력 (블록 화면 전용) --- */
+      { type: "st_show_text", message0: t("b_show_text"), previousStatement: null, nextStatement: null,
+        colour: C_STAGE, args0: [ { type: "input_value", name: "TEXT" } ], tooltip: t("b_show_text_tip") },
+      { type: "st_cam_view", message0: t("b_cam_view"), previousStatement: null, nextStatement: null,
+        colour: C_STAGE, args0: [ { type: "field_dropdown", name: "MODE", options: () => opt(["cmMirror", "cmNormal", "cmOff"]) } ],
+        tooltip: t("b_cam_view_tip") },
+      { type: "sp_put", message0: t("b_sp_put"), previousStatement: null, nextStatement: null, colour: C_STAGE,
+        inputsInline: true,
+        args0: [ { type: "field_input", name: "NAME", text: t("sh_player") },
+                 { type: "field_dropdown", name: "LOOK", options: () => opt(SP_LOOKS) },
+                 { type: "input_value", name: "X", check: "Number" }, { type: "input_value", name: "Y", check: "Number" } ],
+        tooltip: t("b_sp_put_tip") },
+      { type: "sp_goto", message0: t("b_sp_goto"), previousStatement: null, nextStatement: null, colour: C_STAGE,
+        inputsInline: true,
+        args0: [ { type: "field_input", name: "NAME", text: t("sh_player") },
+                 { type: "input_value", name: "X", check: "Number" }, { type: "input_value", name: "Y", check: "Number" } ] },
+      { type: "sp_move", message0: t("b_sp_move"), previousStatement: null, nextStatement: null, colour: C_STAGE,
+        inputsInline: true,
+        args0: [ { type: "field_input", name: "NAME", text: t("sh_player") },
+                 { type: "input_value", name: "DX", check: "Number" }, { type: "input_value", name: "DY", check: "Number" } ],
+        tooltip: t("b_sp_move_tip") },
+      { type: "sp_size", message0: t("b_sp_size"), previousStatement: null, nextStatement: null, colour: C_STAGE,
+        inputsInline: true,
+        args0: [ { type: "field_input", name: "NAME", text: t("sh_player") }, { type: "input_value", name: "S", check: "Number" } ],
+        tooltip: t("b_sp_size_tip") },
+      { type: "sp_show", message0: t("b_sp_show"), previousStatement: null, nextStatement: null, colour: C_STAGE,
+        args0: [ { type: "field_input", name: "NAME", text: t("sh_player") },
+                 { type: "field_dropdown", name: "MODE", options: () => opt(["svShow", "svHide", "svRemove"]) } ] },
+      { type: "sp_xy", message0: t("b_sp_xy"), output: "Number", colour: C_STAGE,
+        args0: [ { type: "field_input", name: "NAME", text: t("sh_player") },
+                 { type: "field_dropdown", name: "AXIS", options: [["x", "x"], ["y", "y"]] } ] },
+      { type: "sp_touch", message0: t("b_sp_touch"), output: "Boolean", colour: C_STAGE,
+        args0: [ { type: "field_input", name: "A", text: t("sh_player") }, { type: "field_input", name: "B", text: t("sh_target") } ] },
+      { type: "sp_edge", message0: t("b_sp_edge"), output: "Boolean", colour: C_STAGE,
+        args0: [ { type: "field_input", name: "NAME", text: t("sh_player") } ] },
+      { type: "ev_forever", message0: t("b_forever"), previousStatement: null, colour: C_EVENT,
+        args0: [ { type: "input_value", name: "FPS", check: "Number" } ],
+        message1: "%1", args1: [ { type: "input_statement", name: "DO" } ],
+        tooltip: t("b_forever_tip") },
+      { type: "ev_key", message0: t("b_key"), output: "Boolean", colour: C_EVENT,
+        args0: [ { type: "field_dropdown", name: "KEY", options: () => opt(["kySpace", "kyLeft", "kyRight", "kyUp", "kyDown"])
+                   .concat("abcdefghijklmnopqrstuvwxyz".split("").map(c => [c.toUpperCase(), c])) } ],
+        tooltip: t("b_key_tip") },
+      { type: "ev_clicked", message0: t("b_clicked"), output: "Boolean", colour: C_EVENT, tooltip: t("b_clicked_tip") },
+      { type: "ev_mouse", message0: t("b_mouse"), output: "Number", colour: C_EVENT,
+        args0: [ { type: "field_dropdown", name: "AXIS", options: [["x", "x"], ["y", "y"]] } ], tooltip: t("b_mouse_tip") },
+      { type: "ev_ask", message0: t("b_ev_ask"), output: "String", colour: C_EVENT,
+        args0: [ { type: "input_value", name: "Q" } ], tooltip: t("b_ev_ask_tip") },
       /* --- 결과 (찾은 것을 통째로 받아 꺼내 쓴다) --- */
       { type: "res_of", message0: t("b_res_of"), output: "Array", colour: C_AI, inputsInline: true,
         args0: [ IMG, { type: "field_dropdown", name: "KIND", options: () => RES_KINDS.map(k => [t("o_k" + k), k]) } ],
@@ -1656,6 +1806,25 @@ def texts_of(result):
   G.forBlock["text_print"]    = b => `RT.print(${V(b,"TEXT","''")});\n`;
   /* 결과 · 기록 — 글자 값(이름 · 표 이름)은 JSON 으로 넣어 따옴표가 섞여도 안전하게 */
   const J = v => JSON.stringify(String(v == null ? "" : v));
+  /* 무대 · 캐릭터 · 입력 */
+  G.forBlock["st_show_text"] = b => `RT.showText(${V(b,"TEXT","''")});\n`;
+  G.forBlock["st_cam_view"]  = b => `await RT.camView(${J(b.getFieldValue("MODE"))});\n`;
+  G.forBlock["sp_put"]   = b => `RT.sp.put(${J(b.getFieldValue("NAME"))}, ${J(b.getFieldValue("LOOK"))}, ${V(b,"X","320")}, ${V(b,"Y","240")});\n`;
+  G.forBlock["sp_goto"]  = b => `RT.sp.go(${J(b.getFieldValue("NAME"))}, ${V(b,"X","320")}, ${V(b,"Y","240")});\n`;
+  G.forBlock["sp_move"]  = b => `RT.sp.move(${J(b.getFieldValue("NAME"))}, ${V(b,"DX","0")}, ${V(b,"DY","0")});\n`;
+  G.forBlock["sp_size"]  = b => `RT.sp.size(${J(b.getFieldValue("NAME"))}, ${V(b,"S","60")});\n`;
+  G.forBlock["sp_show"]  = b => `RT.sp.show(${J(b.getFieldValue("NAME"))}, ${J(b.getFieldValue("MODE"))});\n`;
+  G.forBlock["sp_xy"]    = b => [`RT.sp.xy(${J(b.getFieldValue("NAME"))}, ${J(b.getFieldValue("AXIS"))})`, Order.FUNCTION_CALL];
+  G.forBlock["sp_touch"] = b => [`RT.sp.touch(${J(b.getFieldValue("A"))}, ${J(b.getFieldValue("B"))})`, Order.FUNCTION_CALL];
+  G.forBlock["sp_edge"]  = b => [`RT.sp.edge(${J(b.getFieldValue("NAME"))})`, Order.FUNCTION_CALL];
+  G.forBlock["ev_forever"] = b => {
+    const body = G.statementToCode(b, "DO");
+    return `for (const __fr = RT.frame(${V(b,"FPS","10")}); ; ) {\n  await __fr.next();\n${body}}\n`;
+  };
+  G.forBlock["ev_key"]     = b => [`RT.key(${J(b.getFieldValue("KEY"))})`, Order.FUNCTION_CALL];
+  G.forBlock["ev_clicked"] = () => ["RT.clicked()", Order.FUNCTION_CALL];
+  G.forBlock["ev_mouse"]   = b => [`RT.mouse(${J(b.getFieldValue("AXIS"))})`, Order.FUNCTION_CALL];
+  G.forBlock["ev_ask"]     = b => [`(await RT.ask(${V(b,"Q","''")}))`, Order.ATOMIC];
   G.forBlock["res_of"]     = b => [`(await AI.result(${V(b,"IMG","null")}, ${J(b.getFieldValue("KIND"))}))`, Order.ATOMIC];
   G.forBlock["res_custom"] = b => [`(await AI.resultCustom(${V(b,"IMG","null")}, ${J(b.getFieldValue("MODEL"))}))`, Order.ATOMIC];
   G.forBlock["res_file"]   = b => [`(await AI.resultFile(${V(b,"IMG","null")}, ${J(b.getFieldValue("FILE"))}))`, Order.ATOMIC];
@@ -1812,6 +1981,19 @@ def texts_of(result):
       { kind: "category", name: t("cat_func"), ic: "func", custom: "PROCEDURE", colour: C_CORE.func },
       { kind: "sep" },
       /* ---------- 커스텀 (이 프로그램만의 블록) ---------- */
+      { kind: "category", name: t("cat_stage"), ic: "stage", colour: C_STAGE, contents: [
+        { kind: "label", text: t("lbl_stage_show") },
+        { kind: "block", type: "st_show_text", inputs: { TEXT: txt(t("sh_hello")) } },
+        { kind: "block", type: "st_cam_view" },
+        { kind: "label", text: t("lbl_sprite") },
+        { kind: "block", type: "sp_put", inputs: { X: num(320), Y: num(240) } },
+        { kind: "block", type: "sp_goto", inputs: { X: num(320), Y: num(240) } },
+        { kind: "block", type: "sp_move", inputs: { DX: num(10), DY: num(0) } },
+        { kind: "block", type: "sp_size", inputs: { S: num(60) } },
+        { kind: "block", type: "sp_show" },
+        { kind: "block", type: "sp_xy" },
+        { kind: "block", type: "sp_touch" },
+        { kind: "block", type: "sp_edge" } ] },
       { kind: "category", name: t("cat_image"), ic: "image", colour: C_EDIT, contents: [
         { kind: "block", type: "ai_capture" }, { kind: "block", type: "ai_upload" },
         { kind: "block", type: "st_show_image" },
@@ -1899,6 +2081,13 @@ def texts_of(result):
         { kind: "block", type: "ai_transform" },
         { kind: "block", type: "ai_rag", inputs: { Q: txt(t("sh_chatQ")) } } ] },
       { kind: "category", name: t("cat_event"), ic: "bolt", colour: C_EVENT, contents: [
+        { kind: "block", type: "ev_forever", inputs: { FPS: num(10) } },
+        { kind: "label", text: t("lbl_ev_input") },
+        { kind: "block", type: "ev_key" },
+        { kind: "block", type: "ev_clicked" },
+        { kind: "block", type: "ev_mouse" },
+        { kind: "block", type: "ev_ask", inputs: { Q: txt(t("sh_askQ")) } },
+        { kind: "label", text: t("lbl_ev_wait") },
         { kind: "block", type: "st_wait", inputs: { SEC: num(1) } },
         { kind: "block", type: "ev_wait_face" },
         { kind: "block", type: "ev_wait_hand" },
@@ -1925,6 +2114,7 @@ def texts_of(result):
     wand:  '<path d="M4 20 14 10"/><path d="M15 3v3M18.5 4.5l-2 2M21 9h-3M18.5 13.5l-2-2"/>',
     pen:   '<path d="M4 20l1-4L16 5l3 3L8 19l-4 1Z"/>',
     xy:    '<path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="4"/>',
+    stage: '<rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="12" r="2.2"/><path d="m14 15 2.5-4 2.5 4Z"/>',
     result: '<path d="M4 5h11M4 12h7M4 19h5"/><circle cx="16.5" cy="15.5" r="3.5"/><path d="m19 18 2.5 2.5"/>',
     data:  '<rect x="3.5" y="4" width="17" height="16" rx="2.5"/><path d="M3.5 9.5h17M3.5 15h17M9.5 4v16"/>',
     eye:   '<path d="M2 12c3.2-4.6 6.6-6.9 10-6.9S18.8 7.4 22 12c-3.2 4.6-6.6 6.9-10 6.9S5.2 16.6 2 12Z"/><circle cx="12" cy="12" r="3.1"/>',
@@ -2233,6 +2423,106 @@ def texts_of(result):
       /* 모든 기능을 한 번씩 지나가는 점검용 예제.
          기다리는 블록(얼굴/손 기다리기·음성 인식)과 내가 만든 AI 는 뺐다 —
          멈춰 서거나 학습한 모델이 있어야 해서 "한 번에 쭉" 이 안 된다. */
+      { id: "guess", name: t("ex_guess"), desc: t("ex_guess_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
+          CLEAR(),
+          SET(t("sh_answer"), B("math_random_int", { inputs: { FROM: shadowNum(1), TO: shadowNum(100) } })),
+          SET(t("sh_tries"), B("math_number", { fields: { NUM: 0 } })),
+          SET(t("sh_myAns"), B("math_number", { fields: { NUM: 0 } })),
+          B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_guess")) } }),
+          B("controls_whileUntil", { fields: { MODE: "WHILE" }, inputs: {
+            BOOL: { block: B("logic_compare", { fields: { OP: "NEQ" }, inputs: {
+              A: { block: VG(t("sh_myAns")) }, B: { block: VG(t("sh_answer")) } } }) },
+            DO: { block: chain([
+              SET(t("sh_myAns"), B("ev_ask", { inputs: { Q: shadowTxt(t("sh_guess")) } })),
+              B("math_change", { fields: { VAR: { name: t("sh_tries") } }, inputs: { DELTA: shadowNum(1) } }),
+              B("controls_if", { extraState: { elseIfCount: 1 }, inputs: {
+                IF0: { block: B("logic_compare", { fields: { OP: "LT" }, inputs: {
+                  A: { block: VG(t("sh_myAns")) }, B: { block: VG(t("sh_answer")) } } }) },
+                DO0: { block: B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_up")) } }) },
+                IF1: { block: B("logic_compare", { fields: { OP: "GT" }, inputs: {
+                  A: { block: VG(t("sh_myAns")) }, B: { block: VG(t("sh_answer")) } } }) },
+                DO1: { block: B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_down")) } }) } } }),
+            ]) } } }),
+          B("st_show_text", { inputs: { TEXT: { block: B("text_join", { extraState: { itemCount: 2 }, inputs: {
+            ADD0: shadowTxt(t("sh_ok")), ADD1: { block: VG(t("sh_tries")) } } }) } } }),
+          B("st_beep", { fields: { K: "sndFanfare" } }),
+        ]) ] } } },
+      { id: "catch", name: t("ex_catch"), desc: t("ex_catch_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
+          CLEAR(),
+          SET(t("sh_score"), B("math_number", { fields: { NUM: 0 } })),
+          B("sp_put", { fields: { NAME: t("sh_player"), LOOK: "lkRocket" }, inputs: { X: shadowNum(320), Y: shadowNum(400) } }),
+          B("sp_put", { fields: { NAME: t("sh_target"), LOOK: "lkStar" }, inputs: {
+            X: { block: B("math_random_int", { inputs: { FROM: shadowNum(40), TO: shadowNum(600) } }) }, Y: shadowNum(40) } }),
+          B("sp_size", { fields: { NAME: t("sh_target") }, inputs: { S: shadowNum(50) } }),
+          B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_scoreLbl") + "0") } }),
+          B("ev_forever", { inputs: { FPS: shadowNum(30), DO: { block: chain([
+            B("controls_if", { inputs: { IF0: { block: B("ev_key", { fields: { KEY: "kyLeft" } }) },
+              DO0: { block: B("sp_move", { fields: { NAME: t("sh_player") }, inputs: { DX: shadowNum(-12), DY: shadowNum(0) } }) } } }),
+            B("controls_if", { inputs: { IF0: { block: B("ev_key", { fields: { KEY: "kyRight" } }) },
+              DO0: { block: B("sp_move", { fields: { NAME: t("sh_player") }, inputs: { DX: shadowNum(12), DY: shadowNum(0) } }) } } }),
+            B("controls_if", { inputs: { IF0: { block: B("ev_clicked") },
+              DO0: { block: B("sp_goto", { fields: { NAME: t("sh_player") }, inputs: {
+                X: { block: B("ev_mouse", { fields: { AXIS: "x" } }) }, Y: shadowNum(400) } }) } } }),
+            B("controls_if", { inputs: { IF0: { block: B("sp_edge", { fields: { NAME: t("sh_player") } }) },
+              DO0: { block: B("sp_goto", { fields: { NAME: t("sh_player") }, inputs: { X: shadowNum(320), Y: shadowNum(400) } }) } } }),
+            B("sp_move", { fields: { NAME: t("sh_target") }, inputs: { DX: shadowNum(0), DY: shadowNum(4) } }),
+            B("controls_if", { inputs: {
+              IF0: { block: B("logic_compare", { fields: { OP: "GT" }, inputs: {
+                A: { block: B("sp_xy", { fields: { NAME: t("sh_target"), AXIS: "y" } }) }, B: shadowNum(470) } }) },
+              DO0: { block: B("sp_goto", { fields: { NAME: t("sh_target") }, inputs: {
+                X: { block: B("math_random_int", { inputs: { FROM: shadowNum(40), TO: shadowNum(600) } }) }, Y: shadowNum(40) } }) } } }),
+            B("controls_if", { inputs: {
+              IF0: { block: B("sp_touch", { fields: { A: t("sh_player"), B: t("sh_target") } }) },
+              DO0: { block: chain([
+                B("math_change", { fields: { VAR: { name: t("sh_score") } }, inputs: { DELTA: shadowNum(1) } }),
+                B("st_beep", { fields: { K: "sndCoin" } }),
+                B("sp_goto", { fields: { NAME: t("sh_target") }, inputs: {
+                  X: { block: B("math_random_int", { inputs: { FROM: shadowNum(40), TO: shadowNum(600) } }) }, Y: shadowNum(40) } }),
+                B("st_show_text", { inputs: { TEXT: { block: B("text_join", { extraState: { itemCount: 2 }, inputs: {
+                  ADD0: shadowTxt(t("sh_scoreLbl")), ADD1: { block: VG(t("sh_score")) } } }) } } }),
+              ]) } } }),
+          ]) } } }),
+        ]) ] } } },
+      { id: "handgame", name: t("ex_handgame"), desc: t("ex_handgame_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
+          CLEAR(),
+          B("st_cam_view", { fields: { MODE: "cmMirror" } }),
+          SET(t("sh_score"), B("math_number", { fields: { NUM: 0 } })),
+          B("sp_put", { fields: { NAME: t("sh_player"), LOOK: "lkSmile" }, inputs: { X: shadowNum(320), Y: shadowNum(240) } }),
+          B("sp_show", { fields: { NAME: t("sh_player"), MODE: "svHide" } }),
+          B("sp_put", { fields: { NAME: t("sh_target"), LOOK: "lkStar" }, inputs: {
+            X: { block: B("math_random_int", { inputs: { FROM: shadowNum(60), TO: shadowNum(580) } }) },
+            Y: { block: B("math_random_int", { inputs: { FROM: shadowNum(60), TO: shadowNum(300) } }) } } }),
+          B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_handHint")) } }),
+          B("ev_forever", { inputs: { FPS: shadowNum(5), DO: { block: chain([
+            SET(t("sh_hand"), B("res_of", { fields: { KIND: "hand" }, inputs: { IMG: { block: B("ai_capture") } } })),
+            B("controls_if", { extraState: { hasElse: true }, inputs: {
+              IF0: { block: B("logic_compare", { fields: { OP: "GT" }, inputs: {
+                A: { block: B("res_count", { inputs: { RES: { block: VG(t("sh_hand")) } } }) }, B: shadowNum(0) } }) },
+              DO0: { block: chain([
+                B("sp_show", { fields: { NAME: t("sh_player"), MODE: "svShow" } }),
+                B("st_show_text", { inputs: { TEXT: { block: B("text_join", { extraState: { itemCount: 2 }, inputs: {
+                  ADD0: shadowTxt(t("sh_scoreLbl")), ADD1: { block: VG(t("sh_score")) } } }) } } }),
+                B("sp_goto", { fields: { NAME: t("sh_player") }, inputs: {
+                  X: { block: B("res_nth", { fields: { KEY: "x" }, inputs: { RES: { block: VG(t("sh_hand")) }, N: shadowNum(1) } }) },
+                  Y: { block: B("res_nth", { fields: { KEY: "y" }, inputs: { RES: { block: VG(t("sh_hand")) }, N: shadowNum(1) } }) } } }),
+              ]) },
+              ELSE: { block: B("sp_show", { fields: { NAME: t("sh_player"), MODE: "svHide" } }) } } }),
+            B("controls_if", { inputs: {
+              IF0: { block: B("sp_touch", { fields: { A: t("sh_player"), B: t("sh_target") } }) },
+              DO0: { block: chain([
+                B("math_change", { fields: { VAR: { name: t("sh_score") } }, inputs: { DELTA: shadowNum(1) } }),
+                B("st_beep", { fields: { K: "sndCoin" } }),
+                B("sp_goto", { fields: { NAME: t("sh_target") }, inputs: {
+                  X: { block: B("math_random_int", { inputs: { FROM: shadowNum(60), TO: shadowNum(580) } }) },
+                  Y: { block: B("math_random_int", { inputs: { FROM: shadowNum(60), TO: shadowNum(300) } }) } } }),
+                B("st_show_text", { inputs: { TEXT: { block: B("text_join", { extraState: { itemCount: 2 }, inputs: {
+                  ADD0: shadowTxt(t("sh_scoreLbl")), ADD1: { block: VG(t("sh_score")) } } }) } } }),
+              ]) } } }),
+          ]) } } }),
+        ]) ] } } },
       { id: "result", name: t("ex_result"), desc: t("ex_result_d"),
         state: { blocks: { languageVersion: 0, blocks: [ chain([
           CLEAR(),
@@ -2437,7 +2727,20 @@ def texts_of(result):
   document.getElementById("exampleButton").addEventListener("click", () => {
     const list = document.getElementById("exList");
     list.innerHTML = "";
-    EXAMPLES().forEach(ex => {
+    /* 위에 '만들어 보기(프로젝트)', 아래에 '기능 익히기' — 수업에서는 프로젝트부터 고른다 */
+    const PROJECTS = ["guess", "catch", "handgame", "result", "rps", "greet"];
+    const all = EXAMPLES();
+    const groups = [[t("ex_grpProject"), all.filter(ex => PROJECTS.includes(ex.id))
+                       .sort((a, b) => PROJECTS.indexOf(a.id) - PROJECTS.indexOf(b.id))],
+                    [t("ex_grpBasic"), all.filter(ex => !PROJECTS.includes(ex.id))]];
+    groups.forEach(([title, exs]) => {
+      const h = document.createElement("div");
+      h.style.cssText = "font-size:.82rem;font-weight:700;color:var(--ink-2);margin-top:4px;";
+      h.textContent = title;
+      list.appendChild(h);
+      exs.forEach(ex => addEx(ex));
+    });
+    function addEx(ex) {
       const el = document.createElement("button");
       el.style.cssText = "text-align:left;border:1.5px solid var(--line);background:#fff;" +
         "border-radius:6px;padding:10px 12px;cursor:pointer;font-family:inherit;";
@@ -2451,7 +2754,7 @@ def texts_of(result):
         } catch (e) { console.error(e); log(t("m_error") + e); }
       });
       list.appendChild(el);
-    });
+    }
     exModal.style.display = "flex";
   });
   document.getElementById("exClose").addEventListener("click", () =>
@@ -2516,6 +2819,10 @@ def texts_of(result):
   const overlay = document.getElementById("overlay");
   const octx = overlay.getContext("2d");
   const bigText = document.getElementById("bigText");
+  const spritesEl = document.getElementById("sprites");
+  const askBox = document.getElementById("askBox"), askQ = document.getElementById("askQ"),
+        askIn = document.getElementById("askIn");
+  askBox.addEventListener("submit", e => { e.preventDefault(); RT._answer = askIn.value; });
   const bubble = document.getElementById("bubble");
   const logBox = document.getElementById("logBox");
   const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -2765,11 +3072,14 @@ def texts_of(result):
       await ensureCam();
       const c = document.createElement("canvas");
       c.width = 640; c.height = 480;
-      c.getContext("2d").drawImage(cam, 0, 0, 640, 480);
+      const cx = c.getContext("2d");
+      if (RT._camMode === "cmMirror") { cx.translate(640, 0); cx.scale(-1, 1); }   // 화면과 같은 쪽으로
+      cx.drawImage(cam, 0, 0, 640, 480);
       const url = c.toDataURL("image/jpeg", 0.85);
-      // 찍은 사진을 무대에 놓는다 — 무엇을 찍었는지 보여야 한다(파이썬의 show 와 같이).
-      // 라이브 영상은 무대에 안 보이므로 예전의 "번갈아 깜빡임" 은 생기지 않는다.
-      await swapShot(url);
+      // 찍은 사진을 무대에 놓는다 — 무엇을 찍었는지 보여야 한다.
+      // [카메라 화면] 을 켜 두었으면 이미 움직이는 화면이 보이므로 사진으로 덮지 않는다.
+      if (!RT._camMode || RT._camMode === "cmOff") await swapShot(url);
+      else AI.lastDim = { w: 640, h: 480 };
       return url;
     },
     uploaded() {
@@ -3241,6 +3551,7 @@ def texts_of(result):
 
   const RT = {
     stopFlag: false, iter: 0, lastElapsed: 0,
+    _keys: new Set(), _mouse: { x: 0, y: 0 }, _click: false,
     abort: null, lastAiAt: 0,
     /* AI 호출 횟수는 세지 않는다. 블록은 한 줄씩 await 하므로 서버에 가는 요청은 늘 하나뿐이고,
        속도는 모델 처리 시간이 정한다. 요청 사이 간격만 조금 둔다(서버·화면이 숨 쉴 틈) */
@@ -3255,7 +3566,106 @@ def texts_of(result):
     async step(id) {
       if (RT.stopFlag) throw "STOP";
       ws.highlightBlock(id);
-      await sleep(30);                          // 진행이 눈에 보이는 최소 템포
+      if (!RT._fast) await sleep(30);           // 진행이 눈에 보이는 최소 템포 (계속 반복 안은 빠르게)
+    },
+    /* ---- 계속 반복: 1초에 fps 번. 한 바퀴가 늦으면 기다리지 않고 바로 다음 바퀴 ---- */
+    frame(fps) {
+      RT._fast = true;
+      const gap = 1000 / Math.max(0.1, Math.min(30, +fps || 10));
+      let last = 0;
+      return { async next() {
+        if (RT.stopFlag) throw "STOP";
+        const wait = last + gap - performance.now();
+        await sleep(Math.max(0, wait));
+        if (RT.stopFlag) throw "STOP";
+        last = performance.now();
+      } };
+    },
+    /* ---- 무대 ---- */
+    async camView(mode) {
+      RT._camMode = mode;
+      if (mode === "cmOff") { cam.style.visibility = ""; cam.style.transform = ""; return; }
+      await ensureCam();
+      shotImg.style.display = "none"; shownURL = null;
+      cam.style.visibility = "visible";
+      cam.style.transform = mode === "cmMirror" ? "scaleX(-1)" : "";
+    },
+    /* ---- 키보드 · 마우스 · 대답 ---- */
+    key(k) { return RT._keys.has(k); },
+    clicked() { const c = RT._click; RT._click = false; return c; },
+    mouse(axis) { return Math.round(axis === "y" ? RT._mouse.y : RT._mouse.x); },
+    async ask(q) {
+      askQ.textContent = String(q == null ? "" : q);
+      askIn.value = ""; askBox.classList.add("on");
+      setTimeout(() => askIn.focus(), 0);
+      log(t("m_say") + askQ.textContent);
+      RT._answer = null;
+      try {
+        while (RT._answer === null) {
+          if (RT.stopFlag) throw "STOP";
+          await sleep(80);
+        }
+      } finally { askBox.classList.remove("on"); }
+      log("▷ " + RT._answer);
+      const a = String(RT._answer).trim();
+      return /^-?\d+(\.\d+)?$/.test(a) ? Number(a) : RT._answer;
+    },
+    /* ---- 캐릭터 (무대 좌표 0~640 · 0~480) ---- */
+    sp: {
+      _all: {},
+      _get(name) {
+        const k = String(name);
+        let o = RT.sp._all[k];
+        if (!o) {
+          const el = document.createElement("div");
+          el.className = "sp"; spritesEl.appendChild(el);
+          o = RT.sp._all[k] = { x: 320, y: 240, size: 60, look: "lkStar", shown: true, el };
+          RT.sp._look(o);
+        }
+        return o;
+      },
+      _look(o) {
+        const g = SP_GLYPH[o.look] || "⭐";
+        if (g.startsWith("/")) o.el.innerHTML = '<img src="' + g + '" alt="">';
+        else o.el.textContent = g;
+        RT.sp._draw(o);
+      },
+      _draw(o) {
+        o.el.style.left = (o.x / 6.4) + "%";
+        o.el.style.top = (o.y / 4.8) + "%";
+        o.el.style.fontSize = (o.size / 6.4 * 0.86) + "cqw";
+        const im = o.el.querySelector("img");
+        if (im) im.style.width = (o.size / 6.4) + "cqw";
+        o.el.style.display = o.shown ? "" : "none";
+      },
+      _n(v, d) { v = +v; return isFinite(v) ? v : d; },
+      put(name, look, x, y) {
+        const o = RT.sp._get(name);
+        o.look = look; o.x = RT.sp._n(x, 320); o.y = RT.sp._n(y, 240); o.shown = true;
+        RT.sp._look(o);
+      },
+      go(name, x, y) { const o = RT.sp._get(name); o.x = RT.sp._n(x, o.x); o.y = RT.sp._n(y, o.y); RT.sp._draw(o); },
+      move(name, dx, dy) { const o = RT.sp._get(name); o.x += RT.sp._n(dx, 0); o.y += RT.sp._n(dy, 0); RT.sp._draw(o); },
+      size(name, s) { const o = RT.sp._get(name); o.size = Math.max(4, Math.min(640, RT.sp._n(s, 60))); RT.sp._draw(o); },
+      show(name, mode) {
+        const k = String(name), o = RT.sp._all[k];
+        if (!o) return;
+        if (mode === "svRemove") { o.el.remove(); delete RT.sp._all[k]; return; }
+        o.shown = mode !== "svHide"; RT.sp._draw(o);
+      },
+      xy(name, axis) { const o = RT.sp._all[String(name)]; return o ? Math.round(axis === "y" ? o.y : o.x) : 0; },
+      touch(a, b) {
+        const A = RT.sp._all[String(a)], B = RT.sp._all[String(b)];
+        if (!A || !B || !A.shown || !B.shown || A === B) return false;
+        return Math.hypot(A.x - B.x, A.y - B.y) < (A.size + B.size) / 2 * 0.8;   // 둥근 모양으로 본다
+      },
+      edge(name) {
+        const o = RT.sp._all[String(name)];
+        if (!o) return false;
+        const r = o.size / 2;
+        return o.x - r <= 0 || o.x + r >= 640 || o.y - r <= 0 || o.y + r >= 480;
+      },
+      clear() { Object.values(RT.sp._all).forEach(o => o.el.remove()); RT.sp._all = {}; },
     },
     /* 반복 횟수도 세지 않는다. 블록이 없는 빈 반복이 화면을 얼리지 않게 100번마다 차례를 넘긴다
        (블록이 있으면 RT.step 이 이미 한 줄마다 쉰다) */
@@ -3375,7 +3785,11 @@ def texts_of(result):
       try { speechSynthesis.cancel(); } catch (e) {}
       try { if (RT._voiceSrc) { RT._voiceSrc.stop(); RT._voiceSrc = null; } } catch (e) {}
     },
-    showText(v) { bigText.textContent = String(v); log(t("m_show") + v); },
+    showText(v) {
+      const s = String(v == null ? "" : v);
+      if (bigText.textContent === s) return;      // 계속 반복 안에서 같은 글자면 기록을 쌓지 않는다
+      bigText.textContent = s; log(t("m_show") + s);
+    },
     _audio: null,
     _tone(freq, sec, type) {
       /* Web Audio — 오프라인에서도 동작한다 */
@@ -3600,6 +4014,8 @@ def texts_of(result):
     },
     clearStage() {
       AI.lastBoxes = []; AI._boxImg = null;
+      RT.sp.clear();
+      askBox.classList.remove("on");
       octx.clearRect(0, 0, overlay.width, overlay.height);
       bigText.textContent = ""; bubble.style.display = "none";
       shotImg.style.display = "none";
@@ -3669,6 +4085,8 @@ def texts_of(result):
     RT.voice = "F1"; RT.speed = "normal";   // 목소리·빠르기는 실행마다 기본값으로
     RT.lastAiAt = 0; RT._bseq = null;
     RT._t0 = Date.now(); RT._tables = {};
+    RT._fast = false; RT._camMode = null; RT._click = false; RT._keys.clear();
+    cam.style.visibility = ""; cam.style.transform = "";
     RT.abort = new AbortController();
     RT._vars = {};
     document.getElementById("varsBox").style.display = "none";
@@ -3698,6 +4116,29 @@ def texts_of(result):
       stopCam();                                // 실행이 끝나면 카메라 불도 꺼진다
     }
   });
+  const KEYMAP = { " ": "kySpace", ArrowLeft: "kyLeft", ArrowRight: "kyRight", ArrowUp: "kyUp", ArrowDown: "kyDown" };
+  const keyName = e => KEYMAP[e.key] || (e.key && e.key.length === 1 ? e.key.toLowerCase() : "");
+  const typing = e => /^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || "") || (e.target && e.target.isContentEditable);
+  window.addEventListener("keydown", e => {
+    if (!runButton.disabled || typing(e)) return;
+    const k = keyName(e);
+    if (!k) return;
+    RT._keys.add(k);
+    if (KEYMAP[e.key]) { e.preventDefault(); e.stopPropagation(); }
+  }, true);
+  window.addEventListener("keyup", e => { const k = keyName(e); if (k) RT._keys.delete(k); }, true);
+  window.addEventListener("blur", () => RT._keys.clear());
+  const stageEl = document.getElementById("stage");
+  const stagePos = e => {
+    const r = stageEl.getBoundingClientRect();
+    RT._mouse = { x: (e.clientX - r.left) / r.width * 640, y: (e.clientY - r.top) / r.height * 480 };
+  };
+  stageEl.addEventListener("pointermove", stagePos);
+  stageEl.addEventListener("pointerdown", e => {
+    stagePos(e); RT._click = true;
+    if (document.activeElement && document.activeElement !== askIn) document.activeElement.blur();   // 키보드가 편집기로 가지 않게
+  });
+
   document.getElementById("stopButton").addEventListener("click", () => {
     RT.stopFlag = true;
     if (RT.abort) RT.abort.abort();          // 진행 중인 AI 요청 즉시 끊기
