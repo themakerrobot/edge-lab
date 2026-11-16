@@ -306,7 +306,7 @@
         put: "넣기", detail: "설명", noHit: "찾는 것이 없어요.",
         argsK: "넣는 것", retK: "돌려주는 것", exK: "예시 (눌러서 넣기)",
         g_basic: "기본", g_ai: "AI 로 보기", g_edit: "사진 편집", g_my: "내가 만든 AI",
-        g_sound: "소리", g_flow: "반복 · 조건",
+        g_sound: "소리", g_flow: "반복 · 조건", g_result: "결과 다루기", g_data: "시간 · 기록",
         run: "실행 ▶", running: "실행 중...", stop: "정지", clear: "지우기",
         newFile: "새 파일", openedAs: "불러왔어요: ", runStateK: "상태", stReady: "준비됨", stRun: "실행 중", stDone: "끝남", stStop: "정지됨",
         hint: "show() 결과는 위 칸에 나와요. input() 은 지원하지 않아요.",
@@ -337,7 +337,7 @@
         put: "insert", detail: "what?", noHit: "Nothing found.",
         argsK: "takes", retK: "returns", exK: "example (click to insert)",
         g_basic: "Basics", g_ai: "See with AI", g_edit: "Edit photo", g_my: "Your own AI",
-        g_sound: "Sound", g_flow: "Repeat · If",
+        g_sound: "Sound", g_flow: "Repeat · If", g_result: "Use results", g_data: "Time · records",
         run: "Run ▶", running: "Running...", stop: "Stop", clear: "Clear",
         newFile: "new file", openedAs: "opened: ", runStateK: "state", stReady: "ready", stRun: "running", stDone: "done", stStop: "stopped",
         hint: "show() draws above. input() is not supported.",
@@ -1182,6 +1182,21 @@ print("저장된 모델:", mine)
 # r = vision("my:" + mine[0]["title"], img)
 # print(r)
 
+print("=== 13. 결과 다루기 · 기록 ===")
+r = vision("object", img)
+print("개수:", count(r), "/ 이름:", names(r), "/ 첫 번째:", first(r))
+print("첫 번째 가운데:", nth(r, 1, "x"), nth(r, 1, "y"), "확률:", nth(r, 1, "score"))
+print("사람 있나:", has(r, "사람"), "/ 사람만:", count(only(r, "사람")))
+print("확률 1등:", best(r), "/ 가장 큰 것:", biggest(r), "/ 첫 줄:", items(r)[:1])
+p = vision("pose", img)
+print("코:", pose_point(p, "코"), "왼손목:", pose_x(p, "왼손목"), pose_y(p, "왼손목"))
+reset_timer()
+record("점검표", count(r), first(r))
+print("표:", table("점검표"), "->", save_table("점검표"))
+clear_table("점검표")
+remember("점검횟수", recall("점검횟수", 0) + 1)
+print("점검한 횟수:", recall("점검횟수"), "/ 걸린 시간:", timer(), "초")
+
 print("전체 점검 끝!")
 `,
         code_en: `from themaker import *
@@ -1295,6 +1310,21 @@ print("Saved models:", mine)
 # If there is a model, try the first one
 # r = vision("my:" + mine[0]["title"], img)
 # print(r)
+
+print("=== 13. Use results · records ===")
+r = vision("object", img)
+print("Count:", count(r), "/ names:", names(r), "/ first:", first(r))
+print("First one center:", nth(r, 1, "x"), nth(r, 1, "y"), "score:", nth(r, 1, "score"))
+print("Any person:", has(r, "person"), "/ people only:", count(only(r, "person")))
+print("Most confident:", best(r), "/ biggest:", biggest(r), "/ first row:", items(r)[:1])
+p = vision("pose", img)
+print("Nose:", pose_point(p, "nose"), "left wrist:", pose_x(p, "left_wrist"), pose_y(p, "left_wrist"))
+reset_timer()
+record("check", count(r), first(r))
+print("Table:", table("check"), "->", save_table("check"))
+clear_table("check")
+remember("checks", recall("checks", 0) + 1)
+print("Checks so far:", recall("checks"), "/ took:", timer(), "s")
 
 print("Full check done!")
 ` },
@@ -1659,6 +1689,42 @@ Relative paths resolve from <code>models\\pycode</code>. cv2 and numpy work as u
         en: { d: "listen and transcribe", a: "seconds, lang=", r: "the text you said" },
         x: 'text = listen(4)\nprint("들은 말:", text)' },
 
+      { g: "result", n: "count(r) · names(r)", ins: "count(r)",
+        ko: { d: "찾은 개수 · 이름 목록 — 어느 기능의 결과든 받아요(사물 · 얼굴 · 손 · 글자 · 내 AI · 모델 파일 · 자세 · 마스크)", a: "vision() 이나 detect() 의 결과", r: "숫자 · 목록" },
+        en: { d: "how many were found · their names — works on any result", a: "result of vision() or detect()", r: "number · list" },
+        x: 'r = vision("object", camera())\nprint(count(r), names(r))' },
+      { g: "result", n: 'nth(r, 1, "x")', ins: 'nth(r, 1, "x")',
+        ko: { d: "n 번째(1부터) 것의 값 — name 이름 · score 확률(%) · x · y 가운데 · w · h 크기 · box", a: "결과, 몇 번째, 무엇", r: "값 (없으면 \"\" 또는 0)" },
+        en: { d: "a value of the n-th one (from 1) — name · score(%) · x · y center · w · h · box", a: "result, n, key", r: "value (\"\" or 0 if none)" },
+        x: 'r = vision("face", camera())\nif count(r):\n    print("얼굴 가운데:", nth(r, 1, "x"), nth(r, 1, "y"))' },
+      { g: "result", n: 'has(r, "사람")', ins: 'has(r, "사람")',
+        ko: { d: "그 이름이 있나 — 한글 이름 · 영어 이름 둘 다 돼요", a: "결과, 이름", r: "True / False" },
+        en: { d: "is there one with this name (Korean or English name)", a: "result, name", r: "True / False" },
+        x: 'r = vision("object", camera())\nif has(r, "person"):\n    speak("사람이 있어요")' },
+      { g: "result", n: 'best(r) · biggest(r)', ins: 'best(r)',
+        ko: { d: "확률이 가장 높은 것 · 가장 큰 것의 값 (두 번째 인자로 score · x 등)", a: "결과, 무엇(기본 name)", r: "값" },
+        en: { d: "value of the most confident · the biggest one", a: "result, key (default name)", r: "value" },
+        x: 'r = vision("my:가위바위보", camera())\nif best(r, "score") >= 80:\n    print(best(r))' },
+      { g: "result", n: 'only(r, "컵")', ins: 'only(r, "컵")',
+        ko: { d: "그 이름인 것만 남기기", a: "결과, 이름", r: "목록 (count · nth 에 그대로 넣을 수 있어요)" },
+        en: { d: "keep only the ones with this name", a: "result, name", r: "list (pass it to count · nth)" },
+        x: 'r = vision("object", camera())\nprint("컵:", count(only(r, "컵")), "개")' },
+      { g: "result", n: 'pose_x(r, "왼손목")', ins: 'pose_x(r, "왼손목")',
+        ko: { d: "자세 결과에서 몸 점 하나의 x · y (pose_y) — 안 보이면 -1. pose_point 는 (x, y) 또는 None. 왼쪽 · 오른쪽은 사진 속 사람 기준", a: "자세 결과, 점 이름(코 · 왼어깨 · 오른손목 … 또는 nose · left_wrist …), 몇 번째 사람", r: "숫자" },
+        en: { d: "x · y (pose_y) of one body point — -1 if not visible. pose_point gives (x, y) or None. Left/right are the person's own", a: "pose result, point (nose · left_wrist …), which person", r: "number" },
+        x: 'r = vision("pose", camera())\nif pose_y(r, "오른손목") != -1 and pose_y(r, "오른손목") < pose_y(r, "코"):\n    speak("손을 들었어요")' },
+      { g: "data", n: "timer()", ins: "timer()",
+        ko: { d: "시작한 뒤 지난 초 — reset_timer() 로 0 부터 다시", a: "없음", r: "초 (소수)" },
+        en: { d: "seconds since start — reset_timer() starts again from 0", a: "none", r: "seconds" },
+        x: 'reset_timer()\nspeak("시작!")\nprint(timer(), "초 지났어요")' },
+      { g: "data", n: 'record("표", 값, ...)', ins: 'record("기록", )',
+        ko: { d: "표에 한 줄 더하기 — 맨 앞 칸에 시간이 붙어요. table(\"표\") 로 꺼내고 save_table(\"표\") 로 CSV 저장", a: "표 이름, 값들", r: "지금까지 줄 수" },
+        en: { d: "add a row to a table (time is added first). table() to read, save_table() to save CSV", a: "table name, values", r: "number of rows" },
+        x: 'for i in range(5):\n    record("얼굴", count(vision("face", camera())))\nprint(table("얼굴"))\nprint(save_table("얼굴"))' },
+      { g: "data", n: 'remember("이름", 값)', ins: 'remember("최고점수", )',
+        ko: { d: "값 기억하기 — 다시 실행해도 남아요. recall(\"이름\", 기본값) 으로 꺼내요", a: "이름, 값(숫자 · 글자 · 목록)", r: "그 값" },
+        en: { d: "remember a value across runs — read it back with recall(name, default)", a: "name, value", r: "the value" },
+        x: 'best_score = recall("최고점수", 0)\nif 12 > best_score:\n    remember("최고점수", 12)' },
       { g: "flow", n: "from themaker import *", ins: "from themaker import *\n",
         ko: { d: "맨 위에 한 번 쓰기 — 이게 있어야 위 함수들을 쓸 수 있어요", a: "없음", r: "없음" },
         en: { d: "put this at the top", a: "none", r: "nothing" },
@@ -1768,6 +1834,9 @@ Relative paths resolve from <code>models\\pycode</code>. cv2 and numpy work as u
                    "draw_line", "draw_line_xy",
                    "size_of", "color_at", "color_at_xy", "main_color",
                    "play_note", "beep", "play_melody", "play_hz",
+                   "items", "count", "names", "nth", "first", "has", "only", "best", "biggest",
+                   "pose_point", "pose_x", "pose_y", "timer", "reset_timer",
+                   "record", "table", "clear_table", "save_table", "remember", "recall",
                    "print", "range", "len", "for", "if", "else", "while", "import", "from"];
 
     function themakerHint(editor) {

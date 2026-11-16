@@ -247,6 +247,22 @@ def blocks_work(name: str = Query(...)):
     return _ok({"name": p.stem, "state": p.read_text(encoding="utf-8")})
 
 
+TABLE_MAX = 5 * 1024 * 1024                       # 표 한 개 — 블록이 오래 돌며 쌓아도 이 안
+
+
+@router.post("/blocks/table", tags=["blocks"], summary="블록 표를 CSV 로 저장 (파이썬 작업 폴더)")
+def blocks_table(name: str = Body(...), csv: str = Body(...)):
+    """블록의 [표를 CSV 로 저장] — 파이썬의 save_table() 과 같은 폴더(파이썬 작품 폴더)에 둔다.
+    그래서 파이썬 · 주피터에서 그 이름 그대로 연다. 같은 이름이면 덮어쓴다."""
+    data = csv.encode("utf-8-sig") if not csv.startswith("\ufeff") else csv.encode("utf-8")
+    if len(data) > TABLE_MAX:
+        return _fail("표가 너무 커요 (5MB 까지)")
+    WORK_DIR.mkdir(parents=True, exist_ok=True)
+    p = WORK_DIR / (_safe(name) + ".csv")
+    p.write_bytes(data)
+    return _ok({"saved": p.name, "path": str(p)})
+
+
 @router.delete("/blocks/work", tags=["blocks"], summary="블록 작품 지우기 (휴지통으로)")
 def blocks_delete(name: str = Query(...)):
     p = BLOCK_DIR / (_safe(name) + ".json")

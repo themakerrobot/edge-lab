@@ -288,6 +288,34 @@
       b_face: "%1 얼굴의 %2", b_face_tip: "첫 번째 얼굴의 정보를 알려줘요. 나이는 숫자예요.",
       b_face_count: "%1 에서 얼굴 개수",
       b_ocr: "%1 의 글자 읽기", b_qr: "%1 의 QR 읽기",
+      cat_result: "결과", cat_data: "시간 · 기록",
+      lbl_res_get: "— 결과 가져오기 —", lbl_res_use: "— 결과에서 꺼내기 —", lbl_pose: "— 자세 점 —",
+      b_res_of: "%1 에서 %2 찾은 결과", b_res_of_tip: "찾은 것들을 통째로 줘요. 아래 '꺼내기' 블록으로 개수 · 이름 · 확률 · 위치를 꺼내 써요.",
+      b_res_custom: "%1 을(를) 내 AI %2 로 본 결과", b_res_custom_tip: "클래스마다 한 줄씩, 확률이 높은 순서로 줘요.",
+      b_res_file: "%1 에서 모델 파일 %2 로 찾은 결과", b_res_file_tip: "모델 폴더의 .onnx 로 찾은 것들을 통째로 줘요.",
+      b_res_count: "%1 의 개수", b_res_names: "%1 의 이름 목록",
+      b_res_nth: "%1 의 %2 번째 %3", b_res_nth_tip: "1 부터 세요. 없으면 이름은 빈 글자, 숫자는 0 이에요. 위치는 무대 픽셀(가로 640 · 세로 480).",
+      b_res_has: "%1 에 %2 이(가) 있나?", b_res_has_tip: "한글 이름 · 영어 이름 둘 다 돼요. (예: 사람 / person, 엄지 척 / Thumb_Up)",
+      b_res_pick: "%1 에서 %2 것의 %3",
+      b_res_pose: "%1 의 %2 번째 사람 %3 의 %4", b_res_pose_tip: "'자세' 결과에 써요. 안 보이면 -1. 왼쪽 · 오른쪽은 사진 속 사람 기준이에요.",
+      b_tm_timer: "타이머 (초)", b_tm_reset: "타이머 0 으로",
+      b_dt_record: "표 %1 에 %2 기록하기", b_dt_record_tip: "맨 앞 칸에 시간(초)이 붙어요. 목록을 넣으면 여러 칸이 돼요. 사진은 넣을 수 없어요.",
+      b_dt_rows: "표 %1 의 줄 수", b_dt_save: "표 %1 을(를) CSV 파일로 저장", b_dt_save_tip: "파이썬 작품 폴더에 저장해요 — 파이썬 · 주피터 랩 · 엑셀에서 그 이름 그대로 열어요.",
+      b_dt_remember: "%1 (으)로 %2 기억하기", b_dt_remember_tip: "다시 실행해도 남아요 (작품마다 따로). 최고 점수 같은 것을 담아요.",
+      b_dt_recall: "기억한 %1", b_dt_recall_tip: "기억한 것이 없으면 0.",
+      b_rag: "자료 %1 에서 %2 찾아 답하기", b_rag_tip: "[이야기] 화면에서 만든 내 자료에서 찾아 답해요.",
+      o_kobject: "사물", o_kface: "얼굴", o_kface_attr: "얼굴 분석(표정)", o_khand: "손동작", o_kocr: "글자",
+      o_kqr: "QR", o_kpose: "자세", o_kmask: "마스크",
+      o_yname: "이름", o_yscore: "확률(%)", o_yx: "가운데 x", o_yy: "가운데 y", o_yw: "너비", o_yh: "높이",
+      o_pbest: "확률이 가장 높은", o_pbiggest: "가장 큰",
+      o_pnose: "코", o_pleft_eye: "왼눈", o_pright_eye: "오른눈", o_pleft_ear: "왼귀", o_pright_ear: "오른귀",
+      o_pleft_shoulder: "왼어깨", o_pright_shoulder: "오른어깨", o_pleft_elbow: "왼팔꿈치", o_pright_elbow: "오른팔꿈치",
+      o_pleft_wrist: "왼손목", o_pright_wrist: "오른손목", o_pleft_hip: "왼엉덩이", o_pright_hip: "오른엉덩이",
+      o_pleft_knee: "왼무릎", o_pright_knee: "오른무릎", o_pleft_ankle: "왼발목", o_pright_ankle: "오른발목",
+      o_noDb: "(자료 없음 — [이야기]에서 만들어요)", r_person: "사람",
+      m_savedCsv: "표를 파이썬 작품 폴더에 저장했어요: ", m_noDb: "자료를 골라 주세요 — [이야기] 화면에서 먼저 만들어요", m_noImgInTable: "표에는 사진을 넣을 수 없어요",
+      sh_table: "기록", sh_key: "최고점수", sh_resVar: "찾은것", sh_poseVar: "자세", sh_resSay: "사람이 보여요. 가로 위치 ",
+      ex_result: "결과로 판단하고 기록하기", ex_result_d: "사물 결과에서 개수 · 이름 · 위치를 꺼내 판단하고, 표에 기록해 CSV 로 저장해요. (결과 · 기록)",
       b_ask: "%1 에게 %2 물어보기", b_ask_tip: "사진을 보고 질문에 답해요. (몇 초 걸려요)",
       b_chat: "%1 물어보기 (사진 없이)",
       b_chat_tip: "사진 없이 글로만 물어봐요. 앞에 한 말은 기억하지 않아요.",
@@ -509,6 +537,34 @@
       b_face: "%2 of the face in %1", b_face_tip: "Info about the first face. Age is a number.",
       b_face_count: "number of faces in %1",
       b_ocr: "read the text in %1", b_qr: "read the QR code in %1",
+      cat_result: "Results", cat_data: "Time · Records",
+      lbl_res_get: "— get a result —", lbl_res_use: "— take values out —", lbl_pose: "— body points —",
+      b_res_of: "result of finding %2 in %1", b_res_of_tip: "Gives everything that was found. Use the blocks below to take out count, names, scores and positions.",
+      b_res_custom: "result of my AI %2 on %1", b_res_custom_tip: "One row per class, most confident first.",
+      b_res_file: "result of model file %2 on %1", b_res_file_tip: "Everything found with an .onnx from the models folder.",
+      b_res_count: "count of %1", b_res_names: "names in %1",
+      b_res_nth: "%3 of item %2 in %1", b_res_nth_tip: "Counts from 1. Empty text or 0 if there is none. Positions are stage pixels (640 × 480).",
+      b_res_has: "%1 has %2?", b_res_has_tip: "Korean or English names both work (person, Thumb_Up …).",
+      b_res_pick: "%3 of the %2 one in %1",
+      b_res_pose: "%4 of %3 of person %2 in %1", b_res_pose_tip: "For a pose result. -1 if not visible. Left/right are the person's own.",
+      b_tm_timer: "timer (s)", b_tm_reset: "reset timer",
+      b_dt_record: "record %2 in table %1", b_dt_record_tip: "Time (s) goes in the first column. A list makes several columns. Photos can't go in.",
+      b_dt_rows: "rows in table %1", b_dt_save: "save table %1 as CSV", b_dt_save_tip: "Saved to the Python works folder — open it by name in Python, JupyterLab or Excel.",
+      b_dt_remember: "remember %2 as %1", b_dt_remember_tip: "Stays after you run again (per work). Good for a high score.",
+      b_dt_recall: "remembered %1", b_dt_recall_tip: "0 if nothing was remembered.",
+      b_rag: "answer %2 from material %1", b_rag_tip: "Answers from material you made in [Talk].",
+      o_kobject: "objects", o_kface: "faces", o_kface_attr: "face analysis (emotion)", o_khand: "hand gestures", o_kocr: "text",
+      o_kqr: "QR", o_kpose: "pose", o_kmask: "mask",
+      o_yname: "name", o_yscore: "score (%)", o_yx: "center x", o_yy: "center y", o_yw: "width", o_yh: "height",
+      o_pbest: "most confident", o_pbiggest: "biggest",
+      o_pnose: "nose", o_pleft_eye: "left eye", o_pright_eye: "right eye", o_pleft_ear: "left ear", o_pright_ear: "right ear",
+      o_pleft_shoulder: "left shoulder", o_pright_shoulder: "right shoulder", o_pleft_elbow: "left elbow", o_pright_elbow: "right elbow",
+      o_pleft_wrist: "left wrist", o_pright_wrist: "right wrist", o_pleft_hip: "left hip", o_pright_hip: "right hip",
+      o_pleft_knee: "left knee", o_pright_knee: "right knee", o_pleft_ankle: "left ankle", o_pright_ankle: "right ankle",
+      o_noDb: "(no material — make one in [Talk])", r_person: "person",
+      m_savedCsv: "Saved the table to the Python works folder: ", m_noDb: "Choose a material — make one in [Talk] first", m_noImgInTable: "Photos can't go in a table",
+      sh_table: "log", sh_key: "best", sh_resVar: "found", sh_poseVar: "pose", sh_resSay: "I see a person. x position ",
+      ex_result: "Decide from results and record", ex_result_d: "Take count, names and positions out of an object result, decide, record in a table and save it as CSV. (results · records)",
       b_ask: "ask %1 about %2", b_ask_tip: "Answers a question about the photo. (takes a few seconds)",
       b_chat: "ask %1 (no photo)",
       b_chat_tip: "Ask with words only, no photo. It does not remember earlier turns.",
@@ -850,6 +906,21 @@
       },
       lists_sort: b => "sorted(" + val(b, "LIST", "[]") + ")",
 
+      /* ---- 결과 · 기록 (themaker 의 같은 이름 함수) ---- */
+      res_of: b => "vision(" + q(field(b, "KIND")) + ", " + img(b, "IMG") + ")",
+      res_custom: b => "vision(" + q("my:" + field(b, "MODEL")) + ", " + img(b, "IMG") + ")",
+      res_file: b => "detect(" + q(field(b, "FILE")) + ", " + img(b, "IMG") + ")",
+      res_count: b => "count(" + val(b, "RES", "[]") + ")",
+      res_names: b => "names(" + val(b, "RES", "[]") + ")",
+      res_nth: b => "nth(" + val(b, "RES", "[]") + ", " + val(b, "N", "1") + ", " + q(field(b, "KEY")) + ")",
+      res_has: b => "has(" + val(b, "RES", "[]") + ", " + val(b, "NAME", "''") + ")",
+      res_pick: b => (field(b, "WHICH") === "biggest" ? "biggest(" : "best(") + val(b, "RES", "[]") + ", " + q(field(b, "KEY")) + ")",
+      res_pose: b => "pose_" + field(b, "AXIS") + "(" + val(b, "RES", "[]") + ", " + q(field(b, "PART")) + ", " + val(b, "WHO", "1") + ")",
+      tm_timer: () => "timer()",
+      dt_rows: b => "len(table(" + q(field(b, "TABLE")) + "))",
+      dt_recall: b => "recall(" + q(field(b, "KEY")) + ", 0)",
+      ai_rag: b => "chat(" + val(b, "Q", "''") + ", db=" + q(field(b, "DB")) + ")",
+
       /* ---- 사진 가져오기 ---- */
       ai_capture: () => "camera()",
       ai_upload: () => "load('사진.jpg')",
@@ -986,7 +1057,9 @@
         lastShown = img(b, "IMG");         // 무대에 보인 것을 기억 (저장·박스가 이걸 쓴다)
         out.push(p + "show(" + lastShown + ")");
       } else if (T === "st_boxes") {
-        if (hasResult) {
+        if (lastRes) {
+          out.push(p + "show(" + lastShown + ", " + lastRes + ")");
+        } else if (hasResult) {
           out.push(p + "show(" + lastShown + ", r)");
         } else {                          // 앞에서 인식한 적이 없으면 여기서 한 번 한다
           needCam = true;
@@ -995,6 +1068,14 @@
         }
       } else if (T === "st_clear") {
         return "";                       // 파이썬에는 화면 칸이 없다 — 조용히 건너뛴다
+      } else if (T === "tm_reset") {
+        out.push(p + "reset_timer()");
+      } else if (T === "dt_record") {
+        out.push(p + "record(" + q(field(b, "TABLE")) + ", " + val(b, "V", "''") + ")");
+      } else if (T === "dt_save") {
+        out.push(p + "print(save_table(" + q(field(b, "TABLE")) + "))");
+      } else if (T === "dt_remember") {
+        out.push(p + "remember(" + q(field(b, "KEY")) + ", " + val(b, "V", "0") + ")");
       } else if (T === "st_save_stage") {
         out.push(p + "save(" + img(b, "IMG") + ", 'themaker.jpg')");
       } else if (T === "st_wait") {
@@ -1045,7 +1126,23 @@
         out.push(p + "for " + pyName(b.getField("VAR").getText()) + " in " + val(b, "LIST", "[]") + ":");
         out.push(body(b, "DO", ind + 4, p));
       } else if (T === "variables_set") {
-        out.push(p + pyName(b.getField("VAR").getText()) + " = " + val(b, "VALUE", "None"));
+        const name = pyName(b.getField("VAR").getText());
+        const vb = b.getInputTargetBlock("VALUE");
+        if (vb && /^res_(of|custom|file)$/.test(vb.type)) {
+          /* 결과를 변수에 담으면 그 사진도 img 에 둔다 — [박스 그리기] 가 같은 사진 · 같은 결과를 보여 주게 */
+          const ib = vb.getInputTargetBlock("IMG");
+          if (!ib || ib.type === "ai_capture") {
+            if (ib) out.push(p + "img = " + expr(ib));
+            else needCam = true;
+            lastShown = "img";
+          } else {
+            lastShown = expr(ib);
+          }
+          out.push(p + name + " = " + expr(vb).replace(/, (?:camera\(\)|img)\)$/, ", " + lastShown + ")"));
+          lastRes = name;
+        } else {
+          out.push(p + name + " = " + val(b, "VALUE", "None"));
+        }
       } else if (T === "math_change") {
         const v = pyName(b.getField("VAR").getText());
         out.push(p + v + " = " + v + " + " + val(b, "DELTA", "1"));
@@ -1074,6 +1171,7 @@
 
     let lastShown = "img";                 // 무대에 마지막으로 보인 사진
     let hasResult = false;                 // r(인식 결과) 이 만들어졌는지
+    let lastRes = "";                      // 결과 블록을 담은 마지막 변수 이름
     /* speak() 의 기본값과 같으면 인자를 생략한다 — 코드가 짧아야 읽힌다 */
     function voiceArg(voice, speedKey) {
       const speed = RT_SPEED[speedKey] || 1.05;
@@ -1103,7 +1201,7 @@
     return {
       generate(workspace) {
         needTime = false; needCam = false; needRandom = false; needMath = false;
-        lastShown = "img"; hasResult = false;
+        lastShown = "img"; hasResult = false; lastRes = "";
         const tops = workspace.getTopBlocks(true).filter(b => !b.outputConnection);
         const bodyLines = tops.map(b => chain(b, 0)).filter(s => s.trim()).join("\n");
         if (!bodyLines.trim()) return "from themaker import *\n\n# 블록을 조립해 보세요\n";
@@ -1186,6 +1284,23 @@ def texts_of(result):
       if (j.result === "ok" && Array.isArray(j.data.files)) MODEL_FILES = j.data.files;
     } catch (e) { /* 폴더가 없어도 나머지 블록은 정상 동작 */ }
   }
+
+  /* [이야기] 에서 만든 내 자료 목록 — 자료로 답하기 블록의 드롭다운 */
+  let DB_LIST = [];
+  async function loadDbList() {
+    try {
+      const j = await (await fetch("/chat/db")).json();
+      if (j.result === "ok" && Array.isArray(j.data)) DB_LIST = j.data;
+    } catch (e) { /* 자료가 없어도 나머지 블록은 정상 동작 */ }
+  }
+
+  /* 결과 블록이 쓰는 이름표 — 파이썬 themaker 의 vision 기능 이름 · POSE_PARTS 와 같다 */
+  const RES_KINDS = ["object", "face", "face_attr", "hand", "ocr", "qr", "pose", "mask"];
+  const RES_KEYS = ["name", "score", "x", "y", "w", "h"];
+  const POSE_PARTS = ["nose", "left_eye", "right_eye", "left_ear", "right_ear",
+                      "left_shoulder", "right_shoulder", "left_elbow", "right_elbow",
+                      "left_wrist", "right_wrist", "left_hip", "right_hip",
+                      "left_knee", "right_knee", "left_ankle", "right_ankle"];
 
   /* ---------------- 커스텀 블록 정의 ---------------- */
   /* 색 — 휴(hue) 숫자 대신 한 벌의 또렷한 색. 기본 블록 색은 아래 THEME 이 같은 값을 갖는다 */
@@ -1474,6 +1589,60 @@ def texts_of(result):
         colour: C_AI, tooltip: t("b_boxes_tip") },
       { type: "st_clear", message0: t("b_clear"), previousStatement: null, nextStatement: null,
         colour: C_EDIT },
+      /* --- 결과 (찾은 것을 통째로 받아 꺼내 쓴다) --- */
+      { type: "res_of", message0: t("b_res_of"), output: "Array", colour: C_AI, inputsInline: true,
+        args0: [ IMG, { type: "field_dropdown", name: "KIND", options: () => RES_KINDS.map(k => [t("o_k" + k), k]) } ],
+        tooltip: t("b_res_of_tip") },
+      { type: "res_custom", message0: t("b_res_custom"), output: "Array", colour: C_AI, inputsInline: true,
+        args0: [ IMG, { type: "field_dropdown", name: "MODEL",
+          options: () => (CUSTOM_MODELS.length ? CUSTOM_MODELS.map(m => [m.title, m.slug]) : [[t("o_noCustom"), ""]]) } ],
+        tooltip: t("b_res_custom_tip") },
+      { type: "res_file", message0: t("b_res_file"), output: "Array", colour: C_AI, inputsInline: true,
+        args0: [ IMG, { type: "field_dropdown", name: "FILE",
+          options: () => (MODEL_FILES.length ? MODEL_FILES.map(n => [n, n]) : [[t("o_noFile"), ""]]) } ],
+        tooltip: t("b_res_file_tip") },
+      { type: "res_count", message0: t("b_res_count"), output: "Number", colour: C_AI,
+        args0: [ { type: "input_value", name: "RES" } ] },
+      { type: "res_names", message0: t("b_res_names"), output: "Array", colour: C_AI,
+        args0: [ { type: "input_value", name: "RES" } ] },
+      { type: "res_nth", message0: t("b_res_nth"), output: null, colour: C_AI, inputsInline: true,
+        args0: [ { type: "input_value", name: "RES" }, { type: "input_value", name: "N", check: "Number" },
+                 { type: "field_dropdown", name: "KEY", options: () => RES_KEYS.map(k => [t("o_y" + k), k]) } ],
+        tooltip: t("b_res_nth_tip") },
+      { type: "res_has", message0: t("b_res_has"), output: "Boolean", colour: C_AI, inputsInline: true,
+        args0: [ { type: "input_value", name: "RES" }, { type: "input_value", name: "NAME", check: "String" } ],
+        tooltip: t("b_res_has_tip") },
+      { type: "res_pick", message0: t("b_res_pick"), output: null, colour: C_AI, inputsInline: true,
+        args0: [ { type: "input_value", name: "RES" },
+                 { type: "field_dropdown", name: "WHICH", options: () => opt(["pbest", "pbiggest"]).map(([a, v]) => [a, v.slice(1)]) },
+                 { type: "field_dropdown", name: "KEY", options: () => RES_KEYS.map(k => [t("o_y" + k), k]) } ] },
+      { type: "res_pose", message0: t("b_res_pose"), output: "Number", colour: C_AI, inputsInline: true,
+        args0: [ { type: "input_value", name: "RES" }, { type: "input_value", name: "WHO", check: "Number" },
+                 { type: "field_dropdown", name: "PART", options: () => POSE_PARTS.map(k => [t("o_p" + k), k]) },
+                 { type: "field_dropdown", name: "AXIS", options: [["x", "x"], ["y", "y"]] } ],
+        tooltip: t("b_res_pose_tip") },
+      /* --- 시간 · 기록 --- */
+      { type: "tm_timer", message0: t("b_tm_timer"), output: "Number", colour: C_EVENT },
+      { type: "tm_reset", message0: t("b_tm_reset"), previousStatement: null, nextStatement: null, colour: C_EVENT },
+      { type: "dt_record", message0: t("b_dt_record"), previousStatement: null, nextStatement: null, colour: C_CORE.list,
+        inputsInline: true,
+        args0: [ { type: "field_input", name: "TABLE", text: t("sh_table") }, { type: "input_value", name: "V" } ],
+        tooltip: t("b_dt_record_tip") },
+      { type: "dt_rows", message0: t("b_dt_rows"), output: "Number", colour: C_CORE.list,
+        args0: [ { type: "field_input", name: "TABLE", text: t("sh_table") } ] },
+      { type: "dt_save", message0: t("b_dt_save"), previousStatement: null, nextStatement: null, colour: C_CORE.list,
+        args0: [ { type: "field_input", name: "TABLE", text: t("sh_table") } ], tooltip: t("b_dt_save_tip") },
+      { type: "dt_remember", message0: t("b_dt_remember"), previousStatement: null, nextStatement: null, colour: C_CORE.var,
+        inputsInline: true,
+        args0: [ { type: "field_input", name: "KEY", text: t("sh_key") }, { type: "input_value", name: "V" } ],
+        tooltip: t("b_dt_remember_tip") },
+      { type: "dt_recall", message0: t("b_dt_recall"), output: null, colour: C_CORE.var,
+        args0: [ { type: "field_input", name: "KEY", text: t("sh_key") } ], tooltip: t("b_dt_recall_tip") },
+      { type: "ai_rag", message0: t("b_rag"), output: "String", colour: C_VLM, inputsInline: true,
+        args0: [ { type: "field_dropdown", name: "DB",
+                   options: () => (DB_LIST.length ? DB_LIST.map(d => [d.title || d.slug, d.slug]) : [[t("o_noDb"), ""]]) },
+                 { type: "input_value", name: "Q", check: "String" } ],
+        tooltip: t("b_rag_tip") },
       { type: "st_wait", message0: t("b_wait"), previousStatement: null, nextStatement: null,
         colour: C_EVENT, args0: [ { type: "input_value", name: "SEC", check: "Number" } ] },
     ]);
@@ -1485,6 +1654,25 @@ def texts_of(result):
   /* 표준 "출력하기" — Blockly 기본 생성기는 window.alert 이라 반복 안에서 창이 계속 뜬다.
      RT.print(기록 칸에 "▷ ..." 로 찍는다)로 돌린다. */
   G.forBlock["text_print"]    = b => `RT.print(${V(b,"TEXT","''")});\n`;
+  /* 결과 · 기록 — 글자 값(이름 · 표 이름)은 JSON 으로 넣어 따옴표가 섞여도 안전하게 */
+  const J = v => JSON.stringify(String(v == null ? "" : v));
+  G.forBlock["res_of"]     = b => [`(await AI.result(${V(b,"IMG","null")}, ${J(b.getFieldValue("KIND"))}))`, Order.ATOMIC];
+  G.forBlock["res_custom"] = b => [`(await AI.resultCustom(${V(b,"IMG","null")}, ${J(b.getFieldValue("MODEL"))}))`, Order.ATOMIC];
+  G.forBlock["res_file"]   = b => [`(await AI.resultFile(${V(b,"IMG","null")}, ${J(b.getFieldValue("FILE"))}))`, Order.ATOMIC];
+  G.forBlock["res_count"]  = b => [`RT.res.count(${V(b,"RES","[]")})`, Order.FUNCTION_CALL];
+  G.forBlock["res_names"]  = b => [`RT.res.names(${V(b,"RES","[]")})`, Order.FUNCTION_CALL];
+  G.forBlock["res_nth"]    = b => [`RT.res.nth(${V(b,"RES","[]")}, ${V(b,"N","1")}, ${J(b.getFieldValue("KEY"))})`, Order.FUNCTION_CALL];
+  G.forBlock["res_has"]    = b => [`RT.res.has(${V(b,"RES","[]")}, ${V(b,"NAME","''")})`, Order.FUNCTION_CALL];
+  G.forBlock["res_pick"]   = b => [`RT.res.pick(${V(b,"RES","[]")}, ${J(b.getFieldValue("WHICH"))}, ${J(b.getFieldValue("KEY"))})`, Order.FUNCTION_CALL];
+  G.forBlock["res_pose"]   = b => [`RT.res.pose(${V(b,"RES","[]")}, ${V(b,"WHO","1")}, ${J(b.getFieldValue("PART"))}, ${J(b.getFieldValue("AXIS"))})`, Order.FUNCTION_CALL];
+  G.forBlock["tm_timer"]   = () => ["RT.timer()", Order.FUNCTION_CALL];
+  G.forBlock["tm_reset"]   = () => "RT.resetTimer();\n";
+  G.forBlock["dt_record"]  = b => `RT.record(${J(b.getFieldValue("TABLE"))}, ${V(b,"V","''")});\n`;
+  G.forBlock["dt_rows"]    = b => [`RT.rows(${J(b.getFieldValue("TABLE"))})`, Order.FUNCTION_CALL];
+  G.forBlock["dt_save"]    = b => `await RT.saveTable(${J(b.getFieldValue("TABLE"))});\n`;
+  G.forBlock["dt_remember"] = b => `RT.remember(${J(b.getFieldValue("KEY"))}, ${V(b,"V","0")});\n`;
+  G.forBlock["dt_recall"]  = b => [`RT.recall(${J(b.getFieldValue("KEY"))})`, Order.FUNCTION_CALL];
+  G.forBlock["ai_rag"]     = b => [`(await AI.rag(${J(b.getFieldValue("DB"))}, ${V(b,"Q","''")}))`, Order.ATOMIC];
   G.forBlock["ai_capture"]    = () => ["(await AI.capture())", Order.ATOMIC];
   G.forBlock["ai_upload"]     = () => ["(AI.uploaded())", Order.ATOMIC];
   G.forBlock["ai_detect_draw"] = b => `await AI.detectDraw(${V(b,"IMG","null")}, '${b.getFieldValue("MODE")}');\n`;
@@ -1677,6 +1865,27 @@ def texts_of(result):
         { kind: "label", text: t("lbl_draw_box") },
         { kind: "block", type: "ai_detect_draw" },
         { kind: "block", type: "st_boxes" } ] },
+      { kind: "category", name: t("cat_result"), ic: "result", colour: C_AI, contents: [
+        { kind: "label", text: t("lbl_res_get") },
+        { kind: "block", type: "res_of", inputs: { IMG: { block: { type: "ai_capture" } } } },
+        { kind: "block", type: "res_custom", inputs: { IMG: { block: { type: "ai_capture" } } } },
+        { kind: "block", type: "res_file", inputs: { IMG: { block: { type: "ai_capture" } } } },
+        { kind: "label", text: t("lbl_res_use") },
+        { kind: "block", type: "res_count" },
+        { kind: "block", type: "res_nth", inputs: { N: num(1) } },
+        { kind: "block", type: "res_has", inputs: { NAME: txt(t("r_person")) } },
+        { kind: "block", type: "res_pick" },
+        { kind: "block", type: "res_names" },
+        { kind: "label", text: t("lbl_pose") },
+        { kind: "block", type: "res_pose", inputs: { WHO: num(1) } } ] },
+      { kind: "category", name: t("cat_data"), ic: "data", colour: C_CORE.list, contents: [
+        { kind: "block", type: "tm_timer" },
+        { kind: "block", type: "tm_reset" },
+        { kind: "block", type: "dt_record" },
+        { kind: "block", type: "dt_rows" },
+        { kind: "block", type: "dt_save" },
+        { kind: "block", type: "dt_remember", inputs: { V: num(0) } },
+        { kind: "block", type: "dt_recall" } ] },
       { kind: "category", name: t("cat_sound"), ic: "sound", colour: C_SOUND, contents: [
         { kind: "block", type: "st_say", inputs: { TEXT: txt(t("sh_hello")) } },
         { kind: "block", type: "ai_listen" },
@@ -1687,7 +1896,8 @@ def texts_of(result):
       { kind: "category", name: t("cat_lang"), ic: "talk", colour: C_VLM, contents: [
         { kind: "block", type: "ai_ask", inputs: { Q: txt(t("sh_question")) } },
         { kind: "block", type: "ai_chat", inputs: { Q: txt(t("sh_chatQ")) } },
-        { kind: "block", type: "ai_transform" } ] },
+        { kind: "block", type: "ai_transform" },
+        { kind: "block", type: "ai_rag", inputs: { Q: txt(t("sh_chatQ")) } } ] },
       { kind: "category", name: t("cat_event"), ic: "bolt", colour: C_EVENT, contents: [
         { kind: "block", type: "st_wait", inputs: { SEC: num(1) } },
         { kind: "block", type: "ev_wait_face" },
@@ -1715,6 +1925,8 @@ def texts_of(result):
     wand:  '<path d="M4 20 14 10"/><path d="M15 3v3M18.5 4.5l-2 2M21 9h-3M18.5 13.5l-2-2"/>',
     pen:   '<path d="M4 20l1-4L16 5l3 3L8 19l-4 1Z"/>',
     xy:    '<path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="4"/>',
+    result: '<path d="M4 5h11M4 12h7M4 19h5"/><circle cx="16.5" cy="15.5" r="3.5"/><path d="m19 18 2.5 2.5"/>',
+    data:  '<rect x="3.5" y="4" width="17" height="16" rx="2.5"/><path d="M3.5 9.5h17M3.5 15h17M9.5 4v16"/>',
     eye:   '<path d="M2 12c3.2-4.6 6.6-6.9 10-6.9S18.8 7.4 22 12c-3.2 4.6-6.6 6.9-10 6.9S5.2 16.6 2 12Z"/><circle cx="12" cy="12" r="3.1"/>',
     sound: '<path d="M4 9h4l5-4v14l-5-4H4Z"/><path d="M16.5 9a4 4 0 0 1 0 6M19 6.5a7.5 7.5 0 0 1 0 11"/>',
     talk:  '<path d="M3.5 5.5h17v11h-9l-5 4v-4h-3v-11Z"/>',
@@ -1773,7 +1985,7 @@ def texts_of(result):
   let ws = Blockly.inject("blocklyDiv", Object.assign({ toolbox: buildToolbox() }, WS_OPTS));
   /* 내가 만든 AI 목록 (드롭다운은 열 때마다 최신 목록을 읽음) · 가져다 둔 모델 파일 목록.
      초안을 되살리는 일은 이 둘을 기다린다 — 목록이 비어 있으면 드롭다운 값이 첫 항목으로 바뀐다. */
-  const listsReady = Promise.all([loadCustomModels(), loadModelFiles()]);
+  const listsReady = Promise.all([loadCustomModels(), loadModelFiles(), loadDbList()]);
 
   /* 작업 칸 크기가 바뀌면 블록판을 다시 그린다.
      Blockly 는 만들 때의 크기를 기억하므로, 손잡이로 끌어 칸만 넓혀도 캔버스는
@@ -2021,6 +2233,42 @@ def texts_of(result):
       /* 모든 기능을 한 번씩 지나가는 점검용 예제.
          기다리는 블록(얼굴/손 기다리기·음성 인식)과 내가 만든 AI 는 뺐다 —
          멈춰 서거나 학습한 모델이 있어야 해서 "한 번에 쭉" 이 안 된다. */
+      { id: "result", name: t("ex_result"), desc: t("ex_result_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
+          CLEAR(),
+          B("tm_reset"),
+          B("controls_repeat_ext", { inputs: { TIMES: shadowNum(3), DO: { block: chain([
+            SET(t("sh_resVar"), B("res_of", { fields: { KIND: "object" },
+                                             inputs: { IMG: { block: B("ai_capture") } } })),
+            B("st_boxes"),
+            PR(B("res_names", { inputs: { RES: { block: VG(t("sh_resVar")) } } })),
+            B("dt_record", { fields: { TABLE: t("sh_table") }, inputs: { V: { block: B("lists_create_with", {
+              extraState: { itemCount: 2 }, inputs: {
+                ADD0: { block: B("res_count", { inputs: { RES: { block: VG(t("sh_resVar")) } } }) },
+                ADD1: { block: B("res_pick", { fields: { WHICH: "biggest", KEY: "name" },
+                                              inputs: { RES: { block: VG(t("sh_resVar")) } } }) } } }) } } }),
+            B("controls_if", { inputs: {
+              IF0: { block: B("res_has", { inputs: { RES: { block: VG(t("sh_resVar")) },
+                                                     NAME: shadowTxt(t("r_person")) } }) },
+              DO0: { block: B("st_say", { fields: { V: "F1", S: "normal" }, inputs: { TEXT: { block: B("text_join", {
+                extraState: { itemCount: 2 }, inputs: {
+                  ADD0: shadowTxt(t("sh_resSay")),
+                  ADD1: { block: B("res_nth", { fields: { KEY: "x" }, inputs: {
+                    RES: { block: VG(t("sh_resVar")) }, N: shadowNum(1) } }) } } }) } } }) } } }),
+            B("st_wait", { inputs: { SEC: shadowNum(1) } }),
+          ]) } } }),
+          SET(t("sh_poseVar"), B("res_of", { fields: { KIND: "pose" },
+                                            inputs: { IMG: { block: B("ai_capture") } } })),
+          PR(B("res_pose", { fields: { PART: "nose", AXIS: "y" },
+                             inputs: { RES: { block: VG(t("sh_poseVar")) }, WHO: shadowNum(1) } })),
+          B("dt_remember", { fields: { KEY: t("sh_key") }, inputs: { V: { block: B("math_arithmetic", {
+            fields: { OP: "ADD" }, inputs: { A: { block: B("dt_recall", { fields: { KEY: t("sh_key") } }) },
+                                             B: shadowNum(1) } }) } } }),
+          PR(B("dt_recall", { fields: { KEY: t("sh_key") } })),
+          PR(B("dt_rows", { fields: { TABLE: t("sh_table") } })),
+          PR(B("tm_timer")),
+          B("dt_save", { fields: { TABLE: t("sh_table") } }),
+        ]) ] } } },
       { id: "checkall", name: t("ex_all"), desc: t("ex_all_d"),
         state: { blocks: { languageVersion: 0, blocks: [ chain([
           CLEAR(),
@@ -2441,6 +2689,58 @@ def texts_of(result):
     return j.data;
   }
 
+  /* 결과 블록 — 파이썬 themaker 의 items · count · nth · has · best · biggest · pose_x 와 같은 규칙 */
+  const RES_EP = { object: "object/object_search", face: "face/face_detect", face_attr: "face/face_analyze",
+                   hand: "object/hand", ocr: "code/ocr", qr: "code/barcode",
+                   pose: "object/object_pose", mask: "face/mask_detect" };
+  const RES = {
+    list(d, kind, frac) {
+      const arr = Array.isArray(d) ? d : (d && Array.isArray(d.object) ? d.object : []);
+      return arr.filter(it => it && typeof it === "object").map(it => {
+        const b = Array.isArray(it.box) && it.box.length >= 4 ? it.box.map(v => Math.round(+v || 0)) : [0, 0, 0, 0];
+        let sc = +(it.percent != null ? it.percent : it.score) || 0;
+        if (frac) sc *= 100;                        // 내 AI 는 0~1 로 준다 — 다른 것과 같이 %
+        const nm = [it.name, it.gesture, it.text, it.data, it.emotion].find(v => v != null && v !== "");
+        return Object.assign({}, it, {
+          name: nm != null ? String(nm) : (it.points ? t("r_person") : (it.box ? t("r_face") : "")),
+          name_en: String(it.name_en || it.gesture_en || it.emotion_en || ""),
+          score: Math.round(sc * 10) / 10,
+          x: Math.round((b[0] + b[2]) / 2), y: Math.round((b[1] + b[3]) / 2), w: b[2] - b[0], h: b[3] - b[1],
+          box: [b[0], b[1], b[2], b[3]] });
+      });
+    },
+    rows(r) { return Array.isArray(r) ? r.filter(it => it && typeof it === "object") : []; },
+    count(r) { return RES.rows(r).length; },
+    names(r) { return RES.rows(r).map(it => it.name); },
+    _empty(key) { return key === "name" ? "" : 0; },
+    nth(r, n, key) {
+      const rows = RES.rows(r), i = Math.floor(+n || 0);
+      if (i < 1 || i > rows.length) return RES._empty(key);
+      const v = rows[i - 1][key];
+      return v == null ? RES._empty(key) : v;
+    },
+    _same(it, name) {
+      const k = String(name).trim().toLowerCase();
+      return k !== "" && (String(it.name).toLowerCase() === k || String(it.name_en || "").toLowerCase() === k);
+    },
+    has(r, name) { return RES.rows(r).some(it => RES._same(it, name)); },
+    pick(r, which, key) {
+      const rows = RES.rows(r);
+      if (!rows.length) return RES._empty(key);
+      const f = which === "biggest" ? (it => it.w * it.h) : (it => it.score);
+      const top = rows.reduce((a, c) => (f(c) > f(a) ? c : a));
+      return top[key] == null ? RES._empty(key) : top[key];
+    },
+    pose(r, who, part, axis) {
+      const rows = RES.rows(r), i = POSE_PARTS.indexOf(part), w = Math.floor(+who || 0);
+      if (i < 0 || w < 1 || w > rows.length) return -1;
+      const pts = rows[w - 1].points || [], conf = rows[w - 1].conf || [];
+      if (!pts[i]) return -1;
+      if (conf.length > i && conf[i] < (i <= 4 ? 0.4 : 0.5)) return -1;   // 잘 안 보이는 점은 없는 것으로
+      return Math.round(+pts[i][axis === "y" ? 1 : 0] || 0);
+    },
+  };
+
   const COLOR = { face: "#1f5f7a", objects: "#2e9e5b", text: "#e08a1e", custom: "#b4451c" };
   const COLORS = { face: "#1f5f7a", objects: "#2e8b57", text: "#d97b2b", custom: "#b4451c" };
   const AI = {
@@ -2482,6 +2782,44 @@ def texts_of(result):
       const objs = (d && d.object) || [];
       AI._setBoxes(img, objs.map(o => ({ box: o.box, label: o.name })), COLOR.custom);
       return objs.length ? objs[0].name : t("r_none");
+    },
+    /* ---- 결과 블록: 찾은 것을 같은 모양({name, score %, x, y, w, h, box, name_en})의 목록으로 ---- */
+    async result(img, kind) {
+      const ep = RES_EP[kind];
+      if (!ep) throw t("m_aiError") + kind;
+      const d = await post(ep, img);
+      const rows = RES.list(d, kind, false);
+      AI._setBoxes(img, rows.filter(o => o.w > 0).map(o => ({ box: o.box, label: o.name })),
+                   kind === "ocr" || kind === "qr" ? COLOR.text : kind === "object" ? COLOR.objects : COLOR.face);
+      return rows;
+    },
+    async resultCustom(img, slug) {
+      if (!slug) throw t("m_noCustom");
+      return RES.list(await post("custom/predict", img, { model: slug }), "custom", true);
+    },
+    async resultFile(img, name) {
+      if (!name) throw t("m_noFile");
+      const rows = RES.list(await post("object/detect_file", img, { model: name }), "file", false);
+      AI._setBoxes(img, rows.map(o => ({ box: o.box, label: o.name })), COLOR.custom);
+      return rows;
+    },
+    async rag(db, q) {
+      const text = String(q || "").trim();
+      if (!db) throw t("m_noDb");
+      if (!text) return "";
+      await RT.aiGate();
+      devBusy(DEVICE_OF["chat_ask"] || "GPU");
+      try {
+        const r = await fetch("/chat/rag?" + new URLSearchParams({ db, prompt: text, lang: LANG }),
+                              { method: "POST", signal: RT.abort ? RT.abort.signal : undefined });
+        const j = await r.json();
+        if (j.result !== "ok") throw t("m_aiError") + (j.data || t("m_fail"));
+        devReport(j.device, j.elapsed_ms || 0);
+        return j.data.answer;
+      } catch (e) {
+        if (e && e.name === "AbortError") throw "STOP";
+        throw e;
+      } finally { devIdle(); }
     },
     async custom(img, slug) {
       if (!slug) throw t("m_noCustom");
@@ -3142,7 +3480,7 @@ def texts_of(result):
     varSet(name, val) {
       /* C10: 실행 중 변수 값을 무대 옆에 보여준다 */
       RT._vars = RT._vars || {};
-      RT._vars[name] = Array.isArray(val) ? val.join(", ") : val;
+      RT._vars[name] = Array.isArray(val) ? RT._show(val) : val;
       const box = document.getElementById("varsBox");
       const body = document.getElementById("varsBody");
       if (!box || !body) return;
@@ -3151,10 +3489,53 @@ def texts_of(result):
         "<div><b>" + k.replace(/&/g,"&amp;").replace(/</g,"&lt;") + "</b> = " +
         String(RT._vars[k]).replace(/&/g,"&amp;").replace(/</g,"&lt;").slice(0, 60) + "</div>").join("");
     },
+    /* ---- 시간 · 표 · 기억 (파이썬 timer · record · save_table · remember 와 같은 규칙) ---- */
+    res: RES,
+    timer() { return Math.round((Date.now() - (RT._t0 || Date.now())) / 10) / 100; },
+    resetTimer() { RT._t0 = Date.now(); },
+    record(name, v) {
+      const vals = Array.isArray(v) ? v : [v];
+      if (vals.some(x => typeof x === "string" && x.startsWith("data:image"))) throw t("m_noImgInTable");
+      RT._tables = RT._tables || {};
+      (RT._tables[name] = RT._tables[name] || []).push([RT.timer()].concat(
+        vals.map(x => (x && typeof x === "object") ? (x.name != null ? x.name : JSON.stringify(x)) : x)));
+    },
+    rows(name) { return ((RT._tables || {})[name] || []).length; },
+    async saveTable(name) {
+      /* 파이썬 작품 폴더에 CSV 로 둔다(파이썬 save_table 과 같은 곳) — 키오스크 창에서는 내려받기가 안 보여서 */
+      const rows = (RT._tables || {})[name] || [];
+      const width = rows.reduce((m, r) => Math.max(m, r.length), 1);
+      const cell = v => { const s = String(v == null ? "" : v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+      const head = ["time"].concat(Array.from({ length: width - 1 }, (_, i) => "value" + (i + 1)));
+      const csv = [head].concat(rows).map(r => r.map(cell).join(",")).join("\r\n") + "\r\n";
+      const r = await fetch("/blocks/table", { method: "POST", headers: { "Content-Type": "application/json" },
+                                               body: JSON.stringify({ name: String(name), csv }) });
+      const j = await r.json();
+      if (j.result !== "ok") throw t("m_saveFail") + j.data;
+      log(t("m_savedCsv") + j.data.saved);
+    },
+    _memKey(k) { return "vapi-blk-mem:" + (BLOCK_NAME || "-") + ":" + k; },
+    remember(k, v) {
+      if (typeof v === "string" && v.startsWith("data:image")) throw t("m_noImgInTable");
+      try { localStorage.setItem(RT._memKey(k), JSON.stringify(v)); } catch (e) { /* 저장이 막혀 있으면 이번 실행에서만 */ }
+      (RT._mem = RT._mem || {})[k] = v;
+    },
+    recall(k) {
+      try {
+        const s = localStorage.getItem(RT._memKey(k));
+        if (s != null) return JSON.parse(s);
+      } catch (e) { /* 아래로 */ }
+      const m = (RT._mem || {})[k];
+      return m == null ? 0 : m;
+    },
     print(v) {
       /* 리스트는 보기 좋게 콤마로 */
-      if (Array.isArray(v)) v = v.join(", ");
+      if (Array.isArray(v)) v = RT._show(v);
       log("▷ " + String(v));
+    },
+    _show(arr) {
+      /* 결과 목록은 이름만 — [object Object] 가 보이지 않게 */
+      return arr.map(x => (x && typeof x === "object") ? (x.name != null ? x.name : JSON.stringify(x)) : x).join(", ");
     },
     saveStage(img) {
       const url = img || shownURL;           /* 준 사진이 있으면 그것, 없으면 지금 보이는 것 */
@@ -3287,6 +3668,7 @@ def texts_of(result):
     RT.stopFlag = false; RT.iter = 0;
     RT.voice = "F1"; RT.speed = "normal";   // 목소리·빠르기는 실행마다 기본값으로
     RT.lastAiAt = 0; RT._bseq = null;
+    RT._t0 = Date.now(); RT._tables = {};
     RT.abort = new AbortController();
     RT._vars = {};
     document.getElementById("varsBox").style.display = "none";

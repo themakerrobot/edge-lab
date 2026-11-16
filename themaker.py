@@ -1321,3 +1321,277 @@ def play_hz(freq=440, seconds=0.5):
     """주파수(Hz)로 소리 내기. 440 = 라"""
     _play(_wave(max(20.0, float(freq)), max(0.02, float(seconds))))
     return None
+
+
+# ================================================================= 결과 다루기
+# vision() · detect() 가 준 결과는 기능마다 모양이 조금씩 다르다(사물은 {"object": [...]},
+# 얼굴·손·글자는 목록, 내 AI 는 확률 순 목록). 아래 함수는 어느 것이든 받아서
+# 같은 모양의 목록으로 바꿔 쓴다 — 블록 코딩의 "결과" 블록과 1:1 이다.
+#
+#   r = vision("사물", camera())
+#   print(count(r), names(r))           # 찾은 개수, 이름 목록
+#   if has(r, "사람"): speak("사람이 있어요")
+#   print(nth(r, 1, "x"), nth(r, 1, "score"))   # 첫 번째 것의 가운데 x, 확률(%)
+
+_ITEM_KEYS = ("name", "score", "x", "y", "w", "h", "box", "name_en")
+
+
+def _name_of_item(it):
+    for k in ("name", "gesture", "text", "data", "emotion"):
+        v = it.get(k)
+        if v not in (None, ""):
+            return str(v)
+    if "points" in it:
+        return "사람" if LANG == "ko" else "person"
+    if "box" in it:
+        return "얼굴" if LANG == "ko" else "face"
+    return ""
+
+
+def _score_of_item(it):
+    s = it.get("percent", it.get("score", 0)) or 0
+    try:
+        s = float(s)
+    except (TypeError, ValueError):
+        return 0
+    if isinstance(it.get("score"), float) and "percent" not in it and 0 <= s <= 1:
+        s *= 100                                   # 내 AI 는 0~1 로 준다 — 다른 것과 같이 % 로
+    return round(s, 1)
+
+
+def items(result):
+    """결과를 같은 모양의 목록으로: 하나마다 name · score(%) · x · y(가운데) · w · h · box.
+
+    box 는 [왼쪽, 위, 오른쪽, 아래] (사진의 픽셀 좌표). 상자가 없는 결과(내 AI)는 x·y·w·h 가 0.
+    """
+    if isinstance(result, dict):
+        if isinstance(result.get("object"), list):
+            result = result["object"]
+        elif "answer" in result:
+            return [{"name": str(result["answer"]), "score": 100, "x": 0, "y": 0, "w": 0, "h": 0,
+                     "box": [0, 0, 0, 0], "name_en": ""}]
+        else:
+            result = [result]
+    if not isinstance(result, list):
+        return []
+    out = []
+    for it in result:
+        if not isinstance(it, dict):
+            continue
+        box = it.get("box") or [0, 0, 0, 0]
+        x1, y1, x2, y2 = [int(v) for v in list(box)[:4]] if len(box) >= 4 else (0, 0, 0, 0)
+        row = dict(it)
+        row.update({"name": _name_of_item(it), "score": _score_of_item(it),
+                    "x": (x1 + x2) // 2, "y": (y1 + y2) // 2, "w": x2 - x1, "h": y2 - y1,
+                    "box": [x1, y1, x2, y2],
+                    "name_en": str(it.get("name_en") or it.get("gesture_en") or it.get("emotion_en") or "")})
+        out.append(row)
+    return out
+
+
+def count(result):
+    """찾은 개수."""
+    return len(items(result))
+
+
+def names(result):
+    """찾은 것들의 이름 목록."""
+    return [it["name"] for it in items(result)]
+
+
+def nth(result, n=1, key="name"):
+    """n 번째(1부터) 것의 값. key: name · score · x · y · w · h · box. 없으면 이름은 "", 숫자는 0."""
+    rows = items(result)
+    n = int(n)
+    if n < 1 or n > len(rows):
+        return "" if key in ("name", "name_en") else 0
+    return rows[n - 1].get(key, "")
+
+
+def first(result, key="name"):
+    """첫 번째 것의 값 — nth(result, 1, key) 와 같다."""
+    return nth(result, 1, key)
+
+
+def _same(it, name):
+    name = str(name).strip().lower()
+    return name in (it["name"].lower(), it["name_en"].lower())
+
+
+def has(result, name):
+    """이름이 name 인 것이 있나 (한글 이름 · 영어 이름 둘 다 된다)."""
+    return any(_same(it, name) for it in items(result))
+
+
+def only(result, name):
+    """이름이 name 인 것만 남긴 목록."""
+    return [it for it in items(result) if _same(it, name)]
+
+
+def best(result, key="name"):
+    """확률이 가장 높은 것의 값."""
+    rows = items(result)
+    if not rows:
+        return "" if key in ("name", "name_en") else 0
+    return max(rows, key=lambda it: it["score"]).get(key, "")
+
+
+def biggest(result, key="name"):
+    """가장 큰 것(상자 넓이)의 값."""
+    rows = items(result)
+    if not rows:
+        return "" if key in ("name", "name_en") else 0
+    return max(rows, key=lambda it: it["w"] * it["h"]).get(key, "")
+
+
+# ---------------------------------------------------------------- 자세 점 (COCO 17점)
+# vision("자세", img) 의 결과에서 몸의 점 하나를 꺼낸다. 왼쪽 · 오른쪽은 **사진 속 사람의** 왼쪽 · 오른쪽이다
+# (거울처럼 보는 화면에서는 반대쪽에 보인다). 잘 안 보이는 점(얼굴 0.4 · 몸 0.5 미만)은 없는 것으로 친다.
+POSE_PARTS = ["nose", "left_eye", "right_eye", "left_ear", "right_ear",
+              "left_shoulder", "right_shoulder", "left_elbow", "right_elbow",
+              "left_wrist", "right_wrist", "left_hip", "right_hip",
+              "left_knee", "right_knee", "left_ankle", "right_ankle"]
+_POSE_KO = {"코": 0, "왼눈": 1, "오른눈": 2, "왼귀": 3, "오른귀": 4,
+            "왼어깨": 5, "오른어깨": 6, "왼팔꿈치": 7, "오른팔꿈치": 8,
+            "왼손목": 9, "오른손목": 10, "왼엉덩이": 11, "오른엉덩이": 12,
+            "왼무릎": 13, "오른무릎": 14, "왼발목": 15, "오른발목": 16}
+
+
+def _pose_index(part):
+    if isinstance(part, int):
+        return part if 0 <= part < 17 else -1
+    p = str(part).strip().replace(" ", "")
+    if p in _POSE_KO:
+        return _POSE_KO[p]
+    p = p.lower()
+    return POSE_PARTS.index(p) if p in POSE_PARTS else -1
+
+
+def pose_point(result, part="nose", who=1):
+    """who 번째(1부터) 사람의 몸 점 (x, y). 안 보이면 None.
+
+    >>> r = vision("자세", camera())
+    >>> pose_point(r, "왼손목")       # (312, 140) 또는 None
+    """
+    i = _pose_index(part)
+    if i < 0:
+        raise TheMakerError("모르는 몸 점이에요: %s\n가능한 점: %s" % (part, ", ".join(_POSE_KO)))
+    people = result if isinstance(result, list) else []
+    who = int(who)
+    if who < 1 or who > len(people):
+        return None
+    p = people[who - 1]
+    pts, conf = p.get("points") or [], p.get("conf") or []
+    if i >= len(pts):
+        return None
+    if conf and i < len(conf) and conf[i] < (0.4 if i <= 4 else 0.5):
+        return None
+    return int(pts[i][0]), int(pts[i][1])
+
+
+def pose_x(result, part="nose", who=1):
+    """몸 점의 x. 안 보이면 -1."""
+    pt = pose_point(result, part, who)
+    return pt[0] if pt else -1
+
+
+def pose_y(result, part="nose", who=1):
+    """몸 점의 y. 안 보이면 -1."""
+    pt = pose_point(result, part, who)
+    return pt[1] if pt else -1
+
+
+# ---------------------------------------------------------------- 시간
+_T0 = time.time()
+
+
+def timer():
+    """시작한 뒤(또는 reset_timer 한 뒤) 지난 초."""
+    return round(time.time() - _T0, 2)
+
+
+def reset_timer():
+    """타이머를 0 으로."""
+    global _T0
+    _T0 = time.time()
+
+
+# ---------------------------------------------------------------- 표 기록 · 기억하기
+# record() 로 쌓은 표는 save_table() 로 CSV 가 된다(엑셀 · 주피터 랩에서 연다).
+# remember() 한 값은 파일에 남아서 다음에 실행해도 recall() 로 꺼낼 수 있다(최고 점수 같은 것).
+_TABLES = {}
+_MEMORY_FILE = "themaker_memory.json"
+
+
+def record(table, *values):
+    """표 table 에 한 줄 더한다. 맨 앞 칸에 시간(초)이 붙는다.
+
+    >>> record("감정", vision("얼굴분석", camera())[0]["emotion"])
+    """
+    if len(values) == 1 and isinstance(values[0], (list, tuple)):
+        values = tuple(values[0])                  # record("표", [a, b]) 도 두 칸으로 (블록이 이렇게 만든다)
+    row = [timer()]
+    for v in values:
+        if isinstance(v, np.ndarray):
+            raise TheMakerError("표에는 사진을 넣을 수 없어요 — 숫자나 글자를 넣어 주세요.")
+        row.append(v)
+    _TABLES.setdefault(str(table), []).append(row)
+    return len(_TABLES[str(table)])
+
+
+def table(name):
+    """표 name 의 줄 목록 (한 줄 = [시간, 값, …])."""
+    return [list(r) for r in _TABLES.get(str(name), [])]
+
+
+def clear_table(name):
+    """표 name 을 비운다."""
+    _TABLES.pop(str(name), None)
+
+
+def save_table(name, path=None):
+    """표를 CSV 로 저장하고 파일 경로를 돌려준다. 엑셀에서 한글이 깨지지 않게 utf-8-sig 로 쓴다."""
+    import csv
+    rows = _TABLES.get(str(name), [])
+    path = path or (str(name) + ".csv")
+    width = max([len(r) for r in rows] or [1])
+    head = ["time"] + ["value%d" % i for i in range(1, width)]
+    with open(path, "w", newline="", encoding="utf-8-sig") as f:
+        w = csv.writer(f)
+        w.writerow(head)
+        w.writerows(rows)
+    return os.path.abspath(path)
+
+
+def _memory():
+    try:
+        with open(_MEMORY_FILE, encoding="utf-8") as f:
+            d = json.load(f)
+        return d if isinstance(d, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def remember(key, value):
+    """값을 기억한다 — 프로그램을 다시 실행해도 남는다 (숫자 · 글자 · 목록)."""
+    if isinstance(value, np.ndarray):
+        raise TheMakerError("사진은 기억할 수 없어요 — save() 로 파일에 저장해 주세요.")
+    d = _memory()
+    d[str(key)] = value
+    with open(_MEMORY_FILE, "w", encoding="utf-8") as f:
+        json.dump(d, f, ensure_ascii=False, indent=1)
+    return value
+
+
+def recall(key, default=None):
+    """remember() 한 값. 없으면 default."""
+    return _memory().get(str(key), default)
+
+
+__all__ += [
+    # 결과 다루기
+    "items", "count", "names", "nth", "first", "has", "only", "best", "biggest",
+    "pose_point", "pose_x", "pose_y", "POSE_PARTS",
+    # 시간 · 표 · 기억
+    "timer", "reset_timer", "record", "table", "clear_table", "save_table", "remember", "recall",
+]

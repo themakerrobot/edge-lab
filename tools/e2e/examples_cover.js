@@ -24,6 +24,9 @@ const SKIP_BLOCKS = {
   ai_upload: "사진 파일을 사람이 골라야 함",
   ev_wait_hand: "손을 들 때까지 멈춰 섬",
   ev_wait_custom: "가르친 모델이 있어야 함",
+  res_custom: "가르친 모델이 있어야 함",
+  res_file: "모델 파일이 있어야 함",
+  ai_rag: "[이야기]에서 자료를 먼저 만들어야 함",
 };
 const SKIP_FUNCS = {
   listen: "마이크에 대고 말해야 함",

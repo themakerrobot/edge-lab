@@ -87,6 +87,12 @@ def run(host):
         raise AssertionError("이 예제는 가져다 둔 .onnx 파일이 있어야 합니다")
     T.detect = _no_model
 
+    # 예제가 만드는 파일(표 CSV · 기억 파일)이 저장소에 남지 않게 임시 폴더에서 돈다
+    import tempfile
+    here = os.getcwd()
+    tmp = tempfile.TemporaryDirectory()
+    os.chdir(tmp.name)
+
     ok = fail = skip = 0
     for name, src, lang in _examples():
         T.language(lang)                  # 영문판은 영어 화면에서 도는 것과 같게
@@ -109,5 +115,7 @@ def run(host):
                   % (name[:40], line, type(ex).__name__, ex))
             fail += 1
     T.language("ko")
+    os.chdir(here)
+    tmp.cleanup()
     print("  (사람 손이 필요해 건너뛴 예제 %d개)" % skip)
     return ok, fail
