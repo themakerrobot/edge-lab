@@ -464,8 +464,6 @@
       m_aiError: "AI 오류: ", m_fail: "실패",
       m_camNotReady: "웹캠이 준비되지 않았어요",
       m_needUpload: "먼저 무대에서 [사진 올리기]를 해주세요",
-      m_tooManyAI: "AI를 너무 많이 불렀어요 (한 번 실행에 %1번까지)",
-      m_tooManyLoop: "반복이 너무 많아요 (5000회 초과)",
       m_say: "말하기: ", m_show: "보여주기: ",
       m_needDetect: "먼저 인식 블록을 실행하세요.",
       m_noBlocks: "(블록이 없어요)", m_assembleFirst: "블록을 먼저 조립해 주세요.",
@@ -687,8 +685,6 @@
       m_aiError: "AI error: ", m_fail: "failed",
       m_camNotReady: "The webcam is not ready yet",
       m_needUpload: "Use [Upload photo] on the stage first",
-      m_tooManyAI: "Too many AI calls (limit is %1 per run)",
-      m_tooManyLoop: "Too many loops (over 5000)",
       m_say: "say: ", m_show: "show: ",
       m_needDetect: "Run a detection block first.",
       m_noBlocks: "(no blocks yet)", m_assembleFirst: "Build some blocks first.",
@@ -1486,6 +1482,9 @@ def texts_of(result):
 
   /* ---------------- 코드 생성기 ---------------- */
   const V = (b, n, d) => G.valueToCode(b, n, Order.NONE) || d;
+  /* 표준 "출력하기" — Blockly 기본 생성기는 window.alert 이라 반복 안에서 창이 계속 뜬다.
+     RT.print(기록 칸에 "▷ ..." 로 찍는다)로 돌린다. */
+  G.forBlock["text_print"]    = b => `RT.print(${V(b,"TEXT","''")});\n`;
   G.forBlock["ai_capture"]    = () => ["(await AI.capture())", Order.ATOMIC];
   G.forBlock["ai_upload"]     = () => ["(AI.uploaded())", Order.ATOMIC];
   G.forBlock["ai_detect_draw"] = b => `await AI.detectDraw(${V(b,"IMG","null")}, '${b.getFieldValue("MODE")}');\n`;
@@ -2305,8 +2304,12 @@ def texts_of(result):
     try { s.getTracks().forEach(tr => tr.stop()); } catch (e) {}
     cam.srcObject = null;
   }
+  const LOG_MAX = 300;                     // 오래 도는 프로그램에서 기록이 끝없이 쌓이지 않게
   function log(msg) {
-    logBox.textContent += (logBox.textContent ? "\n" : "") + msg;
+    const lines = logBox.textContent ? logBox.textContent.split("\n") : [];
+    lines.push(String(msg));
+    if (lines.length > LOG_MAX) lines.splice(0, lines.length - LOG_MAX);
+    logBox.textContent = lines.join("\n");
     logBox.scrollTop = logBox.scrollHeight;
   }
 
@@ -2412,7 +2415,7 @@ def texts_of(result):
   }
   async function post(path, imgURL, params) {
     if (!imgURL) throw t("m_noImage");
-    await RT.aiGate();                       // 호출 상한 + 최소 간격 + 정지 확인
+    await RT.aiGate();                       // 최소 간격 + 정지 확인
     AI.lastImg = imgURL;
     AI.lastDim = await dims(imgURL);
     let url = "/" + path;
@@ -2900,12 +2903,12 @@ def texts_of(result):
 
   const RT = {
     stopFlag: false, iter: 0, lastElapsed: 0,
-    abort: null, aiCalls: 0, lastAiAt: 0,
-    AI_CALL_LIMIT: 50, AI_MIN_GAP: 300,
+    abort: null, lastAiAt: 0,
+    /* AI 호출 횟수는 세지 않는다. 블록은 한 줄씩 await 하므로 서버에 가는 요청은 늘 하나뿐이고,
+       속도는 모델 처리 시간이 정한다. 요청 사이 간격만 조금 둔다(서버·화면이 숨 쉴 틈) */
+    AI_MIN_GAP: 100,
     async aiGate() {
       if (RT.stopFlag) throw "STOP";
-      if (++RT.aiCalls > RT.AI_CALL_LIMIT)
-        throw t("m_tooManyAI").replace("%1", RT.AI_CALL_LIMIT);
       const gap = Date.now() - RT.lastAiAt;
       if (gap < RT.AI_MIN_GAP) await sleep(RT.AI_MIN_GAP - gap);  // 서버 연타 방지
       if (RT.stopFlag) throw "STOP";
@@ -2916,9 +2919,11 @@ def texts_of(result):
       ws.highlightBlock(id);
       await sleep(30);                          // 진행이 눈에 보이는 최소 템포
     },
-    loopTrap() {
+    /* 반복 횟수도 세지 않는다. 블록이 없는 빈 반복이 화면을 얼리지 않게 100번마다 차례를 넘긴다
+       (블록이 있으면 RT.step 이 이미 한 줄마다 쉰다) */
+    async loopTrap() {
       if (RT.stopFlag) throw "STOP";
-      if (++RT.iter > 5000) throw t("m_tooManyLoop");
+      if (++RT.iter % 100 === 0) await sleep(0);
     },
     async say(text, voice, speed) {
       text = String(text);
@@ -3161,13 +3166,11 @@ def texts_of(result):
       log(t("m_saved"));
     },
     async waitUntil(kind, want) {
-      /* 조건이 될 때까지 웹캠을 계속 본다. 60초가 지나면 멈춘다.
-         이 안의 인식은 호출 제한(50회)에 세지 않는다 — 기다림 자체가 목적이라서다. */
+      /* 조건이 될 때까지 웹캠을 계속 본다. 60초가 지나면 멈춘다. */
       const t0 = Date.now();
       while (Date.now() - t0 < 60000) {
         if (RT.stopFlag) throw "STOP";
         const img = await AI.capture();
-        const before = RT.aiCalls;
         try {
           if (kind === "face") {
             const d = await post("face/face_detect", img);
@@ -3180,7 +3183,6 @@ def texts_of(result):
             if (d.length && d[0].name === want.label && d[0].score >= 0.6) return true;
           }
         } catch (e) { /* 인식 실패 프레임은 넘어간다 */ }
-        finally { RT.aiCalls = before; }        // 대기 중 인식은 상한에 안 센다
         await sleep(250);
       }
       log(t("m_waitTimeout"));
@@ -3273,7 +3275,7 @@ def texts_of(result):
 
   /* ---------------- 실행/정지 ---------------- */
   G.STATEMENT_PREFIX = "await RT.step(%1);\n";
-  G.INFINITE_LOOP_TRAP = "RT.loopTrap();\n";
+  G.INFINITE_LOOP_TRAP = "await RT.loopTrap();\n";
   G.addReservedWords("AI,RT");
 
   const runButton = document.getElementById("runButton");
@@ -3284,7 +3286,7 @@ def texts_of(result):
     if (runButton.disabled) return;
     RT.stopFlag = false; RT.iter = 0;
     RT.voice = "F1"; RT.speed = "normal";   // 목소리·빠르기는 실행마다 기본값으로
-    RT.aiCalls = 0; RT.lastAiAt = 0; RT._bseq = null;
+    RT.lastAiAt = 0; RT._bseq = null;
     RT.abort = new AbortController();
     RT._vars = {};
     document.getElementById("varsBox").style.display = "none";
