@@ -177,6 +177,11 @@
         <span id="curFile" style="font-size:.86rem;color:var(--ink-2);margin-left:8px;
               max-width:22ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
         <div class="work-tools">
+          <select id="levelSel" title="블록 수준">
+            <option value="easy">쉬움</option>
+            <option value="basic">기본</option>
+            <option value="all">전체</option>
+          </select>
           <button id="newButton">새로 만들기</button>
           <button id="saveButton">저장</button>
           <button id="loadButton">불러오기</button>
@@ -309,6 +314,26 @@
       b_face: "%1 얼굴의 %2", b_face_tip: "첫 번째 얼굴의 정보를 알려줘요. 나이는 숫자예요.",
       b_face_count: "%1 에서 얼굴 개수",
       b_ocr: "%1 의 글자 읽기", b_qr: "%1 의 QR 읽기",
+      lv_title: "블록 수준 — 쉬움: 초등 1~3학년 · 기본: 초등 4~6학년 · 전체: 중학생 이상", lv_easy: "쉬움", lv_basic: "기본", lv_all: "전체",
+      m_level: "블록 수준: ",
+      cat_ez_start: "시작 · 반복", cat_ez_if: "만약", cat_ez_char: "캐릭터", cat_ez_ai: "AI 눈", cat_ez_score: "점수",
+      b_ez_put: "캐릭터 %1 을(를) %2 모양으로 %3 에 놓기", b_ez_put_tip: "무대의 아홉 칸 중 한 곳에 캐릭터를 놓아요.",
+      b_ez_move: "캐릭터 %1 을(를) %2 쪽으로 %3 움직이기",
+      b_ez_place: "캐릭터 %1 을(를) %2 (으)로 옮기기",
+      b_ez_random: "캐릭터 %1 을(를) 아무 곳으로 옮기기",
+      b_ez_follow: "캐릭터 %1 을(를) %2 자리로 옮기기", b_ez_follow_tip: "카메라로 보고, 찾으면 그 자리로 가요. 못 찾으면 그대로 있어요.",
+      b_ez_seen: "카메라에 %1 이(가) 보이나?",
+      b_ez_hand: "손 모양이 %1 인가?",
+      b_ez_emo: "표정이 %1 인가?",
+      b_ez_add: "점수 %1 올리기", b_ez_add_tip: "점수가 무대 위쪽에 보여요.",
+      b_ez_reset: "점수 0 으로", b_ez_score: "점수",
+      o_dRight: "→ 오른쪽", o_dLeft: "← 왼쪽", o_dUp: "↑ 위", o_dDown: "↓ 아래", o_aSmall: "조금", o_aBig: "많이",
+      o_seeFace: "얼굴", o_seeHand: "손", o_seePerson: "사람",
+      o_emo_happy: "웃는 얼굴", o_emo_sad: "슬픈 얼굴", o_emo_surprised: "놀란 얼굴", o_emo_angry: "화난 얼굴", o_emo_neutral: "무표정",
+      sh_ezGood: "다섯 개! 잘했어요", sh_ezShowFace: "얼굴을 보여 주세요", sh_ezSmiled: "웃었네요! 😀", sh_ezSmile: "웃어 보세요", sh_ezThanks: "고마워요",
+      ex_ez_rocket: "화살표로 로켓 움직여 별 잡기", ex_ez_rocket_d: "화살표 키로 로켓을 움직여 별에 닿으면 점수가 올라요. (반복 · 만약 · 점수)",
+      ex_ez_hand: "손으로 별 잡기 (쉬움)", ex_ez_hand_d: "웃는 얼굴이 내 손을 따라가요. 별에 닿으면 점수! (AI 눈)",
+      ex_ez_face: "표정 보고 대답하기", ex_ez_face_d: "웃으면 '웃었네요', 엄지 척을 하면 '고마워요' 해요. (AI 눈 · 만약)",
       cat_stage: "무대 · 캐릭터", lbl_stage_show: "— 무대에 보이기 —", lbl_sprite: "— 캐릭터 (무대 좌표: 가로 0~640, 세로 0~480) —",
       lbl_ev_wait: "— 기다리기 —", lbl_ev_input: "— 키보드 · 마우스 · 대답 —",
       b_show_text: "무대에 큰 글자 %1 보이기", b_show_text_tip: "점수 · 안내를 무대 아래쪽에 크게 보여 줘요.",
@@ -586,6 +611,26 @@
       b_face: "%2 of the face in %1", b_face_tip: "Info about the first face. Age is a number.",
       b_face_count: "number of faces in %1",
       b_ocr: "read the text in %1", b_qr: "read the QR code in %1",
+      lv_title: "Block level — Easy: grades 1–3 · Basic: grades 4–6 · All: middle school and up", lv_easy: "Easy", lv_basic: "Basic", lv_all: "All",
+      m_level: "Block level: ",
+      cat_ez_start: "Start · Repeat", cat_ez_if: "If", cat_ez_char: "Characters", cat_ez_ai: "AI Eyes", cat_ez_score: "Score",
+      b_ez_put: "put character %1 as %2 at %3", b_ez_put_tip: "Puts a character on one of the nine spots of the stage.",
+      b_ez_move: "move character %1 %2 a %3",
+      b_ez_place: "move character %1 to %2",
+      b_ez_random: "move character %1 to a random spot",
+      b_ez_follow: "move character %1 to the %2", b_ez_follow_tip: "Looks with the camera and goes there if found. Stays put if not.",
+      b_ez_seen: "camera sees a %1?",
+      b_ez_hand: "hand is %1?",
+      b_ez_emo: "face is %1?",
+      b_ez_add: "add %1 to score", b_ez_add_tip: "The score shows at the top of the stage.",
+      b_ez_reset: "set score to 0", b_ez_score: "score",
+      o_dRight: "→ right", o_dLeft: "← left", o_dUp: "↑ up", o_dDown: "↓ down", o_aSmall: "little", o_aBig: "lot",
+      o_seeFace: "face", o_seeHand: "hand", o_seePerson: "person",
+      o_emo_happy: "smiling", o_emo_sad: "sad", o_emo_surprised: "surprised", o_emo_angry: "angry", o_emo_neutral: "neutral",
+      sh_ezGood: "Five! Well done", sh_ezShowFace: "Show your face", sh_ezSmiled: "You smiled! 😀", sh_ezSmile: "Give me a smile", sh_ezThanks: "Thank you",
+      ex_ez_rocket: "Move the rocket to catch stars", ex_ez_rocket_d: "Move the rocket with arrow keys; touch the star to score. (repeat · if · score)",
+      ex_ez_hand: "Catch stars with your hand (easy)", ex_ez_hand_d: "A smiley follows your hand. Touch the star to score! (AI eyes)",
+      ex_ez_face: "Answer to your face", ex_ez_face_d: "Smile and it says 'You smiled', thumbs up and it says 'Thank you'. (AI eyes · if)",
       cat_stage: "Stage · Characters", lbl_stage_show: "— show on the stage —", lbl_sprite: "— characters (stage: x 0–640, y 0–480) —",
       lbl_ev_wait: "— wait —", lbl_ev_input: "— keyboard · mouse · answers —",
       b_show_text: "show big text %1 on the stage", b_show_text_tip: "Shows a score or a message at the bottom of the stage.",
@@ -841,7 +886,7 @@
      ======================================================================= */
   const PY = (() => {
     const q = s => "'" + String(s).replace(/\\/g, "\\\\").replace(/'/g, "\\'") + "'";
-    let needTime = false, needCam = false;
+    let needTime = false, needCam = false, needScore = false;
 
     /* 값 블록 -> 파이썬 식 */
     function val(block, name, dflt) {
@@ -983,6 +1028,12 @@
       },
       lists_sort: b => "sorted(" + val(b, "LIST", "[]") + ")",
 
+      /* ---- 쉬움 수준 ---- */
+      ez_seen: b => ({ seeFace: "len(vision('face', camera())) > 0", seeHand: "count(vision('hand', camera())) > 0",
+                       seePerson: "has(vision('object', camera()), 'person')" })[field(b, "WHAT")] || "False",
+      ez_hand: b => "has(vision('hand', camera()), " + q(field(b, "G")) + ")",
+      ez_emo: b => "(first(vision('face_attr', camera()), 'name_en') == " + q(field(b, "E")) + ")",
+      ez_score: () => { needScore = true; return "score"; },
       /* ---- 무대 · 입력 — 무대 캐릭터는 블록 화면 전용 ---- */
       ev_ask: b => "input(" + val(b, "Q", "''") + ")",
       ev_key: () => "False  # 키보드: 블록 화면 전용",
@@ -1153,6 +1204,15 @@
         }
       } else if (T === "st_clear") {
         return "";                       // 파이썬에는 화면 칸이 없다 — 조용히 건너뛴다
+      } else if (T === "ez_add") {
+        needScore = true;
+        out.push(p + "score = score + " + val(b, "N", "1"));
+        out.push(p + "print('score', score)");
+      } else if (T === "ez_reset") {
+        needScore = true;
+        out.push(p + "score = 0");
+      } else if (T === "ez_put" || T === "ez_move" || T === "ez_place" || T === "ez_random" || T === "ez_follow") {
+        out.push(p + "# " + T + " — 무대 캐릭터는 블록 화면 전용");
       } else if (T === "st_show_text") {
         out.push(p + "print(" + val(b, "TEXT", "''") + ")");
       } else if (T === "ev_forever") {
@@ -1297,7 +1357,7 @@
 
     return {
       generate(workspace) {
-        needTime = false; needCam = false; needRandom = false; needMath = false;
+        needTime = false; needCam = false; needRandom = false; needMath = false; needScore = false;
         lastShown = "img"; hasResult = false; lastRes = "";
         const tops = workspace.getTopBlocks(true).filter(b => !b.outputConnection);
         const bodyLines = tops.map(b => chain(b, 0)).filter(s => s.trim()).join("\n");
@@ -1321,6 +1381,7 @@
           head.push("");
         }
         if (needCam) { head.push("img = camera()          # 사진 한 장"); head.push(""); }
+        if (needScore) { head.push("score = 0"); head.push(""); }
         return head.join("\n") + bodyLines + "\n";
       },
     };
@@ -1691,6 +1752,37 @@ def texts_of(result):
         colour: C_AI, tooltip: t("b_boxes_tip") },
       { type: "st_clear", message0: t("b_clear"), previousStatement: null, nextStatement: null,
         colour: C_EDIT },
+      /* --- 쉬움 수준 블록 — 숫자 좌표 · 변수 없이 --- */
+      { type: "ez_put", message0: t("b_ez_put"), previousStatement: null, nextStatement: null, colour: C_STAGE,
+        args0: [ { type: "field_input", name: "NAME", text: t("sh_player") },
+                 { type: "field_dropdown", name: "LOOK", options: () => opt(SP_LOOKS) },
+                 { type: "field_dropdown", name: "POS", options: () => POS9() } ], tooltip: t("b_ez_put_tip") },
+      { type: "ez_move", message0: t("b_ez_move"), previousStatement: null, nextStatement: null, colour: C_STAGE,
+        args0: [ { type: "field_input", name: "NAME", text: t("sh_player") },
+                 { type: "field_dropdown", name: "DIR", options: () => opt(["dRight", "dLeft", "dUp", "dDown"]) },
+                 { type: "field_dropdown", name: "AMT", options: () => opt(["aSmall", "aBig"]) } ] },
+      { type: "ez_place", message0: t("b_ez_place"), previousStatement: null, nextStatement: null, colour: C_STAGE,
+        args0: [ { type: "field_input", name: "NAME", text: t("sh_player") },
+                 { type: "field_dropdown", name: "POS", options: () => POS9() } ] },
+      { type: "ez_random", message0: t("b_ez_random"), previousStatement: null, nextStatement: null, colour: C_STAGE,
+        args0: [ { type: "field_input", name: "NAME", text: t("sh_target") } ] },
+      { type: "ez_follow", message0: t("b_ez_follow"), previousStatement: null, nextStatement: null, colour: C_AI,
+        args0: [ { type: "field_input", name: "NAME", text: t("sh_player") },
+                 { type: "field_dropdown", name: "WHAT", options: () => opt(["seeHand", "seeFace"]) } ],
+        tooltip: t("b_ez_follow_tip") },
+      { type: "ez_seen", message0: t("b_ez_seen"), output: "Boolean", colour: C_AI,
+        args0: [ { type: "field_dropdown", name: "WHAT", options: () => opt(["seeFace", "seeHand", "seePerson"]) } ] },
+      { type: "ez_hand", message0: t("b_ez_hand"), output: "Boolean", colour: C_AI,
+        args0: [ { type: "field_dropdown", name: "G", options: () => [
+          [t("g_Thumb_Up"), "Thumb_Up"], [t("g_Victory"), "Victory"], [t("g_Open_Palm"), "Open_Palm"],
+          [t("g_Closed_Fist"), "Closed_Fist"], [t("g_Pointing_Up"), "Pointing_Up"], [t("g_ILoveYou"), "ILoveYou"] ] } ] },
+      { type: "ez_emo", message0: t("b_ez_emo"), output: "Boolean", colour: C_AI,
+        args0: [ { type: "field_dropdown", name: "E",
+                   options: () => ["happy", "sad", "surprised", "angry", "neutral"].map(k => [t("o_emo_" + k), k]) } ] },
+      { type: "ez_add", message0: t("b_ez_add"), previousStatement: null, nextStatement: null, colour: C_CORE.var,
+        args0: [ { type: "input_value", name: "N", check: "Number" } ], tooltip: t("b_ez_add_tip") },
+      { type: "ez_reset", message0: t("b_ez_reset"), previousStatement: null, nextStatement: null, colour: C_CORE.var },
+      { type: "ez_score", message0: t("b_ez_score"), output: "Number", colour: C_CORE.var },
       /* --- 무대 · 캐릭터 · 입력 (블록 화면 전용) --- */
       { type: "st_show_text", message0: t("b_show_text"), previousStatement: null, nextStatement: null,
         colour: C_STAGE, args0: [ { type: "input_value", name: "TEXT" } ], tooltip: t("b_show_text_tip") },
@@ -1806,6 +1898,18 @@ def texts_of(result):
   G.forBlock["text_print"]    = b => `RT.print(${V(b,"TEXT","''")});\n`;
   /* 결과 · 기록 — 글자 값(이름 · 표 이름)은 JSON 으로 넣어 따옴표가 섞여도 안전하게 */
   const J = v => JSON.stringify(String(v == null ? "" : v));
+  /* 쉬움 수준 */
+  G.forBlock["ez_put"]    = b => `RT.ez.put(${J(b.getFieldValue("NAME"))}, ${J(b.getFieldValue("LOOK"))}, ${J(b.getFieldValue("POS"))});\n`;
+  G.forBlock["ez_move"]   = b => `RT.ez.move(${J(b.getFieldValue("NAME"))}, ${J(b.getFieldValue("DIR"))}, ${J(b.getFieldValue("AMT"))});\n`;
+  G.forBlock["ez_place"]  = b => `RT.ez.place(${J(b.getFieldValue("NAME"))}, ${J(b.getFieldValue("POS"))});\n`;
+  G.forBlock["ez_random"] = b => `RT.ez.random(${J(b.getFieldValue("NAME"))});\n`;
+  G.forBlock["ez_follow"] = b => `await RT.ez.follow(${J(b.getFieldValue("NAME"))}, ${J(b.getFieldValue("WHAT"))});\n`;
+  G.forBlock["ez_seen"]   = b => [`(await RT.ez.seen(${J(b.getFieldValue("WHAT"))}))`, Order.ATOMIC];
+  G.forBlock["ez_hand"]   = b => [`(await RT.ez.hand(${J(b.getFieldValue("G"))}))`, Order.ATOMIC];
+  G.forBlock["ez_emo"]    = b => [`(await RT.ez.emo(${J(b.getFieldValue("E"))}))`, Order.ATOMIC];
+  G.forBlock["ez_add"]    = b => `RT.ez.add(${V(b,"N","1")});\n`;
+  G.forBlock["ez_reset"]  = () => "RT.ez.reset();\n";
+  G.forBlock["ez_score"]  = () => ["RT.ez.score", Order.MEMBER];
   /* 무대 · 캐릭터 · 입력 */
   G.forBlock["st_show_text"] = b => `RT.showText(${V(b,"TEXT","''")});\n`;
   G.forBlock["st_cam_view"]  = b => `await RT.camView(${J(b.getFieldValue("MODE"))});\n`;
@@ -1978,7 +2082,7 @@ def texts_of(result):
         { kind: "block", type: "lists_split" },
         { kind: "block", type: "lists_sort" } ] },
       { kind: "category", name: t("cat_var"), ic: "var", custom: "VARIABLE", colour: C_CORE.var },
-      { kind: "category", name: t("cat_func"), ic: "func", custom: "PROCEDURE", colour: C_CORE.func },
+      { kind: "category", name: t("cat_func"), ic: "func", custom: "PROCEDURE", colour: C_CORE.func, lvAll: true },
       { kind: "sep" },
       /* ---------- 커스텀 (이 프로그램만의 블록) ---------- */
       { kind: "category", name: t("cat_stage"), ic: "stage", colour: C_STAGE, contents: [
@@ -2020,7 +2124,7 @@ def texts_of(result):
         { kind: "block", type: "ed_size_of" },
         { kind: "block", type: "ed_color_at" },
         { kind: "block", type: "ed_main_color" } ] },
-      { kind: "category", name: t("cat_edit_xy"), ic: "xy", colour: C_EDITX, contents: [
+      { kind: "category", name: t("cat_edit_xy"), ic: "xy", colour: C_EDITX, lvAll: true, contents: [
         { kind: "label", text: t("lbl_xy_note") },
         { kind: "block", type: "edx_crop",
           inputs: { X: num(160), Y: num(120), W: num(320), H: num(240) } },
@@ -2092,12 +2196,63 @@ def texts_of(result):
         { kind: "block", type: "ev_wait_face" },
         { kind: "block", type: "ev_wait_hand" },
         { kind: "block", type: "ev_wait_custom", inputs: { LABEL: txt("") } } ] },
-      { kind: "category", name: t("cat_board"), ic: "chip", colour: C_BOARD, contents: [
+      { kind: "category", name: t("cat_board"), ic: "chip", colour: C_BOARD, lvAll: true, contents: [
         { kind: "block", type: "bd_ok" },
         { kind: "block", type: "bd_send", inputs: { TEXT: txt("") } },
         { kind: "block", type: "bd_ask", inputs: { TEXT: txt("") } },
         { kind: "block", type: "bd_read" } ] },
     ] };
+  }
+
+  /* 쉬움 — 초등 1~3학년. 숫자 좌표 · 변수 · 목록 없이, 고르기만 하면 되는 블록 */
+  function buildToolboxEasy() {
+    return { kind: "categoryToolbox", contents: [
+      { kind: "category", name: t("cat_ez_start"), ic: "bolt", colour: C_EVENT, contents: [
+        { kind: "block", type: "ev_forever", inputs: { FPS: num(10) } },
+        { kind: "block", type: "controls_repeat_ext", inputs: { TIMES: num(3) } },
+        { kind: "block", type: "st_wait", inputs: { SEC: num(1) } },
+        { kind: "block", type: "ev_key" },
+        { kind: "block", type: "ev_clicked" } ] },
+      { kind: "category", name: t("cat_ez_if"), ic: "logic", colour: C_CORE.logic, contents: [
+        { kind: "block", type: "controls_if" },
+        { kind: "block", type: "controls_if", extraState: { hasElse: true } },
+        { kind: "block", type: "logic_compare" } ] },
+      { kind: "category", name: t("cat_ez_char"), ic: "stage", colour: C_STAGE, contents: [
+        { kind: "block", type: "ez_put" },
+        { kind: "block", type: "ez_move" },
+        { kind: "block", type: "ez_place" },
+        { kind: "block", type: "ez_random" },
+        { kind: "block", type: "sp_touch" },
+        { kind: "block", type: "sp_edge" },
+        { kind: "block", type: "sp_show" },
+        { kind: "block", type: "st_show_text", inputs: { TEXT: txt(t("sh_hello")) } } ] },
+      { kind: "category", name: t("cat_ez_ai"), ic: "eye", colour: C_AI, contents: [
+        { kind: "block", type: "st_cam_view" },
+        { kind: "block", type: "ez_seen" },
+        { kind: "block", type: "ez_hand" },
+        { kind: "block", type: "ez_emo" },
+        { kind: "block", type: "ez_follow" } ] },
+      { kind: "category", name: t("cat_sound"), ic: "sound", colour: C_SOUND, contents: [
+        { kind: "block", type: "st_say", inputs: { TEXT: txt(t("sh_hello")) } },
+        { kind: "block", type: "st_beep" },
+        { kind: "block", type: "st_note", inputs: { B: num(1) } } ] },
+      { kind: "category", name: t("cat_ez_score"), ic: "star", colour: C_CORE.var, contents: [
+        { kind: "block", type: "ez_add", inputs: { N: num(1) } },
+        { kind: "block", type: "ez_reset" },
+        { kind: "block", type: "ez_score" } ] },
+    ] };
+  }
+
+  /* 기본 — 초등 4~6학년. 전체에서 좌표 편집 · 함수 · 보드 분류와 아래 블록만 뺀다 */
+  const BASIC_HIDE = new Set(["res_pose", "dt_record", "dt_rows", "dt_save", "dt_remember", "dt_recall", "ai_rag"]);
+  function toolboxFor(level) {
+    if (level === "easy") return buildToolboxEasy();
+    const tb = buildToolbox();
+    if (level === "all") return tb;
+    tb.contents = tb.contents.filter(c => !c.lvAll).map(c => !c.contents ? c : Object.assign({}, c, {
+      contents: c.contents.filter(x => !(x.type && BASIC_HIDE.has(x.type)) &&
+                                       !(x.kind === "label" && x.text === t("lbl_pose"))) }));
+    return tb;
   }
 
   /* 분류 줄 — 왼쪽 색 막대와 "고르면 줄 전체를 분류 색으로 칠하기" 대신, 아이콘 타일에만 분류 색(--cat).
@@ -2114,6 +2269,7 @@ def texts_of(result):
     wand:  '<path d="M4 20 14 10"/><path d="M15 3v3M18.5 4.5l-2 2M21 9h-3M18.5 13.5l-2-2"/>',
     pen:   '<path d="M4 20l1-4L16 5l3 3L8 19l-4 1Z"/>',
     xy:    '<path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="4"/>',
+    star:  '<path d="m12 3 2.7 5.6 6.1.8-4.4 4.3 1 6.1L12 17l-5.4 2.8 1-6.1-4.4-4.3 6.1-.8Z"/>',
     stage: '<rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="12" r="2.2"/><path d="m14 15 2.5-4 2.5 4Z"/>',
     result: '<path d="M4 5h11M4 12h7M4 19h5"/><circle cx="16.5" cy="15.5" r="3.5"/><path d="m19 18 2.5 2.5"/>',
     data:  '<rect x="3.5" y="4" width="17" height="16" rx="2.5"/><path d="M3.5 9.5h17M3.5 15h17M9.5 4v16"/>',
@@ -2158,6 +2314,9 @@ def texts_of(result):
     },
   });
 
+  /* 블록 수준 — 쉬움 · 기본 · 전체. 고른 것은 이 PC 에 남고, 작품을 저장할 때 같이 적힌다 */
+  var LEVEL = "basic";
+  try { const v = localStorage.getItem("vapi-blk-level"); if (["easy", "basic", "all"].includes(v)) LEVEL = v; } catch (e) {}
   const WS_OPTS = {
     media: "/blockly/media/",              // 오프라인용 (휴지통·확대축소 아이콘, 효과음)
     trashcan: true, renderer: "zelos", theme: THEME,
@@ -2172,7 +2331,7 @@ def texts_of(result):
     }).catch(() => {});
   }
 
-  let ws = Blockly.inject("blocklyDiv", Object.assign({ toolbox: buildToolbox() }, WS_OPTS));
+  let ws = Blockly.inject("blocklyDiv", Object.assign({ toolbox: toolboxFor(LEVEL) }, WS_OPTS));
   /* 내가 만든 AI 목록 (드롭다운은 열 때마다 최신 목록을 읽음) · 가져다 둔 모델 파일 목록.
      초안을 되살리는 일은 이 둘을 기다린다 — 목록이 비어 있으면 드롭다운 값이 첫 항목으로 바뀐다. */
   const listsReady = Promise.all([loadCustomModels(), loadModelFiles(), loadDbList()]);
@@ -2256,7 +2415,7 @@ def texts_of(result):
             { fields: { VAR: { name: "답" } } }) } } }),
         ]) ] } } },
       /* 가져다 둔 모델 파일(.onnx, easydetect-lab) 로 찾기 — [설정]의 [모델 폴더 열기]에 넣은 것 */
-      { id: "modelfile", name: t("ex_modelfile"), desc: t("ex_modelfile_d"),
+      { id: "modelfile", lv: 2, name: t("ex_modelfile"), desc: t("ex_modelfile_d"),
         state: { blocks: { languageVersion: 0, blocks: [ chain([
           CLEAR(),
           B("variables_set", { fields: { VAR: { name: "사진" } },
@@ -2423,6 +2582,71 @@ def texts_of(result):
       /* 모든 기능을 한 번씩 지나가는 점검용 예제.
          기다리는 블록(얼굴/손 기다리기·음성 인식)과 내가 만든 AI 는 뺐다 —
          멈춰 서거나 학습한 모델이 있어야 해서 "한 번에 쭉" 이 안 된다. */
+      { id: "ez_rocket", lv: 0, name: t("ex_ez_rocket"), desc: t("ex_ez_rocket_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
+          CLEAR(),
+          B("ez_reset"),
+          B("ez_put", { fields: { NAME: t("sh_player"), LOOK: "lkRocket", POS: "bc" } }),
+          B("ez_put", { fields: { NAME: t("sh_target"), LOOK: "lkStar", POS: "tc" } }),
+          B("ev_forever", { inputs: { FPS: shadowNum(20), DO: { block: chain([
+            B("controls_if", { inputs: { IF0: { block: B("ev_key", { fields: { KEY: "kyRight" } }) },
+              DO0: { block: B("ez_move", { fields: { NAME: t("sh_player"), DIR: "dRight", AMT: "aSmall" } }) } } }),
+            B("controls_if", { inputs: { IF0: { block: B("ev_key", { fields: { KEY: "kyLeft" } }) },
+              DO0: { block: B("ez_move", { fields: { NAME: t("sh_player"), DIR: "dLeft", AMT: "aSmall" } }) } } }),
+            B("controls_if", { inputs: { IF0: { block: B("ev_key", { fields: { KEY: "kyUp" } }) },
+              DO0: { block: B("ez_move", { fields: { NAME: t("sh_player"), DIR: "dUp", AMT: "aSmall" } }) } } }),
+            B("controls_if", { inputs: { IF0: { block: B("ev_key", { fields: { KEY: "kyDown" } }) },
+              DO0: { block: B("ez_move", { fields: { NAME: t("sh_player"), DIR: "dDown", AMT: "aSmall" } }) } } }),
+            B("controls_if", { inputs: { IF0: { block: B("sp_edge", { fields: { NAME: t("sh_player") } }) },
+              DO0: { block: B("ez_place", { fields: { NAME: t("sh_player"), POS: "bc" } }) } } }),
+            B("controls_if", { inputs: {
+              IF0: { block: B("sp_touch", { fields: { A: t("sh_player"), B: t("sh_target") } }) },
+              DO0: { block: chain([
+                B("ez_add", { inputs: { N: shadowNum(1) } }),
+                B("st_beep", { fields: { K: "sndCoin" } }),
+                B("ez_random", { fields: { NAME: t("sh_target") } }),
+                B("controls_if", { inputs: {
+                  IF0: { block: B("logic_compare", { fields: { OP: "EQ" }, inputs: {
+                    A: { block: B("ez_score") }, B: shadowNum(5) } }) },
+                  DO0: { block: B("st_say", { fields: { V: "F1", S: "normal" }, inputs: { TEXT: shadowTxt(t("sh_ezGood")) } }) } } }),
+              ]) } } }),
+          ]) } } }),
+        ]) ] } } },
+      { id: "ez_hand", lv: 0, name: t("ex_ez_hand"), desc: t("ex_ez_hand_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
+          CLEAR(),
+          B("st_cam_view", { fields: { MODE: "cmMirror" } }),
+          B("ez_reset"),
+          B("ez_put", { fields: { NAME: t("sh_player"), LOOK: "lkSmile", POS: "mc" } }),
+          B("ez_put", { fields: { NAME: t("sh_target"), LOOK: "lkStar", POS: "tr" } }),
+          B("ev_forever", { inputs: { FPS: shadowNum(5), DO: { block: chain([
+            B("ez_follow", { fields: { NAME: t("sh_player"), WHAT: "seeHand" } }),
+            B("controls_if", { inputs: {
+              IF0: { block: B("sp_touch", { fields: { A: t("sh_player"), B: t("sh_target") } }) },
+              DO0: { block: chain([
+                B("ez_add", { inputs: { N: shadowNum(1) } }),
+                B("st_beep", { fields: { K: "sndCoin" } }),
+                B("ez_random", { fields: { NAME: t("sh_target") } }),
+              ]) } } }),
+          ]) } } }),
+        ]) ] } } },
+      { id: "ez_face", lv: 0, name: t("ex_ez_face"), desc: t("ex_ez_face_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
+          CLEAR(),
+          B("st_cam_view", { fields: { MODE: "cmMirror" } }),
+          B("ev_forever", { inputs: { FPS: shadowNum(2), DO: { block: chain([
+            B("controls_if", { extraState: { hasElse: true }, inputs: {
+              IF0: { block: B("ez_seen", { fields: { WHAT: "seeFace" } }) },
+              DO0: { block: B("controls_if", { extraState: { hasElse: true }, inputs: {
+                IF0: { block: B("ez_emo", { fields: { E: "happy" } }) },
+                DO0: { block: B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_ezSmiled")) } }) },
+                ELSE: { block: B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_ezSmile")) } }) } } }) },
+              ELSE: { block: B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_ezShowFace")) } }) } } }),
+            B("controls_if", { inputs: {
+              IF0: { block: B("ez_hand", { fields: { G: "Thumb_Up" } }) },
+              DO0: { block: B("st_say", { fields: { V: "F1", S: "normal" }, inputs: { TEXT: shadowTxt(t("sh_ezThanks")) } }) } } }),
+          ]) } } }),
+        ]) ] } } },
       { id: "guess", name: t("ex_guess"), desc: t("ex_guess_d"),
         state: { blocks: { languageVersion: 0, blocks: [ chain([
           CLEAR(),
@@ -2523,7 +2747,7 @@ def texts_of(result):
               ]) } } }),
           ]) } } }),
         ]) ] } } },
-      { id: "result", name: t("ex_result"), desc: t("ex_result_d"),
+      { id: "result", lv: 2, name: t("ex_result"), desc: t("ex_result_d"),
         state: { blocks: { languageVersion: 0, blocks: [ chain([
           CLEAR(),
           B("tm_reset"),
@@ -2559,7 +2783,7 @@ def texts_of(result):
           PR(B("tm_timer")),
           B("dt_save", { fields: { TABLE: t("sh_table") } }),
         ]) ] } } },
-      { id: "checkall", name: t("ex_all"), desc: t("ex_all_d"),
+      { id: "checkall", lv: 2, name: t("ex_all"), desc: t("ex_all_d"),
         state: { blocks: { languageVersion: 0, blocks: [ chain([
           CLEAR(),
           B("st_say", { fields: { V: "F1", S: "normal" },
@@ -2728,12 +2952,15 @@ def texts_of(result):
     const list = document.getElementById("exList");
     list.innerHTML = "";
     /* 위에 '만들어 보기(프로젝트)', 아래에 '기능 익히기' — 수업에서는 프로젝트부터 고른다 */
-    const PROJECTS = ["guess", "catch", "handgame", "result", "rps", "greet"];
-    const all = EXAMPLES();
+    const PROJECTS = ["ez_rocket", "ez_hand", "ez_face", "guess", "catch", "handgame", "result", "rps", "greet"];
+    const lvNow = { easy: 0, basic: 1, all: 2 }[LEVEL];
+    const lvOf = ex => (ex.lv == null ? 1 : ex.lv);
+    const all = EXAMPLES().filter(ex => LEVEL === "easy" ? lvOf(ex) === 0 : lvOf(ex) <= lvNow);
     const groups = [[t("ex_grpProject"), all.filter(ex => PROJECTS.includes(ex.id))
                        .sort((a, b) => PROJECTS.indexOf(a.id) - PROJECTS.indexOf(b.id))],
                     [t("ex_grpBasic"), all.filter(ex => !PROJECTS.includes(ex.id))]];
     groups.forEach(([title, exs]) => {
+      if (!exs.length) return;                 // 빈 묶음은 제목도 안 보인다
       const h = document.createElement("div");
       h.style.cssText = "font-size:.82rem;font-weight:700;color:var(--ink-2);margin-top:4px;";
       h.textContent = title;
@@ -2785,6 +3012,12 @@ def texts_of(result):
     set("txtWorkHead", t("workHead"));  set("txtStageHead", t("stageHead"));
     set("uploadButton", t("upload"));   set("uploadHint", t("uploadHint"));
     set("txtCodeView", t("codeView"));
+    const ls = document.getElementById("levelSel");
+    if (ls) {
+      ls.title = t("lv_title");
+      [...ls.options].forEach(o => { o.textContent = t("lv_" + o.value); });
+      ls.value = LEVEL;
+    }
   }
 
   function setLang(lang) {
@@ -2799,11 +3032,35 @@ def texts_of(result):
     const state = Blockly.serialization.workspaces.save(ws);
     ws.dispose();
     defineBlocks();
-    ws = Blockly.inject("blocklyDiv", Object.assign({ toolbox: buildToolbox() }, WS_OPTS));
+    ws = Blockly.inject("blocklyDiv", Object.assign({ toolbox: toolboxFor(LEVEL) }, WS_OPTS));
     Blockly.serialization.workspaces.load(state, ws);
     watchDraft(ws);                    // 새 작업판에도 초안 자동 저장을 건다
 
     applyStaticText();
+  }
+
+  const levelSel = document.getElementById("levelSel");
+  function setLevel(lv, quiet) {
+    if (!["easy", "basic", "all"].includes(lv)) return;
+    LEVEL = lv;
+    try { localStorage.setItem("vapi-blk-level", lv); } catch (e) {}
+    levelSel.value = lv;
+    ws.updateToolbox(toolboxFor(lv));
+    /* 쉬움에서는 파이썬 코드 보기를 숨긴다 — 글자 코드는 기본부터 */
+    const cd = document.getElementById("codeDetails");
+    if (cd) cd.style.display = lv === "easy" ? "none" : "";
+    if (!quiet && typeof log === "function") log(t("m_level") + t("lv_" + lv));
+  }
+  levelSel.addEventListener("change", () => setLevel(levelSel.value));
+  setLevel(LEVEL, true);                       // 처음 열 때 — 쉬움이면 파이썬 보기를 숨긴다
+  /* 작품 파일 = Blockly 상태 + level. 예전 파일(level 없음)은 지금 수준 그대로 연다 */
+  function saveState() {
+    return Object.assign(Blockly.serialization.workspaces.save(ws), { level: LEVEL });
+  }
+  function loadState(st) {
+    if (st && st.level && st.level !== LEVEL) setLevel(st.level);
+    const copy = Object.assign({}, st); delete copy.level;
+    Blockly.serialization.workspaces.load(copy, ws);
   }
 
   document.getElementById("langButton").addEventListener("click",
@@ -3610,6 +3867,37 @@ def texts_of(result):
       const a = String(RT._answer).trim();
       return /^-?\d+(\.\d+)?$/.test(a) ? Number(a) : RT._answer;
     },
+    /* ---- 쉬움 수준: 아홉 칸 · 방향 · 점수 (아래 캐릭터 함수를 그대로 쓴다) ---- */
+    ez: {
+      score: 0,
+      _p9: { tl: [77, 58], tc: [320, 58], tr: [563, 58], ml: [77, 240], mc: [320, 240], mr: [563, 240],
+             bl: [77, 422], bc: [320, 422], br: [563, 422] },
+      put(name, look, pos) { const q = RT.ez._p9[pos] || [320, 240]; RT.sp.put(name, look, q[0], q[1]); },
+      place(name, pos) { const q = RT.ez._p9[pos] || [320, 240]; RT.sp.go(name, q[0], q[1]); },
+      move(name, dir, amt) {
+        const d = amt === "aBig" ? 60 : 20;
+        const v = { dRight: [d, 0], dLeft: [-d, 0], dUp: [0, -d], dDown: [0, d] }[dir] || [0, 0];
+        RT.sp.move(name, v[0], v[1]);
+      },
+      random(name) { RT.sp.go(name, 60 + Math.random() * 520, 60 + Math.random() * 360); },
+      async _look(kind) { return AI.result(await AI.capture(), kind); },
+      async follow(name, what) {
+        const r = await RT.ez._look(what === "seeFace" ? "face" : "hand");
+        if (r.length) RT.sp.go(name, r[0].x, r[0].y);
+      },
+      async seen(what) {
+        if (what === "seePerson") return RES.has(await RT.ez._look("object"), "person");
+        return (await RT.ez._look(what === "seeFace" ? "face" : "hand")).length > 0;
+      },
+      async hand(g) { return RES.has(await RT.ez._look("hand"), g); },
+      async emo(e) {
+        const r = await RT.ez._look("face_attr");
+        return r.length > 0 && r[0].name_en === e;
+      },
+      _show() { RT.showText(t("sh_scoreLbl") + RT.ez.score); },
+      add(n) { RT.ez.score += (+n || 0); RT.ez._show(); },
+      reset() { RT.ez.score = 0; RT.ez._show(); },
+    },
     /* ---- 캐릭터 (무대 좌표 0~640 · 0~480) ---- */
     sp: {
       _all: {},
@@ -4085,7 +4373,7 @@ def texts_of(result):
     RT.voice = "F1"; RT.speed = "normal";   // 목소리·빠르기는 실행마다 기본값으로
     RT.lastAiAt = 0; RT._bseq = null;
     RT._t0 = Date.now(); RT._tables = {};
-    RT._fast = false; RT._camMode = null; RT._click = false; RT._keys.clear();
+    RT._fast = false; RT._camMode = null; RT._click = false; RT._keys.clear(); RT.ez.score = 0;
     cam.style.visibility = ""; cam.style.transform = "";
     RT.abort = new AbortController();
     RT._vars = {};
@@ -4178,7 +4466,7 @@ def texts_of(result):
     clearTimeout(draftTimer); draftTimer = null;
     if (!draftReady || !ws) return;
     try {
-      const state = Blockly.serialization.workspaces.save(ws);
+      const state = saveState();
       localStorage.setItem(DRAFT_KEY, JSON.stringify({ state: state, name: BLOCK_NAME }));
     } catch (e) { /* 저장 공간이 모자라도 작업은 계속된다 */ }
   }
@@ -4195,7 +4483,7 @@ def texts_of(result):
     try {
       const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
       if (d && d.state && ws.getAllBlocks(false).length === 0) {
-        Blockly.serialization.workspaces.load(d.state, ws);
+        loadState(d.state);
         BLOCK_NAME = d.name || "";
         showBlockFile();
         if (ws.getAllBlocks(false).length) log(t("m_draftBack"));
@@ -4267,7 +4555,7 @@ def texts_of(result):
     /* 이름이 있으면 묻지 않고 그 작품에 덮어쓴다 */
     const name = BLOCK_NAME || prompt(t("savePrompt"), "");
     if (!name) return;
-    const state = Blockly.serialization.workspaces.save(ws);
+    const state = saveState();
     try {
       const j = await (await fetch("/blocks/save", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -4291,7 +4579,7 @@ def texts_of(result):
       })).json();
       if (r.result === "ok") {
         if (r.data.canceled) return;
-        Blockly.serialization.workspaces.load(JSON.parse(r.data.text), ws);
+        loadState(JSON.parse(r.data.text));
         BLOCK_NAME = r.data.name;
         showBlockFile();
         log(t("m_loaded") + r.data.name);
@@ -4310,7 +4598,7 @@ def texts_of(result):
       const w = list[n - 1];
       const r = await (await fetch("/blocks/work?name=" + encodeURIComponent(w.name))).json();
       if (r.result !== "ok") throw new Error(r.data);
-      Blockly.serialization.workspaces.load(JSON.parse(r.data.state), ws);
+      loadState(JSON.parse(r.data.state));
       BLOCK_NAME = r.data.name;
       showBlockFile();
       log(t("m_loaded") + w.name);
@@ -4322,7 +4610,7 @@ def texts_of(result):
     const rd = new FileReader();
     rd.onload = e => {
       try {
-        Blockly.serialization.workspaces.load(JSON.parse(e.target.result), ws);
+        loadState(JSON.parse(e.target.result));
         log(t("m_loaded") + f.name);
       } catch (err) { alert(t("m_readFail") + err); }
     };
