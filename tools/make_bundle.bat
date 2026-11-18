@@ -133,6 +133,14 @@ if defined TTS8OK (
 ) else (
   echo   [WARN] models\tts-int8 has no voice_styles or tts.json - keeping models\tts
 )
+REM 음성 인식은 SenseVoice(stt-sv) 를 쓴다 - 예전 Whisper(stt) 는 stt-sv 세 파일이 다 있을 때만 뺀다
+set "SVOK="
+if exist %BUILD%\models\stt-sv\model.int8.onnx if exist %BUILD%\models\stt-sv\tokens.txt if exist %BUILD%\models\stt-sv\silero_vad.onnx set "SVOK=1"
+if defined SVOK (
+  if exist %BUILD%\models\stt rmdir /s /q %BUILD%\models\stt
+) else (
+  echo   [WARN] models\stt-sv is incomplete - run tools\fetch_stt.py. keeping models\stt
+)
 
 REM bundle launcher (ASCII only, CRLF via echo)
 > %BUILD%\run.bat (
@@ -180,7 +188,7 @@ REM 가르치기 특징 모델 - 리포 안 teachlab\models (로봇과 같은 �
 for %%F in (mobilenet_v3_small_embedder.onnx hand_landmarker.task face_landmarker.task pose_landmarker_lite.task) do (
   if not exist %BUILD%\teachlab\models\%%F (echo [ERROR] missing in bundle: teachlab\models\%%F & exit /b 1)
 )
-%BUILD%\python\python.exe -c "import openvino,cv2,numpy;print('  import OK  openvino',openvino.__version__.split('-')[0])"
+%BUILD%\python\python.exe -c "import openvino,cv2,numpy,sherpa_onnx;print('  import OK  openvino',openvino.__version__.split('-')[0],'sherpa-onnx',sherpa_onnx.__version__)"
 if errorlevel 1 (echo [ERROR] import failed inside bundle & exit /b 1)
 %BUILD%\python\python.exe -c "import jupyterlab,ipykernel;print('  import OK  jupyterlab',jupyterlab.__version__)"
 if errorlevel 1 (echo [ERROR] jupyterlab import failed inside bundle - lab.bat will not start & exit /b 1)

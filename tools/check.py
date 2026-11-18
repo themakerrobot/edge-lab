@@ -115,8 +115,19 @@ if q.is_dir():
 else:
     print("WARN models/tts-int8 없음 — 읽어 주기는 원본 models/tts 로 돕니다")
 
-if not pathlib.Path("models/stt").is_dir():
-    print("WARN models/stt 없음 — 음성 인식(STT)을 쓸 수 없습니다")
+sv = pathlib.Path("models/stt-sv")
+sv_miss = [n for n in ("model.int8.onnx", "tokens.txt", "silero_vad.onnx") if not (sv / n).is_file()]
+if not sv_miss:
+    print("OK   음성 인식은 models/stt-sv (SenseVoice) 를 씁니다")
+    try:
+        import sherpa_onnx  # noqa: F401
+    except Exception as ex:
+        fails += 1
+        print("FAIL sherpa-onnx | 불러오지 못함:", ex)
+elif pathlib.Path("models/stt").is_dir():
+    print("WARN models/stt-sv 에", ", ".join(sv_miss), "없음 — 예전 Whisper(models/stt)로 돕니다. tools\\fetch_stt.py 로 받으세요")
+else:
+    print("WARN models/stt-sv 없음 — 음성 인식(STT)을 쓸 수 없습니다. tools\\fetch_stt.py 로 받으세요")
 
 # opencv 는 세 벌(python·contrib·headless)이 서로 다른 패키지의 의존성으로 함께 깔리고
 # 같은 cv2 를 덮어쓴다. headless 가 이기면 창을 못 띄워 파이썬 show(window=True) 가 죽는다.

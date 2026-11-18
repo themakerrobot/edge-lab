@@ -98,6 +98,8 @@ wget -q -O models/mediapipe/gesture_recognizer.task "https://storage.googleapis.
 
 echo "=== [8/9] speech models (STT / TTS) ==="
 hf download OpenVINO/whisper-small-int8-ov --local-dir "$MODELS/stt"
+# 서버가 실제로 쓰는 음성 인식은 SenseVoice(models/stt-sv, 파이보 · 파이브레인과 같은 파일). 위 Whisper 는 VAPI_STT=whisper 용
+python tools/fetch_stt.py
 hf download Supertone/supertonic-3 --local-dir "$MODELS/tts"
 
 echo "=== [9/9] easyocr + offline check ==="

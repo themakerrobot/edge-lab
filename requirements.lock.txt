@@ -142,6 +142,8 @@ send2trash==2.1.0
 setuptools==84.0.0
 shapely==2.1.2
 shellingham==1.5.4
+sherpa-onnx==1.13.8
+sherpa-onnx-core==1.13.8
 six==1.17.0
 sounddevice==0.5.5
 soupsieve==2.10

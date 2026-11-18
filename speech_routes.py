@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
 """speech_routes — 음성 인식(STT) · 음성 합성(TTS).
 
-- POST /speech/stt   (uploadFile: wav)  -> {"text": "...", "lang": "ko"}
+- POST /speech/stt   (uploadFile: wav)  -> {"text": "...", "lang": "ko", "engine": "sensevoice"}
 - POST /speech/tts   (text, voice, lang) -> WAV 파일
 - GET  /speech/ready                    -> 모델이 준비됐는지
 - GET  /speech/voices                   -> 쓸 수 있는 목소리 목록
 
 모델
-  STT: models/stt (OpenVINO/whisper-small-int8-ov, openvino_genai.WhisperPipeline)
+  STT: models/stt-sv (SenseVoiceSmall int8 + silero VAD, sherpa-onnx) — 기본. 파이보 · 파이브레인과 같은 파일·같은 계산
+       (openpibo SpeechToText.transcribe: DC 빼기 · 작은 소리 키우기(최대 20배) · 25초 넘으면 VAD 로 말 단위로 잘라 받아 적기).
+       언어는 모델이 스스로 알아낸다(한·영·중·일·광둥어). lang 은 응답에 그대로 돌려준다.
+       models/stt (OpenVINO/whisper-small-int8-ov) — 예전 것. VAPI_STT=whisper 이고 폴더가 있을 때만 쓴다.
+       실측(x86 4스레드, 문장 14개): SenseVoice 116ms · 최고 메모리 421MB / Whisper 492ms · 831MB, 글자 오류율 2.7% / 2.3%
   TTS: models/tts (Supertone/supertonic-3, onnx/ + voice_styles/)
        추론은 onnxruntime 만 사용한다. 절차는 공식 예제(supertone-inc/supertonic, MIT)를
        그대로 옮긴 것 — 전처리·토크나이저·마스크 계산은 원본과 결과 일치를 확인했다.
@@ -31,7 +35,24 @@ from fastapi.responses import Response
 router = APIRouter()
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
+# 음성 인식 엔진 — SenseVoice(models/stt-sv)가 기본. VAPI_STT=whisper 로 예전 Whisper(models/stt)를 고를 수 있다
+SV_DIR = os.path.join(ROOT, "models", "stt-sv")
+SV_FILES = ("model.int8.onnx", "tokens.txt", "silero_vad.onnx")
 STT_DIR = os.path.join(ROOT, "models", "stt")
+
+
+def _pick_stt():
+    want = os.environ.get("VAPI_STT", "").strip().lower()
+    if want == "whisper":
+        return "whisper"
+    if want in ("sensevoice", "sense", "sv"):
+        return "sensevoice"
+    if all(os.path.isfile(os.path.join(SV_DIR, f)) for f in SV_FILES):
+        return "sensevoice"
+    return "whisper" if os.path.isdir(STT_DIR) else "sensevoice"
+
+
+STT_ENGINE = _pick_stt()
 # 읽어 주기 모델 폴더 — int8 양자화판(models/tts-int8)이 있으면 그것을 쓴다(소리는 같고 CPU 에서 가볍다).
 # 원본 models/tts 는 만일을 위해 그대로 둔다: tts-int8 이 없으면 원본으로, VAPI_TTS=tts 로 원본을 고를 수도 있다.
 # 두 모델의 속도는 tools\tts_bench.py 로 그 PC 에서 잰다.
@@ -44,7 +65,7 @@ def _pick_tts():
 
 
 TTS_DIR = _pick_tts()
-TARGET_SR = 16000                       # Whisper 입력 샘플레이트
+TARGET_SR = 16000                       # 음성 인식 입력 샘플레이트(두 엔진 같음)
 
 _pipe = None
 _dev = "CPU"
@@ -77,13 +98,77 @@ def _pick_device():
         return "CPU"
 
 
+class _SenseVoice:
+    """SenseVoiceSmall int8 + silero VAD (sherpa-onnx). openpibo SpeechToText.transcribe 와 같은 계산이다 —
+    한쪽을 고치면 다른 쪽도 같이 고칠 것(파이보 · 파이브레인 openpibo/speech.py)."""
+
+    def __init__(self, d, threads=4):
+        import sherpa_onnx
+        self._sherpa = sherpa_onnx
+        self._rec = sherpa_onnx.OfflineRecognizer.from_sense_voice(
+            model=os.path.join(d, "model.int8.onnx"), tokens=os.path.join(d, "tokens.txt"),
+            num_threads=threads, use_itn=True)
+        self._vad_cfg = sherpa_onnx.VadModelConfig()
+        self._vad_cfg.silero_vad.model = os.path.join(d, "silero_vad.onnx")
+        self._vad_cfg.silero_vad.min_silence_duration = 0.3
+        self._vad_cfg.sample_rate = TARGET_SR
+
+    def _decode(self, audio):
+        st = self._rec.create_stream()
+        st.accept_waveform(TARGET_SR, audio)
+        self._rec.decode_stream(st)
+        return st.result.text.strip()
+
+    def transcribe(self, audio):
+        audio = np.asarray(audio, dtype=np.float32)
+        if len(audio) == 0:
+            return ""
+        audio = audio - audio.mean()                 # DC 가 있으면 아래 크기 맞추기가 틀어진다
+        peak = float(np.abs(audio).max())
+        if 0 < peak < 0.5:                           # 소리가 작으면 키운다(최대 20배)
+            audio = audio * min(0.5 / peak, 20.0)
+        audio = np.ascontiguousarray(audio, dtype=np.float32)
+        # 말 구간을 먼저 찾는다. 하나도 없으면(조용한 녹음) 빈 글자 — 모델에 그냥 넣으면 '그.' 같은 글자를 지어낸다.
+        # (로봇은 listen() 이 VAD 로 말이 있을 때만 받아 적어 같은 결과다. transcribe() 에는 이 검사가 없다)
+        vad = self._sherpa.VoiceActivityDetector(self._vad_cfg,
+                                                 buffer_size_in_seconds=max(30, len(audio) / TARGET_SR + 5))
+        w = self._vad_cfg.silero_vad.window_size
+        for i in range(0, len(audio), w):
+            vad.accept_waveform(audio[i:i + w])
+        vad.flush()
+        segs = []
+        while not vad.empty():
+            segs.append(np.asarray(vad.front.samples, dtype=np.float32))
+            vad.pop()
+        if not segs:
+            return ""
+        if len(audio) <= 25 * TARGET_SR:            # 짧으면 통째로(로봇과 같은 글자)
+            return self._decode(audio)
+        # 25초보다 길면 말 단위로 잘라 받아 적는다(통째로 넣으면 글자가 뒤섞인다)
+        texts = [self._decode(x) for x in segs]
+        return " ".join(t for t in texts if t)
+
+
 def _load():
-    """WhisperPipeline 지연 로딩. 실패해도 서버는 계속 돈다."""
+    """음성 인식 모델 지연 로딩. 실패해도 서버는 계속 돈다."""
     global _pipe, _dev, _err
     if _pipe is not None or _err:
         return _pipe
     with _lock:
         if _pipe is not None or _err:
+            return _pipe
+        if STT_ENGINE == "sensevoice":
+            miss = [f for f in SV_FILES if not os.path.isfile(os.path.join(SV_DIR, f))]
+            if miss:
+                _err = "models/stt-sv 에 %s 이(가) 없어요. setup 으로 모델을 받아 주세요." % ", ".join(miss)
+                return None
+            try:
+                _dev = "CPU"
+                _pipe = _SenseVoice(SV_DIR)
+                print("[stt] sensevoice loaded (CPU)")
+            except Exception as ex:
+                _err = "STT 모델을 열 수 없어요: %s" % ex
+                print("[stt]", _err)
             return _pipe
         if not os.path.isdir(STT_DIR):
             _err = "models/stt 폴더가 없어요. setup 으로 모델을 받아 주세요."
@@ -129,13 +214,13 @@ def _read_wav(raw):
 @router.get("/speech/ready", tags=["speech"], summary="STT 준비 상태")
 def speech_ready():
     return {"result": "ok",
-            "data": {"loaded": _pipe is not None, "error": _err, "device": _dev,
+            "data": {"loaded": _pipe is not None, "error": _err, "device": _dev, "engine": STT_ENGINE,
                      "tts_loaded": _tts is not None, "tts_error": _tts_err}}
 
 
 @router.post("/speech/stt", tags=["speech"], summary="음성 인식 (WAV -> 글자)")
 def speech_stt(uploadFile: UploadFile = File(...),
-               lang: str = Query("ko", description="ko | en | auto")):
+               lang: str = Query("ko", description="ko | en | auto — SenseVoice 는 언어를 스스로 알아내고, 이 값은 응답에 그대로 돌려준다")):
     t0 = time.perf_counter()
     pipe = _load()
     if pipe is None:
@@ -146,6 +231,12 @@ def speech_stt(uploadFile: UploadFile = File(...),
         return _fail("stt", "소리 파일을 읽을 수 없어요 (WAV 만 됩니다): %s" % ex, t0, _dev)
     if audio.size < TARGET_SR // 5:
         return _fail("stt", "녹음이 너무 짧아요.", t0, _dev)
+    if STT_ENGINE == "sensevoice":
+        try:
+            text = pipe.transcribe(audio)
+            return _ok("stt", {"text": text, "lang": lang, "engine": STT_ENGINE}, t0, _dev)
+        except Exception as ex:
+            return _fail("stt", "음성 인식 실패: %s" % ex, t0, _dev)
     try:
         kw = {}
         if lang in ("ko", "en"):
@@ -155,7 +246,7 @@ def speech_stt(uploadFile: UploadFile = File(...),
         except TypeError:                    # 옵션 미지원 버전 대비
             res = pipe.generate(audio)
         text = str(res).strip()
-        return _ok("stt", {"text": text, "lang": lang}, t0, _dev)
+        return _ok("stt", {"text": text, "lang": lang, "engine": STT_ENGINE}, t0, _dev)
     except Exception as ex:
         return _fail("stt", "음성 인식 실패: %s" % ex, t0, _dev)
 

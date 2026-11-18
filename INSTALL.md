@@ -184,7 +184,7 @@ python tools\check.py                                 # fail = 0 이어야 함
 ### 저장소 구성
 | 폴더 | 설치본에 | 무엇 |
 |---|---|---|
-| `face/` `mediapipe/` `gan/` `vlm/` `embed/` `backbone/` `code/` `stt/` `tts-int8/` `mask/` | 들어감 | 서버가 읽는 IR·모델 |
+| `face/` `mediapipe/` `gan/` `vlm/` `embed/` `backbone/` `code/` `stt-sv/` `tts-int8/` `mask/` | 들어감 | 서버가 읽는 IR·모델 |
 | (`leeyunjai/easydetect`) `ed-m/` `pose/` `mobile_sam/` | 들어감 → `models/easydetect/` | 사물 찾기 · 자세 · 영역 (.onnx) |
 | `object/` `org/` `yolo/` | 빠짐 | 예전 YOLO 모델(ultralytics, AGPL) — 쓰지 않는다. 지워도 된다 |
 | `*.md` | 빠짐 | 저장소 설명 |

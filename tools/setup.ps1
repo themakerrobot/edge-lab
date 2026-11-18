@@ -61,6 +61,9 @@ Write-Host "=== [6/7] speech models (STT / TTS) ===" -ForegroundColor Cyan
 # 이미 변환된 것을 그대로 쓴다 (직접 변환할 필요 없음)
 & hf download OpenVINO/whisper-small-int8-ov --local-dir (Join-Path $MODELS "stt")
 if ($LASTEXITCODE -ne 0) { throw "STT download failed" }
+# 서버가 실제로 쓰는 음성 인식은 SenseVoice(models/stt-sv, 파이보 · 파이브레인과 같은 파일). 위 Whisper 는 VAPI_STT=whisper 용
+python tools\fetch_stt.py
+if ($LASTEXITCODE -ne 0) { throw "STT (SenseVoice) download failed" }
 & hf download Supertone/supertonic-3 --local-dir (Join-Path $MODELS "tts")
 if ($LASTEXITCODE -ne 0) { throw "TTS download failed" }
 

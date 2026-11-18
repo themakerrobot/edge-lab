@@ -8,3 +8,7 @@ licenses — see the "라이선스 / License" section of README.md. In particula
   - Gemma 3 (models/vlm) is provided under the Gemma Terms of Use.
   - Supertonic 3 (models/tts-int8) is provided under the BigScience OpenRAIL-M license,
     including the use restrictions in its Attachment A.
+  - SenseVoiceSmall (models/stt-sv) is provided under the FunASR Model Open Source License
+    Agreement v1.1, Copyright (C) 2023-2028 Alibaba Group. Source: FunAudioLLM/SenseVoiceSmall
+    (https://github.com/modelscope/FunASR). This copy is the sherpa-onnx int8 export.
+    Full text: models/stt-sv/LICENSE-SenseVoice.txt (tools/licenses/FunASR-MODEL_LICENSE.txt).
