@@ -331,6 +331,16 @@
       o_seeFace: "얼굴", o_seeHand: "손", o_seePerson: "사람",
       o_emo_happy: "웃는 얼굴", o_emo_sad: "슬픈 얼굴", o_emo_surprised: "놀란 얼굴", o_emo_angry: "화난 얼굴", o_emo_neutral: "무표정",
       sh_ezGood: "다섯 개! 잘했어요", sh_ezShowFace: "얼굴을 보여 주세요", sh_ezSmiled: "웃었네요! 😀", sh_ezSmile: "웃어 보세요", sh_ezThanks: "고마워요",
+      ex_posture: "바른 자세 알리미 (15초 재기)", ex_posture_d: "자세 점으로 두 어깨 높이 차이를 재는 함수를 만들어 쓰고, 기울어진 채로 오래 있으면 알려 줘요. 잰 값은 표에 기록해 CSV 로 저장해요. (함수 · 자세 점 · 표)",
+      ex_armcount: "팔 들기 운동 세기", ex_armcount_d: "손목이 코보다 올라갔다 내려오면 한 번. '올렸나' 상태 변수로 한 번만 세고, 최고 기록은 기억해 둬요. (상태 변수 · 논리 · 기억하기)",
+      ex_booth: "얼굴 스티커 사진관", ex_booth_d: "사진을 찍어 찾은 얼굴마다 테두리와 글자를 좌표로 그려요. 얼굴 하나를 꾸미는 함수에 번호를 넘겨요. (매개변수 함수 · 좌표 편집 · 반복)",
+      sh_pose: "자세", sh_tilt: "기울기", sh_bad: "나쁜횟수", sh_fnTilt: "어깨기울기", sh_tiltLbl: "어깨 기울기 ",
+      sh_tiltBad: "어깨가 기울었어요 ", sh_tiltOk: "좋은 자세예요 ", sh_tiltSay: "자세를 바르게 해 주세요", sh_noBody: "몸이 보이게 서 주세요",
+      sh_postureTable: "자세기록", sh_postureDone: "다 쟀어요. 표를 저장했어요",
+      sh_count: "횟수", sh_up: "올렸나", sh_wrist: "손목y", sh_nose: "코y", sh_armBest: "팔들기최고",
+      sh_armStart: "30초 동안 오른팔을 머리 위로!", sh_armCount: "횟수 ", sh_armNew: "새 기록이에요!", sh_armBestLbl: " / 최고 ",
+      sh_photo: "사진", sh_faces: "얼굴들", sh_i: "번호", sh_fnDeco: "얼굴꾸미기", sh_n: "n", sh_left: "왼쪽", sh_top: "위쪽",
+      sh_boothTag: "최고!", sh_boothReady: "곧 찍어요", sh_boothCount: "남은시간", sh_boothDone: "사진을 저장했어요",
       ex_react: "반응 속도 재기", ex_react_d: "'지금!' 이 뜨면 스페이스를 눌러요. 타이머로 시간을 재고 가장 빠른 기록을 변수에 남겨요. (타이머 · 변수 · 비교)",
       ex_emogame: "표정 따라 하기 게임", ex_emogame_d: "컴퓨터가 고른 표정을 지으면 점수! 목록에서 하나를 뽑고 AI 결과에 그 표정이 있는지 봐요. (목록 · 랜덤 · AI 결과)",
       ex_hunt: "물건 찾기 미션", ex_hunt_d: "말한 물건을 카메라에 보여 주면 성공. 찾을 때까지 반복하고 걸린 시간을 알려 줘요. (조건 반복 · 목록 · AI 결과)",
@@ -639,6 +649,16 @@
       o_seeFace: "face", o_seeHand: "hand", o_seePerson: "person",
       o_emo_happy: "smiling", o_emo_sad: "sad", o_emo_surprised: "surprised", o_emo_angry: "angry", o_emo_neutral: "neutral",
       sh_ezGood: "Five! Well done", sh_ezShowFace: "Show your face", sh_ezSmiled: "You smiled! 😀", sh_ezSmile: "Give me a smile", sh_ezThanks: "Thank you",
+      ex_posture: "Posture checker (15 s)", ex_posture_d: "Make a function that measures how uneven your shoulders are from body points, and get a warning if you stay tilted. Values go in a table saved as CSV. (functions · body points · tables)",
+      ex_armcount: "Arm raise counter", ex_armcount_d: "One rep when the wrist goes above the nose and back down. A 'raised' state variable counts each rep once, and the best is remembered. (state variables · logic · remember)",
+      ex_booth: "Face sticker photo booth", ex_booth_d: "Take a photo and draw a frame and text on every face with coordinates. A function decorates one face by its number. (functions with parameters · coordinate editing · loops)",
+      sh_pose: "pose", sh_tilt: "tilt", sh_bad: "badCount", sh_fnTilt: "shoulderTilt", sh_tiltLbl: "Shoulder tilt ",
+      sh_tiltBad: "Shoulders tilted ", sh_tiltOk: "Good posture ", sh_tiltSay: "Please sit up straight", sh_noBody: "Stand where I can see you",
+      sh_postureTable: "posture", sh_postureDone: "Done. Table saved",
+      sh_count: "count", sh_up: "raised", sh_wrist: "wristY", sh_nose: "noseY", sh_armBest: "armBest",
+      sh_armStart: "Raise your right arm over your head for 30 s!", sh_armCount: "Reps ", sh_armNew: "New record!", sh_armBestLbl: " / best ",
+      sh_photo: "photo", sh_faces: "faces", sh_i: "i", sh_fnDeco: "decorateFace", sh_n: "n", sh_left: "boxX", sh_top: "boxY",
+      sh_boothTag: "Best!", sh_boothReady: "Get ready", sh_boothCount: "countdown", sh_boothDone: "Photo saved",
       ex_react: "Reaction time", ex_react_d: "Press space when 'Now!' appears. A timer measures it and a variable keeps your best. (timer · variables · compare)",
       ex_emogame: "Copy the face game", ex_emogame_d: "Make the face the computer picks to score! Pick one from a list and check the AI result. (lists · random · AI results)",
       ex_hunt: "Find-it mission", ex_hunt_d: "Show the named thing to the camera. Repeats until found and tells the time taken. (repeat until · lists · AI results)",
@@ -1050,6 +1070,8 @@
       },
       lists_sort: b => "sorted(" + val(b, "LIST", "[]") + ")",
 
+      /* ---- 함수 ---- */
+      procedures_callreturn: b => pyCall(b),
       /* ---- 쉬움 수준 ---- */
       ez_seen: b => ({ seeFace: "len(vision('face', camera())) > 0", seeHand: "count(vision('hand', camera())) > 0",
                        seePerson: "has(vision('object', camera()), 'person')" })[field(b, "WHAT")] || "False",
@@ -1184,6 +1206,29 @@
       return map[k] || (k.startsWith("#") ? k : (k || "red"));   // 모르는 색은 #코드 그대로
     }
 
+    function pyCall(b) {
+      const args = [];
+      for (let i = 0; b.getInput("ARG" + i); i++) args.push(val(b, "ARG" + i, "None"));
+      return pyName(b.getFieldValue("NAME")) + "(" + args.join(", ") + ")";
+    }
+    function pyDef(b, ind) {
+      const p = " ".repeat(ind),
+            params = (b.arguments_ || (b.getVarModels ? b.getVarModels().map(v => v.name) : [])).map(pyName);
+      const out = [p + "def " + pyName(b.getFieldValue("NAME")) + "(" + params.join(", ") + "):"];
+      /* 함수 안에서 값을 바꾸는 바깥 변수는 global 로 — 안 쓰면 파이썬은 새 지역 변수로 본다 */
+      const sets = new Set();
+      b.getDescendants(false).forEach(d => {
+        if (["variables_set", "math_change", "text_append"].includes(d.type)) sets.add(pyName(d.getField("VAR").getText()));
+      });
+      params.forEach(x => sets.delete(x));
+      if (sets.size) out.push(p + "    global " + [...sets].join(", "));
+      const first = b.getInputTargetBlock("STACK");
+      const inner = first ? chain(first, ind + 4) : "";
+      if (inner.split("\n").some(l => l.trim() && !l.trim().startsWith("#"))) out.push(inner);
+      else { if (inner) out.push(inner); if (!b.getInput("RETURN")) out.push(p + "    pass"); }
+      if (b.getInput("RETURN")) out.push(p + "    return " + val(b, "RETURN", "None"));
+      return out.join("\n") + "\n";
+    }
     function pyName(name) {
       const s = String(name).trim().replace(/[^\wㄱ-ㅎ가-힣]/g, "_");
       return /^[0-9]/.test(s) ? "v_" + s : (s || "x");
@@ -1226,6 +1271,13 @@
         }
       } else if (T === "st_clear") {
         return "";                       // 파이썬에는 화면 칸이 없다 — 조용히 건너뛴다
+      } else if (T === "procedures_defnoreturn" || T === "procedures_defreturn") {
+        out.push(pyDef(b, ind));
+      } else if (T === "procedures_callnoreturn") {
+        out.push(p + pyCall(b));
+      } else if (T === "procedures_ifreturn") {
+        out.push(p + "if " + val(b, "CONDITION", "False") + ":");
+        out.push(p + "    return" + (b.getInput("VALUE") ? " " + val(b, "VALUE", "None") : ""));
       } else if (T === "ez_add") {
         needScore = true;
         out.push(p + "score = score + " + val(b, "N", "1"));
@@ -1384,7 +1436,10 @@
       generate(workspace) {
         needTime = false; needCam = false; needRandom = false; needMath = false; needScore = false;
         lastShown = "img"; hasResult = false; lastRes = "";
-        const tops = workspace.getTopBlocks(true).filter(b => !b.outputConnection);
+        /* 함수(def)를 먼저 — 파이썬은 쓰기 전에 정의돼 있어야 한다 */
+        const isDef = b => /^procedures_def/.test(b.type);
+        const all = workspace.getTopBlocks(true).filter(b => !b.outputConnection);
+        const tops = all.filter(isDef).concat(all.filter(b => !isDef(b)));
         const bodyLines = tops.map(b => chain(b, 0)).filter(s => s.trim()).join("\n");
         if (!bodyLines.trim()) return "from themaker import *\n\n# 블록을 조립해 보세요\n";
 
@@ -2890,6 +2945,152 @@ def texts_of(result):
               ELSE: { block: B("sp_show", { fields: { NAME: t("sh_crown"), MODE: "svHide" } }) } } }),
           ]) } } }),
         ]) ] } } },
+      { id: "posture", lv: 2, name: t("ex_posture"), desc: t("ex_posture_d"),
+        state: { blocks: { languageVersion: 0, blocks: [
+          chain([
+            CLEAR(),
+            B("st_cam_view", { fields: { MODE: "cmMirror" } }),
+            SET(t("sh_bad"), B("math_number", { fields: { NUM: 0 } })),
+            B("controls_repeat_ext", { inputs: { TIMES: shadowNum(30), DO: { block: chain([
+              SET(t("sh_pose"), B("res_of", { fields: { KIND: "pose" }, inputs: { IMG: { block: B("ai_capture") } } })),
+              B("controls_if", { extraState: { hasElse: true }, inputs: {
+                IF0: { block: B("logic_compare", { fields: { OP: "GT" }, inputs: {
+                  A: { block: B("res_count", { inputs: { RES: { block: VG(t("sh_pose")) } } }) }, B: shadowNum(0) } }) },
+                DO0: { block: chain([
+                  SET(t("sh_tilt"), B("procedures_callreturn", { extraState: { name: t("sh_fnTilt"), params: [] } })),
+                  B("dt_record", { fields: { TABLE: t("sh_postureTable") }, inputs: { V: { block: VG(t("sh_tilt")) } } }),
+                  B("controls_if", { extraState: { hasElse: true }, inputs: {
+                    IF0: { block: B("logic_compare", { fields: { OP: "GT" }, inputs: {
+                      A: { block: VG(t("sh_tilt")) }, B: shadowNum(25) } }) },
+                    DO0: { block: chain([
+                      B("math_change", { fields: { VAR: { name: t("sh_bad") } }, inputs: { DELTA: shadowNum(1) } }),
+                      B("st_show_text", { inputs: { TEXT: { block: B("text_join", { extraState: { itemCount: 2 }, inputs: {
+                        ADD0: shadowTxt(t("sh_tiltBad")), ADD1: { block: VG(t("sh_tilt")) } } }) } } }),
+                      B("controls_if", { inputs: {
+                        IF0: { block: B("logic_compare", { fields: { OP: "EQ" }, inputs: {
+                          A: { block: VG(t("sh_bad")) }, B: shadowNum(6) } }) },
+                        DO0: { block: chain([
+                          B("st_say", { fields: { V: "F1", S: "normal" }, inputs: { TEXT: shadowTxt(t("sh_tiltSay")) } }),
+                          SET(t("sh_bad"), B("math_number", { fields: { NUM: 0 } })),
+                        ]) } } }),
+                    ]) },
+                    ELSE: { block: chain([
+                      SET(t("sh_bad"), B("math_number", { fields: { NUM: 0 } })),
+                      B("st_show_text", { inputs: { TEXT: { block: B("text_join", { extraState: { itemCount: 2 }, inputs: {
+                        ADD0: shadowTxt(t("sh_tiltOk")), ADD1: { block: VG(t("sh_tilt")) } } }) } } }),
+                    ]) } } }),
+                ]) },
+                ELSE: { block: B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_noBody")) } }) } } }),
+              B("st_wait", { inputs: { SEC: shadowNum(0.5) } }),
+            ]) } } }),
+            B("dt_save", { fields: { TABLE: t("sh_postureTable") } }),
+            B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_postureDone")) } }),
+          ]),
+          Object.assign(B("procedures_defreturn", { fields: { NAME: t("sh_fnTilt") }, inputs: {
+            RETURN: { block: B("math_single", { fields: { OP: "ABS" }, inputs: { NUM: { block: B("math_arithmetic", {
+              fields: { OP: "MINUS" }, inputs: {
+                A: { block: B("res_pose", { fields: { PART: "left_shoulder", AXIS: "y" }, inputs: {
+                  RES: { block: VG(t("sh_pose")) }, WHO: shadowNum(1) } }) },
+                B: { block: B("res_pose", { fields: { PART: "right_shoulder", AXIS: "y" }, inputs: {
+                  RES: { block: VG(t("sh_pose")) }, WHO: shadowNum(1) } }) } } }) } } }) } } }), { x: 620, y: 20 }),
+        ] } } },
+      { id: "armcount", lv: 2, name: t("ex_armcount"), desc: t("ex_armcount_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
+          CLEAR(),
+          B("st_cam_view", { fields: { MODE: "cmMirror" } }),
+          SET(t("sh_count"), B("math_number", { fields: { NUM: 0 } })),
+          SET(t("sh_up"), B("logic_boolean", { fields: { BOOL: "FALSE" } })),
+          B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_armStart")) } }),
+          B("tm_reset"),
+          B("controls_whileUntil", { fields: { MODE: "WHILE" }, inputs: {
+            BOOL: { block: B("logic_compare", { fields: { OP: "LT" }, inputs: { A: { block: B("tm_timer") }, B: shadowNum(30) } }) },
+            DO: { block: chain([
+              SET(t("sh_pose"), B("res_of", { fields: { KIND: "pose" }, inputs: { IMG: { block: B("ai_capture") } } })),
+              SET(t("sh_wrist"), B("res_pose", { fields: { PART: "right_wrist", AXIS: "y" }, inputs: {
+                RES: { block: VG(t("sh_pose")) }, WHO: shadowNum(1) } })),
+              SET(t("sh_nose"), B("res_pose", { fields: { PART: "nose", AXIS: "y" }, inputs: {
+                RES: { block: VG(t("sh_pose")) }, WHO: shadowNum(1) } })),
+              B("controls_if", { inputs: {
+                IF0: { block: B("logic_operation", { fields: { OP: "AND" }, inputs: {
+                  A: { block: B("logic_compare", { fields: { OP: "NEQ" }, inputs: { A: { block: VG(t("sh_wrist")) }, B: shadowNum(-1) } }) },
+                  B: { block: B("logic_compare", { fields: { OP: "NEQ" }, inputs: { A: { block: VG(t("sh_nose")) }, B: shadowNum(-1) } }) } } }) },
+                DO0: { block: B("controls_if", { extraState: { elseIfCount: 1 }, inputs: {
+                  IF0: { block: B("logic_operation", { fields: { OP: "AND" }, inputs: {
+                    A: { block: B("logic_compare", { fields: { OP: "LT" }, inputs: { A: { block: VG(t("sh_wrist")) }, B: { block: VG(t("sh_nose")) } } }) },
+                    B: { block: B("logic_negate", { inputs: { BOOL: { block: VG(t("sh_up")) } } }) } } }) },
+                  DO0: { block: chain([
+                    SET(t("sh_up"), B("logic_boolean", { fields: { BOOL: "TRUE" } })),
+                    B("math_change", { fields: { VAR: { name: t("sh_count") } }, inputs: { DELTA: shadowNum(1) } }),
+                    B("st_beep", { fields: { K: "sndCoin" } }),
+                    B("st_show_text", { inputs: { TEXT: { block: B("text_join", { extraState: { itemCount: 2 }, inputs: {
+                      ADD0: shadowTxt(t("sh_armCount")), ADD1: { block: VG(t("sh_count")) } } }) } } }),
+                  ]) },
+                  IF1: { block: B("logic_compare", { fields: { OP: "GT" }, inputs: {
+                    A: { block: VG(t("sh_wrist")) },
+                    B: { block: B("math_arithmetic", { fields: { OP: "ADD" }, inputs: { A: { block: VG(t("sh_nose")) }, B: shadowNum(60) } }) } } }) },
+                  DO1: { block: SET(t("sh_up"), B("logic_boolean", { fields: { BOOL: "FALSE" } })) } } }) } } }),
+              B("st_wait", { inputs: { SEC: shadowNum(0.2) } }),
+            ]) } } }),
+          B("controls_if", { inputs: {
+            IF0: { block: B("logic_compare", { fields: { OP: "GT" }, inputs: {
+              A: { block: VG(t("sh_count")) }, B: { block: B("dt_recall", { fields: { KEY: t("sh_armBest") } }) } } }) },
+            DO0: { block: chain([
+              B("dt_remember", { fields: { KEY: t("sh_armBest") }, inputs: { V: { block: VG(t("sh_count")) } } }),
+              B("st_say", { fields: { V: "F1", S: "normal" }, inputs: { TEXT: shadowTxt(t("sh_armNew")) } }),
+            ]) } } }),
+          B("st_show_text", { inputs: { TEXT: { block: B("text_join", { extraState: { itemCount: 4 }, inputs: {
+            ADD0: shadowTxt(t("sh_armCount")), ADD1: { block: VG(t("sh_count")) },
+            ADD2: shadowTxt(t("sh_armBestLbl")), ADD3: { block: B("dt_recall", { fields: { KEY: t("sh_armBest") } }) } } }) } } }),
+        ]) ] } } },
+      { id: "booth", lv: 2, name: t("ex_booth"), desc: t("ex_booth_d"),
+        state: { blocks: { languageVersion: 0, blocks: [
+          chain([
+            CLEAR(),
+            B("st_cam_view", { fields: { MODE: "cmMirror" } }),
+            SET(t("sh_boothCount"), B("math_number", { fields: { NUM: 3 } })),
+            B("controls_repeat_ext", { inputs: { TIMES: shadowNum(3), DO: { block: chain([
+              B("st_show_text", { inputs: { TEXT: { block: B("text_join", { extraState: { itemCount: 2 }, inputs: {
+                ADD0: shadowTxt(t("sh_boothReady") + " "), ADD1: { block: VG(t("sh_boothCount")) } } }) } } }),
+              B("st_beep", { fields: { K: "beepOk" } }),
+              B("st_wait", { inputs: { SEC: shadowNum(1) } }),
+              B("math_change", { fields: { VAR: { name: t("sh_boothCount") } }, inputs: { DELTA: shadowNum(-1) } }),
+            ]) } } }),
+            SET(t("sh_photo"), B("ai_capture")),
+            B("st_cam_view", { fields: { MODE: "cmOff" } }),
+            SET(t("sh_faces"), B("res_of", { fields: { KIND: "face" }, inputs: { IMG: { block: VG(t("sh_photo")) } } })),
+            B("controls_for", { fields: { VAR: { name: t("sh_i") } }, inputs: {
+              FROM: shadowNum(1), TO: { block: B("res_count", { inputs: { RES: { block: VG(t("sh_faces")) } } }) }, BY: shadowNum(1),
+              DO: { block: B("procedures_callnoreturn", { extraState: { name: t("sh_fnDeco"), params: [t("sh_n")] },
+                inputs: { ARG0: { block: VG(t("sh_i")) } } }) } } }),
+            B("st_show_image", { inputs: { IMG: { block: VG(t("sh_photo")) } } }),
+            B("st_save_stage", { inputs: { IMG: { block: VG(t("sh_photo")) } } }),
+            B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_boothDone")) } }),
+          ]),
+          Object.assign(B("procedures_defnoreturn", { fields: { NAME: t("sh_fnDeco") }, extraState: { params: [{ name: t("sh_n") }] },
+            inputs: { STACK: { block: chain([
+              SET(t("sh_left"), B("math_arithmetic", { fields: { OP: "MINUS" }, inputs: {
+                A: { block: B("res_nth", { fields: { KEY: "x" }, inputs: { RES: { block: VG(t("sh_faces")) }, N: { block: VG(t("sh_n")) } } }) },
+                B: { block: B("math_arithmetic", { fields: { OP: "DIVIDE" }, inputs: {
+                  A: { block: B("res_nth", { fields: { KEY: "w" }, inputs: { RES: { block: VG(t("sh_faces")) }, N: { block: VG(t("sh_n")) } } }) },
+                  B: shadowNum(2) } }) } } })),
+              SET(t("sh_top"), B("math_arithmetic", { fields: { OP: "MINUS" }, inputs: {
+                A: { block: B("res_nth", { fields: { KEY: "y" }, inputs: { RES: { block: VG(t("sh_faces")) }, N: { block: VG(t("sh_n")) } } }) },
+                B: { block: B("math_arithmetic", { fields: { OP: "DIVIDE" }, inputs: {
+                  A: { block: B("res_nth", { fields: { KEY: "h" }, inputs: { RES: { block: VG(t("sh_faces")) }, N: { block: VG(t("sh_n")) } } }) },
+                  B: shadowNum(2) } }) } } })),
+              SET(t("sh_photo"), B("edx_rect", { fields: { FILL: "hollow", COL: "#f4c522" }, inputs: {
+                IMG: { block: VG(t("sh_photo")) }, X: { block: VG(t("sh_left")) }, Y: { block: VG(t("sh_top")) },
+                W: { block: B("res_nth", { fields: { KEY: "w" }, inputs: { RES: { block: VG(t("sh_faces")) }, N: { block: VG(t("sh_n")) } } }) },
+                H: { block: B("res_nth", { fields: { KEY: "h" }, inputs: { RES: { block: VG(t("sh_faces")) }, N: { block: VG(t("sh_n")) } } }) } } })),
+              SET(t("sh_photo"), B("edx_text", { fields: { COL: "#e0342e" }, inputs: {
+                IMG: { block: VG(t("sh_photo")) }, TXT: shadowTxt(t("sh_boothTag")),
+                X: { block: VG(t("sh_left")) },
+                Y: { block: B("math_constrain", { inputs: {
+                  VALUE: { block: B("math_arithmetic", { fields: { OP: "MINUS" }, inputs: { A: { block: VG(t("sh_top")) }, B: shadowNum(50) } }) },
+                  LOW: shadowNum(5), HIGH: shadowNum(440) } }) },
+                SIZE: shadowNum(40), DEG: shadowNum(-8) } })),
+            ]) } } }), { x: 620, y: 20 }),
+        ] } } },
       { id: "result", lv: 2, name: t("ex_result"), desc: t("ex_result_d"),
         state: { blocks: { languageVersion: 0, blocks: [ chain([
           CLEAR(),
@@ -3096,7 +3297,7 @@ def texts_of(result):
     list.innerHTML = "";
     /* 위에 '만들어 보기(프로젝트)', 아래에 '기능 익히기' — 수업에서는 프로젝트부터 고른다 */
     const PROJECTS = ["ez_rocket", "ez_hand", "ez_face", "guess", "react", "catch", "handgame", "emogame", "hunt", "crown",
-                      "result", "rps", "greet"];
+                      "posture", "armcount", "booth", "result", "rps", "greet"];
     const lvNow = { easy: 0, basic: 1, all: 2 }[LEVEL];
     const lvOf = ex => (ex.lv == null ? 1 : ex.lv);
     const all = EXAMPLES().filter(ex => LEVEL === "easy" ? lvOf(ex) === 0 : lvOf(ex) <= lvNow);
@@ -4504,6 +4705,25 @@ def texts_of(result):
 
   /* ---------------- 실행/정지 ---------------- */
   G.STATEMENT_PREFIX = "await RT.step(%1);\n";
+  /* 함수 — 안의 블록이 모두 await 를 쓰므로 함수도 async 로 만들고, 부르는 쪽은 await 로 기다린다.
+     (그냥 두면 함수 블록을 하나만 써도 프로그램 전체가 SyntaxError 로 안 돈다) */
+  ["procedures_defreturn", "procedures_defnoreturn"].forEach(tp => {
+    const orig = G.forBlock[tp];
+    G.forBlock[tp] = function (b, g) {
+      const r = orig.call(this, b, g);
+      const key = "%" + g.getProcedureName(b.getFieldValue("NAME"));
+      if (g.definitions_[key]) g.definitions_[key] = g.definitions_[key].replace(/(^|\n)function /, "$1async function ");
+      return r;
+    };
+  });
+  {
+    const callR = G.forBlock["procedures_callreturn"], callN = G.forBlock["procedures_callnoreturn"];
+    G.forBlock["procedures_callreturn"] = function (b, g) {
+      const r = callR.call(this, b, g);
+      return ["(await " + r[0] + ")", Order.ATOMIC];
+    };
+    G.forBlock["procedures_callnoreturn"] = function (b, g) { return "await " + callN.call(this, b, g); };
+  }
   G.INFINITE_LOOP_TRAP = "await RT.loopTrap();\n";
   G.addReservedWords("AI,RT");
 
