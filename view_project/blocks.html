@@ -331,6 +331,17 @@
       o_seeFace: "얼굴", o_seeHand: "손", o_seePerson: "사람",
       o_emo_happy: "웃는 얼굴", o_emo_sad: "슬픈 얼굴", o_emo_surprised: "놀란 얼굴", o_emo_angry: "화난 얼굴", o_emo_neutral: "무표정",
       sh_ezGood: "다섯 개! 잘했어요", sh_ezShowFace: "얼굴을 보여 주세요", sh_ezSmiled: "웃었네요! 😀", sh_ezSmile: "웃어 보세요", sh_ezThanks: "고마워요",
+      ex_react: "반응 속도 재기", ex_react_d: "'지금!' 이 뜨면 스페이스를 눌러요. 타이머로 시간을 재고 가장 빠른 기록을 변수에 남겨요. (타이머 · 변수 · 비교)",
+      ex_emogame: "표정 따라 하기 게임", ex_emogame_d: "컴퓨터가 고른 표정을 지으면 점수! 목록에서 하나를 뽑고 AI 결과에 그 표정이 있는지 봐요. (목록 · 랜덤 · AI 결과)",
+      ex_hunt: "물건 찾기 미션", ex_hunt_d: "말한 물건을 카메라에 보여 주면 성공. 찾을 때까지 반복하고 걸린 시간을 알려 줘요. (조건 반복 · 목록 · AI 결과)",
+      ex_crown: "얼굴에 왕관 씌우기", ex_crown_d: "얼굴 위치와 크기를 꺼내 왕관 캐릭터를 머리 위에 놓아요. 얼굴이 커지면 왕관도 커져요. (좌표 · 계산 · 계속 반복)",
+      sh_best: "최고기록", sh_rec: "기록", sh_clickStart: "무대를 한 번 누르면 시작해요", sh_ready: "준비…", sh_now: "지금! 스페이스!",
+      sh_recLbl: "반응 시간 ", sh_sec: "초", sh_bestLbl: "가장 빠른 기록 ",
+      sh_emoCodes: "happy,surprised,sad,angry", sh_emoNames: "웃는,놀란,슬픈,화난", sh_emoShow: " 표정을 지어 보세요!",
+      sh_codes: "표정목록", sh_names: "이름목록", sh_pick: "번호", sh_face: "얼굴", sh_success: "성공!", sh_miss: "아쉬워요",
+      sh_outOf: " / 4",
+      sh_huntList: "컵,책,휴대폰,병,의자", sh_items: "물건목록", sh_huntShow: " 을(를) 카메라에 보여 주세요", sh_found: "찾았어요!",
+      sh_huntDone: "다 찾았어요! 걸린 시간 ", sh_crown: "왕관", sh_find: "찾을것",
       ex_ez_rocket: "화살표로 로켓 움직여 별 잡기", ex_ez_rocket_d: "화살표 키로 로켓을 움직여 별에 닿으면 점수가 올라요. (반복 · 만약 · 점수)",
       ex_ez_hand: "손으로 별 잡기 (쉬움)", ex_ez_hand_d: "웃는 얼굴이 내 손을 따라가요. 별에 닿으면 점수! (AI 눈)",
       ex_ez_face: "표정 보고 대답하기", ex_ez_face_d: "웃으면 '웃었네요', 엄지 척을 하면 '고마워요' 해요. (AI 눈 · 만약)",
@@ -628,6 +639,17 @@
       o_seeFace: "face", o_seeHand: "hand", o_seePerson: "person",
       o_emo_happy: "smiling", o_emo_sad: "sad", o_emo_surprised: "surprised", o_emo_angry: "angry", o_emo_neutral: "neutral",
       sh_ezGood: "Five! Well done", sh_ezShowFace: "Show your face", sh_ezSmiled: "You smiled! 😀", sh_ezSmile: "Give me a smile", sh_ezThanks: "Thank you",
+      ex_react: "Reaction time", ex_react_d: "Press space when 'Now!' appears. A timer measures it and a variable keeps your best. (timer · variables · compare)",
+      ex_emogame: "Copy the face game", ex_emogame_d: "Make the face the computer picks to score! Pick one from a list and check the AI result. (lists · random · AI results)",
+      ex_hunt: "Find-it mission", ex_hunt_d: "Show the named thing to the camera. Repeats until found and tells the time taken. (repeat until · lists · AI results)",
+      ex_crown: "Put a crown on your face", ex_crown_d: "Uses the face position and size to place a crown above your head. A bigger face gets a bigger crown. (coordinates · math · repeat forever)",
+      sh_best: "best", sh_rec: "time", sh_clickStart: "Click the stage once to start", sh_ready: "Ready…", sh_now: "Now! Space!",
+      sh_recLbl: "Reaction time ", sh_sec: " s", sh_bestLbl: "Best time ",
+      sh_emoCodes: "happy,surprised,sad,angry", sh_emoNames: "happy,surprised,sad,angry", sh_emoShow: " face, please!",
+      sh_codes: "codes", sh_names: "names", sh_pick: "n", sh_face: "face", sh_success: "Yes!", sh_miss: "So close",
+      sh_outOf: " / 4",
+      sh_huntList: "cup,book,cell-phone,bottle,chair", sh_items: "items", sh_huntShow: " — show it to the camera", sh_found: "Found it!",
+      sh_huntDone: "All found! Time ", sh_crown: "crown", sh_find: "thing",
       ex_ez_rocket: "Move the rocket to catch stars", ex_ez_rocket_d: "Move the rocket with arrow keys; touch the star to score. (repeat · if · score)",
       ex_ez_hand: "Catch stars with your hand (easy)", ex_ez_hand_d: "A smiley follows your hand. Touch the star to score! (AI eyes)",
       ex_ez_face: "Answer to your face", ex_ez_face_d: "Smile and it says 'You smiled', thumbs up and it says 'Thank you'. (AI eyes · if)",
@@ -1341,7 +1363,10 @@
     function body(b, name, ind, p) {
       const first = b.getInputTargetBlock(name);
       if (!first) return p + "    pass";
-      return chain(first, ind);
+      const c = chain(first, ind);
+      /* 안에 블록 화면 전용 블록(주석)만 있으면 파이썬 문법이 깨진다 — pass 를 붙인다 */
+      if (!c.split("\n").some(l => l.trim() && !l.trim().startsWith("#"))) return (c ? c + "\n" : "") + p + "    pass";
+      return c;
     }
 
     function chain(b, ind) {
@@ -2747,6 +2772,124 @@ def texts_of(result):
               ]) } } }),
           ]) } } }),
         ]) ] } } },
+      { id: "react", name: t("ex_react"), desc: t("ex_react_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
+          CLEAR(),
+          SET(t("sh_best"), B("math_number", { fields: { NUM: 999 } })),
+          B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_clickStart")) } }),
+          B("controls_whileUntil", { fields: { MODE: "UNTIL" }, inputs: {
+            BOOL: { block: B("ev_clicked") },
+            DO: { block: B("st_wait", { inputs: { SEC: shadowNum(0.1) } }) } } }),
+          B("controls_repeat_ext", { inputs: { TIMES: shadowNum(3), DO: { block: chain([
+            B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_ready")) } }),
+            B("st_wait", { inputs: { SEC: { block: B("math_random_int", { inputs: { FROM: shadowNum(1), TO: shadowNum(3) } }) } } }),
+            B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_now")) } }),
+            B("tm_reset"),
+            B("controls_whileUntil", { fields: { MODE: "UNTIL" }, inputs: {
+              BOOL: { block: B("ev_key", { fields: { KEY: "kySpace" } }) },
+              DO: { block: B("st_wait", { inputs: { SEC: shadowNum(0.01) } }) } } }),
+            SET(t("sh_rec"), B("tm_timer")),
+            B("st_show_text", { inputs: { TEXT: { block: B("text_join", { extraState: { itemCount: 3 }, inputs: {
+              ADD0: shadowTxt(t("sh_recLbl")), ADD1: { block: VG(t("sh_rec")) }, ADD2: shadowTxt(t("sh_sec")) } }) } } }),
+            B("controls_if", { inputs: {
+              IF0: { block: B("logic_compare", { fields: { OP: "LT" }, inputs: {
+                A: { block: VG(t("sh_rec")) }, B: { block: VG(t("sh_best")) } } }) },
+              DO0: { block: SET(t("sh_best"), VG(t("sh_rec"))) } } }),
+            B("st_wait", { inputs: { SEC: shadowNum(1.5) } }),
+          ]) } } }),
+          B("st_show_text", { inputs: { TEXT: { block: B("text_join", { extraState: { itemCount: 3 }, inputs: {
+            ADD0: shadowTxt(t("sh_bestLbl")), ADD1: { block: VG(t("sh_best")) }, ADD2: shadowTxt(t("sh_sec")) } }) } } }),
+          B("st_beep", { fields: { K: "sndFanfare" } }),
+        ]) ] } } },
+      { id: "emogame", name: t("ex_emogame"), desc: t("ex_emogame_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
+          CLEAR(),
+          B("st_cam_view", { fields: { MODE: "cmMirror" } }),
+          SET(t("sh_score"), B("math_number", { fields: { NUM: 0 } })),
+          SET(t("sh_codes"), B("lists_split", { fields: { MODE: "SPLIT" }, inputs: {
+            INPUT: shadowTxt(t("sh_emoCodes")), DELIM: shadowTxt(",") } })),
+          SET(t("sh_names"), B("lists_split", { fields: { MODE: "SPLIT" }, inputs: {
+            INPUT: shadowTxt(t("sh_emoNames")), DELIM: shadowTxt(",") } })),
+          B("controls_repeat_ext", { inputs: { TIMES: shadowNum(4), DO: { block: chain([
+            SET(t("sh_pick"), B("math_random_int", { inputs: { FROM: shadowNum(1), TO: shadowNum(4) } })),
+            B("st_show_text", { inputs: { TEXT: { block: B("text_join", { extraState: { itemCount: 2 }, inputs: {
+              ADD0: { block: B("lists_getIndex", { fields: { MODE: "GET", WHERE: "FROM_START" }, inputs: {
+                VALUE: { block: VG(t("sh_names")) }, AT: { block: VG(t("sh_pick")) } } }) },
+              ADD1: shadowTxt(t("sh_emoShow")) } }) } } }),
+            B("st_wait", { inputs: { SEC: shadowNum(2) } }),
+            SET(t("sh_face"), B("res_of", { fields: { KIND: "face_attr" }, inputs: { IMG: { block: B("ai_capture") } } })),
+            B("controls_if", { extraState: { hasElse: true }, inputs: {
+              IF0: { block: B("res_has", { inputs: { RES: { block: VG(t("sh_face")) },
+                NAME: { block: B("lists_getIndex", { fields: { MODE: "GET", WHERE: "FROM_START" }, inputs: {
+                  VALUE: { block: VG(t("sh_codes")) }, AT: { block: VG(t("sh_pick")) } } }) } } }) },
+              DO0: { block: chain([
+                B("math_change", { fields: { VAR: { name: t("sh_score") } }, inputs: { DELTA: shadowNum(1) } }),
+                B("st_beep", { fields: { K: "sndCoin" } }),
+                B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_success")) } }),
+              ]) },
+              ELSE: { block: chain([
+                B("st_beep", { fields: { K: "beepNo" } }),
+                B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_miss")) } }),
+              ]) } } }),
+            B("st_wait", { inputs: { SEC: shadowNum(1) } }),
+          ]) } } }),
+          B("st_show_text", { inputs: { TEXT: { block: B("text_join", { extraState: { itemCount: 3 }, inputs: {
+            ADD0: shadowTxt(t("sh_scoreLbl")), ADD1: { block: VG(t("sh_score")) }, ADD2: shadowTxt(t("sh_outOf")) } }) } } }),
+        ]) ] } } },
+      { id: "hunt", name: t("ex_hunt"), desc: t("ex_hunt_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
+          CLEAR(),
+          B("st_cam_view", { fields: { MODE: "cmNormal" } }),
+          SET(t("sh_items"), B("lists_split", { fields: { MODE: "SPLIT" }, inputs: {
+            INPUT: shadowTxt(t("sh_huntList")), DELIM: shadowTxt(",") } })),
+          B("tm_reset"),
+          B("controls_repeat_ext", { inputs: { TIMES: shadowNum(3), DO: { block: chain([
+            SET(t("sh_find"), B("lists_getIndex", { fields: { MODE: "GET", WHERE: "RANDOM" }, inputs: {
+              VALUE: { block: VG(t("sh_items")) } } })),
+            B("st_show_text", { inputs: { TEXT: { block: B("text_join", { extraState: { itemCount: 2 }, inputs: {
+              ADD0: { block: VG(t("sh_find")) }, ADD1: shadowTxt(t("sh_huntShow")) } }) } } }),
+            B("controls_whileUntil", { fields: { MODE: "UNTIL" }, inputs: {
+              BOOL: { block: B("res_has", { inputs: {
+                RES: { block: B("res_of", { fields: { KIND: "object" }, inputs: { IMG: { block: B("ai_capture") } } }) },
+                NAME: { block: VG(t("sh_find")) } } }) },
+              DO: { block: B("st_wait", { inputs: { SEC: shadowNum(0.5) } }) } } }),
+            B("st_boxes"),
+            B("st_beep", { fields: { K: "sndCoin" } }),
+            B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_found")) } }),
+            B("st_wait", { inputs: { SEC: shadowNum(1) } }),
+          ]) } } }),
+          B("st_show_text", { inputs: { TEXT: { block: B("text_join", { extraState: { itemCount: 3 }, inputs: {
+            ADD0: shadowTxt(t("sh_huntDone")),
+            ADD1: { block: B("math_round", { fields: { OP: "ROUND" }, inputs: { NUM: { block: B("tm_timer") } } }) },
+            ADD2: shadowTxt(t("sh_sec")) } }) } } }),
+          B("st_beep", { fields: { K: "sndFanfare" } }),
+        ]) ] } } },
+      { id: "crown", name: t("ex_crown"), desc: t("ex_crown_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
+          CLEAR(),
+          B("st_cam_view", { fields: { MODE: "cmMirror" } }),
+          B("sp_put", { fields: { NAME: t("sh_crown"), LOOK: "lkCrown" }, inputs: { X: shadowNum(320), Y: shadowNum(100) } }),
+          B("sp_show", { fields: { NAME: t("sh_crown"), MODE: "svHide" } }),
+          B("ev_forever", { inputs: { FPS: shadowNum(8), DO: { block: chain([
+            SET(t("sh_face"), B("res_of", { fields: { KIND: "face" }, inputs: { IMG: { block: B("ai_capture") } } })),
+            B("controls_if", { extraState: { hasElse: true }, inputs: {
+              IF0: { block: B("logic_compare", { fields: { OP: "GT" }, inputs: {
+                A: { block: B("res_count", { inputs: { RES: { block: VG(t("sh_face")) } } }) }, B: shadowNum(0) } }) },
+              DO0: { block: chain([
+                B("sp_show", { fields: { NAME: t("sh_crown"), MODE: "svShow" } }),
+                B("sp_size", { fields: { NAME: t("sh_crown") }, inputs: {
+                  S: { block: B("res_nth", { fields: { KEY: "w" }, inputs: { RES: { block: VG(t("sh_face")) }, N: shadowNum(1) } }) } } }),
+                B("sp_goto", { fields: { NAME: t("sh_crown") }, inputs: {
+                  X: { block: B("res_nth", { fields: { KEY: "x" }, inputs: { RES: { block: VG(t("sh_face")) }, N: shadowNum(1) } }) },
+                  Y: { block: B("math_arithmetic", { fields: { OP: "MINUS" }, inputs: {
+                    A: { block: B("res_nth", { fields: { KEY: "y" }, inputs: { RES: { block: VG(t("sh_face")) }, N: shadowNum(1) } }) },
+                    B: { block: B("math_arithmetic", { fields: { OP: "MULTIPLY" }, inputs: {
+                      A: { block: B("res_nth", { fields: { KEY: "h" }, inputs: { RES: { block: VG(t("sh_face")) }, N: shadowNum(1) } }) },
+                      B: shadowNum(0.75) } }) } } }) } } }),
+              ]) },
+              ELSE: { block: B("sp_show", { fields: { NAME: t("sh_crown"), MODE: "svHide" } }) } } }),
+          ]) } } }),
+        ]) ] } } },
       { id: "result", lv: 2, name: t("ex_result"), desc: t("ex_result_d"),
         state: { blocks: { languageVersion: 0, blocks: [ chain([
           CLEAR(),
@@ -2952,7 +3095,8 @@ def texts_of(result):
     const list = document.getElementById("exList");
     list.innerHTML = "";
     /* 위에 '만들어 보기(프로젝트)', 아래에 '기능 익히기' — 수업에서는 프로젝트부터 고른다 */
-    const PROJECTS = ["ez_rocket", "ez_hand", "ez_face", "guess", "catch", "handgame", "result", "rps", "greet"];
+    const PROJECTS = ["ez_rocket", "ez_hand", "ez_face", "guess", "react", "catch", "handgame", "emogame", "hunt", "crown",
+                      "result", "rps", "greet"];
     const lvNow = { easy: 0, basic: 1, all: 2 }[LEVEL];
     const lvOf = ex => (ex.lv == null ? 1 : ex.lv);
     const all = EXAMPLES().filter(ex => LEVEL === "easy" ? lvOf(ex) === 0 : lvOf(ex) <= lvNow);
