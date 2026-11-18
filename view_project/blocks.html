@@ -2315,7 +2315,7 @@ def texts_of(result):
   });
 
   /* 블록 수준 — 쉬움 · 기본 · 전체. 고른 것은 이 PC 에 남고, 작품을 저장할 때 같이 적힌다 */
-  var LEVEL = "basic";
+  var LEVEL = "all";                   // 처음 기본값 — 지금까지처럼 모든 블록
   try { const v = localStorage.getItem("vapi-blk-level"); if (["easy", "basic", "all"].includes(v)) LEVEL = v; } catch (e) {}
   const WS_OPTS = {
     media: "/blockly/media/",              // 오프라인용 (휴지통·확대축소 아이콘, 효과음)
