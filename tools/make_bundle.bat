@@ -21,6 +21,9 @@ echo.
 echo === [1/8] preflight ===
 if not exist models\vlm (echo [ERROR] models\ not found - run setup first & exit /b 1)
 if not exist main.py  (echo [ERROR] run from project root & exit /b 1)
+REM 배포 점검 — 새 화면 · 새 파이썬 파일 · 새 모델이 아래 목록과 설치 스크립트에 다 들어갔는지 (서버 · 모델 없이)
+"%PY_LOCAL%" tools\release_check.py
+if errorlevel 1 (echo [ERROR] release_check failed - fix the lists above first & exit /b 1)
 
 for /f %%v in ('python -c "import sys;print(str(sys.version_info.major)+'.'+str(sys.version_info.minor))"') do set PYVER=%%v
 if "%PYVER%"=="3.10" set EMBED=3.10.11

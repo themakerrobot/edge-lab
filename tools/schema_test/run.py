@@ -70,6 +70,17 @@ def boot():
     raise RuntimeError("시험 서버가 뜨지 않았습니다")
 
 
+def check_release():
+    """tools/release_check.py — 파일만 읽는다."""
+    import subprocess
+    script = pathlib.Path(__file__).resolve().parents[1] / "release_check.py"
+    r = subprocess.run([sys.executable, str(script)], capture_output=True, text=True)
+    for line in (r.stdout or "").strip().splitlines():
+        print("  " + line.strip())
+    print("  %s  배포 점검" % ("PASS" if r.returncode == 0 else "FAIL"))
+    return (1, 0) if r.returncode == 0 else (0, 1)
+
+
 def check_examples():
     """예제가 블록·함수를 빠짐없이 지나가는지 — node 로 돈다(없으면 건너뜀).
 
@@ -130,14 +141,17 @@ def main_():
     p_ok, p_fail = check_pyexamples.run(HOST)
     print("\n[5] 예제 커버리지 (블록·파이썬)")
     e_ok, e_fail = check_examples()
+    print("\n[6] 배포 점검 (번들 목록 · 셸 · 설치 스크립트)")
+    r_ok, r_fail = check_release()
 
-    ok, fail = a_ok + t_ok + m_ok + p_ok + e_ok, a_fail + t_fail + m_fail + p_fail + e_fail
+    ok, fail = a_ok + t_ok + m_ok + p_ok + e_ok + r_ok, a_fail + t_fail + m_fail + p_fail + e_fail + r_fail
     print("\n" + "=" * 46)
     print("  엔드포인트  %2d PASS / %d FAIL" % (a_ok, a_fail))
     print("  themaker   %2d PASS / %d FAIL" % (t_ok, t_fail))
     print("  직접 기동   %2d PASS / %d FAIL" % (m_ok, m_fail))
     print("  예제 실행   %2d PASS / %d FAIL" % (p_ok, p_fail))
     print("  예제        %2d PASS / %d FAIL" % (e_ok, e_fail))
+    print("  배포 점검   %2d PASS / %d FAIL" % (r_ok, r_fail))
     print("  합계       %2d PASS / %d FAIL" % (ok, fail))
     print("=" * 46)
     return 1 if fail else 0

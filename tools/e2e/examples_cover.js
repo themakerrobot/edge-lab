@@ -27,6 +27,8 @@ const SKIP_BLOCKS = {
   res_custom: "가르친 모델이 있어야 함",
   res_file: "모델 파일이 있어야 함",
   ai_rag: "[이야기]에서 자료를 먼저 만들어야 함",
+  bd_ok: "보드(MCU)가 꽂혀 있어야 함", bd_send: "보드(MCU)가 꽂혀 있어야 함",
+  bd_ask: "보드(MCU)가 꽂혀 있어야 함", bd_read: "보드(MCU)가 꽂혀 있어야 함",
 };
 const SKIP_FUNCS = {
   listen: "마이크에 대고 말해야 함",
@@ -34,6 +36,10 @@ const SKIP_FUNCS = {
   load: "사진 파일이 있어야 함",
   language: "화면 언어를 통째로 바꿔 버림",
   face_clear: "등록한 얼굴을 모두 지워 버림",
+  board_ports: "보드(MCU)가 꽂혀 있어야 함", board_connect: "보드(MCU)가 꽂혀 있어야 함",
+  board_disconnect: "보드(MCU)가 꽂혀 있어야 함", board_connected: "보드(MCU)가 꽂혀 있어야 함",
+  board_send: "보드(MCU)가 꽂혀 있어야 함", board_ask: "보드(MCU)가 꽂혀 있어야 함",
+  board_read: "보드(MCU)가 꽂혀 있어야 함",
 };
 
 function examples(html, marker, endMark, arg) {

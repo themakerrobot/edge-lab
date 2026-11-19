@@ -21,11 +21,18 @@
 | `hub.py` | 실행 중인 main 모듈·엔진 찾기 (`import main` 은 금물 — main.py 가 다시 실행된다) |
 | `db_routes.py` | 내가 준 자료에서 찾아 답하기(RAG) — 자료 저장·검색·답변 |
 | `themaker.py` | 학생 코드용 라이브러리 — `vision()`·`camera()`·`speak()` 등 |
+| `works_routes.py` | 내 작품(/works) — 이름 바꾸기 · 휴지통 |
+| `trash.py` | 지운 작품을 작업폴더의 `.trash` 로 옮긴다(바로 없애지 않는다) |
+| `board.py` · `board_routes.py` | 보드(MCU) 시리얼 — 글자 한 줄씩 주고받기, `/board/*` |
+| `appwin.py` | 앱 창(Chrome/Edge 전용 창, 기본은 키오스크) 띄우기 |
+| `folderpick.py` | 작업폴더 고르기 창 |
+| `sysinfo.py` | 이 컴퓨터 상태(메모리 · CPU 사용률) |
 | `view_project/` | 프론트 6페이지 (`index` 체험하기 · `blocks` 블록 코딩 · `code` 파이썬 · `train` 가르치기 · `talk` 대화 · `options` 설정) |
 | `paths.py` | 폴더 규칙 — `models/`(AI 모델) / `data/`(작업 파일) 분리·자동 이전 |
 | `run.bat` | 실행 |
 | `setup_deploy.ps1` | 설치 — 패키지 + 모델 다운로드 |
 | `requirements.txt` | 패키지 목록 (lock 파일이 있으면 그쪽 우선) |
+| `tools/release_check.py` | 배포 점검 — 서버 파일 · 화면 · 모델 · 패키지가 번들 목록 · 셸 · 설치 스크립트와 맞는지(서버 · 모델 없이). `make_bundle.bat` 와 schema 시험이 먼저 돌린다 |
 | `tools/schema_test/` | 모델 없이 응답 스키마 회귀 시험 — `tools\schema_test\run.bat` (가짜 엔진으로 서버를 띄워 엔드포인트·themaker 를 실제 호출) |
 | `tools/` | 개발·점검용 — 모델 변환(`setup.ps1`·`setup.sh`), 번들 생성(`make_bundle.bat`), 점검(`check.py`·`smoke_test.py`·`bundle_check.bat`), 버전 잠금(`freeze.ps1`)·업그레이드 시험(`upgrade_check.ps1`), 폰트, 런처 소스 |
 

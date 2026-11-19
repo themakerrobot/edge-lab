@@ -17,8 +17,11 @@ python tools\schema_test\run.py    (직접 부를 때)
 |---|---|
 | 엔드포인트 | 인식 계열 전부 + 한/영 두 언어 + `prompt` 가 서버까지 가는지 |
 | 삭제한 경로 | `face_pose`·`_e` 접미사·`txt2image` 등이 되살아나지 않았는지(404) |
-| 화면 | `/`·`/blocks`·`/code`·`/train`·`/options` 가 열리는지 |
+| 화면 | `/`·`/blocks`·`/code`·`/train`·`/options`·`/talk`·`/face` 가 열리는지 |
 | themaker | 기능 이름·한글 별칭·언어 전환·`draw()` 한글 라벨·오류 안내·이미지 편집 |
+| 얼굴 등록 | `__schema_test__` 이름으로 등록 → 누구인지 → 명단 · 파일 → 그 이름만 지우기 (모두 지우기는 하지 않는다) |
+| 예제 커버리지 | 툴박스 블록 · themaker 함수가 예제에 다 나오는지 (node) |
+| 배포 점검 | `tools/release_check.py` — 서버 파일 · 화면 · 모델이 번들 목록 · 셸 · 설치 스크립트에 다 들어갔는지 |
 
 ## 무엇을 못 보는가
 실제 인식 정확도, 블록 페이지 실행(Blockly), 소리·마이크. 이건 개발기에서 확인한다.
@@ -28,3 +31,4 @@ python tools\schema_test\run.py    (직접 부를 때)
 `DIRECTION`, `direction_words`)을 그대로 읽어 쓴다 — 이 부분을
 흉내 내면 시험이 무의미해지므로 그대로 두고, 추론하는 부분만 대신한다.
 기능을 더하면 `check_api.py` 의 `CASES`, `check_themaker.py` 에 한 줄씩 넣는다.
+새 화면 · 새 파이썬 파일 · 새 모델을 넣으면 `python tools/release_check.py` 가 고칠 곳(번들 목록 · PAGE_PATHS · embed.js · shell.js · setup.ps1 · setup.sh …)을 알려 준다.
