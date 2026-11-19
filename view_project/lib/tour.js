@@ -41,7 +41,7 @@
     "/try": [
       [null, { ko: "안녕! 여기는 체험하기예요.\n내 컴퓨터 안의 AI를 눌러서 만나 봐요.",
                en: "Hi! This is Try-It.\nMeet the AI running on your own computer." }],
-      ["#modelSelect", { ko: "무엇을 알아볼지 골라요.\n얼굴·사물·손·글자 같은 것들이 있어요.",
+      ["#aiPick", { ko: "무엇을 알아볼지 골라요.\n얼굴·사물·손·글자 같은 것들이 있어요.",
                           en: "Pick what to recognize —\nfaces, objects, hands, text, and more." }],
       ["#promptInput", { ko: "고른 것에 따라 여기에\n물어볼 말을 적기도 해요.",
                           en: "For some, type your question here." }],
