@@ -62,6 +62,7 @@ CASES = [
     ("얼굴 감정",        "/face/face_emotion",    "plain", None),
     ("얼굴 나이·성별",     "/face/face_age_gender", "plain", None),
     ("마스크",           "/face/mask_detect",       "plain", None),
+    ("누구인지(얼굴 구분)", "/face/who",             "plain", None),
     ("글자 인식",        "/code/ocr",               "text",  None),
     ("QR 인식",          "/code/barcode",           "qr",    None),
     ("배경 제거",        "/gan/portrait",           "plain", None),

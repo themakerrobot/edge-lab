@@ -82,6 +82,7 @@ dl_omz face-detection-retail-0005         "$MODELS/face"
 dl_omz age-gender-recognition-retail-0013 "$MODELS/face"
 dl_omz emotions-recognition-retail-0003   "$MODELS/face"
 dl_omz head-pose-estimation-adas-0001     "$MODELS/face"
+dl_omz face-reidentification-retail-0095  "$MODELS/face"   # 얼굴 구분 (파이보 · 파이브레인과 같은 파일)
 dl_omz single-image-super-resolution-1032 "$MODELS/gan"
 
 # AnimeGANv3 는 비상업 라이선스라 제외했다 (배경제거 U2Net · 화질개선 SR 만 사용)
