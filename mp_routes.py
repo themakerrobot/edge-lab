@@ -65,6 +65,57 @@ def _mp_image(bgr):
     return mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
 
 
+def face_points(bgr, box):
+    """얼굴 구분(retail-0095) 정렬용 — 얼굴 상자 둘레를 25% 넓혀 잘라 MediaPipe 얼굴 점 478개를 찾는다.
+    상자 가운데에 가장 가까운 얼굴의 점을 원래 그림 좌표(numpy Nx2)로 돌려준다. 못 찾거나 MediaPipe 가 없으면 None.
+    파이보 openpibo vision_face._points 와 같은 방식(같은 25%, 같은 검출기 설정 num_faces=2)."""
+    import numpy as np
+    try:
+        _load()
+    except Exception:
+        return None
+    if _face is None:
+        return None
+    h, w = bgr.shape[:2]
+    x1, y1, x2, y2 = [int(v) for v in box]
+    mx, my = int((x2 - x1) * 0.25), int((y2 - y1) * 0.25)
+    cx1, cy1, cx2, cy2 = max(0, x1 - mx), max(0, y1 - my), min(w, x2 + mx), min(h, y2 + my)
+    if cx2 - cx1 < 8 or cy2 - cy1 < 8:
+        return None
+    crop = np.ascontiguousarray(bgr[cy1:cy2, cx1:cx2])
+    with _lock:
+        res = _face.detect(_mp_image(crop))
+    if not res or not res.face_landmarks:
+        return None
+    cw, ch = cx2 - cx1, cy2 - cy1
+    best, best_d = None, None
+    for lms in res.face_landmarks:
+        pts = np.array([(lm.x * cw + cx1, lm.y * ch + cy1) for lm in lms], np.float64)
+        d = np.linalg.norm(pts.mean(0) - ((x1 + x2) / 2, (y1 + y2) / 2))
+        if best_d is None or d < best_d:
+            best, best_d = pts, d
+    return best
+
+
+def face_distances(bgr, boxes):
+    """얼굴 상자마다 거리(cm, 못 재면 0) — /face/mesh 와 같은 계산(홍채 지름, 화각 보정값)."""
+    try:
+        _load()
+        meshes = _mesh_boxes(bgr)
+    except Exception:
+        return [0] * len(boxes)
+    f_px = _f_px(bgr.shape[1])
+    out = []
+    for box in boxes:
+        iris = 0
+        for mbox, m_iris in meshes:
+            if _center_in(mbox, box):
+                iris = m_iris
+                break
+        out.append(int(f_px * IRIS_MM / iris / 10) if iris > 0 else 0)
+    return out
+
+
 def _read_640(path):
     """추론용 640폭 이미지와, 원본 좌표 복원을 위한 배율을 함께 반환."""
     img = cv2.imread(path)

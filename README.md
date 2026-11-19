@@ -80,6 +80,16 @@ speak("안녕하세요")                     # 말하기
 
 ![대화](docs/img/talk.png)
 
+### 얼굴 AI — 얼굴을 등록하고 AI 가 알아봐요
+
+이름을 적고 **[지금 화면으로 등록]** 하면, 그다음부터 카메라에 그 사람이 보일 때 화면에 이름이 뜹니다.
+처음 보는 사람은 '모르는 사람'. 아래 정보 칸에는 얼굴마다 나이 · 성별(AI 짐작) · 감정 · 방향 · 거리 · 마스크가 나옵니다.
+**말하기**를 켜면 알아본 사람에게 적어 둔 말(`[이름] 안녕하세요!`)을 읽어 줍니다.
+
+- 파이보 · 파이브레인과 **같은 모델 · 같은 명단 파일**입니다. **[파이보로 보낼 파일 받기]** 한 `facedb.json` 을 로봇의 `Face.load_db()` 로 바로 열고, 로봇이 `Face.save_db()` 한 파일도 여기서 엽니다.
+- **사진은 저장하지 않습니다.** 얼굴에서 뽑은 숫자(256개)만 이 컴퓨터의 `face/facedb.json` 에 두고, 이름별 · 전체 지우기가 있습니다. 다른 사람 얼굴은 허락을 받고 등록합니다.
+- 블록(누구인지 · 얼굴 등록)과 파이썬(`face_register` · `face_who` · `vision("who", img)` …)에서도 같은 명단을 씁니다.
+
 ### 설정 — 수업 전 점검
 
 **카메라 · 소리 · 마이크**가 되는지 한 번에 확인합니다. 마이크 시험은 3초 녹음해 그대로 되들려 주므로
@@ -113,6 +123,7 @@ AI를 메모리에 올리는 동안 진행 막대가 보이고, 그 사이 파�
 | `db` | 대화에 넣은 자료 |
 | `stats` | 사용 기록 · 학습 결과 |
 | `notebooks` | 코딩 실습 노트북 (lab.bat) |
+| `face` | 얼굴 AI 에서 등록한 얼굴 명단 `facedb.json` (사진 없이 숫자만) |
 
 설정의 **[폴더 열기]** 로 탐색기에서 바로 열립니다.
 
@@ -150,6 +161,7 @@ AI를 메모리에 올리는 동안 진행 막대가 보이고, 그 사이 파�
 | 사물 찾기 · 자세 · 분할 | easydetect ed-m · pose-m · MobileSAM (.onnx) | CPU |
 | 마스크 | MediaPipe mobilenet_v3_small 임베더 + 분류기 (`mask.onnx` 한 개) | CPU |
 | 얼굴 검출 · 나이/성별 · 감정 · 방향 | OpenVINO 프리트레인 | NPU |
+| 얼굴 구분(얼굴 AI · 얼굴 등록) | OpenVINO face-reidentification-retail-0095 (파이보 · 파이브레인과 같은 파일) | CPU |
 | 얼굴 거리 · 손동작 · 표정 학습 | MediaPipe | CPU |
 | 깊이 지도 | Depth Anything V2 Small | GPU |
 | 배경 제거 · 화질 개선 | U2Net · SR-1032 | GPU |
@@ -278,6 +290,16 @@ and it also shows you where the answer came from.
 
 ![Talk](docs/img/en/talk.png)
 
+### Face AI — register faces and let the AI recognise them
+
+Type a name and press **[Register from camera]**; from then on the name appears whenever that person is on camera.
+New faces show as 'Unknown'. The info panel below shows age · gender (AI guess) · emotion · direction · distance · mask for each face.
+Turn on **Speak** to have the recognised person greeted with your own sentence (`Hello, [name]!`).
+
+- **Same model and same list file as Pibo · PiBrain.** The `facedb.json` from **[Get the file for Pibo]** opens on the robot with `Face.load_db()`, and a file the robot saved with `Face.save_db()` opens here.
+- **Photos are not saved** — only numbers taken from the face (256 of them) in `face/facedb.json` on this computer; delete by name or all at once. Ask before registering someone else's face.
+- Blocks (who is it · register a face) and Python (`face_register` · `face_who` · `vision("who", img)` …) use the same list.
+
 ### Settings — check before class
 
 Confirm **camera · sound · microphone** all at once. The mic test records 3 seconds and plays it straight back,
@@ -311,6 +333,7 @@ just upload a photo instead. The camera turns on only at the moment a photo is t
 | `db` | Notes added in Talk |
 | `stats` | Usage records · training results |
 | `notebooks` | Coding lab notebooks (lab.bat) |
+| `face` | Face list registered in Face AI, `facedb.json` (numbers only, no photos) |
 
 **[Open folder]** in Settings opens it in Explorer.
 
@@ -348,6 +371,7 @@ Rules for changing the code are in [DEVELOP.md](DEVELOP.md).
 | Objects · pose · segmentation | easydetect ed-m · pose-m · MobileSAM (.onnx) | CPU |
 | Mask | MediaPipe mobilenet_v3_small embedder + classifier (one `mask.onnx`) | CPU |
 | Face detection · age/gender · emotion · direction | OpenVINO pretrained | NPU |
+| Face ID (Face AI · face registration) | OpenVINO face-reidentification-retail-0095 (same file as Pibo · PiBrain) | CPU |
 | Face distance · hand gestures · expression training | MediaPipe | CPU |
 | Depth map | Depth Anything V2 Small | GPU |
 | Background removal · upscaling | U2Net · SR-1032 | GPU |

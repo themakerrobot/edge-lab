@@ -80,6 +80,8 @@
       ko_d: "나만의 작은 언어모델을 만들어요", en_d: "Build your own tiny language model" },
     { href: "/signal", ic: "signal", cat: "ai", ko: "AI 신호 놀이", en: "AI signals",
       ko_d: "손·얼굴 신호로 규칙과 암호를", en_d: "Rules and passwords with hand & face signals" },
+    { href: "/face", ic: "face",  cat: "ai", ko: "얼굴 AI", en: "Face AI",
+      ko_d: "얼굴을 등록하고 AI 가 알아봐요", en_d: "Register faces and let the AI recognise them" },
     { href: "/sound", ic: "ear",   cat: "ai", ko: "소리 가르치기", en: "Teach sounds",
       ko_d: "내 소리를 AI 에게 가르쳐요", en_d: "Teach the AI your own sounds" },
     { href: "/blocks",  ic: "blocks", cat: "dev", core: true,  ko: "블록",       en: "Blocks",

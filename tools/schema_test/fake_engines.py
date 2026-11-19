@@ -126,6 +126,17 @@ class _Mask:
                 "name_en": "mask", "score": 91.0}
 
 
+class _Reid:
+    """얼굴 구분 흉내 — 같은 사진 · 같은 상자면 같은 숫자 256개(잘라 낸 얼굴 16x16 밝기)."""
+    def embed(self, bgr, box, pts=None):
+        x1, y1, x2, y2 = [int(v) for v in box]
+        crop = cv2.cvtColor(bgr[y1:y2, x1:x2], cv2.COLOR_BGR2GRAY)
+        v = cv2.resize(crop, (16, 16)).astype("float32").reshape(-1) - 127.5
+        v[0] += 1.0                                       # 단색 사진도 0 벡터가 되지 않게
+        import numpy as np
+        return v / (float(np.linalg.norm(v)) or 1.0)
+
+
 class _Face:
     def __init__(self):
         self.detect = _Detect()
@@ -133,6 +144,7 @@ class _Face:
         self.emotion = _Emotion()
         self.head_pose = _HeadPose()
         self.mask = _Mask()
+        self.reid = _Reid()
 
 
 class _VLM:

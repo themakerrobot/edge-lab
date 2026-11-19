@@ -171,7 +171,7 @@ NOTEBOOK_DIR = os.path.join(WORK_ROOT, "notebooks")
 
 # 작업폴더에 딸린 칸 이름 — 옮길 때·비었는지 볼 때 모두 이 목록을 쓴다.
 # 예전에는 같은 목록이 두 군데 적혀 있어서, 칸을 하나 늘리면 한쪽만 고쳐질 수 있었다.
-WORK_PARTS = ("user", "project", "pycode", "blocks", "db", "stats", "models", "notebooks")
+WORK_PARTS = ("user", "project", "pycode", "blocks", "db", "stats", "models", "notebooks", "face")
 
 # 임시 사진과 앱 창 프로필은 그 PC 의 것 — 옮겨 봐야 쓸모없으므로 앱데이터에 둔다.
 TMP_DIR = os.path.join(APPDATA_DIR, "tmp")
@@ -184,7 +184,9 @@ USAGE_PATH = os.path.join(STATS_DIR, "usage.json")
 
 # 모델 폴더(YOLO_DIR)는 초기화에서 뺀다 — 사람이 가져다 둔 파일이라
 # "만든 것 지우기"로 사라지면 안 된다.
-RESET_DIRS = [USER_DIR, PROJECT_DIR, PYCODE_DIR, DB_DIR, STATS_DIR, TMP_DIR]
+# 얼굴 명단(face/facedb.json — 얼굴 AI 에서 등록한 얼굴의 숫자)도 "만든 것 지우기" 에 들어간다
+FACE_DIR = os.path.join(WORK_ROOT, "face")
+RESET_DIRS = [USER_DIR, PROJECT_DIR, PYCODE_DIR, DB_DIR, STATS_DIR, TMP_DIR, FACE_DIR]
 # 위 WORK_PARTS 에서 뽑는다 — 목록을 두 벌 적어 두면 칸을 늘릴 때 한쪽만 고쳐진다
 WORK_SUBDIRS = [os.path.join(WORK_ROOT, n) for n in WORK_PARTS]
 

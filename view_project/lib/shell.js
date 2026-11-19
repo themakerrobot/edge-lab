@@ -40,6 +40,7 @@
     "/board":    { ko: "보드",       en: "Board" },
     "/sound": { ko: "소리 가르치기", en: "Teach sounds" },
     "/signal": { ko: "AI 신호 놀이", en: "AI signals" },
+    "/face": { ko: "얼굴 AI", en: "Face AI" },
     "/diary": { ko: "일기", en: "Diary" },
     "/piano": { ko: "피아노", en: "Piano" },
     "/word": { ko: "문장", en: "Words" },

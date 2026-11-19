@@ -411,12 +411,15 @@
       b_ez_seen: "카메라에 %1 이(가) 보이나?",
       b_ez_hand: "손 모양이 %1 인가?",
       b_ez_emo: "표정이 %1 인가?",
+      b_ez_who: "카메라에 보이는 사람이 %1 인가?", b_ez_who_tip: "얼굴 AI 에서 먼저 얼굴을 등록해 두어요.",
       b_ez_add: "점수 %1 올리기", b_ez_add_tip: "점수가 무대 위쪽에 보여요.",
       b_ez_reset: "점수 0 으로", b_ez_score: "점수",
       o_dRight: "→ 오른쪽", o_dLeft: "← 왼쪽", o_dUp: "↑ 위", o_dDown: "↓ 아래", o_aSmall: "조금", o_aBig: "많이",
       o_seeFace: "얼굴", o_seeHand: "손", o_seePerson: "사람",
       o_emo_happy: "웃는 얼굴", o_emo_sad: "슬픈 얼굴", o_emo_surprised: "놀란 얼굴", o_emo_angry: "화난 얼굴", o_emo_neutral: "무표정",
       sh_ezGood: "다섯 개! 잘했어요", sh_ezShowFace: "얼굴을 보여 주세요", sh_ezSmiled: "웃었네요! 😀", sh_ezSmile: "웃어 보세요", sh_ezThanks: "고마워요",
+      sh_whoName: "지민", sh_ezWhoHi: "지민 안녕! 👋", sh_ezWho: "누구지? (얼굴 AI 에서 먼저 등록해요)",
+      sh_whoAsk: "이름이 뭐예요?", sh_whoLook: "카메라를 봐 주세요", sh_whoHi: " 안녕하세요!", sh_whoUnknown: "누구인지 모르겠어요",
       ex_posture: "바른 자세 알리미 (15초 재기)", ex_posture_d: "자세 점으로 두 어깨 높이 차이를 재는 함수를 만들어 쓰고, 기울어진 채로 오래 있으면 알려 줘요. 잰 값은 표에 기록해 CSV 로 저장해요. (함수 · 자세 점 · 표)",
       ex_armcount: "팔 들기 운동 세기", ex_armcount_d: "손목이 코보다 올라갔다 내려오면 한 번. '올렸나' 상태 변수로 한 번만 세고, 최고 기록은 기억해 둬요. (상태 변수 · 논리 · 기억하기)",
       ex_booth: "얼굴 스티커 사진관", ex_booth_d: "사진을 찍어 찾은 얼굴마다 테두리와 글자를 좌표로 그려요. 얼굴 하나를 꾸미는 함수에 번호를 넘겨요. (매개변수 함수 · 좌표 편집 · 반복)",
@@ -492,7 +495,7 @@
       b_dt_remember: "%1 (으)로 %2 기억하기", b_dt_remember_tip: "다시 실행해도 남아요 (작품마다 따로). 최고 점수 같은 것을 담아요.",
       b_dt_recall: "기억한 %1", b_dt_recall_tip: "기억한 것이 없으면 0.",
       b_rag: "자료 %1 에서 %2 찾아 답하기", b_rag_tip: "[이야기] 화면에서 만든 내 자료에서 찾아 답해요.",
-      o_kobject: "사물", o_kface: "얼굴", o_kface_attr: "얼굴 분석(표정)", o_khand: "손동작", o_kocr: "글자",
+      o_kobject: "사물", o_kface: "얼굴", o_kface_attr: "얼굴 분석(표정)", o_kwho: "누구인지(등록한 얼굴)", o_khand: "손동작", o_kocr: "글자",
       o_kqr: "QR", o_kpose: "자세", o_kmask: "마스크",
       o_yname: "이름", o_yscore: "확률(%)", o_yx: "가운데 x", o_yy: "가운데 y", o_yw: "너비", o_yh: "높이",
       o_pbest: "확률이 가장 높은", o_pbiggest: "가장 큰",
@@ -626,6 +629,9 @@
       ex_hint: "누르면 지금 블록이 예제로 바뀌어요. 저장하지 않은 블록은 사라져요.",
       ex_greet: "얼굴 보이면 인사하기",
       ex_greet_d: "얼굴이 나타날 때까지 기다렸다가 인사해요. (이벤트 대기)",
+      ex_who: "얼굴 등록하고 이름 불러 주기",
+      ex_who_d: "이름을 묻고 얼굴을 등록한 뒤, 카메라에 그 사람이 보이면 이름을 불러 줘요. (얼굴 등록 · 누구인지 · 만약)",
+      ex_ez_who: "내 이름 불러 주기", ex_ez_who_d: "얼굴 AI 에서 등록한 사람이 보이면 인사해요. 이름 칸을 내 이름으로 바꿔요. (AI 눈 · 만약)",
       ex_rps: "가위바위보 대결",
       ex_rps_d: "내 손모양과 컴퓨터의 랜덤을 겨뤄요. (인식·판단)",
       ex_mymodel: "내가 가르친 AI 로 맞히기",
@@ -655,7 +661,7 @@
       sh_voiceF: "안녕하세요, 여자 목소리예요",
       sh_voiceM: "저는 남자 목소리, 느리게 말해요",
       sh_voiceFast: "이번엔 빠르게 말해 볼게요",
-      v_word: "말",
+      v_word: "말", v_who: "이름", v_seen: "보인사람",
       ex_count: "얼굴 수 세기",
       ex_count_d: "얼굴 개수를 변수에 담아 말해요. (변수·인식)",
       m_waitTimeout: "60초가 지나서 그냥 넘어가요",
@@ -672,6 +678,10 @@
       b_color_xy: "%1 의 x %2 y %3 색깔",
       b_hand: "%1 의 손 모양", b_hand_tip: "엄지척·브이·주먹·손바닥·검지위·사랑해 중 하나를 알려줘요. 없으면 '없음'.",
       b_face_dist: "%1 얼굴까지 거리(cm)", b_face_dist_tip: "홍채 크기로 카메라와 얼굴 사이 거리를 추정해요.",
+      b_who: "%1 에서 알아본 사람 이름", b_who_tip: "얼굴 AI 에서 등록한 사람이면 그 이름(가장 큰 얼굴부터), 모르는 사람만 보이면 빈 글자예요.",
+      b_face_reg: "%1 의 얼굴을 이름 %2 (으)로 등록하기",
+      b_face_reg_tip: "가장 큰 얼굴을 등록해요. 같은 사람을 각도를 바꿔 여러 번 등록하면 더 잘 알아봐요. 사진은 저장하지 않아요(숫자만).",
+      lbl_who: "— 누구인지 (얼굴 AI 와 같은 명단) —",
 
       sh_question: "무엇이 보이나요?", sh_hello: "안녕!", sh_win: "이겼다!",
 
@@ -739,12 +749,15 @@
       b_ez_seen: "camera sees a %1?",
       b_ez_hand: "hand is %1?",
       b_ez_emo: "face is %1?",
+      b_ez_who: "the person on camera is %1?", b_ez_who_tip: "Register the face in Face AI first.",
       b_ez_add: "add %1 to score", b_ez_add_tip: "The score shows at the top of the stage.",
       b_ez_reset: "set score to 0", b_ez_score: "score",
       o_dRight: "→ right", o_dLeft: "← left", o_dUp: "↑ up", o_dDown: "↓ down", o_aSmall: "little", o_aBig: "lot",
       o_seeFace: "face", o_seeHand: "hand", o_seePerson: "person",
       o_emo_happy: "smiling", o_emo_sad: "sad", o_emo_surprised: "surprised", o_emo_angry: "angry", o_emo_neutral: "neutral",
       sh_ezGood: "Five! Well done", sh_ezShowFace: "Show your face", sh_ezSmiled: "You smiled! 😀", sh_ezSmile: "Give me a smile", sh_ezThanks: "Thank you",
+      sh_whoName: "Mina", sh_ezWhoHi: "Hi, Mina! 👋", sh_ezWho: "Who is it? (register in Face AI first)",
+      sh_whoAsk: "What is your name?", sh_whoLook: "Look at the camera", sh_whoHi: ", hello!", sh_whoUnknown: "I do not know who this is",
       ex_posture: "Posture checker (15 s)", ex_posture_d: "Make a function that measures how uneven your shoulders are from body points, and get a warning if you stay tilted. Values go in a table saved as CSV. (functions · body points · tables)",
       ex_armcount: "Arm raise counter", ex_armcount_d: "One rep when the wrist goes above the nose and back down. A 'raised' state variable counts each rep once, and the best is remembered. (state variables · logic · remember)",
       ex_booth: "Face sticker photo booth", ex_booth_d: "Take a photo and draw a frame and text on every face with coordinates. A function decorates one face by its number. (functions with parameters · coordinate editing · loops)",
@@ -820,7 +833,7 @@
       b_dt_remember: "remember %2 as %1", b_dt_remember_tip: "Stays after you run again (per work). Good for a high score.",
       b_dt_recall: "remembered %1", b_dt_recall_tip: "0 if nothing was remembered.",
       b_rag: "answer %2 from material %1", b_rag_tip: "Answers from material you made in [Talk].",
-      o_kobject: "objects", o_kface: "faces", o_kface_attr: "face analysis (emotion)", o_khand: "hand gestures", o_kocr: "text",
+      o_kobject: "objects", o_kface: "faces", o_kface_attr: "face analysis (emotion)", o_kwho: "who it is (registered faces)", o_khand: "hand gestures", o_kocr: "text",
       o_kqr: "QR", o_kpose: "pose", o_kmask: "mask",
       o_yname: "name", o_yscore: "score (%)", o_yx: "center x", o_yy: "center y", o_yw: "width", o_yh: "height",
       o_pbest: "most confident", o_pbiggest: "biggest",
@@ -953,6 +966,9 @@
       ex_hint: "Loading replaces your current blocks. Unsaved work is lost.",
       ex_greet: "Greet when a face appears",
       ex_greet_d: "Waits for a face, then says hello. (event wait)",
+      ex_who: "Register a face and call the name",
+      ex_who_d: "Asks a name, registers the face, then calls the name whenever that person is seen. (face registration · who · if)",
+      ex_ez_who: "Call my name", ex_ez_who_d: "Greets a person registered in Face AI. Change the name to yours. (AI eyes · if)",
       ex_rps: "Rock-paper-scissors duel",
       ex_rps_d: "Your hand vs. a random pick. (detection & logic)",
       ex_mymodel: "Use the AI I trained",
@@ -982,7 +998,7 @@
       sh_voiceF: "Hello, this is a female voice",
       sh_voiceM: "I am a male voice, speaking slowly",
       sh_voiceFast: "Now I will speak fast",
-      v_word: "word",
+      v_word: "word", v_who: "name", v_seen: "seen",
       ex_count: "Count the faces",
       ex_count_d: "Stores the face count in a variable and says it. (variables)",
       m_waitTimeout: "60 seconds passed, moving on",
@@ -1000,6 +1016,10 @@
 
       b_hand: "hand gesture in %1", b_hand_tip: "Thumbs-up, victory, fist, open palm, pointing up or I-love-you. 'none' if no hand.",
       b_face_dist: "distance to the face in %1 (cm)", b_face_dist_tip: "Estimates camera-to-face distance from iris size.",
+      b_who: "name of the person recognised in %1", b_who_tip: "The registered name (largest face first). Empty text when only unknown faces are seen.",
+      b_face_reg: "register the face in %1 as %2",
+      b_face_reg_tip: "Registers the largest face. Register the same person a few times at different angles. Photos are not saved (numbers only).",
+      lbl_who: "— who is it (same list as Face AI) —",
 
       sh_question: "What do you see?", sh_hello: "Hi!", sh_win: "I won!",
 
@@ -1183,6 +1203,7 @@
                        seePerson: "has(vision('object', camera()), 'person')" })[field(b, "WHAT")] || "False",
       ez_hand: b => "has(vision('hand', camera()), " + q(field(b, "G")) + ")",
       ez_emo: b => "(first(vision('face_attr', camera()), 'name_en') == " + q(field(b, "E")) + ")",
+      ez_who: b => "has(vision('who', camera(), info=''), " + q(field(b, "NAME")) + ")",
       ez_score: () => { needScore = true; return "score"; },
       /* ---- 무대 · 입력 — 무대 캐릭터는 블록 화면 전용 ---- */
       ev_ask: b => "input(" + val(b, "Q", "''") + ")",
@@ -1224,6 +1245,7 @@
       ai_face_count: b => "len(vision('face', " + img(b, "IMG") + "))",
       ai_hand: b => "first_of(vision('hand', " + img(b, "IMG") + "), 'gesture')",
       ai_face_dist: b => "first_of(vision('distance', " + img(b, "IMG") + "), 'distance')",
+      ai_who: b => "face_who(" + img(b, "IMG") + ")",
       ai_ocr: b => "texts_of(vision('ocr', " + img(b, "IMG") + "))",
       ai_qr: b => "first_of(vision('qr', " + img(b, "IMG") + "), 'data')",
       ai_chat: b => "chat(" + val(b, "Q", "''") + ")",
@@ -1357,6 +1379,8 @@
         lastShown = img(b, "IMG");
         out.push(p + "r = vision(" + q(pick(M_MODE, field(b, "MODE"))) + ", " + lastShown + ")");
         out.push(p + "show(" + lastShown + ", r)");
+      } else if (T === "ai_face_register") {
+        out.push(p + "face_register(" + val(b, "NAME", "''") + ", " + img(b, "IMG") + ")");
       } else if (T === "st_say") {
         out.push(p + "speak(" + val(b, "TEXT", "''")
                  + voiceArg(field(b, "V"), field(b, "S")) + ")");
@@ -1639,7 +1663,7 @@ def texts_of(result):
   }
 
   /* 결과 블록이 쓰는 이름표 — 파이썬 themaker 의 vision 기능 이름 · POSE_PARTS 와 같다 */
-  const RES_KINDS = ["object", "face", "face_attr", "hand", "ocr", "qr", "pose", "mask"];
+  const RES_KINDS = ["object", "face", "face_attr", "who", "hand", "ocr", "qr", "pose", "mask"];
   const RES_KEYS = ["name", "score", "x", "y", "w", "h"];
   const POSE_PARTS = ["nose", "left_eye", "right_eye", "left_ear", "right_ear",
                       "left_shoulder", "right_shoulder", "left_elbow", "right_elbow",
@@ -1896,6 +1920,11 @@ def texts_of(result):
         args0: [ IMG ], tooltip: t("b_hand_tip") },
       { type: "ai_face_dist", message0: t("b_face_dist"), output: "Number", colour: C_AI,
         args0: [ IMG ], tooltip: t("b_face_dist_tip") },
+      { type: "ai_who", message0: t("b_who"), output: "String", colour: C_AI,
+        args0: [ IMG ], tooltip: t("b_who_tip") },
+      { type: "ai_face_register", message0: t("b_face_reg"), previousStatement: null, nextStatement: null,
+        colour: C_AI, inputsInline: true,
+        args0: [ IMG, { type: "input_value", name: "NAME", check: "String" } ], tooltip: t("b_face_reg_tip") },
       { type: "ai_ocr", message0: t("b_ocr"), output: "String", colour: C_AI, args0: [ IMG ] },
       { type: "ai_qr", message0: t("b_qr"), output: "String", colour: C_AI, args0: [ IMG ] },
       // AI 언어/변환
@@ -1965,6 +1994,8 @@ def texts_of(result):
       { type: "ez_emo", message0: t("b_ez_emo"), output: "Boolean", colour: C_AI,
         args0: [ { type: "field_dropdown", name: "E",
                    options: () => ["happy", "sad", "surprised", "angry", "neutral"].map(k => [t("o_emo_" + k), k]) } ] },
+      { type: "ez_who", message0: t("b_ez_who"), output: "Boolean", colour: C_AI,
+        args0: [ { type: "field_input", name: "NAME", text: t("sh_whoName") } ], tooltip: t("b_ez_who_tip") },
       { type: "ez_add", message0: t("b_ez_add"), previousStatement: null, nextStatement: null, colour: C_CORE.var,
         args0: [ { type: "input_value", name: "N", check: "Number" } ], tooltip: t("b_ez_add_tip") },
       { type: "ez_reset", message0: t("b_ez_reset"), previousStatement: null, nextStatement: null, colour: C_CORE.var },
@@ -2093,6 +2124,7 @@ def texts_of(result):
   G.forBlock["ez_seen"]   = b => [`(await RT.ez.seen(${J(b.getFieldValue("WHAT"))}))`, Order.ATOMIC];
   G.forBlock["ez_hand"]   = b => [`(await RT.ez.hand(${J(b.getFieldValue("G"))}))`, Order.ATOMIC];
   G.forBlock["ez_emo"]    = b => [`(await RT.ez.emo(${J(b.getFieldValue("E"))}))`, Order.ATOMIC];
+  G.forBlock["ez_who"]    = b => [`(await RT.ez.who(${J(b.getFieldValue("NAME"))}))`, Order.ATOMIC];
   G.forBlock["ez_add"]    = b => `RT.ez.add(${V(b,"N","1")});\n`;
   G.forBlock["ez_reset"]  = () => "RT.ez.reset();\n";
   G.forBlock["ez_score"]  = () => ["RT.ez.score", Order.MEMBER];
@@ -2175,6 +2207,8 @@ def texts_of(result):
   G.forBlock["ai_hand"]       = b => [`(await AI.hand(${V(b,"IMG","null")}))`, Order.ATOMIC];
   G.forBlock["ai_face_dist"]  = b => [`(await AI.faceDist(${V(b,"IMG","null")}))`, Order.ATOMIC];
   G.forBlock["ai_face_count"] = b => [`(await AI.faceCount(${V(b,"IMG","null")}))`, Order.ATOMIC];
+  G.forBlock["ai_who"]        = b => [`(await AI.who(${V(b,"IMG","null")}))`, Order.ATOMIC];
+  G.forBlock["ai_face_register"] = b => `await AI.faceRegister(${V(b,"IMG","null")}, ${V(b,"NAME","''")});\n`;
   G.forBlock["ai_ocr"]        = b => [`(await AI.ocr(${V(b,"IMG","null")}))`, Order.ATOMIC];
   G.forBlock["ai_qr"]         = b => [`(await AI.qr(${V(b,"IMG","null")}))`, Order.ATOMIC];
   G.forBlock["ai_ask"]        = b => [`(await AI.ask(${V(b,"IMG","null")}, ${V(b,"Q","''")}))`, Order.ATOMIC];
@@ -2331,6 +2365,9 @@ def texts_of(result):
         { kind: "block", type: "ai_face_dist" }, { kind: "block", type: "ai_hand" },
         { kind: "block", type: "ai_objects" },
         { kind: "block", type: "ai_ocr" }, { kind: "block", type: "ai_qr" },
+        { kind: "label", text: t("lbl_who") },
+        { kind: "block", type: "ai_who" },
+        { kind: "block", type: "ai_face_register", inputs: { NAME: txt(t("sh_whoName")) } },
         { kind: "label", text: t("lbl_my_model") },
         { kind: "block", type: "ai_custom" },
         { kind: "block", type: "ai_detect_file" },
@@ -2417,6 +2454,7 @@ def texts_of(result):
         { kind: "block", type: "ez_seen" },
         { kind: "block", type: "ez_hand" },
         { kind: "block", type: "ez_emo" },
+        { kind: "block", type: "ez_who" },
         { kind: "block", type: "ez_follow" } ] },
       { kind: "category", name: t("cat_sound"), ic: "sound", colour: C_SOUND, contents: [
         { kind: "block", type: "st_say", inputs: { TEXT: txt(t("sh_hello")) } },
@@ -2552,6 +2590,30 @@ def texts_of(result):
           B("ev_wait_face"),
           B("st_say", { inputs: { TEXT: shadowTxt(t("sh_hello")) } }),
           B("st_beep", { fields: { K: "beepOk" } }),
+        ]) ] } } },
+      { id: "who", name: t("ex_who"), desc: t("ex_who_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
+          CLEAR(),
+          B("st_cam_view", { fields: { MODE: "cmMirror" } }),
+          B("variables_set", { fields: { VAR: { name: t("v_who") } },
+            inputs: { VALUE: { block: B("ev_ask", { inputs: { Q: shadowTxt(t("sh_whoAsk")) } }) } } }),
+          B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_whoLook")) } }),
+          B("st_wait", { inputs: { SEC: shadowNum(2) } }),
+          B("ai_face_register", { inputs: { IMG: { block: B("ai_capture") }, NAME: { block: VG(t("v_who")) } } }),
+          B("ev_forever", { inputs: { FPS: shadowNum(1), DO: { block: chain([
+            B("variables_set", { fields: { VAR: { name: t("v_seen") } },
+              inputs: { VALUE: { block: B("ai_who", { inputs: { IMG: { block: B("ai_capture") } } }) } } }),
+            B("controls_if", { extraState: { hasElse: true }, inputs: {
+              IF0: { block: B("logic_compare", { fields: { OP: "NEQ" },
+                inputs: { A: { block: VG(t("v_seen")) }, B: shadowTxt("") } }) },
+              DO0: { block: chain([
+                B("st_show_text", { inputs: { TEXT: { block: B("text_join", { extraState: { itemCount: 2 },
+                  inputs: { ADD0: { block: VG(t("v_seen")) }, ADD1: shadowTxt(t("sh_whoHi")) } }) } } }),
+                B("st_say", { inputs: { TEXT: { block: B("text_join", { extraState: { itemCount: 2 },
+                  inputs: { ADD0: { block: VG(t("v_seen")) }, ADD1: shadowTxt(t("sh_whoHi")) } }) } } }),
+                B("st_wait", { inputs: { SEC: shadowNum(3) } }) ]) },
+              ELSE: { block: B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_whoUnknown")) } }) } } }),
+          ]) } } }),
         ]) ] } } },
       { id: "rps", name: t("ex_rps"), desc: t("ex_rps_d"),
         state: { blocks: { languageVersion: 0, blocks: [ chain([
@@ -2833,6 +2895,17 @@ def texts_of(result):
             B("controls_if", { inputs: {
               IF0: { block: B("ez_hand", { fields: { G: "Thumb_Up" } }) },
               DO0: { block: B("st_say", { fields: { V: "F1", S: "normal" }, inputs: { TEXT: shadowTxt(t("sh_ezThanks")) } }) } } }),
+          ]) } } }),
+        ]) ] } } },
+      { id: "ez_who", lv: 0, name: t("ex_ez_who"), desc: t("ex_ez_who_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
+          CLEAR(),
+          B("st_cam_view", { fields: { MODE: "cmMirror" } }),
+          B("ev_forever", { inputs: { FPS: shadowNum(2), DO: { block: chain([
+            B("controls_if", { extraState: { hasElse: true }, inputs: {
+              IF0: { block: B("ez_who", { fields: { NAME: t("sh_whoName") } }) },
+              DO0: { block: B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_ezWhoHi")) } }) },
+              ELSE: { block: B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_ezWho")) } }) } } }),
           ]) } } }),
         ]) ] } } },
       { id: "ez_dance", lv: 0, name: t("ex_ez_dance"), desc: t("ex_ez_dance_d"),
@@ -3499,15 +3572,15 @@ def texts_of(result):
 
   const exModal = document.getElementById("exModal");
   const EX_ICON = { ez_dance: "🤖", ez_song: "🎵", ez_rocket: "🚀", ez_apple: "🍎", ez_hand: "✋", ez_hide: "🙈", ez_drive: "🕹️",
-    ez_face: "😀", guess: "🔢", react: "⏱️", catch: "⭐", handgame: "🖐️", emogame: "🎭", hunt: "🔍", crown: "👑",
+    ez_face: "😀", ez_who: "🙋", who: "🪪", guess: "🔢", react: "⏱️", catch: "⭐", handgame: "🖐️", emogame: "🎭", hunt: "🔍", crown: "👑",
     posture: "🧍", armcount: "💪", booth: "📸", result: "📊", rps: "✌️", greet: "👋", mymodel: "🧠", modelfile: "📦",
     basics: "🧱", selfie: "🖼️", color: "🎨", sound: "🔊", echo: "🗣️", voices: "🎙️", count: "👥", checkall: "✅" };
   document.getElementById("exampleButton").addEventListener("click", () => {
     const list = document.getElementById("exList");
     list.innerHTML = "";
     /* 위에 '만들어 보기(프로젝트)', 아래에 '기능 익히기' — 수업에서는 프로젝트부터 고른다 */
-    const PROJECTS = ["ez_dance", "ez_song", "ez_rocket", "ez_apple", "ez_hand", "ez_hide", "ez_drive", "ez_face", "guess", "react", "catch", "handgame", "emogame", "hunt", "crown",
-                      "posture", "armcount", "booth", "result", "rps", "greet"];
+    const PROJECTS = ["ez_dance", "ez_song", "ez_rocket", "ez_apple", "ez_hand", "ez_hide", "ez_drive", "ez_face", "ez_who", "guess", "react", "catch", "handgame", "emogame", "hunt", "crown",
+                      "posture", "armcount", "booth", "result", "rps", "greet", "who"];
     const lvNow = { easy: 0, basic: 1, all: 2 }[LEVEL];
     const lvOf = ex => (ex.lv == null ? 1 : ex.lv);
     const all = EXAMPLES().filter(ex => LEVEL === "easy" ? lvOf(ex) === 0 : lvOf(ex) <= lvNow);
@@ -3838,7 +3911,9 @@ def texts_of(result):
   /* 결과 블록 — 파이썬 themaker 의 items · count · nth · has · best · biggest · pose_x 와 같은 규칙 */
   const RES_EP = { object: "object/object_search", face: "face/face_detect", face_attr: "face/face_analyze",
                    hand: "object/hand", ocr: "code/ocr", qr: "code/barcode",
-                   pose: "object/object_pose", mask: "face/mask_detect" };
+                   pose: "object/object_pose", mask: "face/mask_detect", who: "face/who" };
+  /* 누구인지는 이름만 쓴다 — 나이 · 감정 같은 얼굴 정보는 계산하지 않게 (빠르다) */
+  const RES_PARAMS = { who: { info: "" } };
   const RES = {
     list(d, kind, frac) {
       const arr = Array.isArray(d) ? d : (d && Array.isArray(d.object) ? d.object : []);
@@ -3936,7 +4011,7 @@ def texts_of(result):
     async result(img, kind) {
       const ep = RES_EP[kind];
       if (!ep) throw t("m_aiError") + kind;
-      const d = await post(ep, img);
+      const d = await post(ep, img, RES_PARAMS[kind]);
       const rows = RES.list(d, kind, false);
       AI._setBoxes(img, rows.filter(o => o.w > 0).map(o => ({ box: o.box, label: o.name })),
                    kind === "ocr" || kind === "qr" ? COLOR.text : kind === "object" ? COLOR.objects : COLOR.face);
@@ -4013,6 +4088,22 @@ def texts_of(result):
       const name = x => x.gesture;
       AI.addLayer(img, d.map(x => ({ box: x.box, label: name(x) })), COLORS.custom);
       return d.length ? name(d[0]) : t("r_none");
+    },
+    /* 누구인지 — 얼굴 AI 와 같은 명단(작업폴더 face/facedb.json). 알아본 사람 중 가장 큰 얼굴의 이름, 없으면 "" */
+    async who(img) {
+      const d = await post("face/who", img, { info: "" });
+      AI._setBoxes(img, d.map(f => ({ box: f.box, label: f.name })), COLOR.face);
+      const known = d.filter(f => f.known);
+      if (!known.length) return "";
+      const area = f => (f.box[2] - f.box[0]) * (f.box[3] - f.box[1]);
+      return known.reduce((a, c) => (area(c) > area(a) ? c : a)).name;
+    },
+    async faceRegister(img, name) {
+      const n = String(name == null ? "" : name).trim();
+      if (!n) throw t("m_aiError") + t("sh_whoAsk");
+      const d = await post("face/register", img, { name: n });
+      AI._setBoxes(img, [{ box: d.box, label: d.name + " ✓" }], COLOR.face);
+      return d.name;
     },
     async faceDist(img) {
       const d = await post("face/mesh", img);
@@ -4481,6 +4572,7 @@ def texts_of(result):
         return (await RT.ez._look(what === "seeFace" ? "face" : "hand")).length > 0;
       },
       async hand(g) { return RES.has(await RT.ez._look("hand"), g); },
+      async who(name) { return RES.has((await RT.ez._look("who")).filter(it => it.known), name); },
       async emo(e) {
         const r = await RT.ez._look("face_attr");
         return r.length > 0 && r[0].name_en === e;

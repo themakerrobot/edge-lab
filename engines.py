@@ -514,6 +514,69 @@ class MaskCls:
                 "score": round(float(x[idx]) * 100, 2)}
 
 
+# ---------------------------------------------------------------- 얼굴 구분 (얼굴 AI 앱 · 블록 · 파이썬)
+# 파이보 · 파이브레인(openpibo vision_face, 261104)과 같은 계산 — 같은 모델 · 같은 정렬 · 같은 판정이라
+# 여기서 만든 명단(facedb.py)을 파이보에서 그대로 쓴다. 숫자를 바꾸면 파이보 쪽도 같이 바꿀 것.
+REID_XML = MODELS / "face/face-reidentification-retail-0095.xml"
+#: retail-0095 정렬 기준점(128x128 기준 비율, OMZ face_recognition_demo · 파이보와 같은 값)
+#: 그림 왼쪽 눈 · 오른쪽 눈 · 코끝 · 입 왼쪽 끝 · 입 오른쪽 끝
+REID_REF5 = np.array([
+    (30.2946 / 96, 51.6963 / 112), (65.5318 / 96, 51.5014 / 112), (48.0252 / 96, 71.7366 / 112),
+    (33.5493 / 96, 92.3655 / 112), (62.7299 / 96, 92.2041 / 112)], np.float64)
+REID_SIZE = 128
+
+
+def _similarity(src, dst):
+    """점 src → dst 로 옮기는 닮음 변환(회전 · 크기 · 이동) 2x3 행렬 (Umeyama, 최소 제곱) — 파이보와 같은 식"""
+    src = np.asarray(src, np.float64)
+    dst = np.asarray(dst, np.float64)
+    ms, md = src.mean(0), dst.mean(0)
+    s, d = src - ms, dst - md
+    cov = d.T @ s / len(src)
+    u, sv, vt = np.linalg.svd(cov)
+    e = np.eye(2)
+    if np.linalg.det(u) * np.linalg.det(vt) < 0:
+        e[1, 1] = -1
+    r = u @ e @ vt
+    scale = np.trace(np.diag(sv) @ e) / ((s ** 2).sum() / len(src))
+    m = np.zeros((2, 3))
+    m[:, :2] = scale * r
+    m[:, 2] = md - scale * r @ ms
+    return m
+
+
+class FaceReid(OVModel):
+    """face-reidentification-retail-0095 — 정렬한 얼굴 128x128 BGR → 숫자 256개(L2 정규화).
+
+    정렬 점은 MediaPipe 얼굴 점 478개(mp_routes.face_points — 얼굴 상자 둘레 25% 를 넓혀 잘라 찾는다)에서 5개를 고른다.
+    점을 못 찾으면 상자만 잘라 넣는다(파이보와 같다 — 덜 정확하다).
+    파이보와 같게 CPU 에서 돈다(숫자가 기기마다 덜 흔들리게)."""
+
+    def __init__(self, device="CPU"):
+        super().__init__(REID_XML, device)
+        self.output = self.compiled.output(0)
+
+    def embed(self, bgr, box, pts=None):
+        if pts is not None:
+            src = np.array([
+                pts[[33, 133]].mean(0),     # 그림 왼쪽 눈 (가운데 = 두 눈꼬리 평균)
+                pts[[362, 263]].mean(0),    # 그림 오른쪽 눈
+                pts[1],                     # 코끝
+                pts[61],                    # 입 왼쪽 끝
+                pts[291],                   # 입 오른쪽 끝
+            ])
+            m = _similarity(src, REID_REF5 * REID_SIZE)
+            face = cv2.warpAffine(bgr, m, (REID_SIZE, REID_SIZE), flags=cv2.INTER_LINEAR,
+                                  borderMode=cv2.BORDER_REPLICATE)
+        else:
+            x1, y1, x2, y2 = [int(v) for v in box]
+            face = cv2.resize(bgr[y1:y2, x1:x2], (REID_SIZE, REID_SIZE))
+        x = face.transpose(2, 0, 1)[np.newaxis].astype(np.float32)
+        with self.lock:
+            vec = np.asarray(self.compiled([x])[self.output], np.float32).reshape(-1)
+        return vec / (float(np.linalg.norm(vec)) or 1.0)
+
+
 class FaceEngine:
     def __init__(self):
         self.detect = FaceDetector(DEV_FACE)
@@ -521,6 +584,8 @@ class FaceEngine:
         self.emotion = Emotion(DEV_FACE)
         self.head_pose = HeadPose(DEV_FACE)
         self.mask = MaskCls()
+        # 얼굴 구분은 모델 파일이 있을 때만 — 없으면 나머지 얼굴 기능은 그대로 돌고, 등록 · 구분만 안내를 낸다
+        self.reid = FaceReid() if REID_XML.exists() else None
 
 
 # ---------------------------------------------------------------- 변환 계열 (gan)

@@ -10,7 +10,9 @@
 | `main.py` | FastAPI 서버 — 전 엔드포인트, `/docs`, `/system`, `/ready`, 앱 창 실행 |
 | `engines.py` | OpenVINO 추론 엔진 + 백그라운드 로딩 |
 | `prompts.py` | VLM 프롬프트 템플릿·파서 |
-| `mp_routes.py` | MediaPipe — 얼굴 거리·방향, 손 제스처 |
+| `mp_routes.py` | MediaPipe — 얼굴 거리·방향, 손 제스처, 얼굴 구분용 5점(`face_points`) |
+| `face_routes.py` | 얼굴 AI API — `/face/who`(누구인지 + 얼굴 정보) · `/face/register` · `/face/db` · 명단 파일 받기/열기 |
+| `facedb.py` | 얼굴 명단 — 파이보 `openpibo-facedb` JSON 형식 · 판정(오차도 0.4). 서버 · 가짜 엔진이 같이 쓴다 |
 | `train_routes.py` | 나만의 AI 학습 API — 특징 추출(5모드)·모델 저장·작품·성적표·[로봇으로 보내기] |
 | `teachlab/` | 가르치기 특징 계산 — 로봇(openpibo-os.pibo `openpibo/modules/teachlab`)과 같은 코드·같은 모델 파일(`teachlab/models/`). 고칠 때는 로봇과 같이 |
 | `stats_routes.py` | 사용 통계 수집 |
@@ -135,3 +137,18 @@ edge-lab(PC)에서 가르친 AI 가 파이보 · PiBrain 에서 **같은 답**�
 | 스크롤 막대 · 키보드 테두리 | `lib/ui.css` | 얇고 둥근 막대, `:focus-visible` 은 청록 테두리 한 모양 |
 
 블록 화면에만 있는 것: 빈 무대 안내(파이보 + [예제 보기]), 실행 중 무대 테두리 · 배지, 무대 아래 `기록 · 변수 · 파이썬` 탭 카드, 그림 · 수준 배지 · 개념 칩이 있는 예제 카드(설명 끝 괄호의 낱말이 칩이 된다).
+
+## 얼굴 AI = 파이보와 같은 얼굴 구분 (261119)
+
+| | edge-lab | 기준(파이보 `openpibo/vision_face.py`) |
+|---|---|---|
+| 모델 | `models/face/face-reidentification-retail-0095` FP16 (HF `leeyunjai/edge-lab` `face/`) | 같은 파일 |
+| 정렬 | 얼굴 상자 + 25% 를 MediaPipe FaceLandmarker 로 → 눈 가운데 2 · 코 · 입꼬리 2 → Umeyama 닮음 변환 → 128×128 (`engines.FaceReid`, `mp_routes.face_points`) | `_points` · `_align` |
+| 판정 | 오차도 = (1 − 코사인) × 0.4/0.6, 가장 낮은 값이 0.4 아래면 그 사람, 아니면 `Guest`(화면은 모르는 사람) | `recognize` |
+| 명단 | 작업폴더 `face/facedb.json` — `{"format": "openpibo-facedb", "model": ..., "names": [...], "vectors": [[256], ...]}` | `save_db` · `load_db` |
+
+- 사진은 저장하지 않는다(숫자만). 파일은 이 PC 안에만 있고, 화면에서 이름별 · 전체 지우기, `paths.RESET_DIRS` 에도 들어간다
+- 모델이 없으면 `/face/db` 의 `ready` 가 false — 화면이 안내하고 등록 단추를 막는다. 나이 · 감정 같은 얼굴 정보는 그대로 된다
+- MediaPipe 가 없으면 정렬 없이 상자를 128×128 로 줄여 쓴다(정확도가 떨어진다 — 파이보와 같은 동작)
+- 시험: `tools/schema_test` 가 `__schema_test__` 이름으로 등록 → 누구인지 → 명단 · 파일 → 그 이름만 지운다(모두 지우기는 하지 않는다)
+- 확인(컨테이너, 실제 모델): 한 장 등록한 사람의 다른 사진 2장 오차도 0.13 · 0.14(알아봄), 다른 사람 3명 0.63 ~ 0.72(모르는 사람). 교실 아이 얼굴 · 쌍둥이에서의 정확도는 확인 필요

@@ -41,6 +41,7 @@ Get-Omz "face-detection-retail-0005"         $faceDir
 Get-Omz "age-gender-recognition-retail-0013" $faceDir
 Get-Omz "emotions-recognition-retail-0003"   $faceDir   # 5 classes
 Get-Omz "head-pose-estimation-adas-0001"     $faceDir
+Get-Omz "face-reidentification-retail-0095"  $faceDir   # face ID (same file as Pibo/PiBrain)
 Get-Omz "single-image-super-resolution-1032" $ganDir    # 4x SR
 
 # AnimeGANv3 는 비상업 라이선스라 제외했다 (배경제거 U2Net · 화질개선 SR 만 사용)

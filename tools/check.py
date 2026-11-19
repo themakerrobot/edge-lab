@@ -21,6 +21,7 @@ NEED = [
     "face/age-gender-recognition-retail-0013.xml",
     "face/emotions-recognition-retail-0003.xml",
     "face/head-pose-estimation-adas-0001.xml",
+    "face/face-reidentification-retail-0095.xml",   # 얼굴 구분(얼굴 AI · 파이보와 같은 파일)
     "gan/u2net.onnx",
     "gan/single-image-super-resolution-1032.xml",
     "gan/depth-v2s.xml",          # 깊이 지도 (상대 깊이 — 보여 주는 용도)
@@ -52,6 +53,19 @@ for m in targets:
     except Exception as e:
         fails += 1
         print("FAIL", m, f"({size} bytes)", "|", str(e)[:200])
+
+# 얼굴 구분(retail-0095) — 파이보와 같은 파일이어야 명단(facedb.json)을 주고받는다. 모양까지 본다
+_reid = pathlib.Path("models/face/face-reidentification-retail-0095.xml")
+if _reid.exists():
+    try:
+        _m = core.read_model(_reid)
+        _ins, _out = list(_m.inputs[0].get_partial_shape()), _m.outputs[0].get_partial_shape()
+        if [d.get_length() for d in _ins] != [1, 3, 128, 128] or _out[-1].get_length() != 256:
+            fails += 1
+            print("FAIL", _reid, "| 입력 1x3x128x128 · 출력 256 이 아님 — 다른 모델 파일", _ins, _out)
+    except Exception as e:
+        fails += 1
+        print("FAIL", _reid, "|", str(e)[:200])
 
 # 사물 찾기 · 자세 · 영역 — easydetect .onnx. 없으면 그 기능이 안 된다. 열리는지도 본다
 for rel in ["easydetect/ed-m/ed-m.onnx", "easydetect/pose/pose-m.onnx",

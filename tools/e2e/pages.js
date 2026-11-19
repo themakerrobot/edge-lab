@@ -27,7 +27,7 @@ const only = e => e.filter(x => !/blockly|Not implemented|getContext|createObjec
 
 (async () => {
   console.log('페이지        닫기 도구 파일패널 오버레이 실제오류');
-  for (const p of ['/', '/try', '/blocks', '/code', '/train', '/talk', '/options']) {
+  for (const p of ['/', '/try', '/blocks', '/code', '/train', '/talk', '/face', '/options']) {
     try {
       const { doc, errs, dom } = await open(p);
       /* 홈이 아닌 화면에는 [× 닫기] 가 하나 있어야 한다(lib/shell.js).

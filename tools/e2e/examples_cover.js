@@ -33,6 +33,7 @@ const SKIP_FUNCS = {
   wav_to_text: "wav 파일이 있어야 함",
   load: "사진 파일이 있어야 함",
   language: "화면 언어를 통째로 바꿔 버림",
+  face_clear: "등록한 얼굴을 모두 지워 버림",
 };
 
 function examples(html, marker, endMark, arg) {

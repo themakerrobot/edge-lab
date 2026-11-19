@@ -66,7 +66,7 @@ CASES = [
 # 없어진 경로 — 되살아나면 안 된다
 CHAT = "/chat/ask"
 
-PAGES = ["/", "/blocks", "/code", "/train", "/options", "/talk", "/ready",
+PAGES = ["/", "/blocks", "/code", "/train", "/options", "/talk", "/face", "/ready",
          "/system/packages", "/system/workdir"]
 
 # 있어야 하는 GET 경로 (없으면 화면에서 기능이 통째로 막힌다)
@@ -85,6 +85,40 @@ def run(host):
             print("  PASS  %-20s %s" % (name, path)); ok += 1
         except Exception as ex:
             print("  FAIL  %-20s %s\n        %s" % (name, path, ex)); fail += 1
+
+    # 얼굴 등록 → 누구인지 → 명단 → 파일 → 그 이름만 지우기 (모두 지우기는 하지 않는다 — 진짜 명단이 사라진다)
+    TEST = "__schema_test__"
+    try:
+        r = _post(host, "/face/register", {"name": TEST})
+        assert r["result"] == "ok" and r["data"]["name"] == TEST and r["data"]["count"] >= 1, r
+        print("  PASS  %-20s %s" % ("얼굴 등록", "/face/register")); ok += 1
+        r = _post(host, "/face/who", None)
+        f = r["data"][0]
+        assert r["result"] == "ok" and f["known"] and f["name"] == TEST and f["match"] < 0.4, r
+        assert {"age", "gender", "emotion", "direction", "distance", "mask"} <= set(f), sorted(f)
+        print("  PASS  %-20s %s" % ("누구인지", "/face/who")); ok += 1
+        r = _post(host, "/face/who", {"info": "", "lang": "en"})
+        f = r["data"][0]
+        assert f["name"] == TEST and "age" not in f and "distance" not in f, f
+        print("  PASS  %-20s %s" % ("누구인지(이름만)", "/face/who?info=")); ok += 1
+        with urllib.request.urlopen(host + "/face/db", timeout=10) as h:
+            d = json.loads(h.read().decode())["data"]
+        assert any(n["name"] == TEST for n in d["names"]) and d["model"] == "face-reidentification-retail-0095", d
+        with urllib.request.urlopen(host + "/face/db/file", timeout=10) as h:
+            fd = json.loads(h.read().decode())
+        assert fd["format"] == "openpibo-facedb" and TEST in fd["names"] and len(fd["vectors"][0]) == 256, list(fd)
+        print("  PASS  %-20s %s" % ("명단 · 파일", "/face/db")); ok += 1
+    except Exception as ex:
+        print("  FAIL  %-20s %s" % ("얼굴 등록 흐름", ex)); fail += 1
+    finally:
+        try:
+            req = urllib.request.Request(host + "/face/db/delete", data=json.dumps({"name": TEST}).encode(),
+                                         headers={"Content-Type": "application/json"})
+            d = json.loads(urllib.request.urlopen(req, timeout=10).read().decode())
+            assert d["result"] == "ok" and d["data"]["deleted"], d
+            print("  PASS  %-20s %s" % ("얼굴 지우기", "/face/db/delete")); ok += 1
+        except Exception as ex:
+            print("  FAIL  %-20s %s" % ("얼굴 지우기", ex)); fail += 1
 
     # 사진 없이 묻기 (업로드 없음)
     try:

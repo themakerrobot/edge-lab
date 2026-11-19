@@ -57,6 +57,21 @@ def run(host):
     case("vision('seg') 그림+이름", lambda: T.vision("seg", img),
          lambda r: isinstance(r["image"], np.ndarray) and r["object"][0]["name"] == "의자")
 
+    def _face():
+        name = "__schema_test__"
+        reg = T.face_register(name, img)
+        who = T.face_who(img)
+        rows = T.vision("누구", img)
+        listed = any(p["name"] == name for p in T.face_list())
+        import tempfile as _tf
+        path = T.face_save(_os.path.join(_tf.mkdtemp(), "facedb.json"))
+        back = T.face_load(path)
+        gone = T.face_delete(name)
+        return (reg["name"] == name, who == name, T.has(rows, name), listed,
+                any(p["name"] == name for p in back), gone,
+                not any(p["name"] == name for p in T.face_list()))
+    case("face_register/who/save/load/delete", _face, lambda r: all(r))
+
     case("chat() 사진 없이", lambda: T.chat("삼국지가 뭐야?"),
          lambda r: isinstance(r, str) and len(r) > 0)
 

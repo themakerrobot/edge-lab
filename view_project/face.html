@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>edge-lab — 얼굴 AI</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+  <link href="/fonts/fonts.css" rel="stylesheet">
+  <script>
+    try { if (localStorage.getItem("vapi-hc") === "1")
+            document.documentElement.classList.add("hc"); } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="/lib/tokens.css">
+  <script src="/lib/embed.js"></script>
+  <link rel="expect" href="#el-built" blocking="render">
+  <style>
+    /* 얼굴 AI — 누구인지(얼굴 등록 · 구분) + 나이 · 성별 · 감정 · 방향 · 거리 · 마스크 (/face/who, /face/register, /face/db).
+     *
+     * 화면(영상 위)에는 상자와 이름만, 나머지는 아래 정보 칸에 얼굴별로. 알아본 사람에게 말하기(TTS)를 켤 수 있다.
+     * 얼굴 구분은 파이보 · 파이브레인과 같은 모델 · 같은 명단 파일(작업폴더 face/facedb.json — facedb.py).
+     * 사진은 저장하지 않는다(숫자 256개만). 이 컴퓨터 밖으로 나가지 않는다.
+     */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; color: var(--ink); background: var(--paper);
+           font-family: var(--font-ui); line-height: 1.5; padding: var(--sp-2, 8px); gap: var(--sp-2, 8px); }
+    button, input, select { font-family: inherit; color: var(--ink); }
+    [hidden] { display: none !important; }        /* 단추 공통 display 가 hidden 을 덮지 않게 */
+    .panel.cam { flex: 1.45 1 0; }
+    .panel.reg { flex: 1 1 0; min-width: 320px; }
+    .panel-body { gap: 10px; }
+
+    /* 무대 — 거울처럼 보이는 영상 + 상자 · 이름 */
+    .stage { position: relative; width: 100%; aspect-ratio: 4 / 3; max-height: 58vh; align-self: center; flex: 0 0 auto;
+             background: #1d1f26; border-radius: var(--r-lg); overflow: hidden; box-shadow: inset 0 0 0 1px rgba(0,0,0,.25);
+             transition: box-shadow .2s; }
+    body.live .stage { box-shadow: 0 0 0 3px var(--ok), 0 6px 18px rgba(46, 143, 99, .25); }
+    .stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+    .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+    #camEmpty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+                gap: 8px; text-align: center; padding: 16px; color: #e8e6e1;
+                background: radial-gradient(circle at 50% 40%, #2a2d36 0%, #1d1f26 70%); }
+    #camEmpty[hidden] { display: none; }
+    #camEmpty img { width: 20%; max-width: 110px; filter: drop-shadow(0 6px 12px rgba(0,0,0,.35)); }
+    #camEmpty b { font-size: 17px; font-weight: 800; color: #fff; }
+    #camEmpty span { font-size: 13px; color: #c9c6bf; }
+    #liveBadge { position: absolute; top: 10px; right: 10px; display: none; align-items: center; gap: 6px; padding: 4px 10px;
+                 border-radius: 999px; background: rgba(20,22,28,.7); color: #fff; font-size: 12px; font-weight: 700; }
+    #liveBadge i { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; animation: blink 1s infinite; }
+    body.live #liveBadge { display: inline-flex; }
+    @keyframes blink { 50% { opacity: .25; } }
+
+    /* 정보 칸 — 얼굴마다 한 줄 */
+    .info { border: 1px solid var(--line-mid); border-radius: var(--r-lg); background: #fff; overflow: hidden; }
+    .info-head { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line-soft);
+                 background: var(--surface-2); font-size: 13px; font-weight: 800; color: var(--ink-2); flex-wrap: wrap; }
+    .info-head .sp { flex: 1; }
+    .chk { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; font-weight: 600; color: var(--ink-2); cursor: pointer; }
+    .chk input { accent-color: var(--accent); }
+    #faces { padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; min-height: 52px; }
+    .face-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; }
+    .face-row .who { font-weight: 800; font-size: 14px; padding: 2px 10px; border-radius: 999px; background: #f0ece4; color: var(--ink-2); }
+    .face-row .who.known { background: #e7f6ee; color: #1f6b47; }
+    .face-row .chip { padding: 1px 8px; border-radius: 6px; background: #f6f3ed; color: #5b5348; font-size: 12.5px; }
+    .face-row .chip small { color: #8a8174; }
+    .empty { color: #8a8174; font-size: 13px; }
+
+    /* 말하기 */
+    .speak { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 12px; border-top: 1px solid var(--line-soft); font-size: 13px; }
+    .speak input[type=text] { flex: 1 1 200px; min-width: 0; height: 32px; padding: 0 10px; border: 1px solid var(--line-mid);
+                              border-radius: var(--r-sm); font-size: 13px; }
+    .speak select { height: 32px; border: 1px solid var(--line-mid); border-radius: var(--r-sm); padding: 0 6px; background: #fff; font-size: 12.5px; }
+    .switch { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; cursor: pointer; }
+    .switch input { width: 34px; height: 20px; appearance: none; border-radius: 999px; background: #d8d1c3; position: relative; cursor: pointer;
+                    transition: background .15s; }
+    .switch input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff;
+                           box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: left .15s; }
+    .switch input:checked { background: var(--ok); }
+    .switch input:checked::after { left: 16px; }
+
+    /* 등록 칸 */
+    .field { display: flex; gap: 8px; }
+    .field input { flex: 1 1 auto; min-width: 0; height: 40px; padding: 0 12px; border: 1px solid var(--line-mid); border-radius: var(--r-sm); font-size: 15px; }
+    .bigbtn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 14px;
+              border-radius: var(--r-sm); border: 1px solid var(--line-mid); background: #fff; font-weight: 700; font-size: 13.5px; cursor: pointer; }
+    .bigbtn.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .bigbtn:disabled { opacity: .5; cursor: not-allowed; }
+    .tip { font-size: 12.5px; color: var(--ink-2); line-height: 1.5; }
+    #regMsg { font-size: 13px; font-weight: 700; min-height: 20px; }
+    #regMsg.ok { color: #1f6b47; } #regMsg.bad { color: var(--danger); }
+    .people { border: 1px solid var(--line-mid); border-radius: var(--r-lg); background: #fff; overflow: hidden; flex: 1 1 auto; min-height: 120px;
+              display: flex; flex-direction: column; }
+    .people-head { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line-soft);
+                   background: var(--surface-2); font-size: 13px; font-weight: 800; color: var(--ink-2); }
+    .people-head .sp { flex: 1; }
+    #people { overflow: auto; flex: 1 1 auto; }
+    .person { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--line-soft); }
+    .person .av { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-bg);
+                  color: var(--accent); font-weight: 800; font-size: 14px; flex: 0 0 auto; }
+    .person b { flex: 1; font-size: 14px; }
+    .person small { color: #8a8174; font-size: 12px; }
+    .person button { border: 0; background: transparent; color: #a3321f; font-size: 12.5px; font-weight: 700; padding: 4px 8px;
+                     border-radius: 6px; cursor: pointer; }
+    .person button:hover { background: #fdecea; }
+    .files { display: flex; flex-wrap: wrap; gap: 6px; }
+    .files .bigbtn { height: 34px; font-size: 12.5px; padding: 0 10px; }
+    #clearAll { color: var(--danger); }
+    .note { font-size: 12px; color: #6b6255; background: #f6f3ed; border-radius: var(--r-sm); padding: 8px 10px; line-height: 1.5; }
+    .warn { font-size: 13px; color: #8a3a12; background: #fdf0e6; border: 1px solid #f2cfb4; border-radius: var(--r-sm); padding: 8px 10px; }
+    .warn[hidden] { display: none; }
+    @media (max-width: 1023px) { .panel, .panel-body { overflow: visible; } .panel.reg { min-width: 0; } }
+  </style>
+  <link rel="stylesheet" href="/lib/ui.css">
+  <link rel="stylesheet" href="/lib/shell.css">
+</head>
+<body data-density="explore">
+  <div class="titlebar">
+    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요"><img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b></a>
+    <span class="tb-sep"></span><span class="tb-app" id="txtTitle"></span>
+    <div class="h-tools"><button id="langButton" title="한국어 / English">EN</button></div>
+  </div>
+  <div class="shell-body"><div class="workbench"><div class="main-container">
+
+    <div class="panel cam">
+      <div class="panel-head">
+        <span class="q"><span class="qnum">1</span><span class="qtext" id="txtQ1">카메라로 봐요</span></span>
+        <div class="ph-tools">
+          <button id="camOn" class="btn-go" type="button"></button>
+          <button id="camOff" class="btn-stop" type="button" hidden></button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="stage" id="stage">
+          <video id="video" autoplay playsinline muted></video>
+          <canvas id="overlay" width="640" height="480"></canvas>
+          <div id="liveBadge"><i></i><span id="txtLive"></span></div>
+          <div id="camEmpty">
+            <img src="/assets/pibo-hello.png" alt="">
+            <b id="txtEmptyT"></b>
+            <span id="txtEmptyS"></span>
+          </div>
+        </div>
+        <div class="info">
+          <div class="info-head">
+            <span id="txtInfo"></span><span class="sp"></span>
+            <label class="chk"><input type="checkbox" data-info="age" checked><span data-t="age"></span></label>
+            <label class="chk"><input type="checkbox" data-info="gender" checked><span data-t="gender"></span></label>
+            <label class="chk"><input type="checkbox" data-info="emotion" checked><span data-t="emotion"></span></label>
+            <label class="chk"><input type="checkbox" data-info="dir" checked><span data-t="dir"></span></label>
+            <label class="chk"><input type="checkbox" data-info="dist" checked><span data-t="dist"></span></label>
+            <label class="chk"><input type="checkbox" data-info="mask"><span data-t="mask"></span></label>
+          </div>
+          <div id="faces"></div>
+          <div class="speak">
+            <label class="switch"><input type="checkbox" id="speakOn"><span id="txtSpeak"></span></label>
+            <input type="text" id="speakText" maxlength="80">
+            <select id="voice"></select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel reg">
+      <div class="panel-head">
+        <span class="q"><span class="qnum">2</span><span class="qtext" id="txtQ2">얼굴 등록</span></span>
+      </div>
+      <div class="panel-body">
+        <div class="warn" id="noModel" hidden></div>
+        <div class="field">
+          <input type="text" id="regName" maxlength="30" autocomplete="off">
+          <button class="bigbtn btn-primary" id="regBtn" type="button"></button>
+        </div>
+        <div class="field">
+          <button class="bigbtn" id="regPhoto" type="button"></button>
+          <input type="file" id="regFile" accept="image/*" hidden>
+        </div>
+        <div id="regMsg"></div>
+        <div class="tip" id="txtTip"></div>
+        <div class="people">
+          <div class="people-head"><span id="txtPeople"></span><span class="sp"></span><span id="peopleCount"></span></div>
+          <div id="people"></div>
+        </div>
+        <div class="files">
+          <button class="bigbtn" id="dlFile" type="button"></button>
+          <button class="bigbtn" id="openFolder" type="button"></button>
+          <button class="bigbtn" id="loadFileBtn" type="button"></button>
+          <input type="file" id="loadFile" accept=".json,application/json" hidden>
+          <button class="bigbtn" id="clearAll" type="button"></button>
+        </div>
+        <div class="note" id="txtNote"></div>
+      </div>
+    </div>
+
+  </div></div></div>
+
+  <script>
+  (function () {
+    "use strict";
+    var LANG = "ko";
+    try { LANG = localStorage.getItem("vapiLang") === "en" ? "en" : "ko"; } catch (e) {}
+    document.documentElement.lang = LANG;
+    var I18N = {
+      ko: { title: "edge-lab — 얼굴 AI", lang: "EN", q1: "카메라로 봐요", q2: "얼굴 등록",
+            camOn: "카메라 켜기", camOff: "카메라 끄기", live: "보는 중",
+            emptyT: "카메라를 켜 보세요", emptyS: "등록한 사람은 이름으로, 처음 보는 사람은 '모르는 사람'으로 알려 줘요.",
+            noCam: "카메라를 쓸 수 없어요 — 설정에서 카메라를 확인해 주세요. 사진으로 등록은 할 수 있어요.",
+            info: "얼굴 정보", age: "나이", gender: "성별", emotion: "감정", dir: "방향", dist: "거리", mask: "마스크",
+            noFace: "얼굴이 보이지 않아요.", camFirst: "카메라를 켜면 여기에 얼굴마다 정보가 나와요.",
+            ageGuess: "약 {n}살", guess: "AI 짐작", cm: "{n}cm", maskOn: "마스크 씀", maskOff: "마스크 안 씀",
+            similar: "닮은 정도", speak: "말하기", speakDef: "[이름] 안녕하세요!", speakPh: "[이름] 자리에 알아본 이름이 들어가요",
+            voice: "목소리 {v}",
+            namePh: "이름 (예: 지민)", reg: "지금 화면으로 등록", regPhoto: "사진으로 등록",
+            regNeedName: "이름을 먼저 적어 주세요.", regNeedCam: "카메라를 켜거나 사진으로 등록해 주세요.",
+            regOk: "'{name}' 을(를) 등록했어요 ({c}번째)", regBusy: "등록하는 중…",
+            tip: "같은 사람을 정면 · 조금 옆 · 웃는 얼굴로 3번쯤 등록하면 더 잘 알아봐요.",
+            people: "등록한 사람", peopleN: "{p}명 · {n}장", none: "아직 등록한 사람이 없어요.", times: "{n}번 등록",
+            del: "지우기", delAsk: "'{name}' 을(를) 지울까요?",
+            dl: "파이보로 보낼 파일 받기", folder: "명단 폴더 열기", load: "파이보 파일 열기",
+            loadAsk: "지금 명단을 이 파일로 바꿀까요? (지금 명단은 사라져요)", loadOk: "명단을 열었어요 — {p}명",
+            clear: "모두 지우기", clearAsk: "등록한 얼굴을 모두 지울까요? 되돌릴 수 없어요.",
+            noModel: "얼굴 구분 모델이 없어요 — setup 을 다시 돌려 주세요. (나이 · 감정 같은 얼굴 정보는 볼 수 있어요)",
+            note: "사진은 저장하지 않아요. 얼굴에서 뽑은 숫자만 이 컴퓨터의 작업폴더(face/facedb.json)에 저장돼요. 파이보 · 파이브레인과 같은 파일이라 그대로 옮겨 쓸 수 있어요(Face.load_db). 다른 사람 얼굴은 허락을 받고 등록해요.",
+            unknown: "모르는 사람" },
+      en: { title: "edge-lab — Face AI", lang: "한", q1: "Look with the camera", q2: "Register faces",
+            camOn: "Camera on", camOff: "Camera off", live: "Watching",
+            emptyT: "Turn on the camera", emptyS: "Registered people are named; new faces show as 'Unknown'.",
+            noCam: "The camera cannot be used — check it in Settings. You can still register from a photo.",
+            info: "Face info", age: "Age", gender: "Gender", emotion: "Emotion", dir: "Direction", dist: "Distance", mask: "Mask",
+            noFace: "No face is visible.", camFirst: "Turn on the camera to see info for each face here.",
+            ageGuess: "about {n}", guess: "AI guess", cm: "{n} cm", maskOn: "mask on", maskOff: "no mask",
+            similar: "match", speak: "Speak", speakDef: "Hello, [name]!", speakPh: "[name] is replaced with the recognised name",
+            voice: "Voice {v}",
+            namePh: "Name (e.g. Mina)", reg: "Register from camera", regPhoto: "Register from a photo",
+            regNeedName: "Type a name first.", regNeedCam: "Turn on the camera or register from a photo.",
+            regOk: "Registered '{name}' ({c})", regBusy: "Registering…",
+            tip: "Register the same person about 3 times — front, a little sideways, smiling — so they are recognised better.",
+            people: "Registered people", peopleN: "people {p} · photos {n}", none: "Nobody is registered yet.", times: "{n} times",
+            del: "Delete", delAsk: "Delete '{name}'?",
+            dl: "Get the file for Pibo", folder: "Open the list folder", load: "Open a Pibo file",
+            loadAsk: "Replace the current list with this file? (the current list is lost)", loadOk: "List opened — people: {p}",
+            clear: "Delete all", clearAsk: "Delete every registered face? This cannot be undone.",
+            noModel: "The face ID model is missing — run setup again. (Face info like age and emotion still works)",
+            note: "Photos are not saved — only numbers taken from the face, in this computer's work folder (face/facedb.json). It is the same file Pibo and PiBrain use (Face.load_db). Ask before registering someone else's face.",
+            unknown: "Unknown" }
+    };
+    function t(k) { return I18N[LANG][k] !== undefined ? I18N[LANG][k] : I18N.ko[k]; }
+    function $(id) { return document.getElementById(id); }
+    function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+    function fill(s, o) { return String(s).replace(/\{(\w+)\}/g, function (_, k) { return o[k] != null ? o[k] : ""; }); }
+
+    var video = $("video"), overlay = $("overlay"), octx = overlay.getContext("2d");
+    var stream = null, live = false, busy = false, lastFaces = [];
+    var snap = document.createElement("canvas"); snap.width = 640; snap.height = 480;
+
+    /* 거울처럼 보이는 그대로 찍는다 — 상자 좌표가 화면과 같은 쪽이 된다 */
+    function frameBlob() {
+      return new Promise(function (ok) {
+        var g = snap.getContext("2d");
+        g.save(); g.translate(640, 0); g.scale(-1, 1);
+        var vw = video.videoWidth || 640, vh = video.videoHeight || 480;
+        var s = Math.max(640 / vw, 480 / vh), w = vw * s, h = vh * s;     // object-fit: cover 와 같은 자르기
+        g.drawImage(video, (640 - w) / 2, (480 - h) / 2, w, h);
+        g.restore();
+        snap.toBlob(ok, "image/jpeg", 0.85);
+      });
+    }
+    function infoWanted() {
+      return Array.prototype.slice.call(document.querySelectorAll("[data-info]")).filter(function (c) { return c.checked; })
+        .map(function (c) { return c.dataset.info; });
+    }
+    try {
+      var saved = JSON.parse(localStorage.getItem("face-info") || "null");
+      if (saved) document.querySelectorAll("[data-info]").forEach(function (c) { c.checked = saved.indexOf(c.dataset.info) >= 0; });
+    } catch (e) {}
+    document.querySelectorAll("[data-info]").forEach(function (c) {
+      c.addEventListener("change", function () { try { localStorage.setItem("face-info", JSON.stringify(infoWanted())); } catch (e) {} });
+    });
+
+    function draw(faces) {
+      octx.clearRect(0, 0, 640, 480);
+      faces.forEach(function (f) {
+        var b = f.box, col = f.known ? "#2e8f63" : "#c9c4ba";
+        octx.lineWidth = 3; octx.strokeStyle = col;
+        octx.strokeRect(b[0], b[1], b[2] - b[0], b[3] - b[1]);
+        var label = f.name || "";
+        octx.font = "bold 20px Pretendard, 'Malgun Gothic', sans-serif";
+        var tw = octx.measureText(label).width + 16, y = Math.max(0, b[1] - 30);
+        octx.fillStyle = col; octx.fillRect(b[0], y, tw, 28);
+        octx.fillStyle = f.known ? "#fff" : "#26262e"; octx.fillText(label, b[0] + 8, y + 21);
+      });
+    }
+    var DIR_ARROW = { CC: "●", LC: "←", RC: "→", CT: "↑", CB: "↓", LT: "↖", RT: "↗", LB: "↙", RB: "↘" };
+    function rows(faces) {
+      if (!live && !faces.length) { $("faces").innerHTML = '<div class="empty">' + esc(t("camFirst")) + "</div>"; return; }
+      if (!faces.length) { $("faces").innerHTML = '<div class="empty">' + esc(t("noFace")) + "</div>"; return; }
+      $("faces").innerHTML = faces.map(function (f) {
+        var c = [];
+        if (f.known) c.push('<span class="chip"><small>' + esc(t("similar")) + "</small> " + Math.max(0, Math.round((1 - f.match / 0.4) * 100)) + "%</span>");
+        if (f.age != null) c.push('<span class="chip">' + esc(fill(t("ageGuess"), { n: f.age })) + " <small>" + esc(t("guess")) + "</small></span>");
+        if (f.gender) c.push('<span class="chip">' + esc(f.gender) + " <small>" + esc(t("guess")) + "</small></span>");
+        if (f.emotion) c.push('<span class="chip">' + esc(f.emotion) + "</span>");
+        if (f.direction) c.push('<span class="chip">' + esc((DIR_ARROW[f.direction_en] || "") + " " + f.direction) + "</span>");
+        if (f.distance != null && f.distance > 0) c.push('<span class="chip">' + esc(fill(t("cm"), { n: f.distance })) + "</span>");
+        if (f.mask != null) c.push('<span class="chip">' + esc(f.mask ? t("maskOn") : t("maskOff")) + "</span>");
+        return '<div class="face-row"><span class="who' + (f.known ? " known" : "") + '">' + esc(f.name) + "</span>" + c.join("") + "</div>";
+      }).join("");
+    }
+
+    /* 말하기 — 알아본 사람에게 한 번. 화면에서 3초 넘게 안 보이다 다시 나타나거나 10초가 지나야 다시 말한다 */
+    var seenAt = {}, saidAt = {}, speaking = false;
+    function maybeSpeak(faces) {
+      if (!$("speakOn").checked) return;
+      var now = Date.now();
+      faces.forEach(function (f) {
+        if (!f.known) return;
+        var n = f.name, back = !seenAt[n] || now - seenAt[n] > 3000;
+        seenAt[n] = now;
+        if (speaking || !(back || now - (saidAt[n] || 0) > 10000) || now - (saidAt[n] || 0) < 4000) return;
+        var text = ($("speakText").value || t("speakDef")).replace(/\[(이름|name)\]/g, n);
+        saidAt[n] = now; speaking = true;
+        fetch("/speech/tts", { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: text, voice: $("voice").value, lang: LANG, speed: 1.05 }) }).then(function (r) {
+          if (!r.ok || (r.headers.get("Content-Type") || "").indexOf("audio") < 0) throw 0;
+          return r.blob();
+        }).then(function (blob) {
+          var a = new Audio(URL.createObjectURL(blob));
+          a.onended = a.onerror = function () { speaking = false; };
+          return a.play();
+        }).catch(function () { speaking = false; });
+      });
+      Object.keys(seenAt).forEach(function (n) { if (now - seenAt[n] > 60000) delete seenAt[n]; });
+    }
+
+    function loop() {
+      if (!live) return;
+      if (busy || !video.videoWidth) { setTimeout(loop, 120); return; }
+      busy = true;
+      frameBlob().then(function (blob) {
+        var fd = new FormData(); fd.append("uploadFile", blob, "frame.jpg");
+        return fetch("/face/who?" + new URLSearchParams({ lang: LANG, info: infoWanted().join(",") }), { method: "POST", body: fd });
+      }).then(function (r) { return r.json(); }).then(function (j) {
+        if (!live) return;
+        lastFaces = (j && j.result === "ok" && Array.isArray(j.data)) ? j.data : [];
+        draw(lastFaces); rows(lastFaces); maybeSpeak(lastFaces);
+      }).catch(function () {}).then(function () { busy = false; setTimeout(loop, 250); });
+    }
+    function camOn() {
+      if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) { $("txtEmptyS").textContent = t("noCam"); return; }
+      navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } }).then(function (s) {
+        stream = s; video.srcObject = s; live = true;
+        document.body.classList.add("live"); $("camEmpty").hidden = true; $("camOn").hidden = true; $("camOff").hidden = false;
+        rows([]); loop();
+        if (window.vapiStat) vapiStat("face_cam");
+      }).catch(function () { $("txtEmptyS").textContent = t("noCam"); });
+    }
+    function camOff() {
+      live = false;
+      if (stream) { stream.getTracks().forEach(function (tr) { tr.stop(); }); stream = null; }
+      video.srcObject = null; lastFaces = [];
+      document.body.classList.remove("live"); $("camEmpty").hidden = false; $("camOn").hidden = false; $("camOff").hidden = true;
+      octx.clearRect(0, 0, 640, 480); rows([]);
+    }
+    $("camOn").addEventListener("click", camOn);
+    $("camOff").addEventListener("click", camOff);
+    /* 창이 가려지면 카메라를 끈다 (lib/embed.js) — 안 보이는 곳에서 카메라가 켜져 있지 않게 */
+    if (window.EL_WIN) EL_WIN.onHide(function () { if (live) camOff(); });
+
+    /* ---- 등록 ---- */
+    function msg(text, cls) { var m = $("regMsg"); m.textContent = text || ""; m.className = cls || ""; }
+    function register(blob) {
+      var name = $("regName").value.trim();
+      if (!name) { msg(t("regNeedName"), "bad"); $("regName").focus(); return; }
+      msg(t("regBusy"));
+      var fd = new FormData(); fd.append("uploadFile", blob, "face.jpg");
+      $("regBtn").disabled = true;
+      fetch("/face/register?" + new URLSearchParams({ name: name, lang: LANG }), { method: "POST", body: fd })
+        .then(function (r) { return r.json(); }).then(function (j) {
+          if (j.result !== "ok") throw new Error(j.data);
+          msg(fill(t("regOk"), { name: j.data.name, c: j.data.count }), "ok");
+          loadPeople();
+          if (window.vapiStat) vapiStat("face_register");
+        }).catch(function (e) { msg(String((e && e.message) || e), "bad"); })
+        .then(function () { $("regBtn").disabled = false; });
+    }
+    $("regBtn").addEventListener("click", function () {
+      if (!$("regName").value.trim()) { msg(t("regNeedName"), "bad"); $("regName").focus(); return; }
+      if (!live || !video.videoWidth) { msg(t("regNeedCam"), "bad"); return; }
+      frameBlob().then(register);
+    });
+    $("regName").addEventListener("keydown", function (e) { if (e.key === "Enter") $("regBtn").click(); });
+    $("regPhoto").addEventListener("click", function () {
+      if (!$("regName").value.trim()) { msg(t("regNeedName"), "bad"); $("regName").focus(); return; }
+      $("regFile").click();
+    });
+    $("regFile").addEventListener("change", function () { var f = this.files[0]; this.value = ""; if (f) register(f); });
+
+    function loadPeople() {
+      fetch("/face/db").then(function (r) { return r.json(); }).then(function (j) {
+        if (j.result !== "ok") throw new Error(j.data);
+        var d = j.data;
+        $("noModel").hidden = !!d.ready;
+        $("regBtn").disabled = $("regPhoto").disabled = !d.ready;
+        $("peopleCount").textContent = d.total ? fill(t("peopleN"), { p: d.people, n: d.total }) : "";
+        $("people").innerHTML = d.names.length ? d.names.map(function (p) {
+          return '<div class="person"><span class="av">' + esc(p.name.slice(0, 1)) + "</span><b>" + esc(p.name) + "</b><small>" +
+            esc(fill(t("times"), { n: p.count })) + '</small><button type="button" data-del="' + esc(p.name) + '">' + esc(t("del")) + "</button></div>";
+        }).join("") : '<div class="person empty">' + esc(t("none")) + "</div>";
+      }).catch(function (e) { $("people").innerHTML = '<div class="person empty">' + esc(String((e && e.message) || e)) + "</div>"; });
+    }
+    $("people").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-del]"); if (!b) return;
+      var name = b.dataset.del;
+      if (!confirm(fill(t("delAsk"), { name: name }))) return;
+      fetch("/face/db/delete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: name }) })
+        .then(function () { loadPeople(); });
+    });
+    $("clearAll").addEventListener("click", function () {
+      if (!confirm(t("clearAsk"))) return;
+      fetch("/face/db/clear", { method: "POST" }).then(function () { loadPeople(); msg(""); });
+    });
+    $("dlFile").addEventListener("click", function () {
+      var a = document.createElement("a"); a.href = "/face/db/file"; a.download = "facedb.json";
+      document.body.appendChild(a); a.click(); a.remove();
+    });
+    $("openFolder").addEventListener("click", function () { fetch("/system/open_folder?sub=face", { method: "POST" }); });
+    $("loadFileBtn").addEventListener("click", function () { $("loadFile").click(); });
+    $("loadFile").addEventListener("change", function () {
+      var f = this.files[0]; this.value = "";
+      if (!f || !confirm(t("loadAsk"))) return;
+      var fd = new FormData(); fd.append("uploadFile", f, f.name);
+      fetch("/face/db/file", { method: "POST", body: fd }).then(function (r) { return r.json(); }).then(function (j) {
+        if (j.result !== "ok") throw new Error(j.data);
+        msg(fill(t("loadOk"), { p: j.data.people }), "ok"); loadPeople();
+      }).catch(function (e) { msg(String((e && e.message) || e), "bad"); });
+    });
+
+    function fillVoices() {
+      fetch("/speech/voices").then(function (r) { return r.json(); }).then(function (j) {
+        var d = (j && j.data) || {}, list = d.voices && d.voices.length ? d.voices : ["F1"];
+        $("voice").innerHTML = list.map(function (v) { return '<option value="' + esc(v) + '">' + esc(fill(t("voice"), { v: v })) + "</option>"; }).join("");
+        var want = ""; try { want = localStorage.getItem("vapi-voice") || ""; } catch (e) {}
+        $("voice").value = list.indexOf(want) >= 0 ? want : (d.default || list[0]);
+      }).catch(function () { $("voice").innerHTML = '<option value="F1">' + esc(fill(t("voice"), { v: "F1" })) + "</option>"; });
+    }
+    try {
+      $("speakText").value = localStorage.getItem("face-speak-text") || t("speakDef");
+      $("speakOn").checked = localStorage.getItem("face-speak") === "1";
+    } catch (e) { $("speakText").value = t("speakDef"); }
+    $("speakText").addEventListener("change", function () { try { localStorage.setItem("face-speak-text", this.value); } catch (e) {} });
+    $("speakOn").addEventListener("change", function () { try { localStorage.setItem("face-speak", this.checked ? "1" : "0"); } catch (e) {} });
+
+    function paintText() {
+      document.title = t("title"); $("langButton").textContent = t("lang");
+      $("txtQ1").textContent = t("q1"); $("txtQ2").textContent = t("q2");
+      $("camOn").textContent = t("camOn"); $("camOff").textContent = t("camOff"); $("txtLive").textContent = t("live");
+      $("txtEmptyT").textContent = t("emptyT"); $("txtEmptyS").textContent = t("emptyS");
+      $("txtInfo").textContent = t("info");
+      document.querySelectorAll("[data-t]").forEach(function (el) { el.textContent = t(el.dataset.t); });
+      $("txtSpeak").textContent = t("speak"); $("speakText").placeholder = t("speakPh");
+      $("regName").placeholder = t("namePh"); $("regBtn").textContent = t("reg"); $("regPhoto").textContent = t("regPhoto");
+      $("txtTip").textContent = t("tip"); $("txtPeople").textContent = t("people");
+      $("dlFile").textContent = t("dl"); $("openFolder").textContent = t("folder"); $("loadFileBtn").textContent = t("load");
+      $("clearAll").textContent = t("clear"); $("noModel").textContent = t("noModel"); $("txtNote").textContent = t("note");
+      if (window.navRepaint) window.navRepaint();
+    }
+    $("langButton").addEventListener("click", function () {
+      try { localStorage.setItem("vapiLang", LANG === "ko" ? "en" : "ko"); } catch (e) {}
+      location.reload();
+    });
+    paintText(); rows([]); loadPeople(); fillVoices();
+  })();
+  </script>
+  <script src="/lib/shell.js"></script>
+  <script src="/lib/usage.js" data-page="face"></script>
+  <i id="el-built" hidden></i>
+</body>
+</html>

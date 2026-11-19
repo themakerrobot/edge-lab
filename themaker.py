@@ -58,6 +58,9 @@ _API = {
     "sr":         ("/gan/sr", {}),
     "depth":      ("/gan/depth", {}),
     "mask":       ("/face/mask_detect", {}),
+    # 누구인지 — 얼굴 AI 앱 · face_register() 로 등록한 이름. 나이 · 성별 · 감정 · 방향 · 거리 · 마스크도 함께 온다
+    # (info="age,gender" 처럼 고르면 그것만 계산한다)
+    "who":        ("/face/who", {}),
 }
 
 # 한글 이름도 그대로 쓸 수 있다
@@ -66,7 +69,7 @@ _ALIAS_KO = {
     "얼굴": "face", "얼굴분석": "face_attr", "얼굴거리": "distance",
     "보기": "look", "설명": "look", "질문": "look",
     "글자": "ocr", "큐알": "qr", "배경제거": "bg_remove", "화질개선": "sr", "깊이지도": "depth", "깊이": "depth",
-    "마스크": "mask",
+    "마스크": "mask", "누구": "who", "얼굴구분": "who",
 }
 
 
@@ -1588,10 +1591,81 @@ def recall(key, default=None):
     return _memory().get(str(key), default)
 
 
+# ================================================================= 얼굴 등록 (얼굴 AI 앱과 같은 명단)
+# 파이보 · 파이브레인과 같은 모델 · 같은 파일 형식이라 face_save() 한 파일을 파이보 Face.load_db() 로 연다.
+# 명단은 작업폴더 face/facedb.json — 사진은 저장하지 않고 얼굴에서 뽑은 숫자만 둔다.
+
+def face_register(name, image):
+    """사진에서 가장 큰 얼굴을 name 으로 등록한다. 같은 사람을 여러 번(각도를 바꿔) 등록하면 더 잘 알아본다.
+
+    >>> face_register("지민", camera())
+    {'name': '지민', 'count': 1, 'total': 1, ...}
+    """
+    url = "/face/register?" + urllib.parse.urlencode({"name": str(name), "lang": LANG})
+    j = _post(url, files={"uploadFile": ("face.jpg", _to_jpg(image), "image/jpeg")})
+    if j.get("result") != "ok":
+        raise TheMakerError("얼굴 등록 실패: %s" % j.get("data"))
+    return j["data"]
+
+
+def face_who(image):
+    """사진에서 알아본(등록한) 사람의 이름 — 가장 큰 얼굴부터. 아무도 모르면 "".
+
+    >>> name = face_who(camera())
+    >>> if name: speak(name + " 안녕!")
+    """
+    rows = [it for it in items(vision("who", image, info="")) if it.get("known")]
+    if not rows:
+        return ""
+    return max(rows, key=lambda it: it["w"] * it["h"])["name"]
+
+
+def face_list():
+    """등록한 이름과 횟수 목록 — [{"name": 이름, "count": 횟수}, ...]"""
+    j = _get("/face/db")
+    if j.get("result") != "ok":
+        raise TheMakerError("얼굴 명단을 읽지 못했어요: %s" % j.get("data"))
+    return j["data"]["names"]
+
+
+def face_delete(name):
+    """그 이름으로 등록한 얼굴을 모두 지운다. 있었으면 True."""
+    j = _post_json("/face/db/delete", {"name": str(name)})
+    return bool(j.get("deleted"))
+
+
+def face_clear():
+    """등록한 얼굴을 모두 지운다 (되돌릴 수 없어요)."""
+    _post_json("/face/db/clear", {})
+    return None
+
+
+def face_save(path="facedb.json"):
+    """명단을 파일로 저장한다 — 파이보 · 파이브레인에서 Face.load_db(이 파일) 로 연다. 저장한 경로를 돌려준다."""
+    data = _get("/face/db/file")
+    if data.get("result") == "fail":
+        raise TheMakerError("얼굴 명단을 저장하지 못했어요: %s" % data.get("data"))
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False)
+    return os.path.abspath(path)
+
+
+def face_load(path):
+    """명단 파일(파이보 Face.save_db() 가 쓴 것 또는 face_save() 한 것)을 연다 — 지금 명단을 바꾼다."""
+    with open(path, "rb") as f:
+        raw = f.read()
+    j = _post("/face/db/file", files={"uploadFile": (os.path.basename(path), raw, "application/json")})
+    if j.get("result") != "ok":
+        raise TheMakerError("얼굴 명단 파일을 열지 못했어요: %s" % j.get("data"))
+    return j["data"]["names"]
+
+
 __all__ += [
     # 결과 다루기
     "items", "count", "names", "nth", "first", "has", "only", "best", "biggest",
     "pose_point", "pose_x", "pose_y", "POSE_PARTS",
     # 시간 · 표 · 기억
     "timer", "reset_timer", "record", "table", "clear_table", "save_table", "remember", "recall",
+    # 얼굴 등록
+    "face_register", "face_who", "face_list", "face_delete", "face_clear", "face_save", "face_load",
 ]

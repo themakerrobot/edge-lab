@@ -111,7 +111,7 @@ def build_device_map():
     import engines as E
     vlm = {"look", "chat_ask"}
     gan = {"portrait", "sr", "depth"}
-    face = {"face_detect", "face_analyze", "face_emotion", "face_age_gender"}
+    face = {"face_detect", "face_analyze", "face_emotion", "face_age_gender", "face_who", "face_register"}
     # 실측: 각 그룹의 대표 모델에게 직접 물어본다
     dev_face = exec_device(eng.face.detect, E.DEV_FACE) if eng else E.DEV_FACE
     dev_gan = exec_device(eng.gan.bgremove, E.DEV_GAN) if eng else E.DEV_GAN
@@ -205,7 +205,7 @@ NPU(없으면 GPU→CPU), 말로 답하는 AI·사물 인식·사진 바꾸기�
 
 # 묶음 설명 — 안 적으면 옆 목록에 "custom", "gan" 같은 이름만 뜬다
 TAGS = [
-    {"name": "face", "description": "얼굴 — 찾기 · 나이/성별 · 감정 · 거리와 방향 · 마스크"},
+    {"name": "face", "description": "얼굴 — 찾기 · 나이/성별 · 감정 · 거리와 방향 · 마스크 · 누구인지(얼굴 등록)"},
     {"name": "object", "description": "사물 · 몸 · 손 — 80가지 사물, 사람 포즈, 손동작, 영역 칠하기. 가져온 easydetect 모델도 여기서 쓴다"},
     {"name": "vlm", "description": "말로 답하는 AI — 사진에 대해 묻고 말로 답을 받는다 (몇 초 걸린다)"},
     {"name": "gan", "description": "사진 바꾸기 — 배경 제거 · 화질 4배 · 깊이 지도"},
@@ -268,7 +268,7 @@ ALLOW_WHILE_LOADING = ("/ready", "/system", "/lib", "/assets", "/fonts", "/block
 # 화면 주소 — 로딩 중에도 열린다. 새 화면을 만들면 여기에 더한다(빠지면 켜진 직후 1~2분은
 # 그 앱이 JSON 503 으로 뜬다 — 셸에 새 앱을 넣으며 한 번 겪었다).
 PAGE_PATHS = ("/", "/home", "/try", "/blocks", "/train", "/options", "/code", "/talk",
-              "/works", "/drive", "/paint", "/typing", "/calc", "/notes", "/recorder", "/story", "/tasks", "/board", "/store", "/sound", "/signal", "/diary", "/piano", "/word", "/eye")
+              "/works", "/drive", "/paint", "/typing", "/calc", "/notes", "/recorder", "/story", "/tasks", "/board", "/store", "/sound", "/signal", "/diary", "/piano", "/word", "/eye", "/face")
 
 
 @app.middleware("http")
@@ -347,6 +347,9 @@ app.include_router(speech_routes.router)
 
 import board_routes  # noqa: E402  (보드(MCU) 시리얼: /board/* — 포트는 서버가 연다)
 app.include_router(board_routes.router)
+
+import face_routes  # noqa: E402  (얼굴 AI: /face/who · /face/register · /face/db — 파이보와 같은 얼굴 명단)
+app.include_router(face_routes.router)
 
 
 # ---------------------------------------------------------------- 공통
@@ -786,6 +789,13 @@ async def board_page():
         return f.read()
 
 
+@app.get("/face", response_class=HTMLResponse)
+async def face_page():
+    """얼굴 AI — 누구인지(얼굴 등록 · 구분) + 나이 · 성별 · 감정 · 방향 · 거리 · 마스크 (face_routes)."""
+    with open("view_project/face.html", encoding="utf-8") as f:
+        return f.read()
+
+
 @app.get("/recorder", response_class=HTMLResponse)
 async def recorder_page():
     """녹음기 — 말 → 글자(/speech/stt) → 다시 읽기(/speech/tts)."""
@@ -1034,11 +1044,14 @@ async def set_username(name: str = Body("", embed=True)):
 
 
 @app.post("/system/open_folder", tags=["system"], summary="작업폴더 열기")
-async def open_folder():
-    """탐색기로 작업폴더를 띄운다 — 아이가 만든 파일을 바로 찾을 수 있게."""
+async def open_folder(sub: str = ""):
+    """탐색기로 작업폴더를 띄운다 — 아이가 만든 파일을 바로 찾을 수 있게.
+    sub=face 면 얼굴 명단 칸(face/facedb.json — 파이보로 옮길 파일)을 바로 연다. 정해 둔 칸 이름만 받는다."""
     import subprocess
     import paths as _p
     target = _p.WORK_ROOT
+    if sub in _p.WORK_PARTS:
+        target = os.path.join(_p.WORK_ROOT, sub)
     os.makedirs(target, exist_ok=True)
     try:
         if os.name == "nt":
@@ -1088,6 +1101,8 @@ async def system_tasks():
         ["/object/object_"])
     add("face", DEVICE_OF.get("face_analyze", E.DEV_FACE), e is not None and getattr(e, "face", None) is not None,
         ["/face/face_", "/face/mask"])
+    add("reid", "CPU", e is not None and getattr(getattr(e, "face", None), "reid", None) is not None,
+        ["/face/who", "/face/register"])
     add("gan", DEVICE_OF.get("portrait", E.DEV_GAN), e is not None and getattr(e, "gan", None) is not None, ["/gan/"])
     add("code", "CPU", e is not None and getattr(e, "code", None) is not None, ["/code/"])
     add("hand", "CPU", MR._hand is not None or MR._face is not None,

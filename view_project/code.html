@@ -308,7 +308,7 @@
         put: "넣기", detail: "설명", noHit: "찾는 것이 없어요.",
         argsK: "넣는 것", retK: "돌려주는 것", exK: "예시 (눌러서 넣기)",
         g_basic: "기본", g_ai: "AI 로 보기", g_edit: "사진 편집", g_my: "내가 만든 AI",
-        g_sound: "소리", g_flow: "반복 · 조건", g_result: "결과 다루기", g_data: "시간 · 기록",
+        g_sound: "소리", g_flow: "반복 · 조건", g_result: "결과 다루기", g_data: "시간 · 기록", g_face: "얼굴 등록",
         run: "실행", running: "실행 중...", stop: "정지", clear: "지우기",
         newFile: "새 파일", openedAs: "불러왔어요: ", runStateK: "상태", stReady: "준비됨", stRun: "실행 중", stDone: "끝남", stStop: "정지됨",
         hint: "show() 결과는 위 칸에 나와요. input() 은 지원하지 않아요.",
@@ -339,7 +339,7 @@
         put: "insert", detail: "what?", noHit: "Nothing found.",
         argsK: "takes", retK: "returns", exK: "example (click to insert)",
         g_basic: "Basics", g_ai: "See with AI", g_edit: "Edit photo", g_my: "Your own AI",
-        g_sound: "Sound", g_flow: "Repeat · If", g_result: "Use results", g_data: "Time · records",
+        g_sound: "Sound", g_flow: "Repeat · If", g_result: "Use results", g_data: "Time · records", g_face: "Face ID",
         run: "Run", running: "Running...", stop: "Stop", clear: "Clear",
         newFile: "new file", openedAs: "opened: ", runStateK: "state", stReady: "ready", stRun: "running", stDone: "done", stStop: "stopped",
         hint: "show() draws above. input() is not supported.",
@@ -1200,6 +1200,15 @@ clear_table("점검표")
 remember("점검횟수", recall("점검횟수", 0) + 1)
 print("점검한 횟수:", recall("점검횟수"), "/ 걸린 시간:", timer(), "초")
 
+print("=== 얼굴 등록 (얼굴 AI 와 같은 명단) ===")
+print("누구:", [f["name"] for f in vision("who", img)], "/ 알아본 이름:", face_who(img))
+if faces:                           # 얼굴이 보일 때만 — 점검용 이름은 바로 지워요
+    print("등록:", face_register("점검용", img))
+print("명단:", face_list())
+print("파일:", face_save("facedb.json"))   # 파이보 Face.load_db() 로 여는 파일
+face_load("facedb.json")
+print("점검용 지움:", face_delete("점검용"))
+
 print("전체 점검 끝!")
 `,
         code_en: `from themaker import *
@@ -1329,6 +1338,15 @@ clear_table("check")
 remember("checks", recall("checks", 0) + 1)
 print("Checks so far:", recall("checks"), "/ took:", timer(), "s")
 
+print("=== Face registration (same list as Face AI) ===")
+print("Who:", [f["name"] for f in vision("who", img)], "/ recognised:", face_who(img))
+if faces:                           # only when a face is visible — the test name is deleted right away
+    print("Registered:", face_register("check-test", img))
+print("List:", face_list())
+print("File:", face_save("facedb.json"))   # open on Pibo with Face.load_db()
+face_load("facedb.json")
+print("Test name deleted:", face_delete("check-test"))
+
 print("Full check done!")
 ` },
     ];
@@ -1373,6 +1391,7 @@ print("Full check done!")
 <tr><td><code>sr</code></td><td>화질개선</td><td>4배 선명하게</td></tr>
 <tr><td><code>depth</code></td><td>깊이지도</td><td>멀고 가까움을 색으로</td></tr>
 <tr><td><code>mask</code></td><td>마스크</td><td>마스크 착용</td></tr>
+<tr><td><code>who</code></td><td>누구</td><td>누구인지 (얼굴 AI 에서 등록한 얼굴)</td></tr>
 </table>
 <p style="margin:10px 0 6px;"><b>내가 가르친 AI — 종류에 따라 보는 것이 달라요</b></p>
 <table>
@@ -1413,6 +1432,7 @@ print(vision("look", img, lang="en")["answer"])   # 영어로 받기</pre>
 <tr><td><code>sr</code></td><td>upscale 4x</td></tr>
 <tr><td><code>depth</code></td><td>depth map (near = bright)</td></tr>
 <tr><td><code>mask</code></td><td>mask on/off</td></tr>
+<tr><td><code>who</code></td><td>who it is (faces registered in Face AI)</td></tr>
 </table>
 <p style="margin:10px 0 6px;"><b>Your trained AI — kinds</b></p>
 <table>
@@ -1545,6 +1565,36 @@ Relative paths resolve from <code>models\\pycode</code>. cv2 and numpy work as u
         ko: { d: "마스크를 썼는지 보기", a: "기능 이름, 사진", r: "찾은 얼굴 목록 — name 에 썼는지 여부" },
         en: { d: "check if a mask is worn", a: "kind, image", r: "a list of faces with name" },
         x: 'for m in vision("mask", camera()):\n    print(m["name"])' },
+      { g: "face", n: 'vision("who", img)', ins: 'vision("who", img)',
+        ko: { d: "누구인지 알아보기 — 얼굴 AI 에서 등록한 사람이면 그 이름. 나이 · 성별 · 감정 · 방향 · 거리 · 마스크도 같이 와요 (info=\"\" 면 이름만, 더 빨라요)",
+              a: "기능 이름, 사진", r: "목록 [{name 이름 또는 모르는 사람, known 알아봤나, match 오차도(0.4 아래면 그 사람), box, age, gender, emotion, ...}, ...]" },
+        en: { d: "who is it — the name if registered in Face AI. Age, gender, emotion, direction, distance and mask come too (info=\"\" for names only, faster)",
+              a: "kind, image", r: "list of {name or Unknown, known, match (below 0.4 = that person), box, age, gender, emotion, ...}" },
+        x: 'for f in vision("who", camera()):\n    print(f["name"], f["known"], f["match"])' },
+      { g: "face", n: "face_who(img)", ins: "face_who(camera())",
+        ko: { d: "알아본 사람 이름 하나 (가장 큰 얼굴부터). 아무도 모르면 빈 글자", a: "사진", r: "이름 (글자)" },
+        en: { d: "the recognised name (largest face first). Empty text when nobody is known", a: "image", r: "name (text)" },
+        x: 'name = face_who(camera())\nif name:\n    speak(name + " 안녕하세요!")' },
+      { g: "face", n: 'face_register("이름", img)', ins: 'face_register("", camera())',
+        ko: { d: "사진에서 가장 큰 얼굴을 그 이름으로 등록 — 같은 사람을 각도를 바꿔 3번쯤 하면 더 잘 알아봐요. 사진은 저장하지 않아요(숫자만)",
+              a: "이름, 사진", r: "{name, count 그 이름 등록 횟수, total 전체}" },
+        en: { d: "register the largest face under a name — about 3 times at different angles works best. Photos are not saved (numbers only)",
+              a: "name, image", r: "{name, count, total}" },
+        x: 'for i in range(3):\n    speak("카메라를 보세요")\n    print(face_register("지민", camera()))' },
+      { g: "face", n: "face_list()", ins: "face_list()",
+        ko: { d: "등록한 이름과 횟수", a: "없음", r: "[{name, count}, ...]" },
+        en: { d: "registered names and counts", a: "none", r: "[{name, count}, ...]" },
+        x: 'for p in face_list():\n    print(p["name"], p["count"], "번")' },
+      { g: "face", n: 'face_delete("이름")', ins: 'face_delete("")',
+        ko: { d: "그 이름으로 등록한 얼굴을 모두 지우기 (face_clear() 는 모두 지워요)", a: "이름", r: "있었으면 True" },
+        en: { d: "delete every face under that name (face_clear() deletes everything)", a: "name", r: "True if it existed" },
+        x: 'print(face_delete("지민"))' },
+      { g: "face", n: 'face_save("facedb.json")', ins: 'face_save("facedb.json")',
+        ko: { d: "명단을 파일로 저장 — 파이보 · 파이브레인에서 Face.load_db(\"facedb.json\") 로 열어요. face_load(파일) 로 다시 열어요",
+              a: "파일 이름", r: "저장한 경로" },
+        en: { d: "save the list to a file — open it on Pibo/PiBrain with Face.load_db(). face_load(file) opens one",
+              a: "file name", r: "saved path" },
+        x: 'print(face_save("facedb.json"))\n# face_load("facedb.json")   # 파이보에서 저장한 파일도 열려요' },
 
       { g: "edit", n: "resize(img, 2)", ins: "resize(img, 2)",
         ko: { d: "크기 바꾸기 (1보다 크면 가운데를 잘라 확대)", a: "사진, 배율", r: "바뀐 사진" },
@@ -1825,7 +1875,7 @@ Relative paths resolve from <code>models\\pycode</code>. cv2 and numpy work as u
     document.getElementById("helpSearch").addEventListener("input", e => renderHelp(e.target.value));
 
     /* ---------------- 자동완성 ---------------- */
-    const KINDS = ["object", "face", "face_attr", "distance", "hand", "pose", "seg",
+    const KINDS = ["object", "face", "face_attr", "who", "distance", "hand", "pose", "seg",
                    "look", "ocr", "qr",
                    "bg_remove", "sr", "depth", "mask"];
     const FUNCS = ["camera", "load", "save", "show", "draw", "vision", "detect", "language", "chat", "db_add", "db_list", "db_find", "db_delete",
@@ -1840,6 +1890,7 @@ Relative paths resolve from <code>models\\pycode</code>. cv2 and numpy work as u
                    "items", "count", "names", "nth", "first", "has", "only", "best", "biggest",
                    "pose_point", "pose_x", "pose_y", "timer", "reset_timer",
                    "record", "table", "clear_table", "save_table", "remember", "recall",
+                   "face_register", "face_who", "face_list", "face_delete", "face_clear", "face_save", "face_load",
                    "print", "range", "len", "for", "if", "else", "while", "import", "from"];
 
     function themakerHint(editor) {
