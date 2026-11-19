@@ -26,7 +26,7 @@
            font-family: var(--font-ui); line-height: 1.5;
            padding: var(--sp-2, 8px); gap: var(--sp-2, 8px); }
     button, input, select, textarea { font-family: inherit; color: var(--ink); }
-    .btn { border: 1.5px solid var(--line-d); background: #fff; font-weight: 600; padding: 7px 13px; border-radius: var(--r); cursor: pointer; font-size: .92rem; }
+    .btn { border: 1px solid var(--line-mid); background: #fff; font-weight: 600; padding: 7px 13px; border-radius: var(--r-sm); cursor: pointer; font-size: .92rem; }
     .btn.primary { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; }
     .btn:disabled { opacity: .45; cursor: not-allowed; }
     .panel.rec { flex: 0 0 360px; } .panel.txt { flex: 1 1 auto; }
@@ -41,13 +41,13 @@
     .level i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #3a9a55, #e0a030, #d9412b); transition: width .08s; }
     .hint { font-size: .85rem; color: var(--ink-2); text-align: center; }
     .takes { display: flex; flex-direction: column; gap: 6px; }
-    .take { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; cursor: pointer; }
+    .take { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid var(--line-mid); border-radius: var(--r-sm); background: #fff; cursor: pointer; }
     .take.on { border-color: var(--cyan); background: var(--cyan-bg); }
     .take b { flex: 1; font-size: .92rem; } .take small { color: var(--ink-2); font-family: Menlo, Consolas, monospace; font-size: .78rem; }
-    textarea { width: 100%; min-height: 150px; flex: 1 1 auto; resize: none; border: 1.5px solid var(--line); border-radius: var(--r); padding: 12px;
+    textarea { width: 100%; min-height: 150px; flex: 1 1 auto; resize: none; border: 1px solid var(--line-mid); border-radius: var(--r-sm); padding: 12px;
                font-size: 1.15rem; line-height: 1.6; background: #fff; }
     .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-    .row select { height: 36px; border: 1.5px solid var(--line); border-radius: var(--r); padding: 0 8px; background: #fff; font-size: .92rem; }
+    .row select { height: 36px; border: 1px solid var(--line-mid); border-radius: var(--r-sm); padding: 0 8px; background: #fff; font-size: .92rem; }
     .meta { font-family: Menlo, Consolas, monospace; font-size: .8rem; color: var(--ink-2); }
     audio { width: 100%; }
     @media (max-width: 1023px) { .panel.rec { flex: 0 0 auto; } .panel, .panel-body { overflow: visible; } }

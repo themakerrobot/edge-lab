@@ -29,16 +29,16 @@
            padding: var(--sp-2, 8px); gap: var(--sp-2, 8px); }
     button, input { font-family: inherit; color: var(--ink); }
     .top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .find { flex: 1 1 260px; max-width: 420px; height: 40px; border: 1.5px solid var(--line); border-radius: 20px; padding: 0 16px; background: #fff; font-size: .98rem; }
-    .seg { display: inline-flex; border: 1.5px solid var(--line-d); border-radius: 20px; overflow: hidden; }
+    .find { flex: 1 1 260px; max-width: 420px; height: 40px; border: 1px solid var(--line-mid); border-radius: 20px; padding: 0 16px; background: #fff; font-size: .98rem; }
+    .seg { display: inline-flex; border: 1px solid var(--line-mid); border-radius: 20px; overflow: hidden; }
     .seg button { border: 0; background: #fff; padding: 0 14px; height: 36px; font-size: .9rem; font-weight: 600; cursor: pointer; }
-    .seg button + button { border-left: 1.5px solid var(--line-d); }
+    .seg button + button { border-left: 1px solid var(--line-mid); }
     .seg button.on { background: var(--pen-blue); color: #fff; }
     .count { font-size: var(--fs-side, 13px); color: var(--ink-2); margin-left: auto; }
     .sec h2 { font-size: 15px; color: var(--cyan-d); margin: 6px 2px 8px; display: flex; align-items: center; gap: 8px; }
     .sec h2::after { content: ""; flex: 1; height: 1px; background: var(--line); opacity: .5; }
     .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 10px; }
-    .card { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border: 1.5px solid var(--line); border-radius: 14px; background: #fff; }
+    .card { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border: 1px solid var(--line-mid); border-radius: 14px; background: #fff; }
     .card.off { background: #f7f3ea; }
     .card .g { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; color: #fff; flex: 0 0 auto; background: var(--cyan); }
     .card .g svg { width: 28px; height: 28px; }
@@ -48,7 +48,7 @@
     .card .t b { display: block; font-size: var(--fs-name, 16px); }
     .card .t small { display: block; font-size: var(--fs-side, 13px); color: var(--ink-2); }
     .card .act { flex: 0 0 auto; }
-    .pill { height: 36px; min-width: 76px; padding: 0 14px; border-radius: 18px; border: 1.5px solid var(--line-d); background: #fff; font-size: .9rem; font-weight: 700; cursor: pointer; }
+    .pill { height: 36px; min-width: 76px; padding: 0 14px; border-radius: 18px; border: 1px solid var(--line-mid); background: #fff; font-size: .9rem; font-weight: 700; cursor: pointer; }
     .pill.add { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; }
     .pill.rm { color: var(--pen-red); border-color: var(--pen-red); }
     .pill.open { border-color: var(--cyan); color: var(--cyan-d); }

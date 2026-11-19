@@ -31,7 +31,7 @@
     a { color:var(--pen-blue-d); text-decoration:none; }
     select, input, button {
       font-family:inherit; font-size:.95rem; color:var(--ink); background:#fff;
-      border:1.5px solid var(--line); border-radius:var(--r); padding:7px 11px; outline:none;
+      border:1px solid var(--line-mid); border-radius: var(--r-sm); padding:7px 11px; outline:none;
     }
     /* 머리표 */
     .h-subject .eyebrow { font-size:0.82rem; letter-spacing:.14em; color:var(--ink-2); }
@@ -40,7 +40,7 @@
     /* 상태바 */
     .sysbar {
       flex:0 0 auto; display:flex; align-items:center; gap:6px 14px; flex-wrap:wrap;
-      background:#fffdf6; border:1.5px solid var(--line-d); border-radius:3px;
+      background:#fffdf6; border:1px solid var(--line-mid); border-radius:3px;
       padding:7px 14px; font-family:"Menlo","Consolas",ui-monospace,monospace;
       font-size:0.82rem; letter-spacing:.02em; color:var(--ink-2);
       box-shadow:0 1px 0 rgba(44,74,124,.15); transform:rotate(-.25deg); position:relative;
@@ -58,17 +58,16 @@
     /* 레이아웃 */
     /* 세로 flex 는 자식을 기본으로 줄인다 — 그대로 두면 내용이 넘쳐도 스크롤이 안 생기고
        웹캠 미리보기 같은 아래쪽 항목만 납작하게 눌린다. 줄이지 말고 넘치게 해서 스크롤을 낸다. */
-    .qnum::after { content:"."; }
-    .btn { border:1.5px solid var(--line-d); background:#fff; font-weight:600; padding:7px 13px;
-           border-radius:var(--r); cursor:pointer; }
+    .btn { border:1px solid var(--line-mid); background:#fff; font-weight:600; padding:7px 13px;
+           border-radius: var(--r-sm); cursor:pointer; }
     .btn.primary { background:var(--pen-blue); border-color:var(--pen-blue-d); color:#fff; }
     .btn.danger { border-color:var(--pen-red); color:var(--pen-red); }
     .btn.sm { padding:4px 9px; font-size:.84rem; }
     .btn:disabled { opacity:.45; cursor:not-allowed; }
     /* 점검 목록 */
     .checks { display:flex; flex-direction:column; gap: var(--sp-1, 4px); }
-    .chk { display:flex; align-items:center; gap:10px; border:1.5px solid var(--line);
-           border-radius:var(--r); padding:8px 12px; background:#fff; }
+    .chk { display:flex; align-items:center; gap:10px; border:1px solid var(--line-mid);
+           border-radius: var(--r-sm); padding:8px 12px; background:#fff; }
     .chk .mark { width:22px; height:22px; flex:0 0 auto; border-radius:50%; color:#fff;
                  display:inline-flex; align-items:center; justify-content:center; font-weight:700; font-size:0.82rem;
                  background:#c9d3dd; }
@@ -77,7 +76,7 @@
     .chk .key { font-weight:700; flex:0 0 150px; }
     .chk .detail { color:var(--ink-2); font-size:.84rem; word-break:break-all; }
     .chk.no .detail { color:var(--pen-red); }
-    .camwrap { border:1.5px solid var(--line-d); border-radius:var(--r); overflow:hidden; background:#000; max-width:320px; }
+    .camwrap { border:1px solid var(--line-mid); border-radius: var(--r-sm); overflow:hidden; background:#000; max-width:320px; }
     .camwrap video { width:100%; display:block; aspect-ratio:4/3; object-fit:cover; }
     /* 목록 */
     table { width:100%; border-collapse:collapse; font-size:.9rem; }
@@ -87,12 +86,12 @@
     .empty { color:var(--ink-2); font-size:.88rem; padding:10px 0; }
     /* 결과 도표 */
     .cards { display:flex; gap:10px; flex-wrap:wrap; }
-    .card { flex:1 1 130px; border:1.5px solid var(--line); border-radius:var(--r);
+    .card { flex:1 1 130px; border:1px solid var(--line-mid); border-radius: var(--r-sm);
             padding:var(--sp-2, 8px) 12px; background:#fffdf6; }
     .card .k { font-size:0.82rem; color:var(--ink-2); letter-spacing:.02em; }
     .card .v { font-size:1.6rem; font-weight:800; color:var(--pen-blue-d);
                font-variant-numeric:tabular-nums; line-height:1.2; }
-    .rep { border:1.5px solid var(--line); border-radius:var(--r); padding:10px 12px; background:#fff; }
+    .rep { border:1px solid var(--line-mid); border-radius: var(--r-sm); padding:10px 12px; background:#fff; }
     .rep + .rep { margin-top: var(--sp-1, 4px); }
     .rep .rh { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:6px; }
     .rep .rh b { font-size:1rem; }
@@ -159,7 +158,7 @@
         <span class="q"><span class="qnum">1</span><span class="qtext" id="txtQ1">수업 전 점검</span></span>
         <span style="margin-left:auto;display:flex;gap:8px;">
           <button class="btn" id="camBtn"><span id="txtCamBtn">웹캠 확인</span></button>
-          <button class="btn primary" id="runBtn"><span id="txtRun">점검 실행</span></button>
+          <button class="btn go" id="runBtn"><span id="txtRun">점검 실행</span></button>
         </span>
       </div>
       <div class="panel-body">
@@ -195,7 +194,7 @@
             <b style="font-size:.9rem;" id="txtNameTitle">이름</b>
             <input id="userName" maxlength="40" placeholder="이름"
                    style="font-family:inherit;font-size:.86rem;padding:4px 8px;width:14ch;
-                          border:1.5px solid var(--line);border-radius:var(--r);background:#fff;">
+                          border:1px solid var(--line-mid);border-radius: var(--r-sm);background:#fff;">
             <button class="btn" id="nameSave" style="padding:5px 12px;font-size:.86rem;">
               <span id="txtNameSave">저장</span></button>
             <span class="hint" id="txtNameHint" style="margin:0;">

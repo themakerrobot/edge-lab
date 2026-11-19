@@ -28,7 +28,7 @@
            padding: var(--sp-2, 8px); gap: var(--sp-2, 8px); }
     button { font-family: inherit; color: var(--ink); }
     .panel.calc { flex: 0 0 440px; } .panel.tape { flex: 1 1 auto; }
-    .screen { border: 1.5px solid var(--line-d); border-radius: 12px; background: #fff; padding: 12px 16px; text-align: right; }
+    .screen { border: 1px solid var(--line-mid); border-radius: 12px; background: #fff; padding: 12px 16px; text-align: right; }
     .screen .ex { font-family: Menlo, Consolas, monospace; font-size: 1rem; color: var(--ink-2); min-height: 1.5rem; overflow: hidden; white-space: nowrap; }
     .screen .v { font-family: Menlo, Consolas, monospace; font-size: 2.7rem; font-weight: 700; line-height: 1.2; overflow: hidden; white-space: nowrap; }
     .screen .v.err { color: var(--pen-red); font-size: 1.5rem; font-family: inherit; padding: 10px 0; }
@@ -38,7 +38,7 @@
     .read span { flex: 1; font-size: 1.05rem; font-weight: 600; color: var(--cyan-d); word-break: keep-all; }
     .read button { border: 1.5px solid var(--cyan); background: #fff; color: var(--cyan-d); border-radius: 8px; padding: 4px 10px; min-height: 36px; font-weight: 600; cursor: pointer; }
     .keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-    .keys button { min-height: 64px; border-radius: 14px; border: 1.5px solid var(--line); background: #fff; font-size: 1.6rem; font-weight: 700; cursor: pointer;
+    .keys button { min-height: 64px; border-radius: 14px; border: 1px solid var(--line-mid); background: #fff; font-size: 1.6rem; font-weight: 700; cursor: pointer;
                    font-family: Menlo, Consolas, monospace; }
     .keys button:active { transform: translateY(1px); }
     .keys .fn { background: #efe8da; font-size: 1.2rem; font-family: inherit; }
@@ -46,12 +46,12 @@
     .keys .op.on { background: #d07a3e; color: #fff; }
     .keys .eq { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; }
     .tapelist { display: flex; flex-direction: column; gap: 6px; }
-    .tapelist button { text-align: right; border: 1.5px solid var(--line); background: #fff; border-radius: 8px; padding: 6px 12px; cursor: pointer;
+    .tapelist button { text-align: right; border: 1px solid var(--line-mid); background: #fff; border-radius: 8px; padding: 6px 12px; cursor: pointer;
                        font-family: Menlo, Consolas, monospace; font-size: 1rem; }
     .tapelist button b { display: block; font-size: 1.3rem; }
     .tapelist button:hover { background: var(--hover-bg); }
     .hint { font-size: var(--fs-side, 13px); color: var(--ink-2); }
-    .btn { border: 1.5px solid var(--line-d); background: #fff; font-weight: 600; padding: 4px 12px; border-radius: var(--r); cursor: pointer; font-size: .9rem; min-height: 32px; }
+    .btn { border: 1px solid var(--line-mid); background: #fff; font-weight: 600; padding: 4px 12px; border-radius: var(--r-sm); cursor: pointer; font-size: .9rem; min-height: 32px; }
     @media (max-width: 1023px) { .main-container { flex-direction: column; } .panel.calc, .panel.tape { flex: 0 0 auto; }
                                  .panel, .panel-body { overflow: visible; } body { overflow: auto; height: auto; } }
   </style>

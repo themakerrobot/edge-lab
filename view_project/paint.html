@@ -30,21 +30,21 @@
     .st { font-weight: 700; font-size: var(--fs-head, 14px); color: var(--cyan-d); }
     .hint { font-size: var(--fs-side, 13px); color: var(--ink-2); }
     .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-    .tool { display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 58px; padding: 6px 2px; border: 1.5px solid var(--line);
+    .tool { display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 58px; padding: 6px 2px; border: 1px solid var(--line-mid);
             border-radius: 10px; background: #fff; cursor: pointer; font-size: 12.5px; }
     .tool svg { width: 24px; height: 24px; }
     .tool.on { border-color: var(--pen-blue); background: var(--pen-blue); color: #fff; }
     .sizes { display: flex; gap: 6px; }
-    .sizes button { flex: 1; height: 44px; border: 1.5px solid var(--line); border-radius: 10px; background: #fff; cursor: pointer; display: grid; place-items: center; }
+    .sizes button { flex: 1; height: 44px; border: 1px solid var(--line-mid); border-radius: 10px; background: #fff; cursor: pointer; display: grid; place-items: center; }
     .sizes button i { display: block; border-radius: 50%; background: var(--ink); }
     .sizes button.on { border-color: var(--pen-blue); background: var(--cyan-bg); }
     .colors { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
     .colors button { aspect-ratio: 1; border-radius: 8px; border: 1.5px solid rgba(0,0,0,.25); cursor: pointer; }
     .colors button.on { outline: 3px solid var(--pen-blue); outline-offset: 2px; }
-    .colors label { aspect-ratio: 1; border-radius: 8px; border: 1.5px dashed var(--line-d); display: grid; place-items: center; cursor: pointer; font-size: 18px; position: relative; overflow: hidden; }
+    .colors label { aspect-ratio: 1; border-radius: 8px; border: 1.5px dashed var(--line-mid); display: grid; place-items: center; cursor: pointer; font-size: 18px; position: relative; overflow: hidden; }
     .colors label input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
     .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-    .btn { border: 1.5px solid var(--line-d); background: #fff; font-weight: 600; padding: 6px 12px; border-radius: var(--r); cursor: pointer; font-size: .92rem;
+    .btn { border: 1px solid var(--line-mid); background: #fff; font-weight: 600; padding: 6px 12px; border-radius: var(--r-sm); cursor: pointer; font-size: .92rem;
            min-height: 40px; display: inline-flex; align-items: center; gap: 6px; }
     .btn svg { width: 18px; height: 18px; }
     .btn.primary { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; }
@@ -52,7 +52,7 @@
     .chk { display: flex; align-items: center; gap: 6px; font-size: .92rem; cursor: pointer; }
     .chk input { width: 18px; height: 18px; }
     .stage { position: relative; display: flex; align-items: center; justify-content: center; min-height: 200px;
-             background: repeating-conic-gradient(#ece5d6 0 25%, #f4efe4 0 50%) 0 0 / 20px 20px; border-radius: var(--r); }
+             background: repeating-conic-gradient(#ece5d6 0 25%, #f4efe4 0 50%) 0 0 / 20px 20px; border-radius: var(--r-sm); }
     .stage canvas { position: absolute; background: transparent; touch-action: none; }
     #cv { background: #fff; box-shadow: 0 4px 16px rgba(40,30,20,.18); }
     #fx { pointer-events: none; }

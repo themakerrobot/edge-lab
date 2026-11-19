@@ -344,6 +344,23 @@ button svg.ic, .btn svg.ic { width: 16px; height: 16px; flex: 0 0 auto; }
   background: #fff; color: var(--accent, #1f5f7a); font-weight: 800; box-shadow: var(--shadow-1), 0 0 0 1px var(--line-soft, #e8e1d4);
 }
 
+/* 화면마다 복사해 두었던 .btn — 한 모양으로 (261119 다듬기 2)
+   ui.css 는 모든 화면에서 화면 <style> 뒤에 읽힌다 — 같은 무게의 규칙은 여기가 이긴다.
+   hover 는 :where 로 무게를 낮춰, 화면의 .btn.on · .btn.armed 같은 상태 색을 덮지 않게 한다.
+   .btn.go = 시작 · 실행(초록, 블록 · 체험하기의 실행 단추와 같은 색). .btn.primary = 주 동작(청록). */
+.btn { border: 1px solid var(--line-mid, #d5cbb9); border-radius: var(--r-sm, 8px);
+       transition: background-color .12s, border-color .12s, box-shadow .12s, color .12s; }
+.btn:where(:hover):not(:disabled) { border-color: var(--accent, #1f5f7a); }
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn.primary { background: var(--accent, #1f5f7a); border-color: var(--accent, #1f5f7a); color: #fff; }
+.btn.primary:hover:not(:disabled) { background: var(--accent-d, #17475c); border-color: var(--accent-d, #17475c); color: #fff; }
+.btn.go { background: var(--ok, #2e8f63); border-color: var(--ok, #2e8f63); color: #fff; font-weight: 800;
+          box-shadow: 0 1px 0 rgba(0, 0, 0, .08), 0 2px 6px rgba(46, 143, 99, .25); }
+.btn.go:hover:not(:disabled) { background: var(--ok-d, #23714e); border-color: var(--ok-d, #23714e); color: #fff; }
+.btn.danger { color: var(--danger, #c2410c); }
+.btn:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
+.btn.primary:disabled, .btn.go:disabled { filter: saturate(.35); }
+
 /* 키보드로 고를 때 보이는 테두리 — 한 모양 */
 :where(button, a, select, input, textarea, [tabindex]):focus-visible {
   outline: 2.5px solid var(--accent, #1f5f7a);

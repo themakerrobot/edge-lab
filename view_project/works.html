@@ -38,8 +38,8 @@
       line-height: 1.5; padding: var(--sp-2, 8px); gap: var(--sp-2, 8px);
     }
     button, input { font-family: inherit; color: var(--ink); }
-    .btn { border: 1.5px solid var(--line-d); background: #fff; font-weight: 600; padding: 6px 12px;
-           border-radius: var(--r); cursor: pointer; font-size: .9rem; }
+    .btn { border: 1px solid var(--line-mid); background: #fff; font-weight: 600; padding: 6px 12px;
+           border-radius: var(--r-sm); cursor: pointer; font-size: .9rem; }
     .btn.primary { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; }
     .btn.danger { border-color: var(--pen-red); color: var(--pen-red); }
     .btn.sm { padding: 4px 10px; font-size: .84rem; }
@@ -47,7 +47,7 @@
     .panel.kinds { flex: 0 0 250px; }
     .panel.list { flex: 1 1 auto; }
     .kind { display: flex; align-items: center; gap: 10px; width: 100%; min-height: var(--tap, 44px);
-            padding: 6px 10px; border: 1.5px solid transparent; border-radius: var(--r); background: none;
+            padding: 6px 10px; border: 1.5px solid transparent; border-radius: var(--r-sm); background: none;
             font-size: var(--fs-name, 15px); cursor: pointer; text-align: left; }
     .kind:hover { background: var(--hover-bg); }
     .kind.on { background: var(--cyan-bg); border-color: var(--cyan); font-weight: 700; color: var(--cyan-d); }
@@ -61,10 +61,10 @@
                     word-break: break-all; margin: 4px 0 8px; }
 
     .find { flex: 1 1 auto; max-width: 260px; margin-left: auto; padding: 6px 10px;
-            border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; font-size: .9rem; }
+            border: 1px solid var(--line-mid); border-radius: var(--r-sm); background: #fff; font-size: .9rem; }
     .rows { display: flex; flex-direction: column; gap: 6px; }
     .row { position: relative; display: flex; align-items: center; gap: 12px; padding: 9px 12px; background: #fff;
-           border: 1.5px solid var(--line); border-radius: var(--r); }
+           border: 1px solid var(--line-mid); border-radius: var(--r-sm); }
     .row:hover { border-color: var(--cyan); }
     .row .ic { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center;
                background: var(--cyan-bg); color: var(--cyan-d); flex: 0 0 auto; }
@@ -77,7 +77,7 @@
     .row .acts { display: flex; gap: 6px; flex: 0 0 auto; flex-wrap: wrap; justify-content: flex-end; }
     .more { width: 34px; height: 30px; padding: 0; font-size: 1.1rem; line-height: 1; }
     .menu { position: absolute; right: 10px; top: calc(100% - 4px); z-index: 20; min-width: 170px; background: #fff;
-            border: 1.5px solid var(--line-d); border-radius: 10px; box-shadow: 0 10px 26px rgba(44,74,124,.2); padding: 4px; }
+            border: 1px solid var(--line-mid); border-radius: 10px; box-shadow: 0 10px 26px rgba(44,74,124,.2); padding: 4px; }
     .menu button { display: block; width: 100%; text-align: left; padding: 8px 10px; border: 0; background: none; border-radius: 7px;
                    font-size: .9rem; cursor: pointer; }
     .menu button:hover { background: var(--cyan-bg); }

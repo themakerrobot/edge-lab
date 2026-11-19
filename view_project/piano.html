@@ -30,7 +30,7 @@
            font-family: var(--font-ui); line-height: 1.5;
            padding: var(--sp-2, 8px); gap: var(--sp-2, 8px); }
     button, input { font-family: inherit; color: var(--ink); }
-    .btn { border: 1.5px solid var(--line-d); background: #fff; font-weight: 600; padding: 4px 12px; border-radius: var(--r); cursor: pointer;
+    .btn { border: 1px solid var(--line-mid); background: #fff; font-weight: 600; padding: 4px 12px; border-radius: var(--r-sm); cursor: pointer;
            font-size: .92rem; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; }
     .btn.primary { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; }
     .btn.rec { color: var(--pen-red); border-color: var(--pen-red); }
@@ -45,7 +45,7 @@
     .st { font-weight: 700; font-size: var(--fs-head, 14px); color: var(--cyan-d); display: flex; align-items: center; gap: 6px; }
     .st .sp { flex: 1; }
     .hint { font-size: var(--fs-side, 13px); color: var(--ink-2); }
-    .sec { display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1.5px dashed var(--line); }
+    .sec { display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1.5px dashed var(--line-mid); }
     .sec:first-child { padding-top: 0; border-top: 0; }
     .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
     .num { font-family: Menlo, Consolas, monospace; font-size: var(--fs-mono, 13px); }
@@ -56,14 +56,14 @@
 
     /* 악기 — 넷 중 하나 */
     .inst { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-    .inst button { min-height: var(--tap, 48px); border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; cursor: pointer;
+    .inst button { min-height: var(--tap, 48px); border: 1px solid var(--line-mid); border-radius: var(--r-sm); background: #fff; cursor: pointer;
                    display: flex; align-items: center; gap: 8px; padding: 4px 10px; font-size: .98rem; font-weight: 600; }
     .inst button svg { width: 26px; height: 26px; flex: 0 0 auto; }
     .inst button.on { border-color: var(--cyan); background: var(--cyan-bg); color: var(--cyan-d); box-shadow: inset 0 0 0 1px var(--cyan); }
 
-    .seg { display: inline-flex; border: 1.5px solid var(--line-d); border-radius: var(--r); overflow: hidden; }
+    .seg { display: inline-flex; border: 1px solid var(--line-mid); border-radius: var(--r-sm); overflow: hidden; }
     .seg button { border: 0; background: #fff; padding: 0 12px; min-height: 40px; font-size: .92rem; font-weight: 600; cursor: pointer; }
-    .seg button + button { border-left: 1.5px solid var(--line-d); }
+    .seg button + button { border-left: 1px solid var(--line-mid); }
     .seg button.on { background: var(--pen-blue); color: #fff; }
     .lr { display: flex; align-items: center; gap: 8px; }
     .lr > span:first-child { flex: 0 0 auto; min-width: 58px; font-size: var(--fs-side, 13px); font-weight: 600; }
@@ -74,17 +74,17 @@
     /* 박자기 */
     .bpm { font-family: Menlo, Consolas, monospace; font-size: 1.5rem; font-weight: 700; min-width: 56px; text-align: center; }
     .beats { display: flex; gap: 6px; }
-    .beats i { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--line); background: #fff; transition: background .05s; }
+    .beats i { width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line-mid); background: #fff; transition: background .05s; }
     .beats i.on { background: var(--pen-blue); border-color: var(--pen-blue-d); }
     .beats i.on.acc { background: var(--pen-red); border-color: var(--pen-red); }
 
     /* 따라 치기 띠 */
-    .follow { border: 1.5px solid var(--line); border-radius: var(--r); background: #fffdf8; padding: 6px 8px; display: flex; flex-direction: column; gap: 6px; }
+    .follow { border: 1px solid var(--line-mid); border-radius: var(--r-sm); background: #fffdf8; padding: 6px 8px; display: flex; flex-direction: column; gap: 6px; }
     .follow .top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .follow .top b { font-size: 1.02rem; }
     .follow .top .sp { flex: 1; }
     .chips { display: flex; flex-wrap: wrap; gap: 4px; max-height: 69px; overflow-y: auto; position: relative; }
-    .chips span { min-width: 34px; padding: 2px 6px; border-radius: 8px; border: 1.5px solid var(--line); background: #fff; text-align: center;
+    .chips span { min-width: 34px; padding: 2px 6px; border-radius: 8px; border: 1px solid var(--line-mid); background: #fff; text-align: center;
                   font-weight: 700; font-size: .95rem; border-bottom-width: 4px; }
     .chips span.done { opacity: .45; background: #e6f3e8; }
     .chips span.cur { background: var(--hit); border-color: var(--hit-d); transform: translateY(-1px); }
@@ -101,7 +101,7 @@
     .kbwrap { display: flex; min-height: 190px; }
     .kb { position: relative; flex: 1; display: flex; touch-action: none; user-select: none; -webkit-user-select: none; max-height: 470px;
           border-top: 6px solid #3b332a; border-radius: 4px; }
-    .wk { flex: 1 1 0; min-width: 0; position: relative; background: #fff; border: 1.5px solid var(--line-d); border-top: 0; margin-left: -1.5px;
+    .wk { flex: 1 1 0; min-width: 0; position: relative; background: #fff; border: 1px solid var(--line-mid); border-top: 0; margin-left: -1.5px;
           border-radius: 0 0 10px 10px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 2px;
           padding-bottom: 8px; cursor: pointer; }
     .wk:first-child { margin-left: 0; }
@@ -122,14 +122,14 @@
 
     /* 드럼 */
     .drums { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
-    .drums button { min-height: 64px; border-radius: 12px; border: 1.5px solid var(--line-d); background: #fff; cursor: pointer; touch-action: none;
+    .drums button { min-height: 64px; border-radius: 12px; border: 1px solid var(--line-mid); background: #fff; cursor: pointer; touch-action: none;
                     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; font-weight: 700; font-size: .98rem;
                     border-bottom-width: 4px; user-select: none; }
     .drums button small { font-family: Menlo, Consolas, monospace; font-size: 12px; color: var(--ink-2); font-weight: 400; }
     .drums button.hit { transform: translateY(2px); border-bottom-width: 2px; background: var(--hit); }
 
     /* 녹음 · 칸 */
-    .recst { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: var(--r); background: #f4efe4; font-size: var(--fs-side, 13px); min-height: 36px; }
+    .recst { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: var(--r-sm); background: #f4efe4; font-size: var(--fs-side, 13px); min-height: 36px; }
     .recst .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line); flex: 0 0 auto; }
     .recst.rec .dot { background: var(--pen-red); animation: bl 1s steps(2) infinite; }
     .recst.play .dot { background: var(--good); }
@@ -145,7 +145,7 @@
     /* 노래 고르기 */
     .songs { display: flex; flex-direction: column; gap: 6px; }
     .songs button { display: flex; align-items: center; gap: 8px; min-height: var(--tap, 48px); padding: 4px 10px; text-align: left;
-                    border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; cursor: pointer; }
+                    border: 1px solid var(--line-mid); border-radius: var(--r-sm); background: #fff; cursor: pointer; }
     .songs button b { display: block; font-size: .98rem; font-weight: 600; }
     .songs button small { display: block; font-size: var(--fs-side, 13px); color: var(--ink-2); }
     .songs button svg { width: 22px; height: 22px; flex: 0 0 auto; color: var(--cyan-d); }
@@ -201,7 +201,7 @@
             <span class="bpm" id="bpmVal"></span><span class="hint">BPM</span><span style="flex:1"></span>
             <div class="seg" id="beatSeg"><button type="button" data-b="2">2</button><button type="button" data-b="3">3</button><button type="button" data-b="4">4</button></div>
           </div>
-          <button class="btn primary" type="button" id="metroBtn" style="min-height:var(--tap,48px)"></button>
+          <button class="btn go" type="button" id="metroBtn" style="min-height:var(--tap,48px)"></button>
         </div>
         <div class="sec">
           <div class="st" id="txtKeys"></div>
@@ -640,7 +640,7 @@
     }
     function paintMetro() {
       $("metroBtn").innerHTML = (metro.on ? IC.stop : IC.play) + "<span>" + (metro.on ? t("stop") : t("start")) + "</span>";
-      $("metroBtn").classList.toggle("primary", !metro.on);
+      $("metroBtn").classList.toggle("go", !metro.on);
       $("metroBtn").classList.toggle("on", metro.on);
     }
     function setBpm(v) { set.bpm = Math.max(60, Math.min(180, Math.round(v))); $("bpm").value = set.bpm; $("bpmVal").textContent = set.bpm; keep(); }

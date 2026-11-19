@@ -32,34 +32,34 @@
            font-family: var(--font-ui); line-height: 1.5;
            padding: var(--sp-2, 8px); gap: var(--sp-2, 8px); }
     button, input { font-family: inherit; color: var(--ink); }
-    .btn { border: 1.5px solid var(--line-d); background: #fff; font-weight: 600; padding: 7px 13px; border-radius: var(--r); cursor: pointer;
+    .btn { border: 1px solid var(--line-mid); background: #fff; font-weight: 600; padding: 7px 13px; border-radius: var(--r-sm); cursor: pointer;
            font-size: .92rem; min-height: 40px; }
     .btn.primary { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; }
     .panel.side { flex: 0 0 270px; } .panel.main { flex: 1 1 auto; }
     .hint { font-size: var(--fs-side, 13px); color: var(--ink-2); }
     .st { font-weight: 700; font-size: var(--fs-head, 14px); color: var(--cyan-d); }
-    .sec { display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1.5px dashed var(--line); }
+    .sec { display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1.5px dashed var(--line-mid); }
     .sec[hidden] { display: none; }
-    .seg { display: flex; border: 1.5px solid var(--line-d); border-radius: var(--r); overflow: hidden; }
+    .seg { display: flex; border: 1px solid var(--line-mid); border-radius: var(--r-sm); overflow: hidden; }
     .seg button { flex: 1; border: 0; background: #fff; min-height: var(--tap, 48px); font-size: 1rem; font-weight: 600; cursor: pointer; }
-    .seg button + button { border-left: 1.5px solid var(--line-d); }
+    .seg button + button { border-left: 1px solid var(--line-mid); }
     .seg button.on { background: var(--pen-blue); color: #fff; }
     .modes { display: flex; flex-direction: column; gap: 6px; }
     .modes button { display: flex; flex-direction: column; align-items: flex-start; min-height: var(--tap, 48px); padding: 7px 12px; text-align: left;
-                    border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; cursor: pointer; }
+                    border: 1px solid var(--line-mid); border-radius: var(--r-sm); background: #fff; cursor: pointer; }
     .modes button b { font-size: 1rem; } .modes button small { font-size: var(--fs-side, 13px); color: var(--ink-2); }
     .modes button.on { border-color: var(--cyan); background: var(--cyan-bg); }
     .lessons { display: flex; flex-wrap: wrap; gap: 6px; }
-    .lessons button { border: 1.5px solid var(--line); background: #fff; border-radius: 16px; padding: 4px 12px; min-height: 36px; cursor: pointer; font-size: .9rem; }
+    .lessons button { border: 1px solid var(--line-mid); background: #fff; border-radius: 16px; padding: 4px 12px; min-height: 36px; cursor: pointer; font-size: .9rem; }
     .lessons button.on { border-color: var(--pen-blue); background: var(--pen-blue); color: #fff; }
     .best { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; font-size: var(--fs-side, 13px); }
     .best b { font-family: Menlo, Consolas, monospace; font-weight: 700; text-align: right; }
 
     .stats { display: flex; gap: 10px; flex-wrap: wrap; }
-    .stat { flex: 1 1 110px; border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; padding: 6px 10px; }
+    .stat { flex: 1 1 110px; border: 1px solid var(--line-mid); border-radius: var(--r-sm); background: #fff; padding: 6px 10px; }
     .stat small { display: block; font-size: var(--fs-side, 13px); color: var(--ink-2); }
     .stat b { font-family: Menlo, Consolas, monospace; font-size: 1.35rem; }
-    .imewarn { background: #fdecc8; border: 1.5px solid #e0a030; border-radius: var(--r); padding: 6px 10px; font-weight: 600; }
+    .imewarn { background: #fdecc8; border: 1.5px solid #e0a030; border-radius: var(--r-sm); padding: 6px 10px; font-weight: 600; }
 
     /* 자리 연습 */
     .keysview { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; outline: none; }
@@ -72,7 +72,7 @@
     .kb { display: flex; flex-direction: column; gap: 6px; user-select: none; }
     .kb .r { display: flex; gap: 6px; }
     .kb .r:nth-child(2) { margin-left: 22px; } .kb .r:nth-child(3) { margin-left: 50px; }
-    .kb .k { width: 54px; height: 54px; border-radius: 9px; border: 1.5px solid var(--line); display: flex; flex-direction: column;
+    .kb .k { width: 54px; height: 54px; border-radius: 9px; border: 1px solid var(--line-mid); display: flex; flex-direction: column;
              align-items: center; justify-content: center; font-size: 1.15rem; font-weight: 700; position: relative; }
     .kb .k small { position: absolute; left: 5px; top: 2px; font-size: 10px; font-weight: 400; color: var(--ink-2); }
     .kb .k.f1 { background: var(--f1); } .kb .k.f2 { background: var(--f2); } .kb .k.f3 { background: var(--f3); } .kb .k.f4 { background: var(--f4); }
@@ -97,10 +97,10 @@
     .bar i { display: block; height: 100%; width: 0; background: var(--ok); transition: width .15s; }
 
     /* 게임 */
-    .rain { position: relative; overflow: hidden; border: 1.5px solid var(--line); border-radius: var(--r);
+    .rain { position: relative; overflow: hidden; border: 1px solid var(--line-mid); border-radius: var(--r-sm);
             background: linear-gradient(#eaf2f6, #fbf7ef 80%); min-height: 240px; }
     .rain { flex: 1 1 auto; }
-    .rain .w { position: absolute; top: 0; left: 0; padding: 3px 12px; border-radius: 14px; background: #fff; border: 1.5px solid var(--line-d);
+    .rain .w { position: absolute; top: 0; left: 0; padding: 3px 12px; border-radius: 14px; background: #fff; border: 1px solid var(--line-mid);
                font-size: 1.35rem; font-weight: 700; white-space: nowrap; will-change: transform; }
     .rain .w.hit { background: var(--ok); color: #fff; border-color: var(--ok); transition: opacity .3s, transform .3s; opacity: 0; }
     .rain .ground { position: absolute; left: 0; right: 0; bottom: 0; height: 6px; background: #b99d7a; }
@@ -469,7 +469,7 @@
       $("stats").innerHTML = statsHtml([["score", "sScore", 0], ["level", "sLevel", 1], ["life", "sLife", "♥♥♥♥♥"]]);
       $("sLife").className = "hearts";
       $("stage").innerHTML = '<div class="rain grow" id="rain"><div class="ground"></div><div class="msg" id="gMsg"><div>' + esc(t("gameHow")) +
-        '</div><button class="btn primary" type="button" id="gGo">' + esc(t("gameStart")) + "</button></div></div>" +
+        '</div><button class="btn go" type="button" id="gGo">' + esc(t("gameStart")) + "</button></div></div>" +
         '<input class="inp" id="inp" autocomplete="off" autocapitalize="off" spellcheck="false" lang="' + kbl + '">';
       $("stage").className = "grow typeview";
       $("stage").style.alignItems = "stretch";

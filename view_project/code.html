@@ -33,7 +33,7 @@
     a { color: var(--pen-blue-d); text-decoration: none; }
     select, input, button {
       font-family: inherit; font-size: .95rem; color: var(--ink); background: #fff;
-      border: 1.5px solid var(--line); border-radius: var(--r); padding: 7px 11px;
+      border: 1px solid var(--line-mid); border-radius: var(--r-sm); padding: 7px 11px;
       outline: none; transition: border-color .12s, background .12s;
       cursor: pointer;
     }
@@ -48,7 +48,7 @@
     /* ===== 시스템 상태바 ===== */
     .chip {
       display: inline-flex; align-items: center; gap: 6px;
-      background: #fff; border: 1.5px solid var(--line); border-radius: 999px;
+      background: #fff; border: 1px solid var(--line-mid); border-radius: 999px;
       padding: 2px 10px; color: #6b6255;
     }
     .chip .dot { width: 7px; height: 7px; border-radius: 50%; background: #cfc7b8; }
@@ -105,7 +105,7 @@
     #helpScroll { flex: 1 1 auto; min-height: 0; overflow: auto; }
     #helpList { padding: 0 12px 4px; }
     .h-item {
-      border: 1.5px solid var(--line); border-radius: var(--r);
+      border: 1px solid var(--line-mid); border-radius: var(--r-sm);
       padding: 8px 10px; margin-bottom: 6px; cursor: pointer;
     }
     .h-item:hover { border-color: var(--pen-blue); background: var(--paper); }
@@ -148,7 +148,7 @@
     #output {
       flex: 1 1 auto; min-height: 0; overflow: auto;
       margin: 0 12px 12px; padding: 12px;
-      background: #23292f; color: #dfe7ee; border-radius: var(--r);
+      background: #23292f; color: #dfe7ee; border-radius: var(--r-sm);
       font-family: "Menlo", "Consolas", ui-monospace, monospace;
       font-size: .87rem; line-height: 1.5; white-space: pre-wrap; word-break: break-all;
     }
@@ -168,7 +168,7 @@
     }
     .modal h3 { font-family: var(--font-ui); color: var(--cyan-d); margin-bottom: var(--sp-2, 8px); }
     .ex-card {
-      border: 1.5px solid var(--line); border-radius: var(--r);
+      border: 1px solid var(--line-mid); border-radius: var(--r-sm);
       padding: 10px 12px; margin-bottom: var(--sp-1, 4px); cursor: pointer;
     }
     .ex-card:hover { border-color: var(--pen-blue); background: var(--paper); }
@@ -236,7 +236,7 @@
       </div>
       <div id="stageWrap" style="display:none;margin:0 12px 8px;">
         <img id="stageImg" alt="" style="width:100%;max-height:44vh;object-fit:contain;
-             background:#fff;border:1.5px solid var(--line);border-radius:var(--r);">
+             background:#fff;border:1px solid var(--line-mid);border-radius: var(--r-sm);">
         <div id="stageCap" style="font-size:0.82rem;color:var(--ink-2);margin-top:3px;"></div>
       </div>
       <div id="output"></div>

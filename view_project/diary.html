@@ -29,7 +29,7 @@
            font-family: var(--font-ui); line-height: 1.5;
            padding: var(--sp-2, 8px); gap: var(--sp-2, 8px); }
     button, input, textarea { font-family: inherit; color: var(--ink); }
-    .btn { border: 1.5px solid var(--line-d); background: #fff; font-weight: 600; padding: 4px 12px; border-radius: var(--r); cursor: pointer;
+    .btn { border: 1px solid var(--line-mid); background: #fff; font-weight: 600; padding: 4px 12px; border-radius: var(--r-sm); cursor: pointer;
            font-size: .9rem; min-height: 32px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; white-space: nowrap; }
     .btn.primary { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; }
     .btn.danger { color: var(--pen-red); border-color: var(--pen-red); }
@@ -42,7 +42,7 @@
     .panel.cal { flex: 0 0 372px; } .panel.edit { flex: 1 1 auto; }
     .st { font-weight: 700; font-size: var(--fs-head, 14px); color: var(--cyan-d); }
     .hint { font-size: var(--fs-side, 13px); color: var(--ink-2); }
-    .sec { display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1.5px dashed var(--line); }
+    .sec { display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1.5px dashed var(--line-mid); }
     .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
     .num { font-family: Menlo, Consolas, monospace; font-size: var(--fs-mono, 13px); }
 
@@ -52,7 +52,7 @@
     .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
     .grid .wd { text-align: center; font-size: var(--fs-side, 13px); font-weight: 700; color: var(--ink-2); }
     .grid .wd.sun, .day.sun .dn { color: var(--sun); } .grid .wd.sat, .day.sat .dn { color: var(--sat); }
-    .day { position: relative; height: 50px; border: 1.5px solid var(--line); border-radius: 8px; background: #fff; cursor: pointer; padding: 2px 0 0;
+    .day { position: relative; height: 50px; border: 1px solid var(--line-mid); border-radius: 8px; background: #fff; cursor: pointer; padding: 2px 0 0;
            display: flex; flex-direction: column; align-items: center; gap: 1px; }
     .day .dn { font-size: .88rem; font-weight: 700; line-height: 1.2; }
     .day svg { width: 24px; height: 24px; }
@@ -77,7 +77,7 @@
     /* 쓰기 */
     .pickers { display: grid; grid-template-columns: 1.1fr 1fr; gap: 12px; }
     .pick { display: flex; gap: 6px; }
-    .pick button { flex: 1 1 0; min-width: 0; min-height: 76px; border: 1.5px solid var(--line); border-radius: 10px; background: #fff; cursor: pointer;
+    .pick button { flex: 1 1 0; min-width: 0; min-height: 76px; border: 1px solid var(--line-mid); border-radius: 10px; background: #fff; cursor: pointer;
                    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 4px 2px; }
     .pick button svg { width: 38px; height: 38px; transition: transform .12s; }
     .pick button span { font-size: var(--fs-side, 13px); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
@@ -88,7 +88,7 @@
 
     .stickers { display: flex; flex-wrap: wrap; gap: 8px; }
     .stk { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 4px 14px 4px 10px; border-radius: 20px; cursor: pointer;
-           border: 1.5px dashed var(--line); background: #fff; font-size: .95rem; font-weight: 600; transition: transform .1s; }
+           border: 1.5px dashed var(--line-mid); background: #fff; font-size: .95rem; font-weight: 600; transition: transform .1s; }
     .stk i { width: 12px; height: 12px; border-radius: 50%; background: var(--c); border: 1.5px solid rgba(0,0,0,.18); flex: 0 0 auto; }
     .stk svg { width: 14px; height: 14px; display: none; }
     .stk.on { background: var(--c); border: 1.5px solid rgba(42,38,32,.45); box-shadow: 0 2px 0 rgba(42,38,32,.25); }
@@ -96,9 +96,9 @@
     .stk.on:nth-child(odd) { transform: rotate(-2deg); } .stk.on:nth-child(even) { transform: rotate(1.5deg); }
     .stk:hover { border-style: solid; }
 
-    .ttl { height: 44px; border: 1.5px solid var(--line); border-radius: var(--r); padding: 0 12px; background: #fff; font-size: 1.05rem; outline: none; width: 100%; }
+    .ttl { height: 44px; border: 1px solid var(--line-mid); border-radius: var(--r-sm); padding: 0 12px; background: #fff; font-size: 1.05rem; outline: none; width: 100%; }
     .ttl:focus, textarea:focus { border-color: var(--cyan); }
-    textarea { width: 100%; resize: none; border: 1.5px solid var(--line); border-radius: var(--r); padding: 12px 14px; background: #fff; font-size: 1.05rem;
+    textarea { width: 100%; resize: none; border: 1px solid var(--line-mid); border-radius: var(--r-sm); padding: 12px 14px; background: #fff; font-size: 1.05rem;
                line-height: 1.8; outline: none; min-height: 120px;
                /* 공책 줄 — 한 줄 높이(1.8em)마다 */
                background-image: linear-gradient(transparent calc(1.8em - 1px), #eadfca calc(1.8em - 1px)); background-size: 100% 1.8em;

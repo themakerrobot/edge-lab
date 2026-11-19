@@ -31,7 +31,7 @@
            font-family: var(--font-ui); line-height: 1.5;
            padding: var(--sp-2, 8px); gap: var(--sp-2, 8px); }
     button, input, select { font-family: inherit; color: var(--ink); }
-    .btn { border: 1.5px solid var(--line-d); background: #fff; font-weight: 600; padding: 7px 13px; border-radius: var(--r); cursor: pointer;
+    .btn { border: 1px solid var(--line-mid); background: #fff; font-weight: 600; padding: 7px 13px; border-radius: var(--r-sm); cursor: pointer;
            font-size: .92rem; min-height: 40px; display: inline-flex; align-items: center; gap: 6px; }
     .btn.primary { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; }
     .btn.go { background: var(--go); border-color: var(--go); color: #fff; }
@@ -43,14 +43,14 @@
     .panel.side { flex: 0 0 280px; } .panel.road { flex: 1 1 auto; } .panel.out { flex: 0 0 300px; }
     .st { font-weight: 700; font-size: var(--fs-head, 14px); color: var(--cyan-d); }
     .hint { font-size: var(--fs-side, 13px); color: var(--ink-2); }
-    .sec { display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1.5px dashed var(--line); }
+    .sec { display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1.5px dashed var(--line-mid); }
     .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     .num { font-family: Menlo, Consolas, monospace; font-size: var(--fs-mono, 13px); }
 
     /* 트랙 고르기 */
     .pick { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
     .pick button { display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 64px; padding: 6px 4px; text-align: center;
-                   border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; cursor: pointer; font-size: .9rem; position: relative; }
+                   border: 1px solid var(--line-mid); border-radius: var(--r-sm); background: #fff; cursor: pointer; font-size: .9rem; position: relative; }
     .pick button b { font-weight: 600; line-height: 1.2; }
     .pick button small { position: absolute; top: 3px; right: 5px; font-size: 11px; color: var(--pen-red); font-weight: 700; }
     .pick button small.race { color: var(--cyan-d); }
@@ -59,9 +59,9 @@
     .pick svg { width: 48px; height: 30px; flex: 0 0 auto; }
 
     /* 두세 개 중 하나 */
-    .seg { display: inline-flex; border: 1.5px solid var(--line-d); border-radius: var(--r); overflow: hidden; }
+    .seg { display: inline-flex; border: 1px solid var(--line-mid); border-radius: var(--r-sm); overflow: hidden; }
     .seg button { border: 0; background: #fff; padding: 0 12px; min-height: 40px; font-size: .92rem; font-weight: 600; cursor: pointer; }
-    .seg button + button { border-left: 1.5px solid var(--line-d); }
+    .seg button + button { border-left: 1px solid var(--line-mid); }
     .seg button.on { background: var(--pen-blue); color: #fff; }
     .seg.big { display: flex; } .seg.big button { flex: 1; min-height: var(--tap, 48px); font-size: 1rem; }
     .seg button:disabled { opacity: .4; cursor: not-allowed; }
@@ -73,25 +73,25 @@
     .bar .bt { height: 10px; border-radius: 5px; background: #ece5d6; overflow: hidden; }
     .bar .bf { height: 100%; background: var(--pen-blue); transition: width .12s; }
     .bar.top .bf { background: var(--go); } .bar.top .bl { font-weight: 700; }
-    .ready { font-size: var(--fs-side, 13px); padding: 6px 8px; border-radius: var(--r); background: #f4efe4; }
+    .ready { font-size: var(--fs-side, 13px); padding: 6px 8px; border-radius: var(--r-sm); background: #f4efe4; }
     .ready.ok { background: #e3f1e6; color: #1e5b30; font-weight: 600; }
 
     /* 진행 단계 */
     .steps { display: flex; gap: 4px; margin-left: auto; font-size: var(--fs-side, 13px); }
-    .steps span { padding: 2px 8px; border-radius: 12px; border: 1.5px solid var(--line); color: var(--ink-2); white-space: nowrap; }
+    .steps span { padding: 2px 8px; border-radius: 12px; border: 1px solid var(--line-mid); color: var(--ink-2); white-space: nowrap; }
     .steps span.done { border-color: var(--go); color: var(--go); }
     .steps span.on { border-color: var(--pen-blue); background: var(--pen-blue); color: #fff; font-weight: 700; }
 
     /* 트랙 */
     .stage { position: relative; display: flex; align-items: center; justify-content: center; min-height: 200px; }
-    #cv { display: block; border-radius: var(--r); border: 1.5px solid var(--line); touch-action: none; }
+    #cv { display: block; border-radius: var(--r-sm); border: 1px solid var(--line-mid); touch-action: none; }
     #overlay { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 12px 22px; border-radius: 10px;
                font-size: 1.3rem; font-weight: 700; color: #fff; display: none; align-items: center; gap: 8px; pointer-events: none; }
     #overlay.on { display: flex; } #overlay.good { background: rgba(35,122,59,.92); } #overlay.bad { background: rgba(158,46,25,.92); }
     #overlay svg { width: 26px; height: 26px; }
     .badge { font-family: Menlo, Consolas, monospace; font-weight: 700; padding: 4px 10px; border-radius: 12px; background: var(--cyan-bg); color: var(--cyan-d); }
     .padrow { display: flex; align-items: center; gap: 10px; }
-    .pad { width: 84px; height: 56px; border-radius: 12px; border: 1.5px solid var(--line-d); background: #fff; cursor: pointer;
+    .pad { width: 84px; height: 56px; border-radius: 12px; border: 1px solid var(--line-mid); background: #fff; cursor: pointer;
            display: grid; place-items: center; touch-action: none; user-select: none; }
     .pad svg { width: 30px; height: 30px; }
     .pad.on { background: var(--pen-blue); color: #fff; }
@@ -109,7 +109,7 @@
     .prg .lb { display: flex; justify-content: space-between; font-size: var(--fs-side, 13px); }
     .prg .tr { height: 10px; border-radius: 5px; background: #ece5d6; overflow: hidden; }
     .prg .fl { height: 100%; width: 0; background: var(--go); }
-    #chart { width: 100%; height: 110px; display: block; border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; }
+    #chart { width: 100%; height: 110px; display: block; border: 1px solid var(--line-mid); border-radius: var(--r-sm); background: #fff; }
     .legend { display: flex; gap: 14px; font-size: var(--fs-side, 13px); }
     .legend i { display: inline-block; width: 14px; height: 3px; vertical-align: middle; margin-right: 4px; }
     .sensor { display: grid; grid-template-columns: 42px 1fr 40px; gap: 6px; align-items: center; font-size: var(--fs-side, 13px); }
@@ -200,7 +200,7 @@
     <div class="panel out">
       <div class="panel-head"><span class="q"><span class="qnum">3</span><span class="qtext" id="txtQ3"></span></span></div>
       <div class="panel-body">
-        <button class="btn primary wide" id="trainBtn" type="button" disabled></button>
+        <button class="btn go wide" id="trainBtn" type="button" disabled></button>
         <div class="hint" id="trainHint"></div>
         <div class="prg">
           <div class="lb"><span id="prgLabel"></span><span class="num" id="prgPct"></span></div>

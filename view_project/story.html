@@ -27,14 +27,14 @@
            font-family: var(--font-ui); line-height: 1.5;
            padding: var(--sp-2, 8px); gap: var(--sp-2, 8px); }
     button, input, select { font-family: inherit; color: var(--ink); }
-    .btn { border: 1.5px solid var(--line-d); background: #fff; font-weight: 600; padding: 7px 13px; border-radius: var(--r); cursor: pointer; font-size: .92rem; }
+    .btn { border: 1px solid var(--line-mid); background: #fff; font-weight: 600; padding: 7px 13px; border-radius: var(--r-sm); cursor: pointer; font-size: .92rem; }
     .btn.primary { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; }
     .btn.sm { padding: 4px 9px; font-size: .84rem; }
     .btn:disabled { opacity: .45; cursor: not-allowed; }
     .panel.cast { flex: 0 0 320px; } .panel.script { flex: 1 1 auto; }
     .who { display: grid; grid-template-columns: 14px 1fr 96px auto; gap: 6px; align-items: center; }
     .who .dot { width: 14px; height: 14px; border-radius: 50%; }
-    .who input, .who select, .line input, .line select { height: 36px; border: 1.5px solid var(--line); border-radius: var(--r); padding: 0 8px; background: #fff; font-size: .92rem; min-width: 0; }
+    .who input, .who select, .line input, .line select { height: 36px; border: 1px solid var(--line-mid); border-radius: var(--r-sm); padding: 0 8px; background: #fff; font-size: .92rem; min-width: 0; }
     .lines { display: flex; flex-direction: column; gap: 6px; }
     .line { display: grid; grid-template-columns: 26px 110px 1fr auto; gap: 6px; align-items: center; padding: 4px; border-radius: 10px; border: 1.5px solid transparent; }
     .line .n { font-family: Menlo, Consolas, monospace; font-size: .8rem; color: var(--ink-2); text-align: right; }
@@ -78,7 +78,7 @@
       <div class="panel-head"><span class="q"><span class="qnum">2</span><span class="qtext" id="txtQ2">대본</span></span>
         <span class="row" style="margin-left:auto">
           <button class="btn" id="aiBtn" type="button"></button>
-          <button class="btn primary" id="playBtn" type="button"></button>
+          <button class="btn go" id="playBtn" type="button"></button>
         </span></div>
       <div class="panel-body">
         <div class="lines" id="lines"></div>

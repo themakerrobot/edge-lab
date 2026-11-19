@@ -32,7 +32,7 @@
            font-family: var(--font-ui); line-height: 1.5;
            padding: var(--sp-2, 8px); gap: var(--sp-2, 8px); }
     button, input, select, textarea { font-family: inherit; color: var(--ink); }
-    .btn { border: 1.5px solid var(--line-d); background: #fff; font-weight: 600; padding: 7px 13px; border-radius: var(--r); cursor: pointer;
+    .btn { border: 1px solid var(--line-mid); background: #fff; font-weight: 600; padding: 7px 13px; border-radius: var(--r-sm); cursor: pointer;
            font-size: .92rem; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; }
     .btn.primary { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; }
     .btn.on { background: var(--cyan-bg); border-color: var(--cyan); color: var(--cyan-d); }
@@ -44,10 +44,10 @@
     .panel.side { flex: 0 0 280px; } .panel.write { flex: 1 1 auto; } .panel.out { flex: 0 0 320px; }
     .st { font-weight: 700; font-size: var(--fs-head, 14px); color: var(--cyan-d); }
     .hint { font-size: var(--fs-side, 13px); color: var(--ink-2); }
-    .sec { display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1.5px dashed var(--line); }
+    .sec { display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1.5px dashed var(--line-mid); }
     .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     .num { font-family: Menlo, Consolas, monospace; font-size: var(--fs-mono, 13px); }
-    .inp { border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; font-size: 1rem; padding: 0 10px; min-height: 44px; min-width: 0; }
+    .inp { border: 1px solid var(--line-mid); border-radius: var(--r-sm); background: #fff; font-size: 1rem; padding: 0 10px; min-height: 44px; min-width: 0; }
     .inp:focus, textarea:focus { outline: 2.5px solid var(--cyan); outline-offset: 0; border-color: var(--cyan); }
     .inp:disabled, textarea:disabled { background: #f4efe4; color: var(--ink-2); }
 
@@ -55,14 +55,14 @@
     /* 예시 글 단추는 한 줄에 셋 — 영어 이름이 길면 단추 안에서 두 줄로 접힌다 (줄이 늘지 않게) */
     #presetRow { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; }
     #presetRow .btn { min-height: 38px; padding: 3px 6px; font-size: .9rem; white-space: normal; line-height: 1.2; text-align: center; }
-    #corpus { width: 100%; min-height: 90px; resize: none; border: 1.5px solid var(--line); border-radius: var(--r); padding: 8px 10px;
+    #corpus { width: 100%; min-height: 90px; resize: none; border: 1px solid var(--line-mid); border-radius: var(--r-sm); padding: 8px 10px;
               font-size: var(--fs-body, 13.5px); line-height: 1.6; background: #fff; }
 
     /* AI 고르기 — 자동차 가르치기의 트랙 고르기와 같은 생김새 */
     /* 두 칸 나란히 — 세로로 쌓으면 왼쪽 칸이 1366×768 에서 넘친다 */
     .pick { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
     .pick button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: var(--tap, 48px); padding: 6px 7px; text-align: left;
-                   border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; cursor: pointer; font-size: .95rem; line-height: 1.3; }
+                   border: 1px solid var(--line-mid); border-radius: var(--r-sm); background: #fff; cursor: pointer; font-size: .95rem; line-height: 1.3; }
     .pick button .nm { display: flex; align-items: center; gap: 5px; font-weight: 700; word-break: keep-all; }
     .pick button small { font-size: var(--fs-side, 13px); color: var(--ink-2); }
     .pick button.on { border-color: var(--cyan); background: var(--cyan-bg); }
@@ -74,7 +74,7 @@
 
     /* 진행 단계 */
     .steps { display: flex; gap: 4px; margin-left: auto; font-size: var(--fs-side, 13px); flex-wrap: wrap; }
-    .steps span { padding: 2px 8px; border-radius: 12px; border: 1.5px solid var(--line); color: var(--ink-2); white-space: nowrap; }
+    .steps span { padding: 2px 8px; border-radius: 12px; border: 1px solid var(--line-mid); color: var(--ink-2); white-space: nowrap; }
     .steps span.done { border-color: var(--go); color: var(--go); }
     .steps span.on { border-color: var(--pen-blue); background: var(--pen-blue); color: #fff; font-weight: 700; }
 
@@ -82,11 +82,11 @@
     .prg .lb { display: flex; justify-content: space-between; font-size: var(--fs-side, 13px); }
     .prg .tr { height: 10px; border-radius: 5px; background: var(--soft); overflow: hidden; }
     .prg .fl { height: 100%; width: 0; background: var(--go); }
-    #chart { width: 100%; height: 80px; display: block; border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; }
+    #chart { width: 100%; height: 80px; display: block; border: 1px solid var(--line-mid); border-radius: var(--r-sm); background: #fff; }
 
     /* 이어 쓰기 */
     #seed { flex: 1 1 160px; font-size: 1.1rem; }
-    .answer { border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; padding: 12px 14px; min-height: 96px;
+    .answer { border: 1px solid var(--line-mid); border-radius: var(--r-sm); background: #fff; padding: 12px 14px; min-height: 96px;
               font-size: 1.25rem; font-weight: 700; line-height: 1.8; overflow-wrap: anywhere; white-space: pre-wrap; }
     .answer.idk { display: flex; align-items: center; justify-content: center; font-size: var(--fs-body, 13.5px); font-weight: 400; color: var(--ink-2); }
     .seedtxt { color: var(--cyan-d); background: var(--cyan-bg); border-radius: 4px; padding: 0 2px; }
@@ -103,18 +103,18 @@
     .bar .bf { height: 100%; background: var(--pen-blue); }
     .bar.top .bf { background: var(--go); } .bar.top .bl { font-weight: 700; }
     #hist { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; min-height: 60px; flex: 1 1 auto; }
-    .hi { border: 1.5px solid var(--line); border-radius: var(--r); padding: 5px 9px; background: #fff; }
+    .hi { border: 1px solid var(--line-mid); border-radius: var(--r-sm); padding: 5px 9px; background: #fff; }
     .hi small { display: block; font-size: var(--fs-side, 13px); color: var(--cyan-d); }
     .hi div { font-size: 1rem; line-height: 1.7; overflow-wrap: anywhere; }
 
     /* 들여다보기 */
     .chips { display: flex; flex-wrap: wrap; gap: 4px; }
-    .chip { min-width: 27px; height: 34px; padding: 0 4px; border-radius: var(--r); border: 1.5px solid var(--line);
+    .chip { min-width: 27px; height: 34px; padding: 0 4px; border-radius: var(--r-sm); border: 1px solid var(--line-mid);
             display: inline-flex; align-items: center; justify-content: center; font-size: 1.05rem; font-weight: 700; color: var(--ink-2); background: #fff; }
     .chip.on { border-color: var(--cyan); background: var(--cyan-bg); color: var(--cyan-d); }
     .chip.next { border-style: dashed; }   /* .q 는 ui.css 의 문항 제목이라 다른 이름을 쓴다 */
     .tabs { display: flex; flex-wrap: wrap; gap: 4px; }
-    .tabs button { border: 1.5px solid var(--line-d); background: #fff; border-radius: var(--r); padding: 0 9px; min-height: 36px;
+    .tabs button { border: 1px solid var(--line-mid); background: #fff; border-radius: var(--r-sm); padding: 0 9px; min-height: 36px;
                    font-size: var(--fs-side, 13px); font-weight: 600; cursor: pointer; }
     .tabs button.on { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; }
     .att-wrap { overflow-x: auto; }
@@ -128,7 +128,7 @@
     table.att tr.last th { color: var(--pen-red); font-weight: 800; }
 
     /* 맞히기 대결 */
-    .duel-q { font-size: 1.15rem; font-weight: 700; padding: 10px 12px; border-radius: var(--r); background: #f4efe4; line-height: 1.6; overflow-wrap: anywhere; }
+    .duel-q { font-size: 1.15rem; font-weight: 700; padding: 10px 12px; border-radius: var(--r-sm); background: #f4efe4; line-height: 1.6; overflow-wrap: anywhere; }
     .duel-q .blank { display: inline-block; min-width: 24px; text-align: center; margin-left: 2px; border-bottom: 2.5px solid var(--pen-blue); color: var(--ink-2); }
     .duel-q .blank.ok { color: var(--go); border-bottom-color: var(--go); }
     #duelIn { width: 96px; text-align: center; font-size: 1.15rem; }
@@ -180,7 +180,7 @@
         </div>
 
         <div class="sec">
-          <button class="btn primary wide" id="trainBtn" type="button"></button>
+          <button class="btn go wide" id="trainBtn" type="button"></button>
           <div class="row">
             <button class="btn fill" id="moreBtn" type="button" disabled></button>
             <button class="btn fill" id="stopBtn" type="button" disabled></button>
@@ -205,7 +205,7 @@
         <div class="row">
           <input class="inp" id="seed" type="text" maxlength="40" autocomplete="off" spellcheck="false">
           <button class="btn" id="stepBtn" type="button" disabled></button>
-          <button class="btn primary" id="genBtn" type="button" disabled></button>
+          <button class="btn go" id="genBtn" type="button" disabled></button>
         </div>
         <div class="slide">
           <div class="lb"><span id="txtTemp"></span><span class="num" id="tempVal">0.8</span></div>

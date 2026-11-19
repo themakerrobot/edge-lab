@@ -32,7 +32,7 @@
        유독 도드라져 보였다. 테두리는 연한 --line, 글씨는 보통 굵기가 기본이다. */
     button, select, input, textarea {
       font-family:inherit; font-size:.95rem; color:var(--ink); background:#fff;
-      border:1.5px solid var(--line); border-radius:var(--r); padding:7px 12px;
+      border:1px solid var(--line-mid); border-radius: var(--r-sm); padding:7px 12px;
     }
     button { cursor:pointer; }
     button:disabled { opacity:.45; cursor:default; }
@@ -54,7 +54,7 @@
     .who .me-mark { font-size:.75rem; color:var(--ink-2); }
     .bubble {
       max-width:min(78%, 720px); padding:10px 13px; border-radius:12px;
-      border:1.5px solid var(--line); background:#fff; white-space:pre-wrap; word-break:break-word;
+      border:1px solid var(--line-mid); background:#fff; white-space:pre-wrap; word-break:break-word;
     }
     .msg.me .bubble { background:#eef4f7; border-color:var(--cyan); }
     .bubble img { max-width:220px; border-radius:8px; display:block; margin-bottom:7px; }
@@ -70,18 +70,18 @@
 
     /* ----- 입력 ----- */
     .ask { flex:0 0 auto; display:flex; gap:8px; padding:10px 12px;
-           border-top:1.5px dashed var(--line); align-items:flex-end; }
+           border-top:1.5px dashed var(--line-mid); align-items:flex-end; }
     .ask textarea { flex:1 1 auto; resize:none; height:44px; max-height:120px; line-height:1.4; }
 
     /* ----- 옆 칸 ----- */
     .side .body { display:flex; flex-direction:column; gap:var(--sp-3, 12px); }
-    .camwrap { border:1.5px solid var(--line-d); border-radius:var(--r);
+    .camwrap { border:1px solid var(--line-mid); border-radius: var(--r-sm);
                overflow:hidden; background:#000; }
     .camwrap video { width:100%; display:block; aspect-ratio:4/3; object-fit:cover; }
     .row { display:flex; gap:7px; align-items:center; flex-wrap:wrap; }
     .lbl { font-weight:700; font-size:.9rem; }
     .dbitem { display:flex; align-items:center; gap:7px; padding:6px 8px;
-              border:1.5px solid var(--line); border-radius:var(--r); background:#fff;
+              border:1px solid var(--line-mid); border-radius: var(--r-sm); background:#fff;
               font-size:.86rem; }
     .dbitem b { flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .dbitem.on { border-color:var(--cyan); background:#eef4f7; }
@@ -91,7 +91,7 @@
              align-items:center; justify-content:center; padding:20px; z-index:40; }
     .modal.show { display:flex; }
     .modal .card { background:var(--box); border:2px solid var(--line-d);
-                   border-radius:var(--r); padding:16px; width:min(620px,100%);
+                   border-radius: var(--r-sm); padding:16px; width:min(620px,100%);
                    display:flex; flex-direction:column; gap:10px; }
     .modal textarea { width:100%; height:230px; resize:vertical; }
 
@@ -187,7 +187,7 @@
           <input id="styleText" maxlength="200" placeholder="직접 적어도 돼요"
                  style="width:100%;box-sizing:border-box;margin-top:var(--sp-1, 4px);
                         font-family:inherit;font-size:.86rem;padding:5px 8px;
-                        border:1.5px solid var(--line);border-radius:var(--r);background:#fff;">
+                        border:1px solid var(--line-mid);border-radius: var(--r-sm);background:#fff;">
           <div class="hint" id="txtStyleHint" style="margin:var(--sp-1, 4px) 0 0;">
             고르면 아래 칸에 적혀요. 고쳐 써도 되고, 처음부터 직접 적어도 돼요.
           </div>

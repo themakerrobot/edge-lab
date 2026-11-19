@@ -140,6 +140,7 @@ edge-lab(PC)에서 가르친 AI 가 파이보 · PiBrain 에서 **같은 답**�
 | 패널 머리표 | `lib/ui.css` `.panel-head` · `.q` · `.qnum` | 높이 44px, 옅은 바탕, 아래 실선. 번호는 동그란 배지(뒤에 '.' 안 붙임) |
 | 단추 종류 | `lib/ui.css` | `btn-primary`(주 동작, 청록) · `btn-go`(실행, 초록) · `btn-stop`(정지, 주황빨강) · `btn-ghost`(보조 — 테두리 없이) · 아이콘은 `<svg class="ic">` + 글자 `<span class="lbl">` |
 | 실행 · 정지 | 블록 · 파이썬 | 한 자리. 실행하는 동안 `body.running` 이 붙고 실행 단추가 정지 단추로 바뀐다. `runButton.disabled` 는 예전처럼 "실행 중" 표시로 쓴다 |
+| 화면마다 있던 `.btn` | `lib/ui.css` | 화면 `<style>` 에 복사돼 있던 `.btn` 을 ui.css 가 한 모양으로 덮는다(1px 연한 선 · 8px 모서리). 시작 · 실행은 `btn go`(초록), 주 동작은 `btn primary`(청록). 화면 CSS 에 `1.5px solid var(--line)` · `border-radius: var(--r)` 를 새로 쓰지 않는다 |
 | 세 칸 고르기 | `.seg` | 쉬움 · 기본 · 전체처럼 하나만 고르는 것. 고른 것에 `.on` |
 | 스크롤 막대 · 키보드 테두리 | `lib/ui.css` | 얇고 둥근 막대, `:focus-visible` 은 청록 테두리 한 모양 |
 

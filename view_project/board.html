@@ -28,7 +28,7 @@
            padding: var(--sp-2, 8px); gap: var(--sp-2, 8px); }
     button, input, select { font-family: inherit; color: var(--ink); }
     .panel.conn { flex: 0 0 320px; } .panel.term { flex: 1 1 auto; }
-    .btn { border: 1.5px solid var(--line-d); background: #fff; font-weight: 600; padding: 6px 13px; border-radius: var(--r); cursor: pointer;
+    .btn { border: 1px solid var(--line-mid); background: #fff; font-weight: 600; padding: 6px 13px; border-radius: var(--r-sm); cursor: pointer;
            font-size: .92rem; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
     .btn.primary { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; }
     .btn.danger { color: var(--pen-red); border-color: var(--pen-red); }
@@ -37,19 +37,19 @@
     .st { font-weight: 700; font-size: var(--fs-head, 14px); color: var(--cyan-d); }
     .hint { font-size: var(--fs-side, 13px); color: var(--ink-2); }
     .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    .sec { display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1.5px dashed var(--line); }
-    select, .inp { height: 40px; border: 1.5px solid var(--line); border-radius: var(--r); padding: 0 10px; background: #fff; font-size: .95rem; }
+    .sec { display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1.5px dashed var(--line-mid); }
+    select, .inp { height: 40px; border: 1px solid var(--line-mid); border-radius: var(--r-sm); padding: 0 10px; background: #fff; font-size: .95rem; }
     .ports { display: flex; flex-direction: column; gap: 6px; }
-    .ports button { text-align: left; border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; padding: 7px 10px; cursor: pointer; }
+    .ports button { text-align: left; border: 1px solid var(--line-mid); border-radius: var(--r-sm); background: #fff; padding: 7px 10px; cursor: pointer; }
     .ports button b { display: block; font-family: Menlo, Consolas, monospace; font-size: .95rem; }
     .ports button small { color: var(--ink-2); font-size: var(--fs-side, 13px); }
     .ports button em { font-style: normal; color: #2f8a4c; font-weight: 700; font-size: var(--fs-side, 13px); }
     .ports button.on { border-color: var(--cyan); background: var(--cyan-bg); }
-    .state { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: var(--r); background: #f4efe4; font-weight: 600; }
+    .state { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: var(--r-sm); background: #f4efe4; font-weight: 600; }
     .state i { width: 10px; height: 10px; border-radius: 50%; background: #a39a8a; flex: 0 0 auto; }
     .state.on { background: #e3f1e6; color: #1e5b30; } .state.on i { background: #2f8a4c; }
     .state.bad { background: #fbe3dc; color: #8f3312; } .state.bad i { background: #c2412a; }
-    .log { font-family: Menlo, Consolas, monospace; font-size: 14px; background: #1f2328; color: #e6e8ec; border-radius: var(--r);
+    .log { font-family: Menlo, Consolas, monospace; font-size: 14px; background: #1f2328; color: #e6e8ec; border-radius: var(--r-sm);
            padding: 10px 12px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; min-height: 160px; }
     .log div { line-height: 1.55; }
     .log .tx { color: #8cc8ff; } .log .rx { color: #b8f0b0; } .log .sys { color: #a7adb8; font-style: italic; }
@@ -59,7 +59,7 @@
     .send { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .send .inp { flex: 1 1 260px; font-family: Menlo, Consolas, monospace; font-size: 1rem; }
     .chips { display: flex; gap: 6px; flex-wrap: wrap; }
-    .chips button { border: 1.5px solid var(--line); background: #fff; border-radius: 14px; padding: 3px 10px 3px 12px; cursor: pointer;
+    .chips button { border: 1px solid var(--line-mid); background: #fff; border-radius: 14px; padding: 3px 10px 3px 12px; cursor: pointer;
                     font-family: Menlo, Consolas, monospace; font-size: .9rem; display: inline-flex; align-items: center; gap: 6px; }
     .chips button span { color: var(--ink-2); font-family: inherit; }
     .chips button span:hover { color: var(--pen-red); }

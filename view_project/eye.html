@@ -33,19 +33,19 @@
            font-family: var(--font-ui); line-height: 1.5;
            padding: var(--sp-2, 8px); gap: var(--sp-2, 8px); }
     button, input, select { font-family: inherit; color: var(--ink); }
-    .btn { border: 1.5px solid var(--line-d); background: #fff; font-weight: 600; padding: 7px 13px; border-radius: var(--r); cursor: pointer;
+    .btn { border: 1px solid var(--line-mid); background: #fff; font-weight: 600; padding: 7px 13px; border-radius: var(--r-sm); cursor: pointer;
            font-size: .92rem; min-height: 40px; display: inline-flex; align-items: center; gap: 6px; }
     .btn.primary { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; }
     .btn:disabled { opacity: .45; cursor: not-allowed; }
     .btn.wide { width: 100%; justify-content: center; min-height: var(--tap, 48px); font-size: 1rem; }
     .btn svg { width: 18px; height: 18px; flex: 0 0 auto; }
-    .inp { border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; padding: 0 10px; min-height: 40px; font-size: .95rem; min-width: 0; }
+    .inp { border: 1px solid var(--line-mid); border-radius: var(--r-sm); background: #fff; padding: 0 10px; min-height: 40px; font-size: .95rem; min-width: 0; }
     .inp:focus { outline: 2px solid var(--cyan); outline-offset: 0; border-color: var(--cyan); }
 
     .panel.side { flex: 0 0 280px; } .panel.stage { flex: 1 1 auto; } .panel.out { flex: 0 0 340px; }
     .st { font-weight: 700; font-size: var(--fs-head, 14px); color: var(--cyan-d); }
     .hint { font-size: var(--fs-side, 13px); color: var(--ink-2); }
-    .sec { display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1.5px dashed var(--line); }
+    .sec { display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1.5px dashed var(--line-mid); }
     .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     .num { font-family: Menlo, Consolas, monospace; font-size: var(--fs-mono, 13px); }
 
@@ -55,30 +55,30 @@
     .totrain:hover { background: #fff; }
     .totrain svg { width: 15px; height: 15px; }
     .steps { display: flex; gap: 4px; margin-left: auto; font-size: var(--fs-side, 13px); flex-wrap: wrap; }
-    .steps span { padding: 2px 8px; border-radius: 12px; border: 1.5px solid var(--line); color: var(--ink-2); white-space: nowrap; }
+    .steps span { padding: 2px 8px; border-radius: 12px; border: 1px solid var(--line-mid); color: var(--ink-2); white-space: nowrap; }
     .steps span.done { border-color: var(--go); color: var(--go); }
     .steps span.on { border-color: var(--pen-blue); background: var(--pen-blue); color: #fff; font-weight: 700; }
     .steps em { font-style: normal; }
 
     /* 두세 개 중 하나 */
-    .seg { display: flex; border: 1.5px solid var(--line-d); border-radius: var(--r); overflow: hidden; }
+    .seg { display: flex; border: 1px solid var(--line-mid); border-radius: var(--r-sm); overflow: hidden; }
     .seg button { flex: 1; border: 0; background: #fff; padding: 0 12px; min-height: var(--tap, 48px); font-size: 1rem; font-weight: 600; cursor: pointer;
                   display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
-    .seg button + button { border-left: 1.5px solid var(--line-d); }
+    .seg button + button { border-left: 1px solid var(--line-mid); }
     .seg button.on { background: var(--pen-blue); color: #fff; }
     .seg svg { width: 18px; height: 18px; }
 
     /* 종류 */
     .addrow { flex-wrap: nowrap; } .addrow .inp { flex: 1; }
     .addrow .btn { padding: 0; width: 44px; justify-content: center; }
-    .cls { border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; padding: 6px 8px; cursor: pointer; display: flex; flex-direction: column; gap: 4px; }
+    .cls { border: 1px solid var(--line-mid); border-radius: var(--r-sm); background: #fff; padding: 6px 8px; cursor: pointer; display: flex; flex-direction: column; gap: 4px; }
     .cls.on { border-color: var(--cyan); background: var(--cyan-bg); box-shadow: inset 3px 0 0 var(--cyan); }
     .cls .top { display: flex; align-items: center; gap: 6px; min-height: 32px; }
     .cls .nm { flex: 1; font-weight: 700; font-size: var(--fs-name, 16px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .cls .rn { flex: 1; min-height: 32px; font-size: .95rem; }
     .cls .ct { color: var(--ink-2); white-space: nowrap; }
     .cls .ct.low { color: var(--pen-red); }
-    .ib { width: 32px; height: 32px; flex: 0 0 auto; border: 1.5px solid transparent; border-radius: var(--r); background: none; cursor: pointer;
+    .ib { width: 32px; height: 32px; flex: 0 0 auto; border: 1.5px solid transparent; border-radius: var(--r-sm); background: none; cursor: pointer;
           display: grid; place-items: center; color: var(--ink-2); }
     .ib:hover { border-color: var(--line); background: #fff; color: var(--ink); }
     .ib svg { width: 16px; height: 16px; }
@@ -92,8 +92,8 @@
     /* ui.css 의 .grow 는 min-height:0 이라 낮은 화면에서 그리기 판이 아래 칸과 겹쳤다 — 내용만큼은 지킨다 */
     .panel-body > .eye-in.grow { min-height: auto; }
     .eye-src, .eye-ai { display: flex; flex-direction: column; gap: 6px; align-items: center; }
-    .srcbox { position: relative; width: var(--src); height: var(--src); border-radius: var(--r); overflow: hidden; }
-    #pad { display: block; width: 100%; height: 100%; background: #fff; border: 1.5px solid var(--line-d); border-radius: var(--r);
+    .srcbox { position: relative; width: var(--src); height: var(--src); border-radius: var(--r-sm); overflow: hidden; }
+    #pad { display: block; width: 100%; height: 100%; background: #fff; border: 1px solid var(--line-mid); border-radius: var(--r-sm);
            touch-action: none; cursor: crosshair; }
     #camVid { display: block; width: 100%; height: 100%; object-fit: cover; background: #2b2721; }
     #camOff { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
@@ -103,10 +103,10 @@
     .cam-frame { position: absolute; inset: 15%; border: 3px dashed #fff; border-radius: 4px; box-shadow: 0 0 0 999px rgba(20,18,14,.32); pointer-events: none; }
     .srcrow { display: flex; gap: 8px; align-items: center; width: var(--src); }
     .srcrow .hint { flex: 1; line-height: 1.3; }
-    #seeCv { width: 128px; height: 128px; image-rendering: pixelated; border: 1.5px solid var(--line-d); border-radius: 3px; background: #fff; }
+    #seeCv { width: 128px; height: 128px; image-rendering: pixelated; border: 1px solid var(--line-mid); border-radius: 3px; background: #fff; }
     .eye-ai .hint { max-width: 150px; text-align: center; line-height: 1.35; }
     .capwrap { display: flex; flex-direction: column; gap: 6px; }
-    .selinfo { font-size: var(--fs-side, 13px); padding: 6px 10px; border-radius: var(--r); background: #f4efe4; color: var(--ink-2); }
+    .selinfo { font-size: var(--fs-side, 13px); padding: 6px 10px; border-radius: var(--r-sm); background: #f4efe4; color: var(--ink-2); }
     .selinfo.on { background: var(--cyan-bg); color: var(--cyan-d); font-weight: 700; }
     .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
@@ -125,14 +125,14 @@
 
     /* 배우기 */
     .augs { display: flex; flex-wrap: wrap; gap: 6px; }
-    .augs label { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 10px; border: 1.5px solid var(--line);
-                  border-radius: var(--r); background: #fff; cursor: pointer; font-size: .92rem; font-weight: 600; }
+    .augs label { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 10px; border: 1px solid var(--line-mid);
+                  border-radius: var(--r-sm); background: #fff; cursor: pointer; font-size: .92rem; font-weight: 600; }
     .augs label:has(input:checked) { border-color: var(--cyan); background: var(--cyan-bg); color: var(--cyan-d); }
     .augs input { width: 18px; height: 18px; accent-color: var(--pen-blue); }
     .prg .lb { display: flex; justify-content: space-between; font-size: var(--fs-side, 13px); }
     .prg .tr { height: 10px; border-radius: 5px; background: #ece5d6; overflow: hidden; }
     .prg .fl { height: 100%; width: 0; background: var(--go); }
-    #chart { width: 100%; height: 100px; display: block; border: 1.5px solid var(--line); border-radius: var(--r); background: #fff; }
+    #chart { width: 100%; height: 100px; display: block; border: 1px solid var(--line-mid); border-radius: var(--r-sm); background: #fff; }
     .legend { display: flex; gap: 14px; font-size: var(--fs-side, 13px); }
     .legend i { display: inline-block; width: 14px; height: 3px; vertical-align: middle; margin-right: 4px; }
 
@@ -149,7 +149,7 @@
     .fcell canvas { width: 100%; aspect-ratio: 1; image-rendering: pixelated; border: 1px solid var(--line); border-radius: 3px; background: #fff; }
     .fno { position: absolute; left: 3px; top: 1px; font-size: 11px; color: var(--ink-2); text-shadow: 0 0 2px #fff; }
     .note { min-height: 32px; width: 100%; padding: 0 5px; font-size: 12.5px; }
-    .empty { border: 1.5px dashed var(--line); border-radius: var(--r); padding: 12px; text-align: center; }
+    .empty { border: 1.5px dashed var(--line-mid); border-radius: var(--r-sm); padding: 12px; text-align: center; }
 
     #loadFile { display: none; }
     .row .btn.half { flex: 1; justify-content: center; }
@@ -259,7 +259,7 @@
           <label><input type="checkbox" data-aug="shift"><span id="txtAShift"></span></label>
           <label><input type="checkbox" data-aug="bright"><span id="txtABright"></span></label>
         </div>
-        <button class="btn primary wide" id="trainBtn" type="button" disabled></button>
+        <button class="btn go wide" id="trainBtn" type="button" disabled></button>
         <div class="hint" id="trainHint"></div>
         <div class="prg">
           <div class="lb"><span id="prgLabel"></span><span class="num" id="prgPct"></span></div>
