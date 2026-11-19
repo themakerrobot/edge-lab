@@ -26,10 +26,29 @@
   --pen-blue:   #1f5f7a;
   --pen-blue-d: #12455c;
   --pen-red:    #b4451c;
-  --line:       #9a8f7d;
+  --line:       #bdb19c;               /* 261119 다듬기 — #9a8f7d 에서 연하게. 밝은 곳 모드는 아래에서 진하게 */
   --line-d:     #4a3f2e;               /* 활동지 표 괘선 */
   --hover-bg:   #f4efe4;
   --r: 6px;
+
+  /* ===== 다듬기 (261119) — 글꼴 한 벌 · 부드러운 선 · 모서리 · 그림자 =====
+   * 활동지 색(종이 · 청록 · 빨간펜)은 그대로 두고, 선을 연하게 · 모서리를 둥글게 · 그림자를 얕게 해서
+   * "같은 디자이너가 만든 한 벌" 로 보이게 한다. 새 화면은 아래 값만 쓴다. */
+  --font-ui:    "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif;
+  --font-mono:  "D2Coding", "Consolas", "Menlo", ui-monospace, monospace;
+  --line-soft:  #e8e1d4;               /* 칸 안의 가는 구분선 */
+  --line-mid:   #d5cbb9;               /* 패널 · 단추 테두리 */
+  --surface-2:  #fcfaf6;               /* 머리표 · 기록 칸 바탕 */
+  --accent:     #1f5f7a;               /* 주 단추 (= --cyan) */
+  --accent-d:   #17475c;
+  --accent-bg:  #e9f2f6;
+  --ok:         #2e8f63;
+  --ok-d:       #23714e;
+  --danger:     #c2410c;
+  --r-sm: 8px;                         /* 단추 · 입력 */
+  --r-lg: 12px;                        /* 패널 · 카드 · 무대 */
+  --shadow-1: 0 1px 2px rgba(42, 38, 32, .06), 0 1px 1px rgba(42, 38, 32, .04);
+  --shadow-2: 0 10px 30px rgba(42, 38, 32, .16), 0 2px 6px rgba(42, 38, 32, .08);
 
   /* ===== 아이 손가락 기준 =====
    *
@@ -76,6 +95,10 @@ html.hc {
   --line:       #7a6f5d;
   --line-d:     #2e281c;
   --hover-bg:   #efe8da;
+  --line-soft:  #b9ad98;
+  --line-mid:   #7a6f5d;
+  --accent:     #114558;
+  --accent-d:   #0c3444;
 }
 html.hc body { background-image: none; }          /* 배경 무늬 제거 */
 html.hc select, html.hc input, html.hc button,

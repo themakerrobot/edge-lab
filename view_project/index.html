@@ -38,12 +38,12 @@
       color: var(--ink);
       background-color: var(--paper);
 
-      font-family: "Gowun Dodum", "Apple SD Gothic Neo", system-ui, sans-serif;
+      font-family: var(--font-ui);
       line-height: 1.5;
       padding: var(--sp-2, 8px);
       gap: var(--sp-2, 8px);
     }
-    .serif { font-family: "Gowun Batang", serif; }
+    .serif { font-family: var(--font-ui); }
 
     a { color: var(--pen-blue-d); text-decoration: none; }
     a:hover { text-decoration: underline; }
@@ -68,7 +68,7 @@
       font-size: 0.82rem; letter-spacing: .14em; color: var(--ink-2);
     }
     .h-subject .title {
-      font-family: "Gowun Batang", serif;
+      font-family: var(--font-ui);
       font-size: 1.15rem; font-weight: 700; letter-spacing: .02em; line-height: 1.2;
     }
     .h-fill { justify-content: center; gap: 4px; }
@@ -163,7 +163,7 @@
     /* 기록 스트립 */
     .history { flex: 0 0 auto; margin-top: var(--sp-2, 8px); }
     .history .h-title {
-      font-family: "Gowun Batang", serif; font-weight: 700; font-size: .88rem;
+      font-family: var(--font-ui); font-weight: 700; font-size: .88rem;
       color: var(--ink-2); margin-bottom: 6px;
     }
     .history .strip { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
@@ -275,7 +275,7 @@
       border-radius: 50%;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       gap: 1px;
-      font-family: "Gowun Batang", serif; font-weight: 700; font-size: 0.82rem;
+      font-family: var(--font-ui); font-weight: 700; font-size: 0.82rem;
       color: var(--pen-red);
       background: rgba(255,255,255,.72);
       transform: rotate(-12deg) scale(0);
@@ -333,7 +333,7 @@
     .easy-answer.fail .bubble-wrap::before { background: #fdf3f2; border-color: var(--pen-red); }
     .easy-answer .ea-label {
       flex: 0 0 auto;
-      font-family: "Gowun Batang", serif; font-weight: 700; font-size: .82rem;
+      font-family: var(--font-ui); font-weight: 700; font-size: .82rem;
       color: var(--pen-blue-d);
       margin-bottom: 3px;
     }
@@ -346,7 +346,7 @@
     .scratchpad summary {
       cursor: pointer; list-style: none;
       display: flex; align-items: center; gap: 8px;
-      font-family: "Gowun Batang", serif; font-weight: 700; font-size: .95rem;
+      font-family: var(--font-ui); font-weight: 700; font-size: .95rem;
       color: var(--ink-2);
       user-select: none;
     }
@@ -1003,7 +1003,7 @@
       ctx.strokeRect(rectX, rectY, rectWidth, rectHeight);
 
       if (text) {
-        ctx.font = "16px 'Gowun Dodum', 'Apple SD Gothic Neo', sans-serif";
+        ctx.font = "16px Pretendard, 'Malgun Gothic', sans-serif";
         const textMetrics = ctx.measureText(text);
         const textWidth = textMetrics.width;
         const textHeight = 16;

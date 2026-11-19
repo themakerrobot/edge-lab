@@ -86,7 +86,7 @@
     ".boot-slide.fade{opacity:0;}",
     ".boot-art{flex:0 0 200px;height:180px;}",
     ".boot-art svg{width:100%;height:100%;}",
-    ".boot-text h2{font-family:'Gowun Dodum',sans-serif;font-size:1.5rem;color:#17475c;margin:0 0 10px;}",
+    ".boot-text h2{font-family:var(--font-ui, sans-serif);font-size:1.5rem;color:#17475c;margin:0 0 10px;}",
     ".boot-text p{font-size:1.18rem;color:#2a2620;line-height:1.7;margin:0;}",
     ".boot-dots{display:flex;gap:8px;justify-content:center;}",
     ".boot-dots span{width:10px;height:10px;border-radius:50%;background:#9a8f7d;}",

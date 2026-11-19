@@ -119,3 +119,19 @@ edge-lab(PC)에서 가르친 AI 가 파이보 · PiBrain 에서 **같은 답**�
 - 확인(컨테이너, openvino 2024.5 · mediapipe 0.10.18): 같은 사진 17장에서 로봇 계산과 특징 차이 1.5e-6 이하(5종 모두), 브라우저로 학습 → 저장 → 가짜 로봇에 보내기 → 로봇 `CustomClassifier` 의 답·확률이 `/custom/predict` 와 17/17 같음, 작품 저장·열기, 예전 모델 올리기·추론, 로봇 주소 검사
 - **같은 점수 점검**: `tools/score_check.py`(로봇 `system/score_check.py` 와 같은 파일). `python tools\score_check.py run <저장한 AI 이름 또는 model.zip> <사진 폴더> --out pc.json` → 로봇·브라우저(`http://<로봇 IP>:50010/static/check.html`) 결과와 `python tools\score_check.py compare robot.json pc.json browser.json`. 로봇 vs PC 는 특징 차이 1e-5 안쪽이어야 한다
 - `teachlab/models/` 의 네 파일은 로봇과 **sha256 이 같아야** 한다. 로봇 쪽을 바꾸면 여기도 바꾼다
+
+## 화면 다듬기 (261119) — 모든 화면 공통 규칙
+
+활동지 콘셉트(종이색 바탕 · 청록 · 빨간펜 · 1 · 2 번호 제목)는 그대로 두고, 아래 한 벌로 맞췄다. 새 화면 · 새 단추는 이 값과 이름만 쓴다.
+
+| 무엇 | 어디 | 규칙 |
+|---|---|---|
+| 글꼴 | `lib/tokens.css` `--font-ui` · `--font-mono`, `fonts/fonts.css` | 화면은 Pretendard 한 벌(한글 2,780자 + 영문). 숫자 · 코드만 고정폭. 캔버스 글씨는 `"... px Pretendard, 'Malgun Gothic', sans-serif"`. Gowun 글꼴은 파일만 남겨 두었다(쓰지 않으면 받지 않는다) |
+| 선 · 모서리 · 그림자 | `--line`(연해짐) · `--line-mid` · `--line-soft` · `--r-sm` 8 · `--r-lg` 12 · `--shadow-1/2` | 패널은 가는 선 + 얕은 그림자 + 12px 모서리. 밝은 곳 모드(`html.hc`)는 굵고 진한 선으로 되돌린다 |
+| 패널 머리표 | `lib/ui.css` `.panel-head` · `.q` · `.qnum` | 높이 44px, 옅은 바탕, 아래 실선. 번호는 동그란 배지(뒤에 '.' 안 붙임) |
+| 단추 종류 | `lib/ui.css` | `btn-primary`(주 동작, 청록) · `btn-go`(실행, 초록) · `btn-stop`(정지, 주황빨강) · `btn-ghost`(보조 — 테두리 없이) · 아이콘은 `<svg class="ic">` + 글자 `<span class="lbl">` |
+| 실행 · 정지 | 블록 · 파이썬 | 한 자리. 실행하는 동안 `body.running` 이 붙고 실행 단추가 정지 단추로 바뀐다. `runButton.disabled` 는 예전처럼 "실행 중" 표시로 쓴다 |
+| 세 칸 고르기 | `.seg` | 쉬움 · 기본 · 전체처럼 하나만 고르는 것. 고른 것에 `.on` |
+| 스크롤 막대 · 키보드 테두리 | `lib/ui.css` | 얇고 둥근 막대, `:focus-visible` 은 청록 테두리 한 모양 |
+
+블록 화면에만 있는 것: 빈 무대 안내(파이보 + [예제 보기]), 실행 중 무대 테두리 · 배지, 무대 아래 `기록 · 변수 · 파이썬` 탭 카드, 그림 · 수준 배지 · 개념 칩이 있는 예제 카드(설명 끝 괄호의 낱말이 칩이 된다).

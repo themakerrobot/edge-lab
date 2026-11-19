@@ -31,7 +31,7 @@
     :root { --go: #3a9a55; --go-bg: #e3f1e6; --bad: #c2412a; --warm: #e0a030; --soft: #f4efe4; }
     html.hc { --go: #237a3b; --go-bg: #d8eedd; --bad: #9e2e19; }
     body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; color: var(--ink); background: var(--paper);
-           font-family: "Gowun Dodum", "Apple SD Gothic Neo", system-ui, sans-serif; line-height: 1.5;
+           font-family: var(--font-ui); line-height: 1.5;
            padding: var(--sp-2, 8px); gap: var(--sp-2, 8px); }
     button, input, select { font-family: inherit; color: var(--ink); }
     .btn { border: 1.5px solid var(--line-d); background: #fff; font-weight: 600; padding: 7px 13px; border-radius: var(--r); cursor: pointer;
@@ -777,7 +777,7 @@
       });
     }
     function label(x, y, s, bg) {
-      octx.font = "bold 18px 'Gowun Dodum', sans-serif";
+      octx.font = "bold 18px Pretendard, 'Malgun Gothic', sans-serif";
       var w = octx.measureText(s).width + 12, yy = Math.max(0, y - 26);
       octx.fillStyle = bg; octx.fillRect(x, yy, w, 24);
       octx.fillStyle = "#fff"; octx.fillText(s, x + 6, yy + 18);

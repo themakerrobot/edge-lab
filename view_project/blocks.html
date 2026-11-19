@@ -27,25 +27,34 @@
       display: flex; flex-direction: column; height: 100dvh; overflow: hidden;
       color: var(--ink); background-color: var(--paper);
 
-      font-family: "Gowun Dodum", "Apple SD Gothic Neo", system-ui, sans-serif;
+      font-family: var(--font-ui);
       padding: var(--sp-2, 8px); gap: var(--sp-2, 8px);
     }
     button, select {
-      font-family: inherit; font-size: .95rem; color: var(--ink); background: #fff;
-      border: 1.5px solid var(--line); border-radius: var(--r); padding: 7px 14px; cursor: pointer;
+      font-family: inherit; font-size: 13px; color: var(--ink); background: #fff;
+      border: 1px solid var(--line-mid); border-radius: var(--r-sm); padding: 6px 12px; cursor: pointer;
     }
-    button:hover { border-color: var(--pen-blue); }
 
-    /* 디바이스 HUD */
-
-    #runButton { background: var(--pen-blue); border-color: var(--pen-blue); color: #fff; font-weight: 700; padding: 0 22px; }
-    #runButton:hover { background: var(--pen-blue-d); }
-    #runButton:disabled { background: #b9b7ac; border-color: #b9b7ac; cursor: wait; }
-    #stopButton { border-color: var(--pen-red); color: var(--pen-red); font-weight: 700; }
+    /* 실행 · 정지는 한 자리 — 실행하는 동안(body.running) 실행 단추가 정지 단추로 바뀐다 */
+    .panel-head #runButton, .panel-head #stopButton { min-width: 92px; padding: 0 16px; font-size: 14px; }
+    #stopButton { display: none; }
+    body.running #runButton { display: none; }
+    body.running #stopButton { display: inline-flex; }
+    .tool-div { width: 1px; height: 20px; background: var(--line-soft); margin: 0 2px; }
+    #curFile { font-size: 13px; color: var(--ink-2); margin-left: 4px; max-width: 22ch;
+               overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    /* 작업판이 좁으면 새로 · 저장 · 불러오기는 아이콘만 (글자는 마우스를 올리면 보인다) */
+    .work { container-type: inline-size; container-name: work; }
+    @container work (max-width: 900px) {
+      #newButton .lbl, #saveButton .lbl, #loadButton .lbl { display: none; }
+      #newButton, #saveButton, #loadButton { padding: 0 9px; }
+    }
+    @container work (max-width: 640px) { .tool-div, #curFile { display: none; } }
 
     .work {
       flex: 1.25 1 0; min-width: 0; display: flex; flex-direction: column;
-      background: var(--box); border: 1.5px solid var(--line); border-radius: var(--r); overflow: hidden;
+      background: var(--box); border: 1px solid var(--line-mid); border-radius: var(--r-lg);
+      box-shadow: var(--shadow-1); overflow: hidden;
     }
     /* 문항 상자와 작업 버튼을 한 줄에 둔다 (버튼은 오른쪽 끝) */
     .stage-tools {
@@ -60,14 +69,10 @@
     /* ── 블록 편집기 — 밝고 조용한 판, 분류는 색 타일 + 아이콘 (openpibo IDE 와 같은 결) ──
        Blockly 13 의 클래스 이름이다(10 의 blocklyTreeRow → blocklyToolboxCategory 등).
        분류 색은 줄 왼쪽 막대 대신 아이콘 타일에만 쓴다 — ElCategory 가 --cat 으로 넘긴다. */
-    @font-face { font-family: "Pretendard"; font-weight: 100 549; font-display: swap;
-                 src: local("Pretendard Regular"), url("/fonts/pretendard/Pretendard-Regular.subset.woff2") format("woff2"); }
-    @font-face { font-family: "Pretendard"; font-weight: 550 900; font-display: swap;
-                 src: local("Pretendard Bold"), url("/fonts/pretendard/Pretendard-Bold.subset.woff2") format("woff2"); }
     #blocklyDiv { --bk-bg: #f7f8fa; --bk-work: #fdfdfe; --bk-line: #e4e7ec; --bk-line2: #c7cdd6; --bk-hover: #eceff3;
                   --bk-ink: #1f2430; --bk-font: "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif; }
     #blocklyDiv .blocklyToolbox { background: var(--bk-bg) !important; border-right: 1px solid var(--bk-line); padding: 8px 0; width: 184px; }
-    #blocklyDiv .blocklyToolboxCategory { display: flex; align-items: center; height: 34px !important; margin: 1px 8px !important; padding: 0 8px !important;
+    #blocklyDiv .blocklyToolboxCategory { display: flex; align-items: center; height: 31px !important; margin: 1px 8px !important; padding: 0 8px !important;
                   border: 0 !important; border-radius: 8px; background: transparent; cursor: pointer; }
     #blocklyDiv .blocklyToolboxCategory:not(.blocklyToolboxSelected):hover { background: var(--bk-hover) !important; }
     #blocklyDiv .blocklyToolboxSelected { background: #fff !important; box-shadow: 0 1px 3px rgba(20,24,40,.12); }
@@ -88,14 +93,35 @@
 
     .stage-panel {
       flex: 1 1 0; min-width: 380px; display: flex; flex-direction: column;
-      background: var(--box); border: 1.5px solid var(--line); border-radius: var(--r); overflow: hidden;
+      background: var(--box); border: 1px solid var(--line-mid); border-radius: var(--r-lg);
+      box-shadow: var(--shadow-1); overflow: hidden;
     }
     .stage-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: var(--sp-2, 8px); display: flex; flex-direction: column; gap: var(--sp-2, 8px); }
     .stage {
       position: relative; width: 100%; aspect-ratio: 4/3; max-height: 60vh;
-      background: #191a1f; border: 1.5px solid var(--line-d); border-radius: 4px; overflow: hidden;
+      background: #1d1f26; border: 0; border-radius: var(--r-lg); overflow: hidden;
       flex: 0 0 auto; align-self: center;
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .25);
+      transition: box-shadow .2s;
     }
+    /* 실행 중 — 무대 둘레가 초록으로 빛나고 왼쪽 위에 '실행 중' */
+    body.running .stage { box-shadow: 0 0 0 3px var(--ok), 0 6px 18px rgba(46, 143, 99, .25); }
+    #runBadge { position: absolute; top: 10px; right: 10px; z-index: 5; display: none; align-items: center; gap: 6px;
+                padding: 4px 10px; border-radius: 999px; background: rgba(20, 22, 28, .7); color: #fff;
+                font-size: 12px; font-weight: 700; pointer-events: none; }
+    #runBadge i { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; animation: blink 1s infinite; }
+    body.running #runBadge { display: inline-flex; }
+    @keyframes blink { 50% { opacity: .25; } }
+    /* 처음 — 무엇을 할지 알려 주는 빈 무대 */
+    #stageEmpty { position: absolute; inset: 0; z-index: 4; display: flex; flex-direction: column; align-items: center;
+                  justify-content: center; gap: 8px; text-align: center; padding: 16px;
+                  background: radial-gradient(circle at 50% 40%, #2a2d36 0%, #1d1f26 70%); color: #e8e6e1; }
+    #stageEmpty[hidden] { display: none; }
+    #stageEmpty img { width: 22%; max-width: 120px; filter: drop-shadow(0 6px 12px rgba(0, 0, 0, .35)); }
+    #stageEmpty b { font-size: 17px; font-weight: 800; color: #fff; }
+    #stageEmpty span { font-size: 13px; color: #c9c6bf; }
+    #stageEmpty button { margin-top: 6px; display: inline-flex; align-items: center; gap: 6px;
+                         padding: 8px 16px; border-radius: var(--r-sm); font-weight: 700; }
     .stage video, .stage canvas, .stage img.shot {
       position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain;
     }
@@ -105,8 +131,8 @@
     .stage video { visibility: hidden; }
     #bigText {
       position: absolute; left: 0; right: 0; top: 4%; text-align: center; pointer-events: none;
-      font-family: "Gowun Batang", serif; font-size: 2rem; font-weight: 700; color: #fff;
-      text-shadow: 0 2px 8px rgba(0,0,0,.75); padding: 0 12px; word-break: keep-all;
+      font-family: var(--font-ui); font-size: 2rem; font-weight: 800; color: #fff; letter-spacing: -.02em;
+      text-shadow: 0 2px 10px rgba(0,0,0,.7); padding: 0 12px; word-break: keep-all;
     }
     /* 캐릭터 — 무대 좌표(가로 640 · 세로 480, 사진 좌표와 같다)를 % 로 바꿔 놓는다.
        크기는 무대 너비에 맞춰 함께 줄어든다(cqw) */
@@ -115,32 +141,84 @@
     #sprites .sp { position: absolute; transform: translate(-50%, -50%); line-height: 1; white-space: nowrap;
                    user-select: none; filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); }
     #sprites .sp img { display: block; }
-    #askBox { position: absolute; left: 6%; right: 6%; bottom: 6%; display: none; flex-direction: column; gap: 6px;
-              background: #fff; border: 2px solid var(--line-d); border-radius: 12px; padding: 10px 12px; }
+    #askBox { position: absolute; left: 6%; right: 6%; bottom: 6%; display: none; flex-direction: column; gap: 8px; z-index: 6;
+              background: #fff; border: 0; border-radius: var(--r-lg); padding: 12px 14px; box-shadow: var(--shadow-2); }
+    #askOk { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; padding: 0 18px; }
     #askBox.on { display: flex; }
     #askQ { font-size: 1rem; font-weight: 700; }
-    #askIn { flex: 1 1 auto; min-width: 0; font: inherit; font-size: 1rem; padding: 6px 10px;
-             border: 1.5px solid var(--line); border-radius: 8px; }
+    #askIn { flex: 1 1 auto; min-width: 0; font: inherit; font-size: 1rem; padding: 8px 12px;
+             border: 1px solid var(--line-mid); border-radius: var(--r-sm); }
     #bubble {
       position: absolute; top: 10px; left: 10px; max-width: 75%;
-      background: #fff; border: 2px solid var(--line-d); border-radius: 12px; border-bottom-left-radius: 2px;
-      padding: 8px 14px; font-size: 1rem; display: none;
+      background: #fff; border: 0; border-radius: 14px; border-bottom-left-radius: 4px; z-index: 5;
+      padding: 8px 14px; font-size: 1rem; font-weight: 600; display: none; box-shadow: var(--shadow-2);
     }
     .stage-tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     
-    #logBox {
-      flex: 0 0 auto; background: #fdfcf8; border: 1.5px solid var(--line); border-radius: var(--r);
-      padding: 8px 12px; font-family: "Menlo","Consolas",ui-monospace,monospace; font-size: 0.82rem;
-      max-height: 120px; overflow-y: auto; color: #3a3a42; white-space: pre-wrap;
-    }
-    #logBox:empty::before { content: "실행하면 진행 상황이 여기에 적혀요."; color: #6b6255; }
+    /* 무대 아래 — 사진 올리기 한 줄, 그리고 기록 · 변수 · 파이썬 탭 카드 하나 */
+    .stage-sub { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+    .stage-sub .hint { font-size: 12.5px; color: var(--ink-2); }
+    .stage-sub button { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+    .outcard { flex: 1 1 auto; min-height: 150px; display: flex; flex-direction: column;
+               border: 1px solid var(--line-mid); border-radius: var(--r-lg); background: #fff; overflow: hidden; }
+    .tabs { display: flex; align-items: center; gap: 2px; padding: 4px 6px 0; border-bottom: 1px solid var(--line-soft);
+            background: var(--surface-2); }
+    .tabs .tab { position: relative; border: 0; background: transparent; border-radius: 6px 6px 0 0; padding: 8px 12px 9px;
+                 font-size: 13px; font-weight: 600; color: var(--ink-2); display: inline-flex; align-items: center; gap: 6px; }
+    .tabs .tab:hover { color: var(--ink); background: rgba(0, 0, 0, .03); }
+    .tabs .tab.on { color: var(--accent); font-weight: 800; }
+    .tabs .tab.on::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 2.5px;
+                           border-radius: 2px; background: var(--accent); }
+    #varsCount:not(:empty) { font-style: normal; font-size: 11px; font-weight: 800; min-width: 18px; padding: 1px 5px;
+                             border-radius: 999px; background: var(--accent-bg); color: var(--accent); }
+    .tabs-sp { flex: 1; }
+    .tab-act { display: none; align-items: center; gap: 5px; border: 1px solid var(--line-soft); background: #fff;
+               border-radius: 6px; padding: 3px 9px; font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+    .outcard[data-tab="py"] .tab-act { display: inline-flex; }
+    .pane { flex: 1 1 auto; min-height: 0; overflow: auto; }
+    .pane[hidden] { display: none; }
+    #logBox { padding: 10px 12px; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6;
+              color: #3a3a42; white-space: pre-wrap; max-height: 220px; overflow-y: auto; }
+    #logBox:empty::before { content: "실행하면 진행 상황이 여기에 적혀요."; color: #8a8174; font-family: var(--font-ui); }
     html[lang="en"] #logBox:empty::before { content: "Run your blocks and progress shows up here."; }
-    details.codeview { flex: 0 0 auto; }
-    details.codeview summary { cursor: pointer; font-family: "Gowun Batang", serif; font-weight: 700; font-size: .9rem; color: var(--ink-2); }
-    details.codeview pre {
-      margin-top: 6px; background: #fdfcf8; border: 1.5px solid var(--line); border-radius: var(--r);
-      padding: 10px; font-size: 0.82rem; max-height: 180px; overflow: auto; white-space: pre-wrap;
-    }
+    #varsBox { padding: 8px 12px; }
+    #varsBody { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; font-size: 13px; font-variant-numeric: tabular-nums; }
+    #varsBody > div { display: contents; }
+    #varsBody b { color: var(--ink); }
+    .pane-empty { padding: 14px 12px; color: #8a8174; font-size: 13px; }
+    #varsBox[style*="block"] + .pane-empty { display: none; }
+    #codeView { margin: 0; padding: 10px 12px; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6;
+                white-space: pre-wrap; max-height: 260px; overflow: auto; background: #fbfaf7; }
+
+    /* 예제 창 — 그림 · 수준 · 배우는 개념이 보이는 카드 */
+    #exModal { position: fixed; inset: 0; z-index: 50; background: rgba(28, 30, 38, .45); backdrop-filter: blur(2px);
+               align-items: center; justify-content: center; }
+    .ex-dlg { width: min(820px, 94vw); max-height: 88vh; display: flex; flex-direction: column; background: #fff;
+              border-radius: 16px; box-shadow: var(--shadow-2); overflow: hidden; }
+    .ex-head { display: flex; align-items: flex-start; gap: 12px; padding: 16px 18px 12px; border-bottom: 1px solid var(--line-soft); }
+    .ex-head b { font-size: 17px; font-weight: 800; }
+    .ex-head .hint { font-size: 12.5px; margin-top: 2px; }
+    #exClose { margin-left: auto; width: 32px; height: 32px; padding: 0; border-radius: 50%; font-size: 18px; line-height: 1; }
+    #exList { overflow-y: auto; min-height: 0; padding: 6px 18px 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    #exList .ex-grp { grid-column: 1 / -1; margin-top: 10px; font-size: 12.5px; font-weight: 800; color: var(--ink-2);
+                      letter-spacing: .02em; }
+    #exList .ex-card { text-align: left; display: grid; grid-template-columns: 44px 1fr; gap: 4px 12px; align-items: start;
+                       padding: 12px; border: 1px solid var(--line-soft); border-radius: var(--r-lg); background: #fff;
+                       transition: border-color .12s, box-shadow .12s, transform .12s; }
+    #exList .ex-card:hover { border-color: var(--accent); box-shadow: var(--shadow-1), 0 4px 14px rgba(31, 95, 122, .12); transform: translateY(-1px); }
+    #exList .ex-ic { grid-row: 1 / span 3; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center;
+                     font-size: 24px; background: var(--surface-2); border: 1px solid var(--line-soft); }
+    #exList .ex-name { font-size: 14px; font-weight: 800; color: var(--ink); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    #exList .ex-lv { font-size: 10.5px; font-weight: 800; padding: 1px 7px; border-radius: 999px; }
+    #exList .ex-lv.l0 { background: #e7f6ee; color: #23714e; }
+    #exList .ex-lv.l1 { background: var(--accent-bg); color: var(--accent); }
+    #exList .ex-lv.l2 { background: #f6ece4; color: #9a4a17; }
+    #exList .ex-desc { font-size: 12.5px; color: var(--ink-2); line-height: 1.45; }
+    #exList .ex-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+    #exList .ex-tags i { font-style: normal; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 6px;
+                         background: #f3f0ea; color: #6b6255; }
+    @media (max-width: 760px) { #exList { grid-template-columns: 1fr; } }
+    html.hc .outcard, html.hc .work, html.hc .stage-panel { border-width: 2px; border-color: var(--line-d); box-shadow: none; }
     /* 좁은 화면 — 기준은 lib/tokens.css 주석의 네 개뿐이다(md 1023 / sm 639).
        전에는 페이지마다 560/860/900/960/980/1200 이 섞여 있어, 같은 창 폭에서
        화면을 옮기면 어떤 것은 접히고 어떤 것은 눌려서 잘렸다.
@@ -174,20 +252,25 @@
       <div class="panel-head">
         <div class="q"><span class="qnum">1</span><span class="qtext" id="txtWorkHead">블록을 조립해요</span></div>
         <!-- 지금 어느 작품을 고치는 중인지 — 저장하면 이 이름으로 덮어쓴다 -->
-        <span id="curFile" style="font-size:.86rem;color:var(--ink-2);margin-left:8px;
-              max-width:22ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+        <span id="curFile"></span>
         <div class="work-tools">
-          <select id="levelSel" title="블록 수준">
+          <div class="seg" id="levelSeg" role="radiogroup" title="블록 수준">
+            <button type="button" data-lv="easy" role="radio">쉬움</button>
+            <button type="button" data-lv="basic" role="radio">기본</button>
+            <button type="button" data-lv="all" role="radio">전체</button>
+          </div>
+          <select id="levelSel" title="블록 수준" hidden>
             <option value="easy">쉬움</option>
             <option value="basic">기본</option>
             <option value="all">전체</option>
           </select>
-          <button id="newButton">새로 만들기</button>
-          <button id="saveButton">저장</button>
-          <button id="loadButton">불러오기</button>
+          <span class="tool-div"></span>
+          <button id="newButton" class="btn-ghost"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11v6M9 14h6"/></svg><span class="lbl">새로 만들기</span></button>
+          <button id="saveButton" class="btn-ghost"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l3 3v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z"/><path d="M8 3v5h7V3M8 21v-7h8v7"/></svg><span class="lbl">저장</span></button>
+          <button id="loadButton" class="btn-ghost"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="lbl">불러오기</span></button>
           <input type="file" id="loadFile" accept=".json" style="display:none">
-          <button id="runButton"><span id="runLabel">실행 ▶</span></button>
-          <button id="stopButton">정지</button>
+          <button id="runButton" class="btn-go"><svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.4-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg><span id="runLabel">실행</span></button>
+          <button id="stopButton" class="btn-stop"><svg class="ic" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg><span class="lbl">정지</span></button>
         </div>
       </div>
       <div id="blocklyDiv"></div>
@@ -197,8 +280,8 @@
       <div class="panel-head">
         <div class="q"><span class="qnum">2</span><span class="qtext" id="txtStageHead">결과를 확인해요</span></div>
         <div class="stage-tools">
-          <button id="exampleButton">예제</button>
-          <button id="clearButton">지우기</button>
+          <button id="exampleButton" class="btn-primary"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="lbl">예제</span></button>
+          <button id="clearButton" class="btn-ghost"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg><span class="lbl">지우기</span></button>
         </div>
       </div>
       <div class="stage-body">
@@ -209,6 +292,13 @@
           <div id="sprites"></div>
           <div id="bigText"></div>
           <div id="bubble"></div>
+          <div id="runBadge"><i></i><span id="txtRunBadge">실행 중</span></div>
+          <div id="stageEmpty">
+            <img src="/assets/pibo-hello.png" alt="">
+            <b id="txtEmptyTitle">무엇을 만들어 볼까요?</b>
+            <span id="txtEmptySub">왼쪽에서 블록을 끌어오거나, 예제로 시작해 보세요.</span>
+            <button type="button" id="emptyExBtn" class="btn-primary"></button>
+          </div>
           <form id="askBox" autocomplete="off">
             <div id="askQ"></div>
             <div style="display:flex;gap:6px;">
@@ -217,29 +307,27 @@
             </div>
           </form>
         </div>
-        <div class="stage-tools">
-          <button id="uploadButton">사진 올리기</button>
-          <input type="file" id="uploadFile" accept="image/*" style="display:none">
+        <div class="stage-sub">
           <span class="hint" id="uploadHint">「업로드한 사진」 블록에서 사용돼요</span>
+          <button id="uploadButton" class="btn-ghost"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="10.5" r="1.8"/><path d="m21 16-5-5-9 8"/></svg><span class="lbl">사진 올리기</span></button>
+          <input type="file" id="uploadFile" accept="image/*" style="display:none">
         </div>
-        <div id="varsBox" style="display:none;border:1.5px dashed var(--line);
-             border-radius:var(--r);padding:6px 10px;font-size:.82rem;background:#fffdf6;">
-          <b id="txtVarsTitle" style="color:var(--ink-2);font-size:0.82rem;">변수 값</b>
-          <div id="varsBody" style="font-variant-numeric:tabular-nums;"></div>
-        </div>
-        <div id="logBox"></div>
-        <details class="codeview" id="codeDetails">
-          <summary id="txtCodeView">파이썬 코드로 보기</summary>
-          <div style="display:flex;gap:6px;margin:6px 0;">
-            <button id="pyCopy" style="border:1.5px solid var(--line);background:#fff;
-              border-radius:6px;padding:3px 12px;cursor:pointer;font-family:inherit;
-              font-size:.82rem;">복사</button>
-            <button id="pyOpen" style="border:1.5px solid var(--line);background:#fff;
-              border-radius:6px;padding:3px 12px;cursor:pointer;font-family:inherit;
-              font-size:.82rem;">파이썬 페이지에서 열기</button>
+        <div class="outcard">
+          <div class="tabs" role="tablist">
+            <button type="button" class="tab on" data-tab="log" role="tab"><span id="txtTabLog">기록</span></button>
+            <button type="button" class="tab" data-tab="vars" role="tab"><span id="txtVarsTitle">변수</span><i id="varsCount"></i></button>
+            <button type="button" class="tab" data-tab="py" role="tab" id="codeDetails"><span id="txtCodeView">파이썬</span></button>
+            <span class="tabs-sp"></span>
+            <button id="pyCopy" class="tab-act"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg><span class="lbl">복사</span></button>
+            <button id="pyOpen" class="tab-act"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg><span class="lbl">파이썬 페이지에서 열기</span></button>
           </div>
-          <pre id="codeView"></pre>
-        </details>
+          <div class="pane" data-pane="log"><div id="logBox"></div></div>
+          <div class="pane" data-pane="vars" hidden>
+            <div id="varsBox" style="display:none"><div id="varsBody"></div></div>
+            <div class="pane-empty" id="txtVarsEmpty">실행하면 변수 값이 여기에 보여요.</div>
+          </div>
+          <div class="pane" data-pane="py" hidden><pre id="codeView"></pre></div>
+        </div>
       </div>
     </div>
   </div>
@@ -251,18 +339,16 @@
   <script src="/blockly/blocks_compressed.js"></script>
   <script src="/blockly/javascript_compressed.js"></script>
   <script src="/blockly/msg/en.js"></script>
-  <div id="exModal" style="display:none;position:fixed;inset:0;background:rgba(38,48,60,.45);
-       z-index:50;align-items:center;justify-content:center;">
-    <div style="background:#fff;border:2px solid var(--line-d);border-radius:6px;
-         max-width:460px;width:92%;padding:16px;max-height:88vh;display:flex;flex-direction:column;">
-      <div style="display:flex;align-items:center;margin-bottom:4px;">
-        <b id="txtExTitle" style="font-size:1.05rem;">예제 프로그램</b>
-        <button id="exClose" style="margin-left:auto;border:1.5px solid var(--line);
-          background:#fff;border-radius:6px;padding:2px 10px;cursor:pointer;">×</button>
+  <div id="exModal" style="display:none;">
+    <div class="ex-dlg" role="dialog" aria-labelledby="txtExTitle">
+      <div class="ex-head">
+        <div>
+          <b id="txtExTitle">예제 프로그램</b>
+          <div class="hint" id="txtExHint">누르면 지금 블록이 예제로 바뀌어요.</div>
+        </div>
+        <button id="exClose" aria-label="닫기">×</button>
       </div>
-      <div class="hint" id="txtExHint" style="font-size:.82rem;color:var(--ink-2);
-           margin-bottom:10px;">누르면 지금 블록이 예제로 바뀌어요.</div>
-      <div id="exList" style="display:flex;flex-direction:column;gap:8px;overflow-y:auto;min-height:0;"></div>
+      <div id="exList"></div>
     </div>
   </div>
   <script>window.MSG_EN = Object.assign({}, Blockly.Msg);</script>
@@ -285,7 +371,7 @@
     ko: {
       titleTag: "edge-lab — 블록", title: "edge-lab",
       eyebrow: "블록으로 나만의 프로그램을 · 인터넷 없이 내 컴퓨터에서",
-      back: "홈", save: "저장", load: "불러오기", stop: "정지", run: "실행 ▶",
+      back: "홈", save: "저장", load: "불러오기", stop: "정지", run: "실행",
       running: "실행 중...", langBtn: "EN",
       workHead: "블록을 조립해요", stageHead: "결과를 확인해요",
       upload: "사진 올리기", uploadHint: "「업로드한 사진」 블록에서 사용돼요",
@@ -530,6 +616,9 @@
       n_do: "도", n_re: "레", n_mi: "미", n_fa: "파", n_sol: "솔",
       n_la: "라", n_si: "시", n_do2: "높은도",
       vars_title: "변수 값",
+      tab_log: "기록", tab_vars: "변수", tab_py: "파이썬", vars_empty: "실행하면 변수 값이 여기에 보여요.",
+      running_badge: "실행 중", empty_title: "무엇을 만들어 볼까요?", empty_sub: "왼쪽에서 블록을 끌어오거나, 예제로 시작해 보세요.",
+      empty_btn: "예제 보기",
       btn_examples: "예제",
       btn_clear: "지우기",
       pyCopy: "복사", pyCopied: "복사했어요", pyOpen: "파이썬 페이지에서 열기",
@@ -610,7 +699,7 @@
     en: {
       titleTag: "edge-lab — Blocks", title: "edge-lab",
       eyebrow: "write your own program with blocks · runs on this computer",
-      back: "Home", save: "Save", load: "Load", stop: "Stop", run: "Run ▶",
+      back: "Home", save: "Save", load: "Load", stop: "Stop", run: "Run",
       running: "Running...", langBtn: "한",
       workHead: "Build your blocks", stageHead: "Check the result",
       upload: "Upload photo", uploadHint: "Used by the “uploaded photo” block",
@@ -854,6 +943,9 @@
       n_do: "C (do)", n_re: "D (re)", n_mi: "E (mi)", n_fa: "F (fa)", n_sol: "G (sol)",
       n_la: "A (la)", n_si: "B (si)", n_do2: "high C",
       vars_title: "Variables",
+      tab_log: "Log", tab_vars: "Variables", tab_py: "Python", vars_empty: "Variable values show up here when you run.",
+      running_badge: "Running", empty_title: "What shall we make?", empty_sub: "Drag blocks from the left, or start from an example.",
+      empty_btn: "See examples",
       btn_examples: "Examples",
       btn_clear: "Clear",
       pyCopy: "Copy", pyCopied: "Copied", pyOpen: "Open in Python page",
@@ -3379,9 +3471,16 @@ def texts_of(result):
     if (box) box.textContent = PY_TEXT;
     return PY_TEXT;
   }
-  document.getElementById("codeDetails").addEventListener("toggle", e => {
-    if (e.target.open) { refreshPython(); if (window.vapiStat) vapiStat("python_view"); }
-  });
+  /* 기록 · 변수 · 파이썬 탭 */
+  const outcard = document.querySelector(".outcard");
+  function showTab(name) {
+    outcard.dataset.tab = name;
+    outcard.querySelectorAll(".tab").forEach(b => { const on = b.dataset.tab === name; b.classList.toggle("on", on); b.setAttribute("aria-selected", on); });
+    outcard.querySelectorAll(".pane").forEach(p => { p.hidden = p.dataset.pane !== name; });
+    if (name === "py") { refreshPython(); if (window.vapiStat) vapiStat("python_view"); }
+  }
+  outcard.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
+  outcard.dataset.tab = "log";
   document.getElementById("pyCopy").addEventListener("click", async () => {
     refreshPython();
     try {
@@ -3399,6 +3498,10 @@ def texts_of(result):
   });
 
   const exModal = document.getElementById("exModal");
+  const EX_ICON = { ez_dance: "🤖", ez_song: "🎵", ez_rocket: "🚀", ez_apple: "🍎", ez_hand: "✋", ez_hide: "🙈", ez_drive: "🕹️",
+    ez_face: "😀", guess: "🔢", react: "⏱️", catch: "⭐", handgame: "🖐️", emogame: "🎭", hunt: "🔍", crown: "👑",
+    posture: "🧍", armcount: "💪", booth: "📸", result: "📊", rps: "✌️", greet: "👋", mymodel: "🧠", modelfile: "📦",
+    basics: "🧱", selfie: "🖼️", color: "🎨", sound: "🔊", echo: "🗣️", voices: "🎙️", count: "👥", checkall: "✅" };
   document.getElementById("exampleButton").addEventListener("click", () => {
     const list = document.getElementById("exList");
     list.innerHTML = "";
@@ -3414,17 +3517,23 @@ def texts_of(result):
     groups.forEach(([title, exs]) => {
       if (!exs.length) return;                 // 빈 묶음은 제목도 안 보인다
       const h = document.createElement("div");
-      h.style.cssText = "font-size:.82rem;font-weight:700;color:var(--ink-2);margin-top:4px;";
+      h.className = "ex-grp";
       h.textContent = title;
       list.appendChild(h);
       exs.forEach(ex => addEx(ex));
     });
     function addEx(ex) {
       const el = document.createElement("button");
-      el.style.cssText = "text-align:left;border:1.5px solid var(--line);background:#fff;" +
-        "border-radius:6px;padding:10px 12px;cursor:pointer;font-family:inherit;";
-      el.innerHTML = "<b>" + ex.name + "</b><div style='font-size:0.82rem;color:var(--ink-2);'>" +
-        ex.desc + "</div>";
+      el.className = "ex-card";
+      /* 설명 끝의 '(반복 · 만약 · 점수)' 는 배우는 개념 — 칩으로 따로 보여 준다 */
+      const m = String(ex.desc).match(/^(.*?)\s*\(([^()]*)\)\s*$/);
+      const desc = m ? m[1] : ex.desc, tags = m ? m[2].split(/\s*[·,]\s*/).filter(Boolean) : [];
+      const esc = v => String(v).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+      const lv = lvOf(ex);
+      el.innerHTML = '<span class="ex-ic">' + (EX_ICON[ex.id] || "🧩") + '</span>' +
+        '<span class="ex-name">' + esc(ex.name) + '<span class="ex-lv l' + lv + '">' + t("lv_" + ["easy", "basic", "all"][lv]) + '</span></span>' +
+        '<span class="ex-desc">' + esc(desc) + '</span>' +
+        '<span class="ex-tags">' + tags.map(x => "<i>" + esc(x) + "</i>").join("") + '</span>';
       el.addEventListener("click", () => {
         try {
           Blockly.serialization.workspaces.load(ex.state, ws);
@@ -3447,12 +3556,14 @@ def texts_of(result):
   var BLOCK_NAME = "";
 
   function applyStaticText() {
-    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    /* 아이콘이 있는 단추는 글자(.lbl)만 바꾼다 — textContent 로 통째로 갈면 아이콘이 지워진다 */
+    const set = (id, v) => { const el = document.getElementById(id); if (!el) return;
+      const l = el.querySelector(".lbl"); if (l) { l.textContent = v; el.title = v; } else el.textContent = v; };
     document.documentElement.lang = LANG;
     document.title = t("titleTag");
     if (window.navRepaint) window.navRepaint();   /* 레일 글자는 lib/shell.js 가 갖고 있다 */
     set("saveButton", t("save"));
-    set("txtVarsTitle", t("vars_title"));
+    set("txtVarsTitle", t("tab_vars"));
     set("newButton", t("btn_new"));
     if (typeof showBlockFile === "function") showBlockFile();   // "새 작품" 문구도 번역
     set("exampleButton", t("btn_examples"));
@@ -3463,7 +3574,12 @@ def texts_of(result):
     set("runLabel", t("run"));          set("langButton", t("langBtn"));
     set("txtWorkHead", t("workHead"));  set("txtStageHead", t("stageHead"));
     set("uploadButton", t("upload"));   set("uploadHint", t("uploadHint"));
-    set("txtCodeView", t("codeView"));
+    set("txtCodeView", t("tab_py")); set("txtTabLog", t("tab_log")); set("txtVarsEmpty", t("vars_empty"));
+    set("txtRunBadge", t("running_badge")); set("txtEmptyTitle", t("empty_title")); set("txtEmptySub", t("empty_sub"));
+    const eb = document.getElementById("emptyExBtn");
+    if (eb) eb.innerHTML = document.querySelector("#exampleButton svg").outerHTML + "<span>" + t("empty_btn") + "</span>";
+    const seg = document.getElementById("levelSeg");
+    if (seg) { seg.title = t("lv_title"); seg.querySelectorAll("button").forEach(b => { b.textContent = t("lv_" + b.dataset.lv); }); }
     const ls = document.getElementById("levelSel");
     if (ls) {
       ls.title = t("lv_title");
@@ -3497,13 +3613,17 @@ def texts_of(result):
     LEVEL = lv;
     try { localStorage.setItem("vapi-blk-level", lv); } catch (e) {}
     levelSel.value = lv;
+    document.querySelectorAll("#levelSeg button").forEach(b => {
+      const on = b.dataset.lv === lv; b.classList.toggle("on", on); b.setAttribute("aria-checked", on); });
     ws.updateToolbox(toolboxFor(lv));
     /* 쉬움에서는 파이썬 코드 보기를 숨긴다 — 글자 코드는 기본부터 */
     const cd = document.getElementById("codeDetails");
     if (cd) cd.style.display = lv === "easy" ? "none" : "";
+    if (lv === "easy" && outcard && outcard.dataset.tab === "py") showTab("log");
     if (!quiet && typeof log === "function") log(t("m_level") + t("lv_" + lv));
   }
   levelSel.addEventListener("change", () => setLevel(levelSel.value));
+  document.querySelectorAll("#levelSeg button").forEach(b => b.addEventListener("click", () => setLevel(b.dataset.lv)));
   setLevel(LEVEL, true);                       // 처음 열 때 — 쉬움이면 파이썬 보기를 숨긴다
   /* 작품 파일 = Blockly 상태 + level. 예전 파일(level 없음)은 지금 수준 그대로 연다 */
   function saveState() {
@@ -3528,6 +3648,15 @@ def texts_of(result):
   const overlay = document.getElementById("overlay");
   const octx = overlay.getContext("2d");
   const bigText = document.getElementById("bigText");
+  /* 빈 무대 안내 — 실행 중이거나 무대에 무엇이든 있으면 숨긴다 */
+  const stageEmpty = document.getElementById("stageEmpty");
+  function updateEmpty() {
+    if (!stageEmpty) return;
+    const sp = document.getElementById("sprites");
+    stageEmpty.hidden = document.body.classList.contains("running") || shotImg.style.display === "block" ||
+      !!(sp && sp.children.length) || !!bigText.textContent || cam.style.visibility === "visible";
+  }
+  document.getElementById("emptyExBtn").addEventListener("click", () => document.getElementById("exampleButton").click());
   const spritesEl = document.getElementById("sprites");
   const askBox = document.getElementById("askBox"), askQ = document.getElementById("askQ"),
         askIn = document.getElementById("askIn");
@@ -3540,6 +3669,7 @@ def texts_of(result):
      블록은 그대로 둔다(그건 [새로 만들기]가 하는 일). RT.clearStage 는 아래에서
      만들어지지만 누를 때 찾으므로 순서는 문제되지 않는다. */
   document.getElementById("clearButton").addEventListener("click", () => {
+    setTimeout(updateEmpty, 0);
     try { RT.clearStage(); } catch (e) {}
     logBox.innerHTML = "";
     const vars = document.getElementById("varsBox");
@@ -3595,7 +3725,7 @@ def texts_of(result):
         c.height = Math.round(im.height * scale);
         c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
         uploadedURL = c.toDataURL("image/jpeg", 0.9);
-        shotImg.src = uploadedURL; shotImg.style.display = "block";
+        shotImg.src = uploadedURL; shotImg.style.display = "block"; updateEmpty();
         document.getElementById("uploadHint").textContent = t("uploadReady") + " (" + f.name + ")";
       };
       im.src = e.target.result;
@@ -4059,7 +4189,7 @@ def texts_of(result):
         g.save();
         g.translate(px * c.width, py * c.height);
         g.rotate((Number(deg) || 0) * Math.PI / 180);
-        g.font = "bold " + size + 'px "Gowun Dodum", sans-serif';
+        g.font = "bold " + size + 'px Pretendard, "Malgun Gothic", sans-serif';
         g.textAlign = "center"; g.textBaseline = "middle";
         g.lineWidth = Math.max(2, size / 10);
         g.strokeStyle = "rgba(255,255,255,.85)";   // 어떤 배경에서도 읽히게 흰 테두리
@@ -4175,7 +4305,7 @@ def texts_of(result):
         g.save();
         g.translate(Number(x) || 0, Number(y) || 0);
         g.rotate((Number(deg) || 0) * Math.PI / 180);
-        g.font = "bold " + size + 'px "Gowun Dodum", sans-serif';
+        g.font = "bold " + size + 'px Pretendard, "Malgun Gothic", sans-serif';
         g.textAlign = "left"; g.textBaseline = "top";
         g.lineWidth = Math.max(2, size / 10);
         g.strokeStyle = "rgba(255,255,255,.85)";
@@ -4648,6 +4778,8 @@ def texts_of(result):
       const body = document.getElementById("varsBody");
       if (!box || !body) return;
       box.style.display = "block";
+      const vc = document.getElementById("varsCount");
+      if (vc) vc.textContent = Object.keys(RT._vars).length;
       body.innerHTML = Object.keys(RT._vars).map(k =>
         "<div><b>" + k.replace(/&/g,"&amp;").replace(/</g,"&lt;") + "</b> = " +
         String(RT._vars[k]).replace(/&/g,"&amp;").replace(/</g,"&lt;").slice(0, 60) + "</div>").join("");
@@ -4748,7 +4880,7 @@ def texts_of(result):
       const k = Math.max(1, w / 640);               // 사진 크기에 비례한 선/글자 굵기
       octx.clearRect(0, 0, w, h);
       octx.lineWidth = 3 * k;
-      octx.font = (18 * k) + "px 'Gowun Dodum', sans-serif";
+      octx.font = (18 * k) + "px Pretendard, 'Malgun Gothic', sans-serif";
       AI.lastBoxes.forEach(({ box, label, color }) => {
         const c = color || "#1f5f7a";
         const [x1, y1, x2, y2] = box;
@@ -4858,9 +4990,11 @@ def texts_of(result):
     RT.abort = new AbortController();
     RT._vars = {};
     document.getElementById("varsBox").style.display = "none";
+    document.getElementById("varsCount").textContent = "";
     logBox.textContent = "";
     RT.clearStage();
-    runButton.disabled = true; runLabel.textContent = t("running");
+    runButton.disabled = true;
+    document.body.classList.add("running"); updateEmpty();
     let code = "";
     try {
       code = G.workspaceToCode(ws);          // 화면에서 도는 것 (블록 실행용)
@@ -4881,6 +5015,7 @@ def texts_of(result):
     } finally {
       ws.highlightBlock(null);
       runButton.disabled = false; runLabel.textContent = t("run");
+      document.body.classList.remove("running"); updateEmpty();
       stopCam();                                // 실행이 끝나면 카메라 불도 꺼진다
     }
   });
@@ -4930,6 +5065,7 @@ def texts_of(result):
     if (RT.abort) RT.abort.abort();
     RT._stopVoice();
     RT.clearStage();                  // 무대·기록도 함께 비운다
+    updateEmpty();
     log(t("m_newOk"));
   });
 

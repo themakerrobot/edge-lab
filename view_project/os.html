@@ -52,7 +52,7 @@
     html, body { height: 100%; }
     body {
       display: flex; flex-direction: column; height: 100dvh; overflow: hidden;
-      color: var(--ink); font-family: "Gowun Dodum", "Apple SD Gothic Neo", system-ui, sans-serif;
+      color: var(--ink); font-family: var(--font-ui);
       font-size: var(--fs-body); line-height: 1.5;
     }
     /* 첫 화면 — 내용(body)은 준비될 때까지 투명, 배경은 html 이 바로 그린다.
@@ -145,10 +145,10 @@
              opacity: 0; transform: translateY(6px) scale(.96); transform-origin: 100% 100%;
              transition: opacity .18s ease-out, transform .18s ease-out; }
     .d-say.on { opacity: 1; transform: none; }
-    .d-hero .t { font-family: "Gowun Batang", serif; font-size: 56px; font-weight: 700; line-height: 1;
+    .d-hero .t { font-family: var(--font-ui); font-size: 56px; font-weight: 700; line-height: 1;
                  letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
     .d-hero .d { font-size: 15px; color: var(--ink-2); padding-bottom: 6px; }
-    .d-hero .d b { display: block; font-family: "Gowun Batang", serif; font-size: 19px; color: var(--ink); margin-top: 3px; }
+    .d-hero .d b { display: block; font-family: var(--font-ui); font-size: 19px; color: var(--ink); margin-top: 3px; }
     .d-hero img { height: 72px; margin-left: auto; }
     /* 칸 수(--cols)는 fitCols() 가 정한다 — 화면에 들어가는 칸 수와 가장 긴 묶음의 아이콘 수 중 작은 쪽.
        auto-fill 로 두면 넓은 화면에서 빈 칸이 남아 아이콘이 왼쪽으로 쏠렸다(묶음 제목 줄이 모든 칸을 가로질러 auto-fit 도 안 접힌다) */
@@ -317,7 +317,7 @@
     #osFull[hidden] { display: none; }
     .full-card { width: min(420px, calc(100% - 32px)); background: var(--paper); border: 1.5px solid var(--line-d);
                  border-radius: 16px; padding: 18px 18px 14px; box-shadow: 0 20px 50px rgba(44,74,124,.3); }
-    .full-card h2 { font-family: "Gowun Batang", serif; font-size: 18px; margin-bottom: 4px; }
+    .full-card h2 { font-family: var(--font-ui); font-size: 18px; margin-bottom: 4px; }
     .full-card p { font-size: 13.5px; color: var(--ink-2); margin-bottom: 12px; }
     .full-row { display: flex; align-items: center; gap: 10px; min-height: 46px; padding: 4px 6px; border-radius: 10px; }
     .full-row + .full-row { border-top: 1px solid rgba(74,63,46,.1); }
@@ -986,7 +986,7 @@
       };
 
       /* 첫 화면 — 한 번에 보인다. 배경(html)은 바로 그리고, 내용(body)은 스크립트가 다 돌고(DOMContentLoaded)
-         화면에 쓰인 글꼴을 받은 뒤에 보인다 — 대체 글꼴로 그렸다가 Gowun 으로 다시 그려지는 것을 보이지 않게.
+         화면에 쓰인 글꼴을 받은 뒤에 보인다 — 대체 글꼴로 그렸다가 Pretendard 로 다시 그려지는 것을 보이지 않게.
          칸의 내용은 기억해 둔 값(DESK_KEY)으로 이미 그려져 있어 서버를 기다리지 않는다.
          기억한 값이 없는 첫 실행만 첫 자료를 기다린다 — 준비 화면이 떠 있으면 바탕화면은 가려져 있으니 기다리지 않는다.
          최대 1.5초(키오스크로 켰을 때는 검은 화면이라 6초). */

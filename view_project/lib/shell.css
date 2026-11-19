@@ -243,3 +243,24 @@ html.hc .titlebar .h-tools > a {
   .shell-body { display: block; }
   .workbench { display: block; padding: 0; overflow: visible; }
 }
+
+
+/* ═══════════════════ 다듬기 (261119) ═══════════════════
+   타이틀바는 가는 선 · 흰 바탕, 오른쪽 알약은 같은 높이 · 같은 선. 값은 lib/tokens.css. */
+.titlebar { border-bottom: 1px solid var(--line-mid, #d5cbb9); box-shadow: 0 1px 0 rgba(42, 38, 32, .03); }
+.tb-app { font-size: 13px; font-weight: 600; color: var(--ink, #2a2620); }
+.titlebar .h-tools > button,
+.titlebar .h-tools > a {
+  height: 26px;
+  border: 1px solid var(--line-mid, #d5cbb9);
+  font-weight: 600;
+  transition: background-color .12s, border-color .12s, color .12s;
+}
+.titlebar .h-tools > button:hover,
+.titlebar .h-tools > a:hover { background: var(--hover-bg, #f4efe4); }
+.titlebar .h-tools > button.round { width: 26px; }
+.titlebar .h-tools > a.close { border-color: var(--line-mid, #d5cbb9); }
+.workbench { padding: 6px; gap: 6px; }
+
+/* 닫기의 × — 페이지가 .x 라는 이름을 다른 데 쓰면(이야기 극장의 지우기 단추) 그 크기가 여기로 번져 × 가 위로 떴다 */
+.titlebar .h-tools > a.close .x { width: auto; height: auto; border-radius: 0; background: none; padding: 0; color: inherit; }

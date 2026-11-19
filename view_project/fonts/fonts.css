@@ -1,3 +1,18 @@
+/* 화면 글꼴 — Pretendard (SIL OFL 1.1, fonts/pretendard/LICENSE.txt). 한글 2,780자 + 영문.
+   모든 화면이 lib/tokens.css 의 --font-ui 로 이것을 쓴다. 아래 Gowun 은 예전 작품 · 문서 호환용으로 남겨 둔다
+   (unicode-range 라 쓰지 않으면 받지 않는다). */
+@font-face {
+  font-family: 'Pretendard';
+  font-weight: 100 549;
+  font-display: swap;
+  src: local('Pretendard Regular'), url(/fonts/pretendard/Pretendard-Regular.subset.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Pretendard';
+  font-weight: 550 900;
+  font-display: swap;
+  src: local('Pretendard Bold'), url(/fonts/pretendard/Pretendard-Bold.subset.woff2) format('woff2');
+}
 @font-face {
   font-family: 'Gowun Batang';
   font-style: normal;

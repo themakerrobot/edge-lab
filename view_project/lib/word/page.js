@@ -310,7 +310,7 @@ function drawChart() {
   const g = c.getContext('2d'); g.scale(dpr, dpr);
   g.clearRect(0, 0, W, H);
   // 범례는 캔버스 오른쪽 위 줄에 쓴다
-  g.font = '13px "Gowun Dodum", sans-serif'; g.textAlign = 'right'; g.textBaseline = 'top';
+  g.font = '13px Pretendard, "Malgun Gothic", sans-serif'; g.textAlign = 'right'; g.textBaseline = 'top';
   g.fillStyle = css('--ink-2') || '#4a423a'; g.fillText(t('loss'), W - 8, 6);
   g.fillStyle = css('--pen-red') || '#b4451c'; g.fillRect(W - 14 - g.measureText(t('loss')).width - 18, 13, 14, 3);
   if (losses.length < 2) return;

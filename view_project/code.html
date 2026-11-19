@@ -27,7 +27,7 @@
     body {
       display: flex; flex-direction: column; height: 100dvh; overflow: hidden;
       color: var(--ink); background-color: var(--paper);
-      font-family: "Gowun Dodum", "Apple SD Gothic Neo", system-ui, sans-serif;
+      font-family: var(--font-ui);
       line-height: 1.5; padding: var(--sp-2, 8px); gap: var(--sp-2, 8px);
     }
     a { color: var(--pen-blue-d); text-decoration: none; }
@@ -43,7 +43,7 @@
 
     /* ===== 머리표 ===== */
     .eyebrow { font-size: 0.82rem; color: var(--ink-2); letter-spacing: .04em; }
-    .title { font-family: "Gowun Dodum", sans-serif; font-weight: 700; font-size: 1.15rem; color: var(--ink); }
+    .title { font-family: var(--font-ui); font-weight: 700; font-size: 1.15rem; color: var(--ink); }
 
     /* ===== 시스템 상태바 ===== */
     .chip {
@@ -68,9 +68,11 @@
     #guideButton.on {
       background: var(--cyan); border-color: var(--cyan-d); color: #fff; font-weight: 700;
     }
-    #runButton { background: var(--pen-blue); border-color: var(--pen-blue-d); color: #fff; font-weight: 700; }
-    #runButton:hover:not(:disabled) { background: var(--pen-blue-d); }
-    #stopButton { color: var(--pen-red); border-color: var(--pen-red); }
+    /* 실행 · 정지는 한 자리 — 실행하는 동안(body.running) 정지 단추로 바뀐다 (블록 화면과 같다) */
+    .panel-head #runButton, .panel-head #stopButton { min-width: 92px; padding: 0 16px; font-size: 14px; }
+    #stopButton { display: none; }
+    body.running #runButton { display: none; }
+    body.running #stopButton { display: inline-flex; }
 
     .CodeMirror {
       flex: 1 1 auto; height: auto; min-height: 0;
@@ -164,7 +166,7 @@
       width: min(720px, 92vw); max-height: 84vh; overflow: auto;
       background: var(--box); border: 2px solid var(--line-d); border-radius: 6px; padding: 20px;
     }
-    .modal h3 { font-family: "Gowun Dodum", sans-serif; color: var(--cyan-d); margin-bottom: var(--sp-2, 8px); }
+    .modal h3 { font-family: var(--font-ui); color: var(--cyan-d); margin-bottom: var(--sp-2, 8px); }
     .ex-card {
       border: 1.5px solid var(--line); border-radius: var(--r);
       padding: 10px 12px; margin-bottom: var(--sp-1, 4px); cursor: pointer;
@@ -175,7 +177,7 @@
     .ex-card .d { color: var(--ink-2); font-size: .86rem; }
     .modal table { border-collapse: collapse; width: 100%; font-size: .88rem; }
     .modal th, .modal td { border: 1px solid var(--line); padding: 6px 9px; text-align: left; }
-    .modal th { background: var(--paper); font-family: "Gowun Dodum", sans-serif; }
+    .modal th { background: var(--paper); font-family: var(--font-ui); }
     .modal code { background: var(--paper); padding: 1px 5px; border-radius: 3px;
                   font-family: "Menlo","Consolas",ui-monospace,monospace; font-size: .85em; }
     .modal .close { float: right; }
@@ -215,8 +217,8 @@
           <button id="newButton" title="Ctrl + Alt + N">새로 만들기</button>
           <button id="saveButton">저장</button>
           <button id="loadButton">불러오기</button>
-          <button id="runButton" title="Ctrl + Enter"><span id="runLabel">실행 ▶</span></button>
-          <button id="stopButton" title="Esc">정지</button>
+          <button id="runButton" class="btn-go" title="Ctrl + Enter"><svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.4-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg><span id="runLabel">실행</span></button>
+          <button id="stopButton" class="btn-stop" title="Esc">정지</button>
         </div>
       </div>
       <textarea id="editor"></textarea>
@@ -307,7 +309,7 @@
         argsK: "넣는 것", retK: "돌려주는 것", exK: "예시 (눌러서 넣기)",
         g_basic: "기본", g_ai: "AI 로 보기", g_edit: "사진 편집", g_my: "내가 만든 AI",
         g_sound: "소리", g_flow: "반복 · 조건", g_result: "결과 다루기", g_data: "시간 · 기록",
-        run: "실행 ▶", running: "실행 중...", stop: "정지", clear: "지우기",
+        run: "실행", running: "실행 중...", stop: "정지", clear: "지우기",
         newFile: "새 파일", openedAs: "불러왔어요: ", runStateK: "상태", stReady: "준비됨", stRun: "실행 중", stDone: "끝남", stStop: "정지됨",
         hint: "show() 결과는 위 칸에 나와요. input() 은 지원하지 않아요.",
         exTitle: "예제 프로그램", guideTitle: "themaker 함수 가이드",
@@ -338,7 +340,7 @@
         argsK: "takes", retK: "returns", exK: "example (click to insert)",
         g_basic: "Basics", g_ai: "See with AI", g_edit: "Edit photo", g_my: "Your own AI",
         g_sound: "Sound", g_flow: "Repeat · If", g_result: "Use results", g_data: "Time · records",
-        run: "Run ▶", running: "Running...", stop: "Stop", clear: "Clear",
+        run: "Run", running: "Running...", stop: "Stop", clear: "Clear",
         newFile: "new file", openedAs: "opened: ", runStateK: "state", stReady: "ready", stRun: "running", stDone: "done", stStop: "stopped",
         hint: "show() draws above. input() is not supported.",
         exTitle: "Example programs", guideTitle: "themaker functions",
@@ -424,6 +426,7 @@ show(img, r)                # show the result (boxes are drawn)
       if (stEl) stEl.textContent = t(key);
       const running = key === "stRun";
       document.getElementById("runButton").disabled = running;
+      document.body.classList.toggle("running", running);
       document.getElementById("runLabel").textContent = running ? t("running") : t("run");
     }
 
