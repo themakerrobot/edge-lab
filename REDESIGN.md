@@ -778,7 +778,7 @@ AI 작업 관리자에 **넣지 않은 것**: NPU·GPU 사용률(드라이버마
 openpibo IDE 의 결로 다시 칠했다(코드는 옮기지 않고 값만 참고). Blockly 13 이라 클래스 이름이 10 과 다르다
 (`blocklyTreeRow` → `blocklyToolboxCategory`, `blocklyTreeLabel` → `blocklyToolboxCategoryLabel`, `blocklyTreeSelected` → `blocklyToolboxSelected`).
 
-- 테마 `edgelab`: 기본 블록 색을 한 벌의 hex 로(논리 #5566D9 · 반복 #2E9E6B · 수학 #7A56C9 · 텍스트 #C2477B ·
+- 테마 `appTheme`: 기본 블록 색을 한 벌의 hex 로(논리 #5566D9 · 반복 #2E9E6B · 수학 #7A56C9 · 텍스트 #C2477B ·
   목록 #D15A3A · 변수 #D9772B · 함수 #6C7A8C), 이 프로그램 블록도 hex 로(이미지 #1B8FB5 · 좌표 #3C7DD9 · AI 인식 #1E9C75 ·
   소리 #8C5BD6 · AI 언어 #7B61D1 · 이벤트 #E8A30C · 판단 #D14A63 · 보드 #2F7FD1). 판 #fdfdfe, 도구상자·펼침 #f7f8fa.
 - 분류 줄: 왼쪽 색 막대·"고르면 줄 전체를 분류 색으로" 를 없애고, 색은 24px 아이콘 타일에만(`ElCategory`, `--cat`).

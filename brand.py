@@ -38,7 +38,7 @@ REPO_GITHUB, REPO_HF = B["repo_github"], B["repo_hf"]
 
 
 def _has_batchim(word):
-    """마지막 글자에 받침이 있나. 한글이 아니면 영어 읽기로 대강 본다(edge-lab → '랩' → 있음)."""
+    """마지막 글자에 받침이 있나. 한글이 아니면 영어 끝소리로 대강 본다(…lab → '랩' → 있음)."""
     w = word.rstrip()
     if not w:
         return False
@@ -49,7 +49,7 @@ def _has_batchim(word):
 
 
 def ko(particle="을"):
-    """한국어 이름 + 조사 — ko("을") → 'edge-lab 을' / 'AI 실습실을'. 한글로 끝나면 붙여 쓴다."""
+    """한국어 이름 + 조사 — ko("을") → '… lab 을' / '… 실습실을'. 한글로 끝나면 붙여 쓴다."""
     pairs = {"을": ("을", "를"), "를": ("을", "를"), "은": ("은", "는"), "는": ("은", "는"),
              "이": ("이", "가"), "가": ("이", "가"), "과": ("과", "와"), "와": ("과", "와")}
     a, b = pairs.get(particle, (particle, particle))

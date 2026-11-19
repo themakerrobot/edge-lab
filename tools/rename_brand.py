@@ -75,7 +75,7 @@ def gh_anchor(title):
 def tracked_files():
     out = subprocess.run(["git", "ls-files"], cwd=ROOT, capture_output=True, text=True).stdout.split("\n")
     for rel in out:
-        if not rel or rel in SKIP_FILES or rel.startswith(SKIP_DIRS) or not rel.endswith(TEXT_EXT):
+        if not rel or rel in SKIP_FILES or rel.startswith(SKIP_DIRS) or not (rel.endswith(TEXT_EXT) or rel == "NOTICE"):
             continue
         if rel.endswith((".min.js",)) or "tf.min" in rel:
             continue
@@ -83,6 +83,10 @@ def tracked_files():
 
 
 def _josa(new_ko, particle):
+    if particle in ("으로", "로"):                      # 받침이 없거나 ㄹ 받침이면 '로'
+        c = new_ko.rstrip()[-1]
+        rieul = ("가" <= c <= "힣" and (ord(c) - 0xAC00) % 28 == 8) or c.lower() == "l"
+        return "으로" if BR._has_batchim(new_ko) and not rieul else "로"
     pairs = {"을": ("을", "를"), "를": ("을", "를"), "은": ("은", "는"), "는": ("은", "는"),
              "이": ("이", "가"), "가": ("이", "가"), "과": ("과", "와"), "와": ("과", "와")}
     if particle not in pairs:
@@ -119,19 +123,21 @@ def rewrite(text, old, new):
                 gh_anchor(new["name"]) + r"-\1"))
     rep.append((r"\(#" + re.escape(gh_anchor(old["name_ko"])) + r"-사용-설명서\)",
                 "(#" + gh_anchor(new["name_ko"]) + "-사용-설명서)"))
-    rep.append((r"\(#" + re.escape(gh_anchor(old["name_ko"])) + r"\)", "(#" + gh_anchor(new["name_ko"]) + ")"))
+    rep.append((r"\(#" + re.escape(gh_anchor(old["name"])) + r"\)", "(#" + gh_anchor(new["name"]) + ")"))   # README 첫 제목(# <name>)
     for pat, sub in rep:
         text = re.sub(pat, sub, text)
     # 남은 이름 — 한글이 있는 줄은 한국어 이름(조사까지), 아니면 영어 이름
-    ko_rx = re.compile(re.escape(old["name_ko"]) + r"( ?)(을|를|은|는|이|가|과|와)?(?![\w-])")
+    ko_rx = re.compile(re.escape(old["name_ko"]) + r"(`?)( ?)(으로|로|을|를|은|는|이|가|과|와)?(?![\w-])")
     en_rx = re.compile(re.escape(old["name"]) + r"(?![\w-])")
     lines = text.split("\n")
     for i, ln in enumerate(lines):
         if HANGUL.search(ln):
             def ko_sub(m):
-                part = m.group(2)
+                tick, sp, part = m.group(1), m.group(2), m.group(3)
                 if not part:
-                    return new["name_ko"]
+                    return new["name_ko"] + tick + sp            # 뒤 공백 · 백틱은 그대로
+                if tick:
+                    return new["name_ko"] + tick + sp + _josa(new["name_ko"], part)
                 sep = "" if HANGUL.match(new["name_ko"][-1]) else " "
                 return new["name_ko"] + sep + _josa(new["name_ko"], part)
             ln = ko_rx.sub(ko_sub, ln)
