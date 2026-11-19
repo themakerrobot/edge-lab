@@ -2,6 +2,7 @@
 # frozen at 2026-08-15 13:29:14
 # python 3.13.14
 # - 2026-10-28 ultralytics 8.4.118 · ultralytics-thop · polars · polars-runtime-32 뺌 (사물 · 자세 · 영역 · 마스크를 easydetect · OpenVINO 로)
+# ^ 2026-11-19 easydetect 0.7.13 → 0.7.16 (추론 코드 같음 — 사물 · 자세 · 영역 결과가 0.7.13 과 똑같음을 확인. 더해진 것은 hub 모델 · 학습 쪽, 의존성 같음)
 # + 2026-10-28 easydetect 0.7.13 (easydetect-lab 에서 학습한 .onnx 를 내 모델로 쓰기 — 의존성은 이미 다 있어 한 줄만 추가)
 # + 2026-09-30 jupyterlab 4.6.4 와 의존성 69개 추가 (Windows · Python 3.13 기준으로 계산, 기존 고정 버전은 그대로)
 #
@@ -30,7 +31,7 @@ contourpy==1.3.3
 cycler==0.12.1
 debugpy==1.8.22
 defusedxml==0.7.1
-easydetect==0.7.13
+easydetect==0.7.16
 easyocr==1.7.2
 executing==2.2.1
 fastapi==0.141.1
