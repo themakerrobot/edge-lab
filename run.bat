@@ -29,7 +29,7 @@ rem 기본은 전체 화면(키오스크)이다 — 빠져나갈 때는 오른�
 rem 보통 창으로 띄우려면(개발·선생님 PC) 아래 줄의 rem 을 지운다
 rem set VAPI_NO_KIOSK=1
 
-echo Starting edge-lab ... the browser opens right away and shows loading progress.
+echo Starting ... the browser opens right away and shows loading progress.
 "%PY%" main.py
 rem [끄기] 로 정상 종료하면 창을 바로 닫는다. 오류로 멈췄을 때만 메시지를 읽을 수 있게 멈춘다.
 if errorlevel 1 pause

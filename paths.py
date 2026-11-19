@@ -12,12 +12,12 @@
       project/     블록 코딩 작품
       pycode/      파이썬 작품 (파이썬을 실행할 때 이 폴더가 작업 위치)
       db/          아이가 올린 자료
-      기본값: 문서\\Edge Lab  (문서 폴더가 없으면 홈\\Edge Lab)
+      기본값: 문서\\<work_folder>  (문서 폴더가 없으면 홈\\<work_folder>) — 이름은 brand.json
 
   앱데이터 — 프로그램이 혼자 쓰는 것. 사용자가 열어볼 일이 없다.
       stats/  사용 통계·성적표   tmp/  업로드된 사진(자동 정리)
       .appwin/  앱 창 프로필     settings.json  작업폴더 위치
-      기본값: 윈도우 %LOCALAPPDATA%\\EdgeLab / 리눅스 ~/.local/share/edgelab
+      기본값: 윈도우 %LOCALAPPDATA%\\<appdata_folder> / 리눅스 ~/.local/share/<appdata_folder 소문자>
 
 정하는 순서 (앞이 이김)
   1) 환경변수 VAPI_WORK / VAPI_APPDATA
@@ -34,7 +34,9 @@ import sys
 ROOT = os.path.dirname(os.path.abspath(__file__))
 MODELS_DIR = os.path.join(ROOT, "models")
 
-WORK_NAME = "Edge Lab"
+import brand  # noqa: E402  (제품 이름 · 폴더 이름은 brand.json 하나에서)
+
+WORK_NAME = brand.WORK_FOLDER
 PORTABLE_MARK = os.path.join(ROOT, "portable.txt")
 
 
@@ -62,11 +64,11 @@ def _documents():
 def _default_appdata():
     if sys.platform.startswith("win"):
         base = os.environ.get("LOCALAPPDATA") or os.path.join(_home(), "AppData", "Local")
-        return os.path.join(base, "EdgeLab")
+        return os.path.join(base, brand.APPDATA_FOLDER)
     if sys.platform == "darwin":
-        return os.path.join(_home(), "Library", "Application Support", "EdgeLab")
+        return os.path.join(_home(), "Library", "Application Support", brand.APPDATA_FOLDER)
     base = os.environ.get("XDG_DATA_HOME") or os.path.join(_home(), ".local", "share")
-    return os.path.join(base, "edgelab")
+    return os.path.join(base, brand.APPDATA_FOLDER.lower())
 
 
 def _portable():

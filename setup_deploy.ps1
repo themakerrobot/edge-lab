@@ -1,5 +1,5 @@
 ﻿# ==========================================================================
-#  edge-lab : one-shot deploy (clone the repo, then run this)
+#  one-shot deploy (clone the repo, then run this)
 #  Installs packages + downloads converted models from HF + verifies.
 #  usage:
 #    powershell -ExecutionPolicy Bypass -File setup_deploy.ps1

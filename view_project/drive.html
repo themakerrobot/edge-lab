@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>edge-lab — 자동차 가르치기</title>
+  <title>자동차 가르치기</title>
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
@@ -12,6 +12,7 @@
             document.documentElement.classList.add("hc"); } catch (e) {}
   </script>
   <link rel="stylesheet" href="/lib/tokens.css">
+  <script src="/lib/brand.js"></script>
   <script src="/lib/embed.js"></script>
   <link rel="expect" href="#el-built" blocking="render">
   <style>
@@ -132,7 +133,7 @@
 </head>
 <body data-density="explore">
   <div class="titlebar">
-    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요"><img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b></a>
+    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요"><img src="/assets/pibo-logo.png" alt=""><b></b></a>
     <span class="tb-sep"></span><span class="tb-app" id="txtTitle"></span>
     <div class="h-tools"><button id="langButton" title="한국어 / English">EN</button></div>
   </div>
@@ -255,7 +256,7 @@
     try { LANG = localStorage.getItem("vapiLang") === "en" ? "en" : "ko"; } catch (e) {}
     document.documentElement.lang = LANG;
     var I18N = {
-      ko: { title: "edge-lab — 자동차 가르치기", lang: "EN", q1: "운전 교실", q3: "배우기 · AI",
+      ko: { title: "자동차 가르치기", lang: "EN", q1: "운전 교실", q3: "배우기 · AI",
             s1: "① 운전하기", s2: "② 배우기", s3: "③ AI 운전", s4: "④ 새 트랙", forTest: "시험용", forRace: "대회",
             basic: "초급", pro: "고급",
             basicHint: "방향만 가르쳐요. 차는 늘 같은 빠르기로 달려요.",
@@ -296,7 +297,7 @@
             raceTiePro: "순위: 완주가 많을수록 · 같으면 걸린 시간 합이 짧을수록",
             runs: "AI 운전 기록", none: "아직 없어요", done: "완주", stopAt: "{n}바퀴에서 멈춤", cut: "끼어들기 {n}",
             best: "가장 빠른 바퀴 {t}초", avg: "평균 {t}초", top: "최고 속도 {v}배" },
-      en: { title: "edge-lab — Teach a car", lang: "한", q1: "Driving class", q3: "Learn · AI",
+      en: { title: "Teach a car", lang: "한", q1: "Driving class", q3: "Learn · AI",
             s1: "① Drive", s2: "② Learn", s3: "③ AI drives", s4: "④ New track", forTest: "test", forRace: "race",
             basic: "Basic", pro: "Advanced",
             basicHint: "Teach steering only. The car always runs at the same speed.",
@@ -670,7 +671,7 @@
         $("trainHint").textContent = t("learnedHint").replace("{n}", X.length);
         paintTrain(); paintCounts(); paintRace(); setStep(3); paintLive();
         if (window.vapiStat) vapiStat("drive_train");
-        if (window.EL_WIN && EL_WIN.hidden) EL_WIN.notify(t("learned").replace("{p}", m.lastAcc), { actions: [{ label: t("title").replace(/^edge-lab — /, ""), href: "/drive" }] });
+        if (window.EL_WIN && EL_WIN.hidden) EL_WIN.notify(t("learned").replace("{p}", m.lastAcc), { actions: [{ label: t("title"), href: "/drive" }] });
       })();
     });
 

@@ -39,7 +39,7 @@ document.documentElement.lang = LANG;
 
 const I18N = {
   ko: {
-    title: 'edge-lab — 소리 가르치기', app: '소리 가르치기', lang: 'EN',
+    title: '소리 가르치기', app: '소리 가르치기', lang: 'EN',
     q1: '소리 모으기', q2: '배우기', q3: '해 보기',
     newP: '새로', exportP: '파일로 저장', importP: '파일 열기',
     newSure: '정말 새로?', newDone: '새로 시작해요', exported: '파일로 저장했어요',
@@ -75,7 +75,7 @@ const I18N = {
     notified: '소리 가르치기 · 다 배웠어요 ({p}%)',
   },
   en: {
-    title: 'edge-lab — Teach sounds', app: 'Teach sounds', lang: '한',
+    title: 'Teach sounds', app: 'Teach sounds', lang: '한',
     q1: 'Collect sounds', q2: 'Train', q3: 'Try it',
     newP: 'New', exportP: 'Save file', importP: 'Open file',
     newSure: 'Really new?', newDone: 'Started fresh', exported: 'Saved to a file',

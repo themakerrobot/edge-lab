@@ -4,7 +4,7 @@
     python lab.py [노트북 폴더]        (보통은 lab.bat / lab.sh 를 실행)
 
 - 노트북: 프로그램 폴더의 notebooks/ 는 원본(교재)이다. 켤 때 작업폴더(paths.NOTEBOOK_DIR,
-  기본 문서/Edge Lab/notebooks)에 맞춰 넣고, 학습자는 그 폴더에서 작업한다 (sync_notebooks):
+  기본 문서/<work_folder>/notebooks — brand.json)에 맞춰 넣고, 학습자는 그 폴더에서 작업한다 (sync_notebooks):
   없는 것은 복사, 안 고친 것은 바뀐 원본으로 바꾸고, 고친 것은 그대로 두고 새 원본을 "(새 버전)" 으로 옆에 둔다.
   원본으로 되돌리려면 그 노트북을 지우고 다시 켠다.
 - 노트북에 알려 주는 환경변수: EDGE_ROOT(프로그램 폴더), EDGE_MODELS(프로그램 폴더의 models/).

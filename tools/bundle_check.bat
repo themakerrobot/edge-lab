@@ -37,7 +37,7 @@ if errorlevel 1 goto :fail
 
 echo.
 echo === [3/4] start server (model loading takes 1-2 min) ===
-start "edge-lab-check" /min cmd /c "%PY% main.py"
+start "bundle-check" /min cmd /c "%PY% main.py"
 
 set /a WAIT=0
 :waitloop
@@ -60,7 +60,7 @@ if exist smoke_test.py (
 )
 set RESULT=%ERRORLEVEL%
 
-taskkill /fi "windowtitle eq edge-lab-check*" /t /f >nul 2>&1
+taskkill /fi "windowtitle eq bundle-check*" /t /f >nul 2>&1
 
 echo.
 if "%RESULT%"=="0" (

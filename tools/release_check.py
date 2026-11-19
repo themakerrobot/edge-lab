@@ -14,6 +14,8 @@ tools/make_bundle.bat 와 tools/schema_test/run.py 가 이것을 먼저 돌린�
   3) 화면이 부르는 /lib · /assets · /fonts · /blockly 파일이 실제로 있나, 번들 공용 파일 확인 목록이 있나
   4) 서버가 반드시 읽는 모델(tools/check.py NEED)이 설치 스크립트(setup.ps1 · setup.sh)와 배포 받기(setup_deploy.ps1)에 들어가나
   5) 파이썬 코드가 쓰는 바깥 패키지가 requirements.txt · requirements.lock.txt 에 다 있나
+  6) 제품 이름이 brand.json 한 곳에만 있나 — 코드에 이름을 직접 쓰면 FAIL, 문서 · lib/brand.js 가
+     brand.json 과 맞는지(tools/rename_brand.py --check), 모든 화면이 lib/brand.js 를 먼저 읽는지
 """
 import ast
 import os
@@ -236,6 +238,63 @@ def check_packages(mods):
             WARN.append("requirements 에 없는 패키지(선택 기능이면 무시): import %s" % imp)
 
 
+# ------------------------------------------------------------------ 6) 제품 이름
+# 이름처럼 보이지만 파일 형식 표시라 그대로 두는 것 (tools/rename_brand.py PROTECT 와 같다)
+BRAND_KEEP = ["edge-lab-sound", "edge-lab-drive", "edge-lab-story", 'app: "edge-lab"', "edge-lab.classes",
+              "----edgelab"]
+BRAND_SKIP = {"brand.py", "brand.json", "tools/rename_brand.py", "tools/release_check.py",
+              "tools/score_check.py", "view_project/lib/brand.js"}
+VENDOR = ("view_project/blockly/", "view_project/lib/swagger/", "view_project/lib/cm/", "models/")
+
+
+def code_files():
+    pats = ["*.py", "*.bat", "*.sh", "*.ps1", "tools/*.py", "tools/*.bat", "tools/*.ps1", "tools/*.sh",
+            "view_project/*.html", "view_project/lib/*.js", "view_project/lib/*.css", "view_project/lib/*/*.js"]
+    for pat in pats:
+        for f in sorted(ROOT.glob(pat)):
+            rel = f.relative_to(ROOT).as_posix()
+            if rel in BRAND_SKIP or rel.startswith(VENDOR) or ".min." in rel:
+                continue
+            yield rel
+
+
+def check_brand():
+    sys.path.insert(0, str(ROOT))
+    try:
+        import brand
+        b = brand.load()
+    except Exception as ex:
+        fail("brand.json 을 읽지 못했어요: %s" % ex)
+        return
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("rename_brand", ROOT / "tools" / "rename_brand.py")
+    rb = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(rb)
+    for prob in rb.check():
+        fail(prob + "  →  python tools/rename_brand.py")
+    words = {b["name"], b["name_ko"], b["slug"], b["work_folder"], b["appdata_folder"]}
+    for rel in code_files():
+        text = read(rel)
+        for k in BRAND_KEEP + [b["repo_github"], b["repo_hf"]]:
+            text = text.replace(k, "")
+        for w in sorted(words):
+            if w and w in text:
+                n = text[:text.index(w)].count("\n") + 1
+                fail("코드에 제품 이름을 직접 씀(brand.py · EL_BRAND 로): %s:%d  '%s'" % (rel, n, w))
+                break
+    for f in sorted((ROOT / "view_project").glob("*.html")):
+        t = f.read_text(encoding="utf-8")
+        i = t.find("/lib/brand.js")
+        first = min([x for x in (t.find("/lib/embed.js"), t.find("/lib/boot.js"), t.find("/lib/shell.js")) if x >= 0] or [len(t)])
+        if i < 0 or i > first:
+            fail("화면이 lib/brand.js 를 먼저 읽지 않음: view_project/" + f.name)
+    bat = read("tools/make_bundle.bat")
+    copy, verify, _ = bundle_lists()
+    for need in ("brand.json",):
+        if need not in copy or need not in verify:
+            fail("번들 복사 · 확인 목록에 없음: " + need)
+
+
 def main():
     os.chdir(ROOT)
     mods = check_python()
@@ -243,6 +302,7 @@ def main():
     check_assets(routes)
     check_models()
     check_packages(mods)
+    check_brand()
     print("배포 점검 — 서버 파일 %d 개 · 화면 %d 개 · 필수 모델 %d 개"
           % (len(mods), len(routes), len(need_models())))
     for w in dict.fromkeys(WARN):

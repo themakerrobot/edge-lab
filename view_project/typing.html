@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>edge-lab — 타자 연습</title>
+  <title>타자 연습</title>
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
@@ -12,6 +12,7 @@
             document.documentElement.classList.add("hc"); } catch (e) {}
   </script>
   <link rel="stylesheet" href="/lib/tokens.css">
+  <script src="/lib/brand.js"></script>
   <script src="/lib/embed.js"></script>
   <link rel="expect" href="#el-built" blocking="render">
   <style>
@@ -122,7 +123,7 @@
 </head>
 <body data-density="explore">
   <div class="titlebar">
-    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요"><img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b></a>
+    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요"><img src="/assets/pibo-logo.png" alt=""><b></b></a>
     <span class="tb-sep"></span><span class="tb-app" id="txtTitle"></span>
     <div class="h-tools"><button id="langButton" title="한국어 / English">EN</button></div>
   </div>
@@ -163,7 +164,7 @@
     try { LANG = localStorage.getItem("vapiLang") === "en" ? "en" : "ko"; } catch (e) {}
     document.documentElement.lang = LANG;
     var I18N = {
-      ko: { title: "edge-lab — 타자 연습", lang: "EN", q1: "연습 고르기", lesson: "자리 고르기", best: "내 최고 기록",
+      ko: { title: "타자 연습", lang: "EN", q1: "연습 고르기", lesson: "자리 고르기", best: "내 최고 기록",
             mKeys: "자리 연습", mKeysD: "손가락 자리를 익혀요", mWords: "낱말 연습", mWordsD: "낱말 20개",
             mSent: "문장 연습", mSentD: "8개씩 · 모두 100개", mGame: "낱말 비", mGameD: "떨어지는 낱말을 쳐서 터뜨려요",
             L1: "기본 자리", L2: "검지 뻗기", L3: "윗줄", L4: "아랫줄", L5: "모든 자리", L6ko: "쌍자음 · ㅒㅖ", L6en: "대문자",
@@ -176,7 +177,7 @@
             again: "다시 하기", fin: "다 했어요!", newBest: "새 최고 기록!",
             gameStart: "시작", gameHow: "떨어지는 낱말을 치고 Enter 나 스페이스. 땅에 닿기 전에!", gameOver: "끝!", gameScore: "{s}점 · {n}개 터뜨림",
             bKeys: "자리 (타/분)", bWords: "낱말 (타/분)", bSent: "문장 (타/분)", bGame: "낱말 비 (점)", none: "—" },
-      en: { title: "edge-lab — Typing", lang: "한", q1: "Pick a practice", lesson: "Pick keys", best: "My best",
+      en: { title: "Typing", lang: "한", q1: "Pick a practice", lesson: "Pick keys", best: "My best",
             mKeys: "Key practice", mKeysD: "Learn where fingers go", mWords: "Words", mWordsD: "20 words",
             mSent: "Sentences", mSentD: "8 at a time · 100 in all", mGame: "Word rain", mGameD: "Type falling words to pop them",
             L1: "Home row", L2: "Index reach", L3: "Top row", L4: "Bottom row", L5: "All keys", L6ko: "Double consonants", L6en: "Capitals",

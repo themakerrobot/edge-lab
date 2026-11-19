@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>edge-lab — AI 작업 관리자</title>
+  <title>AI 작업 관리자</title>
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
@@ -12,6 +12,7 @@
             document.documentElement.classList.add("hc"); } catch (e) {}
   </script>
   <link rel="stylesheet" href="/lib/tokens.css">
+  <script src="/lib/brand.js"></script>
   <script src="/lib/embed.js"></script>
   <link rel="expect" href="#el-built" blocking="render">
   <style>
@@ -59,7 +60,7 @@
 </head>
 <body data-density="explore">
   <div class="titlebar">
-    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요"><img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b></a>
+    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요"><img src="/assets/pibo-logo.png" alt=""><b></b></a>
     <span class="tb-sep"></span><span class="tb-app" id="txtTitle"></span>
     <div class="h-tools"><button id="langButton" title="한국어 / English">EN</button></div>
   </div>
@@ -82,7 +83,7 @@
     try { LANG = localStorage.getItem("vapiLang") === "en" ? "en" : "ko"; } catch (e) {}
     document.documentElement.lang = LANG;
     var I18N = {
-      ko: { title: "edge-lab — AI 작업 관리자", lang: "EN", q: "이 컴퓨터에서 도는 AI",
+      ko: { title: "AI 작업 관리자", lang: "EN", q: "이 컴퓨터에서 도는 AI",
             mem: "메모리", memSub: "이 프로그램 {p} GB · 컴퓨터 전체 {u} / {t} GB", models: "{n}개 모델", idle: "쉬는 중", none: "없음",
             cpuSub: "지금 사용률", thM: "AI", thD: "장치", thS: "상태", thL: "마지막 사용", thN: "부른 횟수",
             up: "올라와 있음", lazy: "처음 쓸 때 올라와요", down: "아직 안 올라옴", busy: "방금 씀",
@@ -101,7 +102,7 @@
                  tts: ["글자 → 말 (Supertonic)", "목소리 · 이야기 극장"],
                  embed: ["자료 찾기", "대화의 내 자료에서 답하기"],
                  user: ["가져온 모델", "models 폴더에 넣은 easydetect .onnx"] } },
-      en: { title: "edge-lab — AI task manager", lang: "한", q: "AI running on this computer",
+      en: { title: "AI task manager", lang: "한", q: "AI running on this computer",
             mem: "Memory", memSub: "This program {p} GB · whole PC {u} / {t} GB", models: "{n} models", idle: "idle", none: "none",
             cpuSub: "usage now", thM: "AI", thD: "Device", thS: "State", thL: "Last used", thN: "Calls",
             up: "Loaded", lazy: "Loads on first use", down: "Not loaded yet", busy: "Just used",

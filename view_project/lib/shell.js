@@ -8,7 +8,7 @@
  * 페이지가 갖춰야 할 마크업 — 이것뿐이다:
  *
  *     <div class="titlebar">
- *       <a class="tb-brand" href="/"><img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b></a>
+ *       <a class="tb-brand" href="/"><img src="/assets/pibo-logo.png" alt=""><b></b></a>   (이름은 lib/brand.js)
  *       <span class="tb-sep"></span>
  *       <span class="tb-app" id="txtTitle"></span>
  *       <div class="h-tools">
@@ -82,7 +82,35 @@
     if (el) { var a = APP[here()]; el.textContent = a ? a[L] : ""; }
     var c = document.getElementById("closeApp");
     if (c) { c.title = CLOSE[L]; c.querySelector(".tx").textContent = CLOSE[L]; }
+    brandPaint(L);
   }
+
+  /* 제품 이름 — lib/brand.js(brand.json 사본). 타이틀바 로고 글자 · 부제(마우스를 올리면) · 창 제목 앞머리.
+     화면은 document.title 에 앱 이름만 넣는다(예: "계산기") — "<이름> — " 은 여기서 붙인다.
+     그래서 이름이 바뀌어도 화면 파일은 고칠 것이 없다. */
+  function brandPaint(L) {
+    var B = window.EL_BRAND;
+    if (!B) return;
+    var b = document.querySelector(".tb-brand b");
+    if (b) b.textContent = B.label(L);
+    var a = document.querySelector(".tb-brand");
+    if (a) a.title = B.tag(L);
+    fixTitle();
+  }
+  function fixTitle() {
+    var B = window.EL_BRAND;
+    if (!B) return;
+    var t = document.title || "";
+    [B.name, B.name_ko].forEach(function (n) { if (t.indexOf(n + " — ") === 0) t = t.slice(n.length + 3); });
+    if (t === B.name || t === B.name_ko) t = "";
+    var want = t ? B.label() + " — " + t : B.label();
+    if (document.title !== want) document.title = want;     // 바꾸면 아래 감시가 한 번 더 부르지만 그때는 같아서 멈춘다
+  }
+  (function watchTitle() {
+    var el = document.querySelector("title");
+    if (!el || !window.MutationObserver) return;
+    new MutationObserver(fixTitle).observe(el, { childList: true, characterData: true, subtree: true });
+  })();
   /* 이름은 예전 그대로 둔다 — 여섯 페이지가 이미 이 이름으로 부르고 있다 */
   window.navRepaint = paint;
 

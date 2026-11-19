@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
-# edge-lab : 단일 FastAPI 서버 (기존 circulus-vapi 5개 서버 통합, 온디바이스)
+# 단일 FastAPI 서버 (기존 circulus-vapi 5개 서버 통합, 온디바이스)
 # 응답 스키마는 기존 서버와 동일: {"type": <service_name>, "result": "ok"|"fail", "data": ...}
 import os
 import sys
 import time
 import uuid
+
+import brand                       # 제품 이름 (brand.json)
 from contextlib import asynccontextmanager
 from typing import Optional
 
@@ -12,7 +14,8 @@ from typing import Optional
 # 전에는 서버보다 먼저 켜는 화면(파일)을 띄우고 준비 화면을 거쳐 바탕화면으로 넘어갔는데, 넘어갈 때마다 깜빡였다.
 # 그 사이(무거운 import) 까만 창에 무엇을 하는 중인지 적어 둔다.
 if __name__ == "__main__":
-    print("edge-lab 을 켜는 중이에요. 준비되면 화면이 저절로 열려요 — 이 까만 창은 닫지 마세요.", flush=True)
+    import brand as _brand        # 제품 이름은 brand.json 하나에서 읽는다
+    print(_brand.ko("을") + " 켜는 중이에요. 준비되면 화면이 저절로 열려요 — 이 까만 창은 닫지 마세요.", flush=True)
 
 
 import cv2
@@ -170,7 +173,7 @@ def _load_engines():
 async def lifespan(app: FastAPI):
     import threading
     threading.Thread(target=_load_engines, daemon=True).start()
-    print(f"! edge-lab listening on {HOST}:{PORT}")
+    print(f"! {brand.NAME} listening on {HOST}:{PORT}")
     open_browser()
     yield
 
@@ -196,7 +199,7 @@ DESCRIPTION = """\
 NPU(없으면 GPU→CPU), 말로 답하는 AI·사물 인식·사진 바꾸기는 GPU, 글자·QR 은 CPU 로
 나눠 맡습니다.
 
-아이가 만든 것은 프로그램 폴더가 아니라 `문서\\Edge Lab` 에 남습니다 — 새 버전으로
+아이가 만든 것은 프로그램 폴더가 아니라 `문서\\{WORK}` 에 남습니다 — 새 버전으로
 덮어써도 사라지지 않습니다.
 
 > **로그인이 없습니다.** 교실 PC 한 대에서 쓰는 전제입니다. 기본값이 `127.0.0.1`
@@ -204,6 +207,8 @@ NPU(없으면 GPU→CPU), 말로 답하는 AI·사물 인식·사진 바꾸기�
 """
 
 # 묶음 설명 — 안 적으면 옆 목록에 "custom", "gan" 같은 이름만 뜬다
+DESCRIPTION = DESCRIPTION.replace("{WORK}", brand.WORK_FOLDER)
+
 TAGS = [
     {"name": "face", "description": "얼굴 — 찾기 · 나이/성별 · 감정 · 거리와 방향 · 마스크 · 누구인지(얼굴 등록)"},
     {"name": "object", "description": "사물 · 몸 · 손 — 80가지 사물, 사람 포즈, 손동작, 영역 칠하기. 가져온 easydetect 모델도 여기서 쓴다"},
@@ -223,7 +228,7 @@ TAGS = [
 
 def _version():
     """번들 버전. tools\\make_bundle.bat 이 배포본 루트에 VERSION.txt 를 남긴다
-    ("edge-lab 1.0.0"). 저장소에서 바로 띄운 경우에는 그 파일이 없다 — 그때
+    ("<이름> 1.0.0"). 저장소에서 바로 띄운 경우에는 그 파일이 없다 — 그때
     "0.1.0"(FastAPI 기본값)이 박히면 배포본인 척하게 되므로 dev 라고 적는다."""
     try:
         here = os.path.dirname(os.path.abspath(__file__))
@@ -238,7 +243,7 @@ def _version():
 # cdn.jsdelivr.net 에서 받아 오므로, 인터넷 없는 교실 PC 에서는 홈의 [API Docs] 를
 # 눌러도 흰 화면만 떴다. "인터넷 없이 내 컴퓨터에서 돌아요" 라고 적어 둔 프로그램에서
 # 그 한 장만 인터넷이 필요했던 셈이다. 파일은 view_project/lib/swagger/ 에 같이 넣었다.
-app = FastAPI(title="edge-lab", version=_version(),
+app = FastAPI(title=brand.NAME, version=_version(),
               description=DESCRIPTION, openapi_tags=TAGS,
               docs_url=None, lifespan=lifespan)
 
@@ -249,7 +254,7 @@ async def swagger_docs():
     from fastapi.openapi.docs import get_swagger_ui_html
     return get_swagger_ui_html(
         openapi_url="/openapi.json",
-        title="edge-lab — API",
+        title=brand.NAME + " — API",
         swagger_js_url="/lib/swagger/swagger-ui-bundle.js",
         swagger_css_url="/lib/swagger/swagger-ui.css",
         swagger_favicon_url="/assets/favicon-64.png",

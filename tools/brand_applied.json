@@ -1,0 +1,11 @@
+{
+  "name": "edge-lab",
+  "name_ko": "edge-lab",
+  "tagline": "인터넷 없이 내 컴퓨터에서 실행돼요",
+  "tagline_en": "Runs on this computer, no internet needed",
+  "slug": "edge-lab",
+  "work_folder": "Edge Lab",
+  "appdata_folder": "EdgeLab",
+  "repo_github": "themakerrobot/edge-lab",
+  "repo_hf": "leeyunjai/edge-lab"
+}

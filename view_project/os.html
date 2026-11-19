@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>edge-lab</title>
+  <title></title>
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
@@ -33,9 +33,10 @@
     @keyframes el-undark { to { opacity: 0; } }
   </style>
   <link rel="stylesheet" href="/lib/tokens.css">
+  <script src="/lib/brand.js"></script>
   <script src="/lib/boot.js"></script>
   <style>
-    /* 셸 — edge-lab 을 하나의 컴퓨터처럼 보이게 하는 첫 화면.
+    /* 셸 — 이 프로그램을 하나의 컴퓨터처럼 보이게 하는 첫 화면.
      *
      * 전에는 "/" 가 런처(home.html)였고, 앱을 누르면 페이지가 통째로 바뀌었다.
      * 그러면 블록을 짜다 카메라를 보러 가는 순간 블록이 사라진다. 여기서는 셸이
@@ -344,7 +345,7 @@
 <body>
 
   <div id="osbar">
-    <button class="os-start" id="osStart" type="button"><img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b></button>
+    <button class="os-start" id="osStart" type="button"><img src="/assets/pibo-logo.png" alt=""><b id="osBrand"></b></button>
     <span class="os-sep"></span>
     <nav class="os-apps" id="osApps"></nav>
     <div class="os-tray">
@@ -606,6 +607,7 @@
 
       /* ─────────────── 상단바 ─────────────── */
       function paintBar() {
+        if (window.EL_BRAND) { document.title = EL_BRAND.label(LANG); $("osBrand").textContent = EL_BRAND.label(LANG); $("osBrand").parentNode.setAttribute("aria-label", EL_BRAND.tag(LANG)); }
         $("osStart").classList.toggle("on", active === null);
         $("osStart").title = T("start");
         var box = $("osApps");
@@ -727,7 +729,7 @@
         var a = n.src ? appOf(n.src) : null;
         var el = document.createElement("div");
         el.className = cls;
-        el.innerHTML = '<span class="i">' + (a ? icon(a.ic) : BELL) + "</span><b>" + esc(n.src ? appName(n.src) : "edge-lab") +
+        el.innerHTML = '<span class="i">' + (a ? icon(a.ic) : BELL) + "</span><b>" + esc(n.src ? appName(n.src) : (window.EL_BRAND ? EL_BRAND.label(LANG) : "")) +
           "<small>" + esc(ago(n.at)) + "</small></b>" +
           (cls === "toast" ? '<button class="x" type="button" title="' + esc(T("close")) + '">×</button>' : "<span></span>") +
           "<p>" + esc(n.text) + "</p>";

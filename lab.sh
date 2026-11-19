@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 코딩 실습 (우분투) — JupyterLab 을 전용 창으로 연다. 창을 닫으면 JupyterLab 도 꺼진다 (lab.py)
-# 노트북 원본은 notebooks/ , 실제로 쓰는 곳은 작업폴더(~/Documents/Edge Lab/notebooks)
+# 노트북 원본은 notebooks/ , 실제로 쓰는 곳은 작업폴더(~/Documents/<work_folder>/notebooks — brand.json)
 cd "$(dirname "$0")"
 if [ -x venv/bin/python ]; then PY=venv/bin/python; else PY=python3; fi
 

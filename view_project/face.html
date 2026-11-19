@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>edge-lab — 얼굴 AI</title>
+  <title>얼굴 AI</title>
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
@@ -12,6 +12,7 @@
             document.documentElement.classList.add("hc"); } catch (e) {}
   </script>
   <link rel="stylesheet" href="/lib/tokens.css">
+  <script src="/lib/brand.js"></script>
   <script src="/lib/embed.js"></script>
   <link rel="expect" href="#el-built" blocking="render">
   <style>
@@ -115,7 +116,7 @@
 </head>
 <body data-density="explore">
   <div class="titlebar">
-    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요"><img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b></a>
+    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요"><img src="/assets/pibo-logo.png" alt=""><b></b></a>
     <span class="tb-sep"></span><span class="tb-app" id="txtTitle"></span>
     <div class="h-tools"><button id="langButton" title="한국어 / English">EN</button></div>
   </div>
@@ -199,7 +200,7 @@
     try { LANG = localStorage.getItem("vapiLang") === "en" ? "en" : "ko"; } catch (e) {}
     document.documentElement.lang = LANG;
     var I18N = {
-      ko: { title: "edge-lab — 얼굴 AI", lang: "EN", q1: "카메라로 봐요", q2: "얼굴 등록",
+      ko: { title: "얼굴 AI", lang: "EN", q1: "카메라로 봐요", q2: "얼굴 등록",
             camOn: "카메라 켜기", camOff: "카메라 끄기", live: "보는 중",
             emptyT: "카메라를 켜 보세요", emptyS: "등록한 사람은 이름으로, 처음 보는 사람은 '모르는 사람'으로 알려 줘요.",
             noCam: "카메라를 쓸 수 없어요 — 설정에서 카메라를 확인해 주세요. 사진으로 등록은 할 수 있어요.",
@@ -221,7 +222,7 @@
             noModel: "얼굴 구분 모델이 없어요 — setup 을 다시 돌려 주세요. (나이 · 감정 같은 얼굴 정보는 볼 수 있어요)",
             note: "사진은 저장하지 않아요. 얼굴에서 뽑은 숫자만 이 컴퓨터의 작업폴더(face/facedb.json)에 저장돼요. 다른 사람 얼굴은 허락을 받고 등록해요.",
             unknown: "모르는 사람" },
-      en: { title: "edge-lab — Face AI", lang: "한", q1: "Look with the camera", q2: "Register faces",
+      en: { title: "Face AI", lang: "한", q1: "Look with the camera", q2: "Register faces",
             camOn: "Camera on", camOff: "Camera off", live: "Watching",
             emptyT: "Turn on the camera", emptyS: "Registered people are named; new faces show as 'Unknown'.",
             noCam: "The camera cannot be used — check it in Settings. You can still register from a photo.",

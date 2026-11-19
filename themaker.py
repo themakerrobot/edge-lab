@@ -314,7 +314,7 @@ def models():
     >>> r = detect(models()[0], camera())
 
     파일은 [설정·점검]의 [모델 폴더 열기]로 열리는 폴더에 넣는다
-    (문서\\Edge Lab\\models). 넣자마자 이 목록에 나온다.
+    (작업폴더\\models). 넣자마자 이 목록에 나온다.
     """
     try:
         j = _get("/object/model_files")
@@ -429,6 +429,15 @@ def draw(image, result):
     return img
 
 
+def _app_name():
+    """창 제목에 쓸 제품 이름 (brand.json). 못 읽으면 그냥 AI."""
+    try:
+        import brand
+        return brand.NAME
+    except Exception:
+        return "AI"
+
+
 def show(image, result=None, title=None, wait=True, window=False):
     """결과를 보여준다. result 를 주면 박스를 그려서 보여준다.
 
@@ -450,7 +459,7 @@ def show(image, result=None, title=None, wait=True, window=False):
             return img
         except Exception:
             pass                      # 화면으로 못 보내면 창으로 대신 띄운다
-    cv2.imshow(caption or "edge-lab", _flatten(img))
+    cv2.imshow(caption or _app_name(), _flatten(img))
     if wait:
         cv2.waitKey(0)
         cv2.destroyAllWindows()

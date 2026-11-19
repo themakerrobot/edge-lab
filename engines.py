@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# edge-lab : on-device inference engines (Intel Meteor Lake / OpenVINO)
+# on-device inference engines (Intel Meteor Lake / OpenVINO)
 # 디바이스 배정: VLM/gan=GPU, easydetect=CPU, 얼굴 스위트=NPU(없으면 GPU→CPU), ocr/qr=CPU
 import base64
 import os

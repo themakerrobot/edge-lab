@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""edge-lab 배포 점검: 서버에 실제 요청을 보내 전 서비스가 응답하는지 확인한다.
+"""배포 점검: 서버에 실제 요청을 보내 전 서비스가 응답하는지 확인한다.
    사용법: python smoke_test.py [host]     기본값 http://localhost:57711
    표준 라이브러리 + cv2/numpy 만 사용 (requests 불필요)."""
 import io
@@ -225,7 +225,7 @@ def wait_ready(limit=300):
 
 
 def main():
-    print(f"\nedge-lab smoke test  ->  {HOST}\n" + "-" * 62)
+    print(f"\nsmoke test  ->  {HOST}\n" + "-" * 62)
     if not wait_ready():
         return 1
     try:

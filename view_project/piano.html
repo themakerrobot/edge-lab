@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>edge-lab — 피아노</title>
+  <title>피아노</title>
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
@@ -12,6 +12,7 @@
             document.documentElement.classList.add("hc"); } catch (e) {}
   </script>
   <link rel="stylesheet" href="/lib/tokens.css">
+  <script src="/lib/brand.js"></script>
   <script src="/lib/embed.js"></script>
   <link rel="expect" href="#el-built" blocking="render">
   <style>
@@ -166,7 +167,7 @@
 </head>
 <body data-density="explore">
   <div class="titlebar">
-    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요"><img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b></a>
+    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요"><img src="/assets/pibo-logo.png" alt=""><b></b></a>
     <span class="tb-sep"></span><span class="tb-app" id="txtTitle"></span>
     <div class="h-tools"><button id="langButton" title="한국어 / English">EN</button></div>
   </div>
@@ -250,7 +251,7 @@
     try { LANG = localStorage.getItem("vapiLang") === "en" ? "en" : "ko"; } catch (e) {}
     document.documentElement.lang = LANG;
     var I18N = {
-      ko: { title: "edge-lab — 피아노", lang: "EN", q1: "소리", q2: "건반", q3: "녹음 · 따라 치기",
+      ko: { title: "피아노", lang: "EN", q1: "소리", q2: "건반", q3: "녹음 · 따라 치기",
             inst: "악기", piano: "피아노", organ: "오르간", xylo: "실로폰", chip: "8비트",
             vol: "크기", sus: "울림", susOn: "길게 울려요", susOff: "짧게 끊어요", names: "음 이름", oct: "옥타브",
             metro: "박자기", start: "박자 시작", stop: "박자 멈춤",
@@ -267,7 +268,7 @@
             songDone: "다 쳤어요! 틀린 건반 {w}번", bravo: "노래를 끝까지 쳤어요!",
             twinkle: "반짝반짝 작은 별", butterfly: "나비야", plane: "비행기", joy: "환희의 송가",
             fr: "프랑스 민요", de: "독일 민요", us: "미국 민요", bee: "베토벤 교향곡 9번" },
-      en: { title: "edge-lab — Piano", lang: "한", q1: "Sound", q2: "Keyboard", q3: "Record · Play along",
+      en: { title: "Piano", lang: "한", q1: "Sound", q2: "Keyboard", q3: "Record · Play along",
             inst: "Instrument", piano: "Piano", organ: "Organ", xylo: "Xylophone", chip: "8-bit",
             vol: "Volume", sus: "Sustain", susOn: "Long ring", susOff: "Short", names: "Names", oct: "Octave",
             metro: "Metronome", start: "Start beat", stop: "Stop beat",

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>edge-lab</title>
+  <title></title>
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
@@ -16,6 +16,7 @@
   <!-- 다 그려지기 전에는 내보내지 않는다. 앞 화면이 그대로 떠 있다가 완성된 화면으로
        넘어간다(lib/tokens.css 의 view-transition). 늦어도 DOMContentLoaded 에 풀린다. -->
   <link rel="expect" href="#el-built" blocking="render">
+  <script src="/lib/brand.js"></script>
   <script src="/lib/boot.js"></script>
   <style>
     /* 런처 — 앱을 골라 여는 첫 화면.
@@ -187,7 +188,7 @@
 
   <div class="titlebar">
     <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요">
-      <img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b>
+      <img src="/assets/pibo-logo.png" alt=""><b></b>
     </a>
     <span class="tb-sep"></span>
     <span class="tb-app" id="txtTitle"></span>
@@ -246,7 +247,7 @@
       $("txtHello").textContent = T.hello;
       $("txtHelloSub").textContent = T.helloSub;
       $("langButton").textContent = T.langBtn;
-      document.title = "edge-lab";
+      document.title = window.EL_BRAND ? EL_BRAND.label(LANG) : "";
 
       var icon = function (n) { return (window.elIcon ? window.elIcon(n) : ""); };
 

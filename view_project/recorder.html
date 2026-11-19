@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>edge-lab — 녹음기</title>
+  <title>녹음기</title>
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
@@ -12,6 +12,7 @@
             document.documentElement.classList.add("hc"); } catch (e) {}
   </script>
   <link rel="stylesheet" href="/lib/tokens.css">
+  <script src="/lib/brand.js"></script>
   <script src="/lib/embed.js"></script>
   <link rel="expect" href="#el-built" blocking="render">
   <style>
@@ -57,7 +58,7 @@
 </head>
 <body data-density="explore">
   <div class="titlebar">
-    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요"><img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b></a>
+    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요"><img src="/assets/pibo-logo.png" alt=""><b></b></a>
     <span class="tb-sep"></span><span class="tb-app" id="txtTitle"></span>
     <div class="h-tools"><button id="langButton" title="한국어 / English">EN</button></div>
   </div>
@@ -105,14 +106,14 @@
     try { LANG = localStorage.getItem("vapiLang") === "en" ? "en" : "ko"; } catch (e) {}
     document.documentElement.lang = LANG;
     var I18N = {
-      ko: { title: "edge-lab — 녹음기", lang: "EN", q1: "녹음하기", q2: "글자로 · 다시 읽기",
+      ko: { title: "녹음기", lang: "EN", q1: "녹음하기", q2: "글자로 · 다시 읽기",
             hintIdle: "빨간 단추를 누르고 말해 보세요. 다시 누르면 멈춰요 (최대 30초).", hintRec: "녹음 중… 다시 누르면 멈춰요",
             micFail: "마이크를 쓸 수 없어요 — 설정에서 마이크를 확인해 주세요.", take: "녹음 {n}",
             stt: "글자로 바꾸기", sttBusy: "받아 적는 중…", sttFail: "알아듣지 못했어요: ", sttEmpty: "말소리가 들리지 않았어요.",
             ph: "녹음을 글자로 바꾸면 여기에 나와요. 직접 써도 돼요.",
             tts: "다시 읽기", ttsBusy: "목소리 만드는 중…", ttsFail: "읽지 못했어요: ", ttsSave: "읽은 소리 저장", notReady: "AI 가 아직 준비 중이에요.",
             slow: "느리게", normal: "보통", fast: "빠르게", voice: "목소리 {v}" },
-      en: { title: "edge-lab — Recorder", lang: "한", q1: "Record", q2: "To text · read aloud",
+      en: { title: "Recorder", lang: "한", q1: "Record", q2: "To text · read aloud",
             hintIdle: "Press the red button and talk. Press again to stop (up to 30 s).", hintRec: "Recording… press again to stop",
             micFail: "The mic cannot be used — check it in Settings.", take: "Take {n}",
             stt: "Turn into text", sttBusy: "Writing it down…", sttFail: "Could not understand: ", sttEmpty: "No speech was heard.",

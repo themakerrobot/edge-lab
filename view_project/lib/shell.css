@@ -8,7 +8,7 @@
  * 일이 같아서 폭 76px 만 먹었다. 이동은 홈 하나가 맡는다.
  *
  *     ┌───────────────────────────────────────────────┐
- *     │ edge-lab │ 파이썬        [?] [한/영] [AI] [×닫기] │  titlebar 40px
+ *     │ 이름     │ 파이썬        [?] [한/영] [AI] [×닫기] │  titlebar 40px
  *     ├───────────────────────────────────────────────┤
  *     │                                               │
  *     │              workbench — 나머지 전부           │
@@ -66,8 +66,7 @@ body {
 }
 .tb-brand:hover { text-decoration: none; }
 .tb-brand img { height: 20px; width: auto; flex: 0 0 auto; }
-/* 브랜드는 한국어 화면에서도 로마자다 — 서버도 FastAPI(title="edge-lab") 이고
-   콘솔도 "edge-lab listening on" 이라, 화면만 한글이라 어긋나 있었다. */
+/* 이름은 lib/brand.js(brand.json)에서 shell.js 가 채운다 — 한국어 화면은 name_ko, 영어 화면은 name */
 .tb-brand b {
   font-family: "Menlo", "Consolas", ui-monospace, monospace;
   font-size: 13px;

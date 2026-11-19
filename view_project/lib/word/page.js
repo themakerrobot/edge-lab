@@ -34,7 +34,7 @@ document.documentElement.lang = LANG;
 
 const I18N = {
   ko: {
-    title: 'edge-lab — 문장', app: '문장', lang: 'EN',
+    title: '문장', app: '문장', lang: 'EN',
     q1: '가르칠 글', q2: '이어 쓰기', q3: '들여다보기',
     s1: '① 글 넣기', s2: '② 배우기', s3: '③ 이어 쓰기', s4: '④ 들여다보기',
     examples: '예시 글', corpusPh: '여기에 글을 써요. 줄마다 한 문장씩!',
@@ -60,7 +60,7 @@ const I18N = {
     me: '나', ai: 'AI', duelAsk: '다음 글자를 써 보세요', duelOne: '한 글자를 써 주세요', answer: '정답',
   },
   en: {
-    title: 'edge-lab — Words', app: 'Words', lang: '한',
+    title: 'Words', app: 'Words', lang: '한',
     q1: 'Text to teach', q2: 'Write on', q3: 'Look inside',
     s1: '① Add text', s2: '② Teach', s3: '③ Write on', s4: '④ Look inside',
     examples: 'Examples', corpusPh: 'Write here. One sentence per line!',

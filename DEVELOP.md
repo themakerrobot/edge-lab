@@ -18,6 +18,7 @@
 | `stats_routes.py` | 사용 통계 수집 |
 | `code_routes.py` | 파이썬 IDE API — 실행·정지·출력·작품 저장 |
 | `speech_routes.py` | 음성 인식(STT)·음성 합성(TTS) API |
+| `brand.py` · `brand.json` | 제품 이름 한 곳 — 화면 이름 · 한국어 이름 · 부제 · 파일 이름 · 작업 폴더 · 앱데이터 폴더 · 저장소 주소. 아래 "제품 이름" 절 |
 | `hub.py` | 실행 중인 main 모듈·엔진 찾기 (`import main` 은 금물 — main.py 가 다시 실행된다) |
 | `db_routes.py` | 내가 준 자료에서 찾아 답하기(RAG) — 자료 저장·검색·답변 |
 | `themaker.py` | 학생 코드용 라이브러리 — `vision()`·`camera()`·`speak()` 등 |
@@ -162,3 +163,18 @@ edge-lab(PC)에서 가르친 AI 가 파이보 · PiBrain 에서 **같은 답**�
 - MediaPipe 가 없으면 정렬 없이 상자를 128×128 로 줄여 쓴다(정확도가 떨어진다 — 파이보와 같은 동작)
 - 시험: `tools/schema_test` 가 `__schema_test__` 이름으로 등록 → 누구인지 → 명단 · 파일 → 그 이름만 지운다(모두 지우기는 하지 않는다)
 - 확인(컨테이너, 실제 모델): 한 장 등록한 사람의 다른 사진 2장 오차도 0.13 · 0.14(알아봄), 다른 사람 3명 0.63 ~ 0.72(모르는 사람). 교실 아이 얼굴 · 쌍둥이에서의 정확도는 확인 필요
+
+## 제품 이름 = brand.json 한 곳
+
+이름을 바꿀 때는 `brand.json` 만 고치고 `python tools/rename_brand.py` 를 한 번 돌린다.
+
+| 어디서 | 어떻게 읽나 |
+|---|---|
+| 서버 (main · paths · themaker) | `import brand` — `brand.NAME`, `brand.ko("을")`, `brand.WORK_FOLDER` … |
+| 화면 | 모든 화면이 맨 먼저 `lib/brand.js`(brand.json 사본, 도구가 만든다)를 읽는다. 타이틀바 로고 글자 · 부제 · 창 제목 앞머리는 `shell.js` 가 채운다 — 화면은 `document.title` 에 앱 이름만 넣는다 |
+| 번들 | `make_bundle.bat` 이 `brand.py` 로 slug · 이름을 읽어 `<slug>-<버전>.zip` · `<slug>.exe` · `<slug>.ico` |
+| 문서 · 노트북 · 설치 주소 | 실행 중에 읽을 수 없어 `tools/rename_brand.py` 가 지난 이름(`tools/brand_applied.json`)을 새 이름으로 바꾼다. 한글이 있는 줄은 `name_ko`(조사도 맞춘다), 없는 줄은 `name` |
+
+- 코드에 이름을 직접 쓰지 않는다 — `tools/release_check.py` 가 FAIL 로 잡는다
+- 그대로 두는 것: 저장 파일 형식 `edge-lab-sound` · `edge-lab-drive` · `edge-lab-story`, 가르친 AI 의 `app` 값, 마스크 모델 메타데이터 `edge-lab.classes`, 로봇과 같은 파일 `tools/score_check.py`
+- 저장소 주소를 바꾸면 GitHub 저장소 이름 바꾸기 · HF 새 저장소 올리기는 사람이 한다

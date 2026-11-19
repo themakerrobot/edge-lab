@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>edge-lab — 앱 가게</title>
+  <title>앱 가게</title>
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
@@ -12,6 +12,7 @@
             document.documentElement.classList.add("hc"); } catch (e) {}
   </script>
   <link rel="stylesheet" href="/lib/tokens.css">
+  <script src="/lib/brand.js"></script>
   <script src="/lib/embed.js"></script>
   <link rel="expect" href="#el-built" blocking="render">
   <style>
@@ -61,7 +62,7 @@
 </head>
 <body data-density="explore">
   <div class="titlebar">
-    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요"><img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b></a>
+    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요"><img src="/assets/pibo-logo.png" alt=""><b></b></a>
     <span class="tb-sep"></span><span class="tb-app" id="txtTitle"></span>
     <div class="h-tools"><button id="langButton" title="한국어 / English">EN</button></div>
   </div>
@@ -89,11 +90,11 @@
     try { LANG = localStorage.getItem("vapiLang") === "en" ? "en" : "ko"; } catch (e) {}
     document.documentElement.lang = LANG;
     var I18N = {
-      ko: { title: "edge-lab — 앱 가게", lang: "EN", q1: "앱 가게", find: "앱 찾기", all: "모두", in: "넣은 앱", out: "뺀 앱",
+      ko: { title: "앱 가게", lang: "EN", q1: "앱 가게", find: "앱 찾기", all: "모두", in: "넣은 앱", out: "뺀 앱",
             count: "앱 {n}개 중 {i}개가 바탕화면에 있어요", add: "넣기", rm: "빼기", open: "열기", core: "기본 앱",
             note: "여기 있는 앱은 모두 이 컴퓨터 안에 있어요. 빼도 그 앱에서 만든 것(메모 · 일기 · 작품)은 지워지지 않아요.",
             none: "찾는 앱이 없어요.", added: "‘{a}’ 을(를) 바탕화면에 넣었어요." },
-      en: { title: "edge-lab — App store", lang: "한", q1: "App store", find: "Find an app", all: "All", in: "On desk", out: "Removed",
+      en: { title: "App store", lang: "한", q1: "App store", find: "Find an app", all: "All", in: "On desk", out: "Removed",
             count: "{i} of {n} apps are on the desk", add: "Add", rm: "Remove", open: "Open", core: "Built-in",
             note: "Every app here is already on this computer. Removing one keeps what you made with it (notes, diary, projects).",
             none: "No app found.", added: "‘{a}’ is on the desk now." }

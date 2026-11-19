@@ -1,5 +1,5 @@
 // themakerrobot/teach-lab lib/classifier.js (커밋 74f421a) 에서 옮김 — 코드는 한 글자도 고치지 않았다.
-// edge-lab 에서는 /lib/sound/ 아래 ES 모듈로 쓴다 (화면: view_project/sound.html).
+// 여기서는 /lib/sound/ 아래 ES 모듈로 쓴다 (화면: view_project/sound.html).
 // 학습한 모델을 평범한 float32 덩어리로 IndexedDB 에 두고, 다시 열면 TF.js 없이 이 파일만으로 추론한다.
 //
 // MIT License

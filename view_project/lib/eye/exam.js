@@ -1,5 +1,5 @@
 // themakerrobot/ml-lab acts/eye/exam.js (커밋 e17acd7) 에서 옮김 — 계산·상수는 그대로 두었다.
-// edge-lab 에서는 /lib/eye/ 아래 ES 모듈로 쓴다 (화면: view_project/eye.html).
+// 여기서는 /lib/eye/ 아래 ES 모듈로 쓴다 (화면: view_project/eye.html).
 //
 // MIT License
 //

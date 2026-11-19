@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>edge-lab — 메모장</title>
+  <title>메모장</title>
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
@@ -12,6 +12,7 @@
             document.documentElement.classList.add("hc"); } catch (e) {}
   </script>
   <link rel="stylesheet" href="/lib/tokens.css">
+  <script src="/lib/brand.js"></script>
   <script src="/lib/embed.js"></script>
   <link rel="expect" href="#el-built" blocking="render">
   <style>
@@ -52,7 +53,7 @@
 </head>
 <body data-density="explore">
   <div class="titlebar">
-    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요"><img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b></a>
+    <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요"><img src="/assets/pibo-logo.png" alt=""><b></b></a>
     <span class="tb-sep"></span><span class="tb-app" id="txtTitle"></span>
     <div class="h-tools"><button id="langButton" title="한국어 / English">EN</button></div>
   </div>
@@ -91,12 +92,12 @@
     try { LANG = localStorage.getItem("vapiLang") === "en" ? "en" : "ko"; } catch (e) {}
     document.documentElement.lang = LANG;
     var I18N = {
-      ko: { title: "edge-lab — 메모장", lang: "EN", q1: "메모", q2: "쓰기", nw: "+ 새 메모", find: "메모 찾기",
+      ko: { title: "메모장", lang: "EN", q1: "메모", q2: "쓰기", nw: "+ 새 메모", find: "메모 찾기",
             none: "메모가 없어요. [+ 새 메모] 를 눌러요.", noHit: "찾는 메모가 없어요.", untitled: "(빈 메모)",
             ph: "여기에 써요. 첫 줄이 제목이 돼요.", open: "파일 열기", save: "파일로 받기", del: "지우기",
             delAsk: "이 메모를 지울까요?", chars: "{n}자", lines: "{n}줄", saved: "저장됨 {t}", saving: "저장하는 중…", full: "저장 공간이 모자라요 — 오래된 메모를 지워 주세요",
             file: "메모" },
-      en: { title: "edge-lab — Notes", lang: "한", q1: "Notes", q2: "Write", nw: "+ New", find: "Find a note",
+      en: { title: "Notes", lang: "한", q1: "Notes", q2: "Write", nw: "+ New", find: "Find a note",
             none: "No notes yet. Press [+ New].", noHit: "No matching notes.", untitled: "(empty note)",
             ph: "Write here. The first line becomes the title.", open: "Open file", save: "Download", del: "Delete",
             delAsk: "Delete this note?", chars: "{n} chars", lines: "{n} lines", saved: "Saved {t}", saving: "Saving…", full: "Out of space — delete some old notes",

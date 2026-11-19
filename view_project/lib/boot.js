@@ -118,7 +118,7 @@
     '  <div class="boot-card">',
     '    <div class="boot-brand">',
     '      <img src="/assets/pibo-prof.png" alt="">',
-    '      <span><b>edge-lab</b><i id="bootSub"></i></span>',
+    '      <span><b>' + (window.EL_BRAND ? EL_BRAND.label() : '') + '</b><i id="bootSub"></i></span>',
     '    </div>',
     '    <div class="boot-slide">',
     '      <div class="boot-art" id="bootArt"></div>',

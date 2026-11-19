@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title id="txtTitleTag">edge-lab — 블록</title>
+  <title id="txtTitleTag">블록</title>
   <link rel="icon" type="image/png" sizes="64x64" href="/assets/favicon-64.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
   <link href="/fonts/fonts.css" rel="stylesheet">
@@ -14,6 +14,7 @@
   </script>
   <link rel="stylesheet" href="/lib/tokens.css">
   <!-- 셸(/) 안의 창으로 열렸을 때 — 제목줄 숨김·숨김/보임 전달. 다른 스크립트보다 먼저 -->
+  <script src="/lib/brand.js"></script>
   <script src="/lib/embed.js"></script>
   <!-- 다 그려지기 전에는 내보내지 않는다. 앞 화면이 그대로 떠 있다가 완성된 화면으로
        넘어간다(lib/tokens.css 의 view-transition). 늦어도 DOMContentLoaded 에 풀린다. -->
@@ -235,7 +236,7 @@
 <body data-density="work">
   <div class="titlebar">
     <a class="tb-brand" href="/" title="인터넷 없이 내 컴퓨터에서 실행돼요">
-      <img src="/assets/pibo-logo.png" alt=""><b>edge-lab</b>
+      <img src="/assets/pibo-logo.png" alt=""><b></b>
     </a>
     <span class="tb-sep"></span>
     <span class="tb-app" id="txtTitle"></span>
@@ -357,8 +358,8 @@
   <script>
   "use strict";
   /**********************************************************************
-   * edge-lab AI 블록 코딩 — Blockly 워크스페이스 + 결과 칸 + async 실행기
-   * 서버는 기존 edge-lab API 그대로 사용 (백엔드 수정 없음)
+   * AI 블록 코딩 — Blockly 워크스페이스 + 결과 칸 + async 실행기
+   * 서버는 기존 API 그대로 사용 (백엔드 수정 없음)
    **********************************************************************/
   const G = javascript.javascriptGenerator;
   const Order = javascript.Order;
@@ -369,7 +370,7 @@
 
   const I18N = {
     ko: {
-      titleTag: "edge-lab — 블록", title: "edge-lab",
+      titleTag: "블록",
       eyebrow: "블록으로 나만의 프로그램을 · 인터넷 없이 내 컴퓨터에서",
       back: "홈", save: "저장", load: "불러오기", stop: "정지", run: "실행",
       running: "실행 중...", langBtn: "EN",
@@ -707,7 +708,7 @@
       tts: "ko-KR",
     },
     en: {
-      titleTag: "edge-lab — Blocks", title: "edge-lab",
+      titleTag: "Blocks",
       eyebrow: "write your own program with blocks · runs on this computer",
       back: "Home", save: "Save", load: "Load", stop: "Stop", run: "Run",
       running: "Running...", langBtn: "한",
@@ -2523,7 +2524,7 @@ def texts_of(result):
     return "#" + [n >> 16, n >> 8 & 255, n & 255].map(c => f(c).toString(16).padStart(2, "0")).join("");
   };
   const style = hex => ({ colourPrimary: hex, colourSecondary: shade(hex, 0.35), colourTertiary: shade(hex, -0.2) });
-  const THEME = Blockly.Theme.defineTheme("edgelab", {
+  const THEME = Blockly.Theme.defineTheme("appTheme", {
     base: Blockly.Themes.Classic,
     fontStyle: { family: '"Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif', weight: "bold", size: 13 },
     blockStyles: {
@@ -3806,7 +3807,7 @@ def texts_of(result):
     rd.readAsDataURL(f);
   });
 
-  /* ---------------- AI 헬퍼 (edge-lab 호출) ---------------- */
+  /* ---------------- AI 헬퍼 (서버 호출) ---------------- */
   function dataURLtoBlob(u) {
     const [h, b64] = u.split(","), mime = h.match(/data:(.*?);/)[1];
     const bin = atob(b64), arr = new Uint8Array(bin.length);
