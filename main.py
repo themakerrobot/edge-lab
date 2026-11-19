@@ -1044,14 +1044,11 @@ async def set_username(name: str = Body("", embed=True)):
 
 
 @app.post("/system/open_folder", tags=["system"], summary="작업폴더 열기")
-async def open_folder(sub: str = ""):
-    """탐색기로 작업폴더를 띄운다 — 아이가 만든 파일을 바로 찾을 수 있게.
-    sub=face 면 얼굴 명단 칸(face/facedb.json — 파이보로 옮길 파일)을 바로 연다. 정해 둔 칸 이름만 받는다."""
+async def open_folder():
+    """탐색기로 작업폴더를 띄운다 — 아이가 만든 파일을 바로 찾을 수 있게."""
     import subprocess
     import paths as _p
     target = _p.WORK_ROOT
-    if sub in _p.WORK_PARTS:
-        target = os.path.join(_p.WORK_ROOT, sub)
     os.makedirs(target, exist_ok=True)
     try:
         if os.name == "nt":

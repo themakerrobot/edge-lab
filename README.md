@@ -86,7 +86,7 @@ speak("안녕하세요")                     # 말하기
 처음 보는 사람은 '모르는 사람'. 아래 정보 칸에는 얼굴마다 나이 · 성별(AI 짐작) · 감정 · 방향 · 거리 · 마스크가 나옵니다.
 **말하기**를 켜면 알아본 사람에게 적어 둔 말(`[이름] 안녕하세요!`)을 읽어 줍니다.
 
-- 파이보 · 파이브레인과 **같은 모델 · 같은 명단 파일**입니다. **[파이보로 보낼 파일 받기]** 한 `facedb.json` 을 로봇의 `Face.load_db()` 로 바로 열고, 로봇이 `Face.save_db()` 한 파일도 여기서 엽니다.
+- 파이보 · 파이브레인과 **같은 모델 · 같은 명단 파일**입니다. **[명단 저장하기]** 한 `facedb.json` 은 로봇의 `Face.load_db()` 로도 열리고, 로봇이 `Face.save_db()` 한 파일도 **[명단 불러오기]** 로 열립니다.
 - **사진은 저장하지 않습니다.** 얼굴에서 뽑은 숫자(256개)만 이 컴퓨터의 `face/facedb.json` 에 두고, 이름별 · 전체 지우기가 있습니다. 다른 사람 얼굴은 허락을 받고 등록합니다.
 - 블록(누구인지 · 얼굴 등록)과 파이썬(`face_register` · `face_who` · `vision("who", img)` …)에서도 같은 명단을 씁니다.
 
@@ -296,7 +296,7 @@ Type a name and press **[Register from camera]**; from then on the name appears 
 New faces show as 'Unknown'. The info panel below shows age · gender (AI guess) · emotion · direction · distance · mask for each face.
 Turn on **Speak** to have the recognised person greeted with your own sentence (`Hello, [name]!`).
 
-- **Same model and same list file as Pibo · PiBrain.** The `facedb.json` from **[Get the file for Pibo]** opens on the robot with `Face.load_db()`, and a file the robot saved with `Face.save_db()` opens here.
+- **Same model and same list file as Pibo · PiBrain.** The `facedb.json` from **[Save the list]** also opens on the robot with `Face.load_db()`, and a file the robot saved with `Face.save_db()` opens with **[Load a list]**.
 - **Photos are not saved** — only numbers taken from the face (256 of them) in `face/facedb.json` on this computer; delete by name or all at once. Ask before registering someone else's face.
 - Blocks (who is it · register a face) and Python (`face_register` · `face_who` · `vision("who", img)` …) use the same list.
 
