@@ -1,8 +1,8 @@
 {
   "name": "edge-lab",
   "name_ko": "edge-lab",
-  "tagline": "인터넷 없이 내 컴퓨터에서 실행돼요",
-  "tagline_en": "Runs on this computer, no internet needed",
+  "tagline": "인터넷 없이 내 컴퓨터에서 하는 AI 실습",
+  "tagline_en": "Hands-on AI that runs on your own computer, no internet",
   "slug": "edge-lab",
   "work_folder": "Edge Lab",
   "appdata_folder": "EdgeLab",

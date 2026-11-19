@@ -272,7 +272,7 @@ def check_brand():
     spec.loader.exec_module(rb)
     for prob in rb.check():
         fail(prob + "  →  python tools/rename_brand.py")
-    words = {b["name"], b["name_ko"], b["slug"], b["work_folder"], b["appdata_folder"]}
+    words = {b["name"], b["name_ko"], b["slug"], b["work_folder"], b["appdata_folder"], b["tagline"], b["tagline_en"]}
     for rel in code_files():
         text = read(rel)
         for k in BRAND_KEEP + [b["repo_github"], b["repo_hf"]]:

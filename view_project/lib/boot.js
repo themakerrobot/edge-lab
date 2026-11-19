@@ -38,7 +38,7 @@
 
   var UI = {
     ko: {
-      sub: "인터넷 없이 내 컴퓨터에서 실행돼요",
+      sub: window.EL_BRAND ? EL_BRAND.tag("ko") : "",            // 부제는 brand.json
       skip: "건너뛰기", wait: "준비 중...", start: "시작하기",
       done: "준비 끝!", error: "문제가 생겼어요: ", sec: "초", min: "분 ",
       s1h: "인터넷 없이 동작해요",
@@ -53,7 +53,7 @@
       s5b: "준비가 끝나면 아래 [시작하기] 버튼이 켜져요. 먼저 웹캠이 잘 보이는지 확인해 두면 좋아요."
     },
     en: {
-      sub: "Runs on this computer, no internet needed",
+      sub: window.EL_BRAND ? EL_BRAND.tag("en") : "",
       skip: "Skip", wait: "Getting ready...", start: "Start",
       done: "Ready!", error: "Something went wrong: ", sec: "s", min: "m ",
       s1h: "It works without the internet",
