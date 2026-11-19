@@ -163,8 +163,16 @@ def check():
     if load_applied() != b:
         problems.append("tools/brand_applied.json 이 brand.json 과 다름 (문서 · 노트북에 아직 지난 이름)")
     for k, v in b.items():
-        if any(ch in v for ch in '"\\<>'):
-            problems.append("brand.json %s 에 쓸 수 없는 글자(\" \\ < >)" % k)
+        if any(ch in v for ch in '"\\<>&|^%'):
+            problems.append("brand.json %s 에 쓸 수 없는 글자(\" \\ < > & | ^ %%)" % k)
+    if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", b["slug"]):
+        problems.append("brand.json slug 는 소문자 · 숫자 · - 만 (파일 이름 · 번들 이름에 쓴다)")
+    for k in ("work_folder", "appdata_folder"):
+        if re.search(r'[/\\:*?]', b[k]):
+            problems.append("brand.json %s 에 폴더 구분 글자(/ \\ : * ?)를 쓸 수 없어요" % k)
+    for k in ("repo_github", "repo_hf"):
+        if not re.fullmatch(r"[\w.-]+/[\w.-]+", b[k]):
+            problems.append("brand.json %s 는 '주인/이름' 모양이어야 해요" % k)
     return problems
 
 
@@ -174,6 +182,11 @@ def main():
         for x in p:
             print("  FAIL  " + x + "  →  python tools/rename_brand.py")
         return 1 if p else 0
+    bad = [x for x in check() if "brand.js" not in x and "brand_applied" not in x]
+    if bad:                                             # 값이 틀리면 아무것도 바꾸지 않는다
+        for x in bad:
+            print("  FAIL  " + x)
+        return 1
     new = BR.load()
     old = load_applied() or new
     changed = []

@@ -15,8 +15,9 @@ set VERSION=%1
 if exist "%ROOT%venv\Scripts\python.exe" (set "PY_LOCAL=%ROOT%venv\Scripts\python.exe") else (set "PY_LOCAL=python")
 if "%VERSION%"=="" set VERSION=1.0.0
 REM 제품 이름 · 파일 이름 — brand.json 하나에서 (brand.py)
-for /f "usebackq delims=" %%s in (`"%PY_LOCAL%" -c "import brand;print(brand.SLUG)"`) do set "SLUG=%%s"
-for /f "usebackq delims=" %%s in (`"%PY_LOCAL%" -c "import brand;print(brand.NAME)"`) do set "BNAME=%%s"
+REM   (for /f 안의 명령이 따옴표로 시작하면 cmd 가 바깥 따옴표를 벗긴다 - call 을 앞에 둔다)
+for /f "delims=" %%s in ('call "%PY_LOCAL%" -c "import brand;print(brand.SLUG)"') do set "SLUG=%%s"
+for /f "delims=" %%s in ('call "%PY_LOCAL%" -c "import brand;print(brand.NAME)"') do set "BNAME=%%s"
 if "%SLUG%"=="" (echo [ERROR] brand.json not readable & exit /b 1)
 set BUILD=build\%SLUG%
 set DIST=dist
