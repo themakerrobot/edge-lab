@@ -352,6 +352,13 @@
       sh_outOf: " / 4",
       sh_huntList: "컵,책,휴대폰,병,의자", sh_items: "물건목록", sh_huntShow: " 을(를) 카메라에 보여 주세요", sh_found: "찾았어요!",
       sh_huntDone: "다 찾았어요! 걸린 시간 ", sh_crown: "왕관", sh_find: "찾을것",
+      ex_ez_dance: "로봇 춤추기", ex_ez_dance_d: "로봇이 오른쪽 · 아래 · 왼쪽 · 위로 움직이며 춤춰요. 같은 춤을 반복 블록으로 4번! (순서 · 반복)",
+      ex_ez_song: "학교종 연주하기", ex_ez_song_d: "계이름 블록을 순서대로 놓아 노래를 연주해요. 같은 부분은 반복으로. (순서 · 반복)",
+      ex_ez_drive: "손으로 로봇 조종하기", ex_ez_drive_d: "브이(✌)면 오른쪽, 주먹이면 왼쪽, 엄지 척이면 위로 가요. 하트에 닿으면 점수! (AI 눈 · 만약)",
+      ex_ez_hide: "얼굴 숨바꼭질", ex_ez_hide_d: "카메라에서 얼굴을 숨기면 고양이가 사라지고, 다시 보이면 '찾았다!' 해요. (AI 눈 · 만약 · 아니면)",
+      ex_ez_apple: "떨어지는 사과 받기", ex_ez_apple_d: "사과가 떨어져요. 화살표 키로 고양이를 움직여 받아요. 놓치면 다시 위에서! (계속 반복 · 닿았나 · 점수)",
+      sh_robot: "로봇", sh_heart: "하트", sh_cat: "고양이", sh_apple: "사과", sh_ezEnd: "끝!", sh_ezSong: "학교종이 땡땡땡",
+      sh_ezDrive: "✌ 오른쪽 · ✊ 왼쪽 · 👍 위", sh_ezFound: "찾았다! 👀", sh_ezWhere: "어디 숨었지?",
       ex_ez_rocket: "화살표로 로켓 움직여 별 잡기", ex_ez_rocket_d: "화살표 키로 로켓을 움직여 별에 닿으면 점수가 올라요. (반복 · 만약 · 점수)",
       ex_ez_hand: "손으로 별 잡기 (쉬움)", ex_ez_hand_d: "웃는 얼굴이 내 손을 따라가요. 별에 닿으면 점수! (AI 눈)",
       ex_ez_face: "표정 보고 대답하기", ex_ez_face_d: "웃으면 '웃었네요', 엄지 척을 하면 '고마워요' 해요. (AI 눈 · 만약)",
@@ -670,6 +677,13 @@
       sh_outOf: " / 4",
       sh_huntList: "cup,book,cell-phone,bottle,chair", sh_items: "items", sh_huntShow: " — show it to the camera", sh_found: "Found it!",
       sh_huntDone: "All found! Time ", sh_crown: "crown", sh_find: "thing",
+      ex_ez_dance: "Robot dance", ex_ez_dance_d: "The robot moves right, down, left and up. The same dance 4 times with a repeat block! (order · repeat)",
+      ex_ez_song: "Play the school bell song", ex_ez_song_d: "Put note blocks in order to play a song. Repeat the parts that are the same. (order · repeat)",
+      ex_ez_drive: "Drive the robot with your hand", ex_ez_drive_d: "Victory (✌) goes right, a fist goes left, thumbs up goes up. Touch the heart to score! (AI eyes · if)",
+      ex_ez_hide: "Face hide-and-seek", ex_ez_hide_d: "Hide your face and the cat disappears; show it and it says 'Found you!'. (AI eyes · if · else)",
+      ex_ez_apple: "Catch the falling apple", ex_ez_apple_d: "An apple falls. Move the cat with the arrow keys to catch it. Miss it and it starts again! (repeat forever · touching · score)",
+      sh_robot: "robot", sh_heart: "heart", sh_cat: "cat", sh_apple: "apple", sh_ezEnd: "The end!", sh_ezSong: "School bell song",
+      sh_ezDrive: "✌ right · ✊ left · 👍 up", sh_ezFound: "Found you! 👀", sh_ezWhere: "Where are you?",
       ex_ez_rocket: "Move the rocket to catch stars", ex_ez_rocket_d: "Move the rocket with arrow keys; touch the star to score. (repeat · if · score)",
       ex_ez_hand: "Catch stars with your hand (easy)", ex_ez_hand_d: "A smiley follows your hand. Touch the star to score! (AI eyes)",
       ex_ez_face: "Answer to your face", ex_ez_face_d: "Smile and it says 'You smiled', thumbs up and it says 'Thank you'. (AI eyes · if)",
@@ -2437,6 +2451,8 @@ def texts_of(result):
     const SET = (n, blk) => B("variables_set",
       { fields: { VAR: { name: n } }, inputs: { VALUE: { block: blk } } });
     const PR = blk => B("text_print", { inputs: { TEXT: { block: blk } } });
+    const MV = (name, dir) => B("ez_move", { fields: { NAME: name, DIR: dir, AMT: "aBig" } });
+    const NOTE = (hz, beats) => B("st_note", { fields: { N: hz }, inputs: { B: shadowNum(beats || 1) } });
     return [
       { id: "greet", name: t("ex_greet"), desc: t("ex_greet_d"),
         state: { blocks: { languageVersion: 0, blocks: [ chain([
@@ -2725,6 +2741,97 @@ def texts_of(result):
             B("controls_if", { inputs: {
               IF0: { block: B("ez_hand", { fields: { G: "Thumb_Up" } }) },
               DO0: { block: B("st_say", { fields: { V: "F1", S: "normal" }, inputs: { TEXT: shadowTxt(t("sh_ezThanks")) } }) } } }),
+          ]) } } }),
+        ]) ] } } },
+      { id: "ez_dance", lv: 0, name: t("ex_ez_dance"), desc: t("ex_ez_dance_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
+          CLEAR(),
+          B("ez_put", { fields: { NAME: t("sh_robot"), LOOK: "lkRobot", POS: "tl" } }),
+          B("controls_repeat_ext", { inputs: { TIMES: shadowNum(4), DO: { block: chain([
+            MV(t("sh_robot"), "dRight"), NOTE("262"), MV(t("sh_robot"), "dRight"), NOTE("330"),
+            MV(t("sh_robot"), "dDown"), NOTE("392"),
+            MV(t("sh_robot"), "dLeft"), NOTE("330"), MV(t("sh_robot"), "dLeft"), NOTE("262"),
+            MV(t("sh_robot"), "dUp"), NOTE("523"),
+          ]) } } }),
+          B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_ezEnd")) } }),
+          B("st_beep", { fields: { K: "sndClap" } }),
+        ]) ] } } },
+      { id: "ez_song", lv: 0, name: t("ex_ez_song"), desc: t("ex_ez_song_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
+          CLEAR(),
+          B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_ezSong")) } }),
+          B("controls_repeat_ext", { inputs: { TIMES: shadowNum(2), DO: { block: chain([
+            NOTE("392"), NOTE("392"), NOTE("440"), NOTE("440"), NOTE("392"), NOTE("392"), NOTE("330", 2),
+            NOTE("392"), NOTE("392"), NOTE("330"), NOTE("330"), NOTE("294", 3),
+          ]) } } }),
+          B("st_beep", { fields: { K: "sndChime" } }),
+        ]) ] } } },
+      { id: "ez_drive", lv: 0, name: t("ex_ez_drive"), desc: t("ex_ez_drive_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
+          CLEAR(),
+          B("st_cam_view", { fields: { MODE: "cmMirror" } }),
+          B("ez_reset"),
+          B("ez_put", { fields: { NAME: t("sh_robot"), LOOK: "lkRobot", POS: "bl" } }),
+          B("ez_put", { fields: { NAME: t("sh_heart"), LOOK: "lkHeart", POS: "tr" } }),
+          B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_ezDrive")) } }),
+          B("ev_forever", { inputs: { FPS: shadowNum(3), DO: { block: chain([
+            B("controls_if", { inputs: { IF0: { block: B("ez_hand", { fields: { G: "Victory" } }) },
+              DO0: { block: B("ez_move", { fields: { NAME: t("sh_robot"), DIR: "dRight", AMT: "aBig" } }) } } }),
+            B("controls_if", { inputs: { IF0: { block: B("ez_hand", { fields: { G: "Closed_Fist" } }) },
+              DO0: { block: B("ez_move", { fields: { NAME: t("sh_robot"), DIR: "dLeft", AMT: "aBig" } }) } } }),
+            B("controls_if", { inputs: { IF0: { block: B("ez_hand", { fields: { G: "Thumb_Up" } }) },
+              DO0: { block: B("ez_move", { fields: { NAME: t("sh_robot"), DIR: "dUp", AMT: "aBig" } }) } } }),
+            B("controls_if", { inputs: { IF0: { block: B("sp_edge", { fields: { NAME: t("sh_robot") } }) },
+              DO0: { block: B("ez_place", { fields: { NAME: t("sh_robot"), POS: "bl" } }) } } }),
+            B("controls_if", { inputs: {
+              IF0: { block: B("sp_touch", { fields: { A: t("sh_robot"), B: t("sh_heart") } }) },
+              DO0: { block: chain([
+                B("ez_add", { inputs: { N: shadowNum(1) } }),
+                B("st_beep", { fields: { K: "sndCoin" } }),
+                B("ez_place", { fields: { NAME: t("sh_robot"), POS: "bl" } }),
+                B("ez_random", { fields: { NAME: t("sh_heart") } }),
+              ]) } } }),
+          ]) } } }),
+        ]) ] } } },
+      { id: "ez_hide", lv: 0, name: t("ex_ez_hide"), desc: t("ex_ez_hide_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
+          CLEAR(),
+          B("st_cam_view", { fields: { MODE: "cmMirror" } }),
+          B("ez_put", { fields: { NAME: t("sh_cat"), LOOK: "lkCat", POS: "br" } }),
+          B("ev_forever", { inputs: { FPS: shadowNum(2), DO: { block:
+            B("controls_if", { extraState: { hasElse: true }, inputs: {
+              IF0: { block: B("ez_seen", { fields: { WHAT: "seeFace" } }) },
+              DO0: { block: chain([
+                B("sp_show", { fields: { NAME: t("sh_cat"), MODE: "svShow" } }),
+                B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_ezFound")) } }),
+              ]) },
+              ELSE: { block: chain([
+                B("sp_show", { fields: { NAME: t("sh_cat"), MODE: "svHide" } }),
+                B("st_show_text", { inputs: { TEXT: shadowTxt(t("sh_ezWhere")) } }),
+              ]) } } }) } } }),
+        ]) ] } } },
+      { id: "ez_apple", lv: 0, name: t("ex_ez_apple"), desc: t("ex_ez_apple_d"),
+        state: { blocks: { languageVersion: 0, blocks: [ chain([
+          CLEAR(),
+          B("ez_reset"),
+          B("ez_put", { fields: { NAME: t("sh_cat"), LOOK: "lkCat", POS: "bc" } }),
+          B("ez_put", { fields: { NAME: t("sh_apple"), LOOK: "lkApple", POS: "tc" } }),
+          B("ev_forever", { inputs: { FPS: shadowNum(15), DO: { block: chain([
+            B("ez_move", { fields: { NAME: t("sh_apple"), DIR: "dDown", AMT: "aSmall" } }),
+            B("controls_if", { inputs: { IF0: { block: B("ev_key", { fields: { KEY: "kyRight" } }) },
+              DO0: { block: B("ez_move", { fields: { NAME: t("sh_cat"), DIR: "dRight", AMT: "aSmall" } }) } } }),
+            B("controls_if", { inputs: { IF0: { block: B("ev_key", { fields: { KEY: "kyLeft" } }) },
+              DO0: { block: B("ez_move", { fields: { NAME: t("sh_cat"), DIR: "dLeft", AMT: "aSmall" } }) } } }),
+            B("controls_if", { inputs: {
+              IF0: { block: B("sp_touch", { fields: { A: t("sh_cat"), B: t("sh_apple") } }) },
+              DO0: { block: chain([
+                B("ez_add", { inputs: { N: shadowNum(1) } }),
+                B("st_beep", { fields: { K: "sndCoin" } }),
+                B("ez_place", { fields: { NAME: t("sh_apple"), POS: "tl" } }),
+              ]) } } }),
+            B("controls_if", { inputs: {
+              IF0: { block: B("sp_edge", { fields: { NAME: t("sh_apple") } }) },
+              DO0: { block: B("ez_place", { fields: { NAME: t("sh_apple"), POS: "tr" } }) } } }),
           ]) } } }),
         ]) ] } } },
       { id: "guess", name: t("ex_guess"), desc: t("ex_guess_d"),
@@ -3296,7 +3403,7 @@ def texts_of(result):
     const list = document.getElementById("exList");
     list.innerHTML = "";
     /* 위에 '만들어 보기(프로젝트)', 아래에 '기능 익히기' — 수업에서는 프로젝트부터 고른다 */
-    const PROJECTS = ["ez_rocket", "ez_hand", "ez_face", "guess", "react", "catch", "handgame", "emogame", "hunt", "crown",
+    const PROJECTS = ["ez_dance", "ez_song", "ez_rocket", "ez_apple", "ez_hand", "ez_hide", "ez_drive", "ez_face", "guess", "react", "catch", "handgame", "emogame", "hunt", "crown",
                       "posture", "armcount", "booth", "result", "rps", "greet"];
     const lvNow = { easy: 0, basic: 1, all: 2 }[LEVEL];
     const lvOf = ex => (ex.lv == null ? 1 : ex.lv);
@@ -4225,7 +4332,16 @@ def texts_of(result):
         RT.sp.move(name, v[0], v[1]);
       },
       random(name) { RT.sp.go(name, 60 + Math.random() * 520, 60 + Math.random() * 360); },
-      async _look(kind) { return AI.result(await AI.capture(), kind); },
+      /* 같은 바퀴 안에서 '손 모양이 ~인가?' 를 여러 번 물어도 사진 · AI 는 한 번만 —
+         0.2초 안에 같은 것을 다시 물으면 방금 결과를 그대로 쓴다 */
+      _cache: {},
+      async _look(kind) {
+        const c = RT.ez._cache[kind], now = performance.now();
+        if (c && now - c.t < 200) return c.r;
+        const r = await AI.result(await AI.capture(), kind);
+        RT.ez._cache[kind] = { t: performance.now(), r };
+        return r;
+      },
       async follow(name, what) {
         const r = await RT.ez._look(what === "seeFace" ? "face" : "hand");
         if (r.length) RT.sp.go(name, r[0].x, r[0].y);
@@ -4737,7 +4853,7 @@ def texts_of(result):
     RT.voice = "F1"; RT.speed = "normal";   // 목소리·빠르기는 실행마다 기본값으로
     RT.lastAiAt = 0; RT._bseq = null;
     RT._t0 = Date.now(); RT._tables = {};
-    RT._fast = false; RT._camMode = null; RT._click = false; RT._keys.clear(); RT.ez.score = 0;
+    RT._fast = false; RT._camMode = null; RT._click = false; RT._keys.clear(); RT.ez.score = 0; RT.ez._cache = {};
     cam.style.visibility = ""; cam.style.transform = "";
     RT.abort = new AbortController();
     RT._vars = {};
