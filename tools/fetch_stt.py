@@ -7,7 +7,7 @@
   silero_vad.onnx  말 구간 찾기(긴 녹음을 자를 때)              — MIT
 FunASR 모델 라이선스는 '출처·저작자 표시와 모델 이름 유지' 를 요구한다 — 원문(tools/licenses)을 같은 폴더에 둔다.
 
-쓰는 법:  venv\\Scripts\\python tools\\fetch_stt.py      (setup_deploy.ps1 이 부른다)
+쓰는 법:  venv\\Scripts\\python tools\\fetch_stt.py      (변환 setup.ps1 이 부르고, fetch_models.py 는 저장소에 stt-sv 가 없을 때만 부른다)
 """
 import os
 import shutil

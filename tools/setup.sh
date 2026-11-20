@@ -97,11 +97,10 @@ mkdir -p models/mediapipe
 wget -q -O models/mediapipe/face_landmarker.task "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task"
 wget -q -O models/mediapipe/gesture_recognizer.task "https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/latest/gesture_recognizer.task"
 
-echo "=== [8/9] speech models (STT / TTS) ==="
-hf download OpenVINO/whisper-small-int8-ov --local-dir "$MODELS/stt"
-# 서버가 실제로 쓰는 음성 인식은 SenseVoice(models/stt-sv, 파이보 · 파이브레인과 같은 파일). 위 Whisper 는 VAPI_STT=whisper 용
+echo "=== [8/9] speech models (STT) ==="
+# 음성 인식 SenseVoice — 원본은 파이보 · 파이브레인과 같은 leeyunjai/themaker .model/stt → models/stt-sv (HF 에 같이 올라간다)
 python tools/fetch_stt.py
-hf download Supertone/supertonic-3 --local-dir "$MODELS/tts"
+# 읽어 주기 models/tts-int8 (Supertonic int8) 은 여기서 만들지 않는다 — HF 에 있는 것을 그대로 쓴다
 
 echo "=== [9/9] easyocr + offline check ==="
 python - <<'PY'
@@ -120,11 +119,9 @@ core = ov.Core()
 print("devices:", core.available_devices)
 models = Path("models")
 fails = 0
-for name in ["duration_predictor.onnx", "text_encoder.onnx",
-             "vector_estimator.onnx", "vocoder.onnx",
-             "tts.json", "unicode_indexer.json"]:
-    if not (models / "tts/onnx" / name).exists():
-        fails += 1; print("FAIL models/tts/onnx/" + name, "| missing")
+for name in ["model.int8.onnx", "tokens.txt", "silero_vad.onnx"]:
+    if not (models / "stt-sv" / name).exists():
+        fails += 1; print("FAIL models/stt-sv/" + name, "| missing")
 for m in list(models.rglob("*.xml")) + list(models.glob("gan/*.onnx")):
     try:
         core.read_model(m); print("OK ", m)

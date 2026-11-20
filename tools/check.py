@@ -99,39 +99,21 @@ for rel in ["mobilenet_v3_small_embedder.onnx", "hand_landmarker.task", "face_la
             fails += 1
             print("FAIL teachlab/models/" + rel, "|", str(e)[:200])
 
-# TTS(Supertonic)는 OpenVINO 로 읽는 모델이 아니라 파일 존재만 확인한다
+# 읽어 주기(Supertonic int8)는 OpenVINO 로 읽는 모델이 아니라 파일이 다 있는지만 본다
 tts_need = ["duration_predictor.onnx", "text_encoder.onnx", "vector_estimator.onnx",
             "vocoder.onnx", "tts.json", "unicode_indexer.json"]
-tts_dir = pathlib.Path("models/tts/onnx")
-if not tts_dir.is_dir() and pathlib.Path("models/tts-int8").is_dir():
-    pass                                      # 원본은 받지 않는다(허깅페이스에만) — 아래 int8 점검만
-elif tts_dir.is_dir():
-    for name in tts_need:
-        if not (tts_dir / name).exists():
-            fails += 1
-            print("FAIL models/tts/onnx/" + name, "| 파일 없음")
-    styles = list(pathlib.Path("models/tts/voice_styles").glob("*.json"))
-    if len(styles) < 10:
-        print("WARN 목소리 파일이", len(styles), "개 (10개 기대)")
-else:
-    print("WARN models/tts 없음 — 음성 합성(TTS)을 쓸 수 없습니다")
-
-# 실제로 쓰는 것은 int8 양자화판(models/tts-int8)이다 — 있으면 모델 파일 넷이 다 있는지 본다
 q = pathlib.Path("models/tts-int8")
-if q.is_dir():
-    qd = q / "onnx" if (q / "onnx" / "vector_estimator.onnx").exists() else q
-    orig = pathlib.Path("models/tts")
-    for name in tts_need:                     # 설정 · 글자표는 원본이 있으면 거기 것을 써도 된다
-        if not (qd / name).exists() and not (name.endswith(".json") and (orig / "onnx" / name).exists()):
-            fails += 1
-            print("FAIL", (qd / name).as_posix(), "| 파일 없음")
-    vs = list((q / "voice_styles").glob("*.json")) or list((orig / "voice_styles").glob("*.json"))
-    if len(vs) < 10:
+qd = q / "onnx" if (q / "onnx" / "vector_estimator.onnx").exists() else q
+for name in tts_need:
+    if not (qd / name).exists():
         fails += 1
-        print("FAIL models/tts-int8/voice_styles | 목소리 파일이", len(vs), "개 (10개 기대)")
-    print("OK   읽어 주기는 models/tts-int8 을 씁니다 (원본 models/tts 는 VAPI_TTS=tts 로)")
-else:
-    print("WARN models/tts-int8 없음 — 읽어 주기는 원본 models/tts 로 돕니다")
+        print("FAIL", (qd / name).as_posix(), "| 파일 없음 — 읽어 주기(TTS)를 쓸 수 없습니다")
+vs = list((q / "voice_styles").glob("*.json"))
+if len(vs) < 10:
+    fails += 1
+    print("FAIL models/tts-int8/voice_styles | 목소리 파일이", len(vs), "개 (10개 기대)")
+if (qd / "vocoder.onnx").exists() and len(vs) >= 10:
+    print("OK   읽어 주기는 models/tts-int8 을 씁니다")
 
 sv = pathlib.Path("models/stt-sv")
 sv_miss = [n for n in ("model.int8.onnx", "tokens.txt", "silero_vad.onnx") if not (sv / n).is_file()]
@@ -142,10 +124,9 @@ if not sv_miss:
     except Exception as ex:
         fails += 1
         print("FAIL sherpa-onnx | 불러오지 못함:", ex)
-elif pathlib.Path("models/stt").is_dir():
-    print("WARN models/stt-sv 에", ", ".join(sv_miss), "없음 — 예전 Whisper(models/stt)로 돕니다. tools\\fetch_stt.py 로 받으세요")
 else:
-    print("WARN models/stt-sv 없음 — 음성 인식(STT)을 쓸 수 없습니다. tools\\fetch_stt.py 로 받으세요")
+    fails += 1
+    print("FAIL models/stt-sv 에", ", ".join(sv_miss), "없음 — 음성 인식(STT)을 쓸 수 없습니다. tools\\fetch_models.py 로 받으세요")
 
 # opencv 는 세 벌(python·contrib·headless)이 서로 다른 패키지의 의존성으로 함께 깔리고
 # 같은 cv2 를 덮어쓴다. headless 가 이기면 창을 못 띄워 파이썬 show(window=True) 가 죽는다.

@@ -193,7 +193,8 @@ Remove-Item conv.py, depth-v2s.xml, depth-v2s.bin
 ## HF 모델 저장소 다시 만들기
 배포·개발 PC 는 모두 HF 에서 받아 쓴다. 이 절은 **모델을 새로 만들어 HF 에 올릴 때만** 쓴다 (30~50분).
 나머지는 전부 원본 저장소에서 받아 오므로 HF 저장소가 비어도 다시 만들 수 있다 — 다만 **변환 PC 는 인터넷이 필요하다**.
-사물 찾기 · 자세 · 영역(easydetect, `leeyunjai/easydetect`)과 마스크(`mask/mask.onnx`)는 이 스크립트가 만들지 않는다 — 있는 파일을 그대로 쓴다.
+사물 찾기 · 자세 · 영역(easydetect, `leeyunjai/easydetect`) · 마스크(`mask/mask.onnx`) · 읽어 주기(`tts-int8/`, Supertonic int8)는 이 스크립트가 만들지 않는다 — 있는 파일을 그대로 쓴다.
+음성 인식(`stt-sv/`)은 원본 `leeyunjai/themaker` 에서 받아 온다(`tools/fetch_stt.py`).
 VLM(gemma3)·깊이 지도는 요구 버전이 달라 전용 venv 에서 따로 변환한다 (위 두 절).
 ```
 git clone https://github.com/themakerrobot/edge-lab.git
@@ -211,7 +212,9 @@ python tools\check.py                                 # fail = 0 이어야 함
 | `face/` `mediapipe/` `gan/` `vlm/` `embed/` `backbone/` `code/` `stt-sv/` `tts-int8/` `mask/` | 들어감 | 서버가 읽는 IR·모델 |
 | (`leeyunjai/easydetect`) `ed-m/` `pose/` `mobile_sam/` | 들어감 → `models/easydetect/` | 사물 찾기 · 자세 · 영역 (.onnx) |
 | `object/` `org/` `yolo/` | 빠짐 | 예전 YOLO 모델(ultralytics, AGPL) — 쓰지 않는다. 지워도 된다 |
+| `tts/` | 빠짐 | 읽어 주기 원본(Supertone/supertonic-3) — 보관용. `tts-int8/` 의 바탕 |
+| `release/` | 빠짐 | 배포판 zip (`tools/upload_release.py`) |
 | `*.md` | 빠짐 | 저장소 설명 |
 
-빼는 것은 `setup_deploy.ps1` 의 `--exclude` 로 정한다. 값을 이어 쓰지 말고
-**플래그를 여러 번** 써야 한다 — 이어 쓰면 뒤엣것이 받을 파일 이름으로 먹힌다.
+빼는 것은 `tools/fetch_models.py` 의 `IGNORE` 로 정한다 (설치 `setup_deploy.ps1` 과 배포판 자동 만들기가 같이 쓴다).
+`tools/release_check.py` 가 `check.py` 가 찾는 모델이 이 목록에 걸리지 않는지 본다.

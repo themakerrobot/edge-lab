@@ -1,0 +1,44 @@
+name: hf-stt-sv
+
+# 음성 인식 모델(SenseVoice int8)을 허깅페이스 모델 저장소(brand.json 의 repo_hf)의 stt-sv/ 에 올린다.
+# 원본은 파이보 · 파이브레인과 같은 leeyunjai/themaker .model/stt (tools/fetch_stt.py 가 받는다).
+# 필요한 것: 저장소 Secret HF_TOKEN — 허깅페이스 쓰기 토큰. 손으로 돌리기: Actions → hf-stt-sv → Run workflow
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: 받기
+        run: |
+          pip install "$(grep -E '^huggingface[-_]hub==' requirements.lock.txt || echo huggingface_hub)"
+          python tools/fetch_stt.py
+
+      - name: 올리기
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          test -n "$HF_TOKEN" || { echo "저장소 Secret HF_TOKEN 이 없어요"; exit 1; }
+          python - <<'EOF'
+          import brand
+          from huggingface_hub import HfApi
+          api = HfApi()
+          api.upload_folder(repo_id=brand.REPO_HF, folder_path="models/stt-sv", path_in_repo="stt-sv",
+                            commit_message="stt-sv: SenseVoice int8 (leeyunjai/themaker .model/stt)")
+          files = sorted(f for f in api.list_repo_files(brand.REPO_HF) if f.startswith("stt-sv/"))
+          print("\n".join(files))
+          need = {"stt-sv/model.int8.onnx", "stt-sv/tokens.txt", "stt-sv/silero_vad.onnx", "stt-sv/LICENSE-SenseVoice.txt"}
+          assert need <= set(files), need - set(files)
+          EOF

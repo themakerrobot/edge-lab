@@ -7,12 +7,11 @@
 - GET  /speech/voices                   -> 쓸 수 있는 목소리 목록
 
 모델
-  STT: models/stt-sv (SenseVoiceSmall int8 + silero VAD, sherpa-onnx) — 기본. 파이보 · 파이브레인과 같은 파일·같은 계산
+  STT: models/stt-sv (SenseVoiceSmall int8 + silero VAD, sherpa-onnx). 파이보 · 파이브레인과 같은 파일·같은 계산
        (openpibo SpeechToText.transcribe: DC 빼기 · 작은 소리 키우기(최대 20배) · 25초 넘으면 VAD 로 말 단위로 잘라 받아 적기).
        언어는 모델이 스스로 알아낸다(한·영·중·일·광둥어). lang 은 응답에 그대로 돌려준다.
-       models/stt (OpenVINO/whisper-small-int8-ov) — 예전 것. VAPI_STT=whisper 이고 폴더가 있을 때만 쓴다.
-       실측(x86 4스레드, 문장 14개): SenseVoice 116ms · 최고 메모리 421MB / Whisper 492ms · 831MB, 글자 오류율 2.7% / 2.3%
-  TTS: models/tts (Supertone/supertonic-3, onnx/ + voice_styles/)
+       실측(x86 4스레드, 문장 14개): 116ms · 최고 메모리 421MB, 글자 오류율 2.7% (예전 Whisper-small 은 492ms · 831MB · 2.3% — 뺐다)
+  TTS: models/tts-int8 (Supertone/supertonic-3 의 int8 양자화판, onnx/ + voice_styles/ — 바꾼 곳은 MODIFICATIONS.md)
        추론은 onnxruntime 만 사용한다. 절차는 공식 예제(supertone-inc/supertonic, MIT)를
        그대로 옮긴 것 — 전처리·토크나이저·마스크 계산은 원본과 결과 일치를 확인했다.
 
@@ -35,37 +34,12 @@ from fastapi.responses import Response
 router = APIRouter()
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-# 음성 인식 엔진 — SenseVoice(models/stt-sv)가 기본. VAPI_STT=whisper 로 예전 Whisper(models/stt)를 고를 수 있다
+# 음성 인식 — SenseVoice(models/stt-sv) 하나. 읽어 주기 — Supertonic int8(models/tts-int8) 하나.
 SV_DIR = os.path.join(ROOT, "models", "stt-sv")
 SV_FILES = ("model.int8.onnx", "tokens.txt", "silero_vad.onnx")
-STT_DIR = os.path.join(ROOT, "models", "stt")
-
-
-def _pick_stt():
-    want = os.environ.get("VAPI_STT", "").strip().lower()
-    if want == "whisper":
-        return "whisper"
-    if want in ("sensevoice", "sense", "sv"):
-        return "sensevoice"
-    if all(os.path.isfile(os.path.join(SV_DIR, f)) for f in SV_FILES):
-        return "sensevoice"
-    return "whisper" if os.path.isdir(STT_DIR) else "sensevoice"
-
-
-STT_ENGINE = _pick_stt()
-# 읽어 주기 모델 폴더 — int8 양자화판(models/tts-int8)이 있으면 그것을 쓴다(소리는 같고 CPU 에서 가볍다).
-# 원본 models/tts 는 만일을 위해 그대로 둔다: tts-int8 이 없으면 원본으로, VAPI_TTS=tts 로 원본을 고를 수도 있다.
-# 두 모델의 속도는 tools\tts_bench.py 로 그 PC 에서 잰다.
-def _pick_tts():
-    want = os.environ.get("VAPI_TTS", "").strip()
-    if want:
-        return os.path.join(ROOT, "models", want)
-    q = os.path.join(ROOT, "models", "tts-int8")
-    return q if os.path.isdir(q) else os.path.join(ROOT, "models", "tts")
-
-
-TTS_DIR = _pick_tts()
-TARGET_SR = 16000                       # 음성 인식 입력 샘플레이트(두 엔진 같음)
+STT_ENGINE = "sensevoice"               # 응답 · /speech/ready 에 그대로 알린다
+TTS_DIR = os.path.join(ROOT, "models", "tts-int8")
+TARGET_SR = 16000                       # 음성 인식 입력 샘플레이트
 
 _pipe = None
 _dev = "CPU"
@@ -86,16 +60,6 @@ def _ok(name, data, t0, dev):
 def _fail(name, msg, t0, dev="CPU"):
     return {"type": name, "result": "fail", "data": str(msg),
             "elapsed_ms": int((time.perf_counter() - t0) * 1000), "device": dev}
-
-
-def _pick_device():
-    """GPU 가 있으면 GPU, 없으면 CPU. (NPU 는 Whisper 미지원 케이스가 많다)"""
-    try:
-        import openvino as ov
-        devs = ov.Core().available_devices
-        return "GPU" if any(d.startswith("GPU") for d in devs) else "CPU"
-    except Exception:
-        return "CPU"
 
 
 class _SenseVoice:
@@ -157,32 +121,14 @@ def _load():
     with _lock:
         if _pipe is not None or _err:
             return _pipe
-        if STT_ENGINE == "sensevoice":
-            miss = [f for f in SV_FILES if not os.path.isfile(os.path.join(SV_DIR, f))]
-            if miss:
-                _err = "models/stt-sv 에 %s 이(가) 없어요. setup 으로 모델을 받아 주세요." % ", ".join(miss)
-                return None
-            try:
-                _dev = "CPU"
-                _pipe = _SenseVoice(SV_DIR)
-                print("[stt] sensevoice loaded (CPU)")
-            except Exception as ex:
-                _err = "STT 모델을 열 수 없어요: %s" % ex
-                print("[stt]", _err)
-            return _pipe
-        if not os.path.isdir(STT_DIR):
-            _err = "models/stt 폴더가 없어요. setup 으로 모델을 받아 주세요."
+        miss = [f for f in SV_FILES if not os.path.isfile(os.path.join(SV_DIR, f))]
+        if miss:
+            _err = "models/stt-sv 에 %s 이(가) 없어요. setup 으로 모델을 받아 주세요." % ", ".join(miss)
             return None
         try:
-            import openvino_genai as ov_genai
-            _dev = _pick_device()
-            try:
-                from engines import CACHE_DIR as _cache
-            except Exception:
-                _cache = ""
-            kw = {"CACHE_DIR": _cache} if _cache else {}
-            _pipe = ov_genai.WhisperPipeline(STT_DIR, _dev, **kw)
-            print(f"[stt] whisper loaded ({_dev})")
+            _dev = "CPU"
+            _pipe = _SenseVoice(SV_DIR)
+            print("[stt] sensevoice loaded (CPU)")
         except Exception as ex:
             _err = "STT 모델을 열 수 없어요: %s" % ex
             print("[stt]", _err)
@@ -231,21 +177,8 @@ def speech_stt(uploadFile: UploadFile = File(...),
         return _fail("stt", "소리 파일을 읽을 수 없어요 (WAV 만 됩니다): %s" % ex, t0, _dev)
     if audio.size < TARGET_SR // 5:
         return _fail("stt", "녹음이 너무 짧아요.", t0, _dev)
-    if STT_ENGINE == "sensevoice":
-        try:
-            text = pipe.transcribe(audio)
-            return _ok("stt", {"text": text, "lang": lang, "engine": STT_ENGINE}, t0, _dev)
-        except Exception as ex:
-            return _fail("stt", "음성 인식 실패: %s" % ex, t0, _dev)
     try:
-        kw = {}
-        if lang in ("ko", "en"):
-            kw = {"language": "<|%s|>" % lang, "task": "transcribe"}
-        try:
-            res = pipe.generate(audio, **kw)
-        except TypeError:                    # 옵션 미지원 버전 대비
-            res = pipe.generate(audio)
-        text = str(res).strip()
+        text = pipe.transcribe(audio)
         return _ok("stt", {"text": text, "lang": lang, "engine": STT_ENGINE}, t0, _dev)
     except Exception as ex:
         return _fail("stt", "음성 인식 실패: %s" % ex, t0, _dev)
@@ -253,7 +186,7 @@ def speech_stt(uploadFile: UploadFile = File(...),
 
 # ================================================================= TTS
 # Supertonic 3 (ONNX) — 공식 예제(supertone-inc/supertonic, MIT)의 파이썬 추론 절차를
-# onnxruntime 만으로 옮긴 것. 별도 SDK 없이 models/tts/onnx 를 직접 돌린다.
+# onnxruntime 만으로 옮긴 것. 별도 SDK 없이 models/tts-int8/onnx 를 직접 돌린다.
 TTS_LANGS = ("en", "ko", "ja", "ar", "bg", "cs", "da", "de", "el", "es", "et", "fi",
              "fr", "hi", "hr", "hu", "id", "it", "lt", "lv", "nl", "pl", "pt", "ro",
              "ru", "sk", "sl", "sv", "tr", "uk", "vi", "na")
@@ -310,7 +243,7 @@ class _Supertonic:
 
     def __init__(self, root):
         import onnxruntime as ort
-        # onnx/ 아래에 두는 것이 원래 구성이다. 양자화판처럼 폴더 바로 아래에 .onnx 가 있어도 연다
+        # onnx/ 아래에 두는 것이 원래 구성이다. 폴더 바로 아래에 .onnx 가 있어도 연다
         d = os.path.join(root, "onnx")
         if not os.path.isfile(os.path.join(d, "vector_estimator.onnx")):
             d = root
@@ -322,12 +255,9 @@ class _Supertonic:
         self.enc = load("text_encoder.onnx")
         self.est = load("vector_estimator.onnx")
         self.voc = load("vocoder.onnx")
-        # 설정 · 글자표는 양자화판에 없을 수 있다 — 없으면 원래 모델(models/tts/onnx) 것을 쓴다
-        cfg_of = lambda n: (os.path.join(d, n) if os.path.isfile(os.path.join(d, n))
-                            else os.path.join(os.path.dirname(root), "tts", "onnx", n))
-        with open(cfg_of("tts.json"), encoding="utf-8") as f:
+        with open(os.path.join(d, "tts.json"), encoding="utf-8") as f:
             cfg = json.load(f)
-        with open(cfg_of("unicode_indexer.json"), encoding="utf-8") as f:
+        with open(os.path.join(d, "unicode_indexer.json"), encoding="utf-8") as f:
             self.indexer = json.load(f)
         self.sr = int(cfg["ae"]["sample_rate"])
         self.base_chunk = int(cfg["ae"]["base_chunk_size"])
@@ -335,8 +265,6 @@ class _Supertonic:
         self.ldim = int(cfg["ttl"]["latent_dim"])
         self.styles = {}
         self.style_dir = os.path.join(root, "voice_styles")
-        if not os.path.isdir(self.style_dir):               # 목소리 파일은 원래 모델 것을 같이 쓴다
-            self.style_dir = os.path.join(os.path.dirname(root), "tts", "voice_styles")
 
     # ---- 목소리 ----
     def style(self, name):
@@ -406,7 +334,7 @@ class _Supertonic:
 
 
 def _load_tts():
-    """models/tts 를 직접 연다. 실패해도 서버는 계속 돈다."""
+    """models/tts-int8 을 직접 연다. 실패해도 서버는 계속 돈다."""
     global _tts, _tts_err
     if _tts is not None or _tts_err:
         return _tts

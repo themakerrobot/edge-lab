@@ -8,7 +8,7 @@ $ErrorActionPreference = "Stop"
 $BASE   = Split-Path $PSScriptRoot -Parent   # 프로젝트 루트 (이 스크립트는 tools\ 안에 있다)
 Set-Location $BASE
 $MODELS = Join-Path $BASE "models"
-foreach ($d in "org","vlm","object","face","gan","code","stt","tts") {
+foreach ($d in "org","vlm","object","face","gan","code") {
   New-Item -ItemType Directory -Force -Path (Join-Path $MODELS $d) | Out-Null
 }
 
@@ -58,15 +58,11 @@ New-Item -ItemType Directory -Force -Path $mpDir | Out-Null
 Invoke-WebRequest -Uri "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task" -OutFile (Join-Path $mpDir "face_landmarker.task")
 Invoke-WebRequest -Uri "https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/latest/gesture_recognizer.task" -OutFile (Join-Path $mpDir "gesture_recognizer.task")
 
-Write-Host "=== [6/7] speech models (STT / TTS) ===" -ForegroundColor Cyan
-# 이미 변환된 것을 그대로 쓴다 (직접 변환할 필요 없음)
-& hf download OpenVINO/whisper-small-int8-ov --local-dir (Join-Path $MODELS "stt")
-if ($LASTEXITCODE -ne 0) { throw "STT download failed" }
-# 서버가 실제로 쓰는 음성 인식은 SenseVoice(models/stt-sv, 파이보 · 파이브레인과 같은 파일). 위 Whisper 는 VAPI_STT=whisper 용
+Write-Host "=== [6/7] speech models (STT) ===" -ForegroundColor Cyan
+# 음성 인식 SenseVoice — 원본은 파이보 · 파이브레인과 같은 leeyunjai/themaker .model/stt → models/stt-sv (HF 에 같이 올라간다)
 python tools\fetch_stt.py
 if ($LASTEXITCODE -ne 0) { throw "STT (SenseVoice) download failed" }
-& hf download Supertone/supertonic-3 --local-dir (Join-Path $MODELS "tts")
-if ($LASTEXITCODE -ne 0) { throw "TTS download failed" }
+# 읽어 주기 models/tts-int8 (Supertonic int8) 은 여기서 만들지 않는다 — HF 에 있는 것을 그대로 쓴다(바꾼 곳은 MODIFICATIONS.md)
 
 Write-Host "=== [7/7] easyocr + offline check ===" -ForegroundColor Cyan
 @'
@@ -88,11 +84,9 @@ print("devices:", core.available_devices)  # expect CPU / GPU / NPU
 models = Path("models")
 targets = list(models.rglob("*.xml")) + list(models.glob("gan/*.onnx"))
 fails = 0
-for name in ["duration_predictor.onnx", "text_encoder.onnx",
-             "vector_estimator.onnx", "vocoder.onnx",
-             "tts.json", "unicode_indexer.json"]:
-    if not (models / "tts/onnx" / name).exists():
-        fails += 1; print("FAIL models/tts/onnx/" + name, "| missing")
+for name in ["model.int8.onnx", "tokens.txt", "silero_vad.onnx"]:
+    if not (models / "stt-sv" / name).exists():
+        fails += 1; print("FAIL models/stt-sv/" + name, "| missing")
 for m in targets:
     try:
         core.read_model(m); print("OK ", m)
