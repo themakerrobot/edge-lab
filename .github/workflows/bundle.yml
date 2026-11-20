@@ -1,0 +1,140 @@
+name: bundle
+
+# 배포판 자동 만들기 — 릴리즈를 발행(published)하면 Windows 러너가
+#   1) 모델 받기 (tools/fetch_models.py — 설치 setup_deploy.ps1 과 같은 것)
+#   2) 배포판 만들기 (tools\make_bundle.bat — 사람이 돌리던 것 그대로)
+#   3) 새 곳(한글 · 공백이 든 폴더)에 풀고 인터넷을 막은 채 bundle_check.bat (모델 열기 · 서버 · 전 기능)
+#   4) 허깅페이스 모델 저장소의 release/ 에 올리기 (tools/upload_release.py)
+#   5) 릴리즈 노트에 받는 링크 · sha256
+# GitHub 릴리즈는 파일 하나가 2GiB 까지라 zip(VLM 포함 5GB 남짓)은 허깅페이스에 둔다.
+# 필요한 것: 저장소 Secret HF_TOKEN — 허깅페이스 쓰기 토큰 (Settings → Secrets and variables → Actions)
+# 손으로 돌리기: Actions → bundle → Run workflow. release 를 비우면 만들고 시험만 한다(올리지 않는다).
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release:
+        description: "이 릴리즈 태그(예 v1.0.0)로 만들어 허깅페이스에 올리고 노트에 링크. 비우면 만들고 시험만"
+        type: string
+        default: ""
+
+permissions:
+  contents: write          # 릴리즈 노트에 링크를 적는다
+
+concurrency:
+  group: bundle-${{ github.event.release.tag_name || inputs.release || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  bundle:
+    runs-on: windows-latest
+    timeout-minutes: 180
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.release }}
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.release || github.ref }}
+
+      - name: 디스크 — 모델 · 빌드 · zip 은 가장 넉넉한 드라이브에
+        # 모델 4.6GB + 빌드 폴더 + zip 5GB 남짓 + 시험으로 푼 것 — 작업 드라이브 하나로는 빠듯할 수 있다
+        run: |
+          Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Free } |
+            Format-Table Name, @{ n = 'FreeGB'; e = { [math]::Round($_.Free / 1GB, 1) } } -AutoSize
+          $d = Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Free } | Sort-Object Free -Descending | Select-Object -First 1
+          $base = Join-Path $d.Root "el"
+          foreach ($n in "models", "build", "dist") {
+            New-Item -ItemType Directory -Force (Join-Path $base $n) | Out-Null
+            if (Test-Path $n) { Remove-Item -Recurse -Force $n }
+            New-Item -ItemType Junction -Path $n -Target (Join-Path $base $n) | Out-Null
+          }
+          "EL_BASE=$base" >> $env:GITHUB_ENV
+          if ($d.Free -lt 30GB) { Write-Warning ("가장 넉넉한 드라이브 {0}: 여유 {1:N1} GB (30GB 보다 적다)" -f $d.Name, ($d.Free / 1GB)) }
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"   # requirements.lock.txt 를 만든 버전 — make_bundle 이 같은 버전의 embeddable 을 받는다
+
+      - name: 받기 · 올리기에 쓰는 패키지
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $true
+          python -m pip install --upgrade pip
+          $pin = (Select-String -Path requirements.lock.txt -Pattern '^huggingface[-_]hub==').Line
+          python -m pip install ($pin ? $pin : "huggingface_hub")
+          $v = if ($env:TAG) { $env:TAG -replace '^v', '' } else { "test-" + $env:GITHUB_SHA.Substring(0, 7) }
+          "VER=$v" >> $env:GITHUB_ENV
+          "SLUG=$(python -c 'import brand;print(brand.SLUG)')" >> $env:GITHUB_ENV
+
+      - name: 배포 점검 (번들 목록 · 셸 · 설치 스크립트 · 이름)
+        run: python tools/release_check.py
+
+      - name: 모델 받기
+        env:
+          HFT: ${{ secrets.HF_TOKEN }}
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $true
+          if ($env:HFT) { $env:HF_TOKEN = $env:HFT }     # 공개 저장소라 없어도 받는다
+          python tools/fetch_models.py
+
+      - name: 배포판 만들기 (tools\make_bundle.bat)
+        shell: cmd
+        run: call tools\make_bundle.bat %VER% < nul
+
+      - name: 크기 · 정리
+        run: |
+          $zip = Get-ChildItem "dist\$env:SLUG-$env:VER.zip" -ErrorAction Stop
+          "ZIP=$($zip.FullName)" >> $env:GITHUB_ENV
+          $line = "{0}  {1:N0} MB" -f $zip.Name, ($zip.Length / 1MB)
+          $line
+          "## 배포판`n``$line``" >> $env:GITHUB_STEP_SUMMARY
+          # 시험할 자리를 비운다 — 빌드 폴더와 받은 모델은 이제 zip 안에 있다
+          Remove-Item -Recurse -Force build\* , models\* -ErrorAction SilentlyContinue
+
+      - name: 시험 — 한글 · 공백 폴더에 풀고, 인터넷을 막고 bundle_check.bat
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $true
+          $where = Join-Path $env:EL_BASE "바탕 화면"
+          7z x -bso0 -bsp0 $env:ZIP "-o$where"
+          $bundle = Join-Path $where $env:SLUG
+          # 밖으로 나가는 길을 다 막는다 — 허깅페이스 · 프록시를 따르는 HTTP(S)
+          $env:HF_HUB_OFFLINE = "1"
+          $env:HTTP_PROXY = "http://127.0.0.1:9"
+          $env:HTTPS_PROXY = "http://127.0.0.1:9"
+          $env:NO_PROXY = "127.0.0.1,localhost"
+          Push-Location $bundle
+          $PSNativeCommandUseErrorActionPreference = $false
+          cmd /c "bundle_check.bat < nul"
+          $rc = $LASTEXITCODE
+          Pop-Location
+          Remove-Item -Recurse -Force $where -ErrorAction SilentlyContinue
+          if ($rc -ne 0) { Write-Error "bundle_check.bat 실패 ($rc)"; exit 1 }
+
+      - name: 허깅페이스 release/ 에 올리기
+        if: env.TAG != ''
+        env:
+          HFT: ${{ secrets.HF_TOKEN }}
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $true
+          if (-not $env:HFT) { Write-Error "저장소 Secret HF_TOKEN(허깅페이스 쓰기 토큰)이 없어요"; exit 1 }
+          $env:HF_TOKEN = $env:HFT
+          python tools/upload_release.py $env:ZIP --notes-out notes.md
+
+      - name: 릴리즈 노트에 받는 링크
+        if: env.TAG != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $true
+          $body = (gh release view $env:TAG --json body -q .body --repo "${{ github.repository }}") -join "`n"
+          # 다시 돌려도 링크가 두 번 붙지 않게 — 표시 사이를 바꾼다
+          $body = [regex]::Replace($body, '(?s)\s*<!-- bundle -->.*?<!-- /bundle -->', '')
+          $notes = Get-Content notes.md -Raw -Encoding utf8
+          ($body.TrimEnd() + "`n`n<!-- bundle -->`n" + $notes.TrimEnd() + "`n<!-- /bundle -->`n") |
+            Set-Content -Encoding utf8 body.md
+          gh release edit $env:TAG --notes-file body.md --repo "${{ github.repository }}"

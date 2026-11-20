@@ -46,17 +46,27 @@ powershell -ExecutionPolicy Bypass -File setup_deploy.ps1
 
 ## 배포판 만들고 올리기
 
-```
-tools\make_bundle.bat 1.0.0                 배포판 만들기 → dist\edge-lab-1.0.0.zip (파이썬 · 패키지 · 모델 포함, 압축 풀고 run.bat)
-venv\Scripts\python tools\upload_release.py   허깅페이스에 올리기 (dist\ 의 가장 새 zip)
-```
+**자동 (기본)** — GitHub 에서 릴리즈를 발행하면(`v1.0.0` 같은 태그) Actions 의 `bundle` 이 알아서 한다 (`.github/workflows/bundle.yml`).
 
-- 만든 **번들 zip 하나만** 허깅페이스 `leeyunjai/edge-lab` 의 `release/` 에 올린다(저장소 이름은 `brand.json` 의 `repo_hf`). 같이 올라가는 것은 sha256 파일과 `release/latest.json`(가장 최근 버전 · 링크) 뿐이다
-- GitHub 릴리즈는 파일 하나가 2GiB 까지라 VLM 이 든 배포판(5GB 남짓)을 못 올린다. 허깅페이스 공개 저장소는 그런 제한이 없고 로그인 없이 링크로 받는다(이어받기 된다)
-- 처음 한 번 `venv\Scripts\hf auth login` 으로 **쓰기** 토큰을 넣는다(또는 환경변수 `HF_TOKEN`). `--dry-run` 을 붙이면 올리지 않고 할 일만 보인다
-- 다 올리면 받는 링크와 sha256, GitHub 릴리즈 노트에 붙일 글을 찍어 준다
-- `setup_deploy.ps1` 은 `release/` 를 받지 않는다 — 설치할 때 배포판 zip 까지 받지 않게
-- 시험 빌드는 올리지 않는다 — 큰 파일을 짧은 시간에 여러 번 올리면 허깅페이스가 막을 수 있다
+1. 모델 받기 — `tools/fetch_models.py` (설치 `setup_deploy.ps1` 과 같은 것)
+2. 배포판 만들기 — `tools\make_bundle.bat <버전>` (사람이 돌리던 것 그대로) → `edge-lab-<버전>.zip` (파이썬 · 패키지 · 모델 포함)
+3. 시험 — 한글 · 공백이 든 폴더에 풀고 인터넷을 막은 채 `bundle_check.bat` (모델 열기 · 서버 · 전 기능)
+4. 허깅페이스 `leeyunjai/edge-lab` 의 `release/` 에 올리기 — `tools/upload_release.py` (저장소는 `brand.json` 의 `repo_hf`)
+5. 릴리즈 노트에 받는 링크 · sha256 을 적는다
+
+- 처음 한 번: 저장소 **Settings → Secrets and variables → Actions** 에 `HF_TOKEN`(허깅페이스 **쓰기** 토큰)을 넣는다
+- 올리지 않고 만들고 시험만: Actions → bundle → Run workflow, `release` 를 비운다
+- GitHub 릴리즈는 파일 하나가 2GiB 까지라 VLM 이 든 배포판(5GB 남짓)을 못 올린다 — 그래서 zip 은 허깅페이스에 두고 릴리즈에는 링크만. 허깅페이스 공개 저장소는 로그인 없이 링크로 받고 이어받기가 된다
+- 같이 올라가는 것은 sha256 파일과 `release/latest.json`(가장 최근 버전 · 링크) 뿐이다. `fetch_models.py` 는 `release/` 를 받지 않는다 — 설치할 때 배포판 zip 까지 받지 않게
+- 큰 파일을 짧은 시간에 여러 번 올리면 허깅페이스가 막을 수 있다 — 릴리즈를 자주 다시 발행하지 않는다
+
+**손으로** (Actions 없이, 개발 PC 에서)
+
+```
+tools\make_bundle.bat 1.0.0                    배포판 만들기 → dist\edge-lab-1.0.0.zip
+venv\Scripts\hf auth login                     처음 한 번 — 허깅페이스 쓰기 토큰
+venv\Scripts\python tools\upload_release.py    올리기 (--dry-run 이면 할 일만 보인다)
+```
 
 ## 패키지 버전
 | 파일 | 내용 |

@@ -49,6 +49,7 @@ def main():
     ap = argparse.ArgumentParser(description="make_bundle 이 만든 배포판 zip 을 허깅페이스 release/ 에 올린다")
     ap.add_argument("zip", nargs="?", help="올릴 zip (생략하면 dist\\ 의 가장 새 것)")
     ap.add_argument("--dry-run", action="store_true", help="올리지 않고 할 일만 보인다")
+    ap.add_argument("--notes-out", help="GitHub 릴리즈 노트에 붙일 글을 이 파일에 쓴다 (자동 만들기가 쓴다)")
     a = ap.parse_args()
 
     path = a.zip or newest_zip()
@@ -101,12 +102,15 @@ def main():
                            path_or_fileobj=json.dumps(latest, ensure_ascii=False, indent=2).encode("utf-8")),
     ])
 
+    notes = ("**다운로드**: [%s](%s) (%.1f GB)  \n"
+             "sha256: `%s`  \n"
+             "압축을 풀고 run.bat 을 두 번 누르면 됩니다. 점검은 bundle_check.bat\n") % (name, url, size / 1e9, digest)
     print("\n다 올렸어요.")
     print("받는 링크  " + url)
-    print("\nGitHub 릴리즈 노트에 붙일 글:\n")
-    print("**다운로드**: [%s](%s) (%.1f GB)  " % (name, url, size / 1e9))
-    print("sha256: `%s`  " % digest)
-    print("압축을 풀고 run.bat 을 두 번 누르면 됩니다. 점검은 bundle_check.bat")
+    print("\nGitHub 릴리즈 노트에 붙일 글:\n\n" + notes)
+    if a.notes_out:
+        with open(a.notes_out, "w", encoding="utf-8", newline="\n") as f:
+            f.write(notes)
     return 0
 
 

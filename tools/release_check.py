@@ -189,14 +189,19 @@ def check_models():
     need = need_models()
     if not need:
         fail("tools/check.py 에서 NEED 목록을 찾지 못했어요")
-    ps1, sh, deploy = read("tools/setup.ps1"), read("tools/setup.sh"), read("setup_deploy.ps1")
-    ign = re.search(r"ignore_patterns=\[([^\]]*)\]", deploy)
-    ignore = re.findall(r"'([^']+)'", ign.group(1)) if ign else []
+    ps1, sh = read("tools/setup.ps1"), read("tools/setup.sh")
+    fm = read("tools/fetch_models.py")
+    ign = re.search(r"IGNORE\s*=\s*\[([^\]]*)\]", fm)
+    ignore = re.findall(r'"([^"]+)"', ign.group(1)) if ign else []
+    if not ign:
+        fail("tools/fetch_models.py 에서 IGNORE 목록을 찾지 못했어요")
+    if "tools\\fetch_models.py" not in read("setup_deploy.ps1"):
+        fail("setup_deploy.ps1 이 tools\\fetch_models.py 로 모델을 받지 않음")
     for rel in need:
         stem = pathlib.Path(rel).stem
         top = rel.split("/")[0]
         if any(p.rstrip("*").rstrip("/") == top for p in ignore if p.endswith("/*")):
-            fail("setup_deploy.ps1 가 받지 않는 폴더의 필수 모델: models/" + rel)
+            fail("tools/fetch_models.py 가 받지 않는 폴더의 필수 모델: models/" + rel)
         if rel in MODEL_NOT_IN_SETUP:
             continue
         if stem not in ps1:
