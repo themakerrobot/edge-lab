@@ -16,6 +16,7 @@ tools/make_bundle.bat 와 tools/schema_test/run.py 가 이것을 먼저 돌린�
   5) 파이썬 코드가 쓰는 바깥 패키지가 requirements.txt · requirements.lock.txt 에 다 있나
   4-1) 코딩 실습 노트북이 부르는 모델(models/... 경로)이 받기 · 번들에서 빠지지 않고, tools/check.py 가 보고,
      00_start 의 모델 점검 목록에 있나 · 한국어/영어 노트북이 같은 모델을 쓰나
+     tools/hf/README.md (허깅페이스 저장소 설명) 폴더 표가 그 폴더들을 다 담나
   6) 제품 이름이 brand.json 한 곳에만 있나 — 코드에 이름을 직접 쓰면 FAIL, 문서 · lib/brand.js 가
      brand.json 과 맞는지(tools/rename_brand.py --check), 모든 화면이 lib/brand.js 를 먼저 읽는지
 """
@@ -322,6 +323,12 @@ def check_notebook_models():
                 continue
             if not any(l == rel or rel.startswith(l + "/") or l.startswith(rel + "/") for l in lst):
                 fail("notebooks/%s00_start.ipynb 모델 점검 목록에 없음: models/%s" % (lang, rel))
+    # 허깅페이스 저장소 설명(tools/hf/README.md → Actions hf-models)의 폴더 표가 쓰는 폴더를 다 담나
+    hf = read("tools/hf/README.md")
+    tops = {r.split("/")[0] for r in list(used) + need_models()} | {"stt-sv", "tts-int8"}
+    for top in sorted(tops - {"easydetect"}):
+        if "`%s/`" % top not in hf:
+            fail("tools/hf/README.md 폴더 표에 없음: %s/ (고친 뒤 Actions hf-models → readme)" % top)
     return len(used)
 
 

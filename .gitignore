@@ -52,3 +52,5 @@ portable.txt
 # 코딩 실습 노트북 자동 저장본
 .ipynb_checkpoints/
 bundle_check_server.log
+# tools/depth_check.py 가 만드는 결과 그림
+depth_check.jpg

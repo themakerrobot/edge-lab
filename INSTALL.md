@@ -216,5 +216,7 @@ python tools\check.py                                 # fail = 0 이어야 함
 | `release/` | 빠짐 | 배포판 zip (`tools/upload_release.py`) |
 | `*.md` | 빠짐 | 저장소 설명 |
 
+허깅페이스 저장소 설명(README)의 원본은 `tools/hf/README.md` 다 — 폴더를 바꾸면 고치고 Actions `hf-models` → readme 로 올린다.
+
 빼는 것은 `tools/fetch_models.py` 의 `IGNORE` 로 정한다 (설치 `setup_deploy.ps1` 과 배포판 자동 만들기가 같이 쓴다).
 `tools/release_check.py` 가 `check.py` 가 찾는 모델이 이 목록에 걸리지 않는지 본다.

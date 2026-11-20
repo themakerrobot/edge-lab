@@ -1,11 +1,17 @@
 name: hf-models
 
-# 음성 인식 모델(SenseVoice int8)을 허깅페이스 모델 저장소(brand.json 의 repo_hf)의 stt-sv/ 에 올린다.
-# 원본은 leeyunjai/themaker .model/stt (tools/fetch_stt.py 가 받는다). 올린 뒤 sha256 이 같은지 본다.
+# 허깅페이스 모델 저장소(brand.json 의 repo_hf)에 올린다. 올린 뒤 sha256 이 같은지 본다.
+#   readme  저장소 설명 — tools/hf/README.md → README.md (폴더 · 라이선스 표. 폴더를 바꾸면 같이 고친다)
+#   stt-sv  음성 인식 SenseVoice int8 — 원본 leeyunjai/themaker .model/stt (tools/fetch_stt.py 가 받는다) → stt-sv/
 # 필요한 것: 저장소 Secret HF_TOKEN — 허깅페이스 쓰기 토큰. 손으로 돌리기: Actions → hf-models → Run workflow
 
 on:
   workflow_dispatch:
+    inputs:
+      what:
+        description: "올릴 것"
+        type: choice
+        options: [readme, stt-sv]
 
 permissions:
   contents: read
@@ -24,28 +30,33 @@ jobs:
       - name: 받기
         run: |
           pip install "$(grep -E '^huggingface[-_]hub==' requirements.lock.txt || echo huggingface_hub)"
-          python tools/fetch_stt.py
+          if [ "${{ inputs.what }}" = "stt-sv" ]; then python tools/fetch_stt.py; fi
 
       - name: 올리기 · 확인
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          WHAT: ${{ inputs.what }}
         run: |
           test -n "$HF_TOKEN" || { echo "저장소 Secret HF_TOKEN 이 없어요"; exit 1; }
           python - <<'PY'
-          import hashlib, pathlib
+          import hashlib, os, pathlib
           import brand
           from huggingface_hub import CommitOperationAdd, HfApi
-          src, dst = pathlib.Path("models/stt-sv"), "stt-sv"
-          files = ["model.int8.onnx", "tokens.txt", "silero_vad.onnx", "LICENSE-SenseVoice.txt"]
-          sha = {f: hashlib.sha256((src / f).read_bytes()).hexdigest() for f in files}
+          if os.environ["WHAT"] == "readme":
+              pairs = {"README.md": pathlib.Path("tools/hf/README.md")}
+              msg = "README: 폴더 · 라이선스 표"
+          else:
+              src = pathlib.Path("models/stt-sv")
+              pairs = {"stt-sv/" + f: src / f for f in ("model.int8.onnx", "tokens.txt", "silero_vad.onnx", "LICENSE-SenseVoice.txt")}
+              msg = "stt-sv: SenseVoice int8 (leeyunjai/themaker .model/stt)"
+          sha = {k: hashlib.sha256(v.read_bytes()).hexdigest() for k, v in pairs.items()}
           api = HfApi()
-          api.create_commit(repo_id=brand.REPO_HF, commit_message="stt-sv: SenseVoice int8 (leeyunjai/themaker .model/stt)",
-                            operations=[CommitOperationAdd(path_in_repo=f"{dst}/{f}", path_or_fileobj=str(src / f)) for f in files])
+          api.create_commit(repo_id=brand.REPO_HF, commit_message=msg,
+                            operations=[CommitOperationAdd(path_in_repo=k, path_or_fileobj=str(v)) for k, v in pairs.items()])
           bad = 0
-          for p in api.get_paths_info(brand.REPO_HF, [f"{dst}/{f}" for f in files]):
-              f = p.path.split("/", 1)[1]
-              got = p.lfs.sha256 if p.lfs else hashlib.sha256(open(api.hf_hub_download(brand.REPO_HF, p.path), "rb").read()).hexdigest()
-              bad += got != sha[f]
-              print("OK  " if got == sha[f] else "FAIL", p.path, sha[f])
+          for k in pairs:
+              got = hashlib.sha256(open(api.hf_hub_download(brand.REPO_HF, k, force_download=True), "rb").read()).hexdigest()
+              bad += got != sha[k]
+              print("OK  " if got == sha[k] else "FAIL", k, sha[k])
           raise SystemExit(bad)
           PY
