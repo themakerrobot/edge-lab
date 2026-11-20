@@ -3,7 +3,8 @@
 
 - POST /pycode/run        {code}      -> {sid}   학생 코드를 로컬 프로세스로 실행
 - POST /pycode/stop       {sid}                  실행 중지
-- GET  /pycode/output     ?sid&pos    -> {text, done, exit}  출력 폴링
+- GET  /pycode/output     ?sid&pos    -> {text, done, exit, error}  출력 폴링
+                                      error: 멈췄을 때 무슨 오류인지 (pyrunner.py 가 남긴 것 — 화면이 오류 코드로 바꾼다)
 - POST /pycode/save       {name, code}
 - GET  /pycode/works                  -> 저장 목록
 - GET  /pycode/work       ?name       -> {name, code}
@@ -13,6 +14,7 @@
 프로젝트 루트를 PYTHONPATH 에 넣어 `from themaker import *` 가 되게 한다.
 cv2.imshow 창도 로컬이라 그대로 뜬다. input() 은 지원하지 않는다.
 """
+import json
 import os
 import sys
 import time
@@ -63,9 +65,22 @@ def _reader(sid, proc):
         pass
     finally:
         code = proc.wait()
+        err = None
+        with _lock:
+            s = _sessions.get(sid)
+            path = s and s.get("file")
+        if code and path:                       # 멈춘 이유 — pyrunner.py 가 run_xxx.err.json 에 남긴다
+            ep = os.path.splitext(path)[0] + ".err.json"
+            try:
+                with open(ep, encoding="utf-8") as f:
+                    err = json.load(f)
+                os.remove(ep)
+            except (OSError, ValueError):
+                err = None
         with _lock:
             s = _sessions.get(sid)
             if s is not None:
+                s["error"] = err
                 s["done"] = True
                 s["exit"] = code
 
@@ -107,7 +122,7 @@ def pycode_run(code: str = Body(..., embed=True), lang: str = "ko"):
         kw["preexec_fn"] = os.setsid
 
     proc = subprocess.Popen(
-        [sys.executable, str(path)],
+        [sys.executable, str(ROOT / "pyrunner.py"), str(path)],     # 멈추면 오류를 정리해 남긴다
         cwd=str(WORK_DIR), env=env,
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
         stdin=subprocess.DEVNULL, **kw)
@@ -167,12 +182,13 @@ def pycode_output(sid: str = Query(...), pos: int = Query(0)):
             return _fail("no such session")
         buf = s["buf"]
         done, code, stopped = s["done"], s["exit"], s.get("stopped", False)
+        error = s.get("error") if done and not stopped else None
     pos = max(0, min(pos, len(buf)))
     with _lock:
         s2 = _sessions.get(sid) or {}
         seq, cap = s2.get("seq", 0), s2.get("caption", "")
     return _ok({"text": buf[pos:], "pos": len(buf), "done": done, "exit": code,
-                "stopped": stopped, "seq": seq, "caption": cap})
+                "stopped": stopped, "seq": seq, "caption": cap, "error": error})
 
 
 # ---------------------------------------------------------------- 화면(그림) 보기

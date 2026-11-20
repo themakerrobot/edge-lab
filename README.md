@@ -50,6 +50,7 @@ Intel AI PC의 CPU·GPU·NPU에 일을 나눠 실행합니다. 클라우드도, 
 ### 파이썬 — 한 줄이면 돼요
 
 `themaker` 라이브러리로 AI를 부릅니다. 예제 16종과 도움말, 자동완성이 함께 있습니다.
+오류가 나면 Traceback 대신 **오류 코드 · 몇 번째 줄 · 해 볼 것**을 보여 줍니다(블록도 같아요 — [사용 설명서](docs/MANUAL.md)의 오류 코드 표).
 
 ```python
 from themaker import *
@@ -271,6 +272,7 @@ See **what your blocks look like as Python** side by side, and carry it straight
 ### Python — one line is enough
 
 Call the AI through the `themaker` library. 16 examples, built-in help and autocomplete come with it.
+When something goes wrong it shows **an error code · the line · what to try** instead of a Traceback (Blocks too — see the error code table in the [user guide](docs/MANUAL.md)).
 
 ```python
 from themaker import *

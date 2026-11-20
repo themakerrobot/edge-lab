@@ -18,6 +18,7 @@
 | `modelfile.py` | 모델 파일을 바이트로 읽기 — MediaPipe 에 경로를 넘기면 한글 폴더에서 서버가 죽는다 |
 | `stats_routes.py` | 사용 통계 수집 |
 | `code_routes.py` | 파이썬 IDE API — 실행·정지·출력·작품 저장 |
+| `pyrunner.py` | 학생 파이썬 실행기 — 그대로 실행하고, 멈추면 예외 종류 · 줄 · 원래 Traceback 을 `run_xxx.err.json` 에 남긴다(→ `/pycode/output` 의 `error`) |
 | `speech_routes.py` | 음성 인식(STT)·음성 합성(TTS) API |
 | `brand.py` · `brand.json` | 제품 이름 한 곳 — 화면 이름 · 한국어 이름 · 부제 · 파일 이름 · 작업 폴더 · 앱데이터 폴더 · 저장소 주소. 아래 "제품 이름" 절 |
 | `hub.py` | 실행 중인 main 모듈·엔진 찾기 (`import main` 은 금물 — main.py 가 다시 실행된다) |
@@ -127,6 +128,21 @@
 
 - **예전 모델(TF.js zip)** 은 서버에서 계속 추론한다(`LegacyHead` · `_legacy_*` — MobileNetV2 1280(`models/backbone`) · 화면 좌표 손 · easydetect 몸). 가르치기 화면으로 다시 불러오기는 안 된다(다시 가르치라고 안내). 예전 작품(v2 이하)은 클래스 이름만 가져온다
 - 모델 파일 넷(임베더 · 손 · 얼굴 · 자세)은 허깅페이스 `mediapipe/` → `models/mediapipe/`. 허깅페이스에 올리는 것은 Actions `hf-models`
+
+## 오류 코드 — 파이썬 · 블록 (261120)
+
+멈췄을 때 Traceback 을 그대로 보이지 않고 **코드 · 쉬운 설명 · 줄 · 해 볼 것** 카드를 보인다. 목록과 글(한/영)은 `view_project/lib/errcodes.js` 한 곳.
+
+| 접두 | 어디서 | 가르는 법 |
+|---|---|---|
+| `PY-` | 파이썬 문법 · 실행 | `pyrunner.py` 가 남긴 예외 종류(`NameError` → `PY-NAME`) · 윈도우 종료 코드(메모리) |
+| `TM-` | themaker 명령 | `TheMakerError(msg, code="TM-…")` — 새 `raise` 에는 반드시 code 를 단다 |
+| `BK-` | 블록 | 블록 화면이 `throw fail("m_…")` 로 던진 키(`BK_KEY`) · 자바스크립트 오류 종류(`BK-BLOCK`) · 서버 연결 실패 |
+
+- 파이썬: 서버는 종류 · 메시지 · 줄 · 그 줄 코드 · 원래 Traceback(실행기 · runpy 줄과 서버 경로는 뺀다)만 넘기고, 화면이 글을 만든다. 오류 줄은 편집기에 빨갛게, 카드의 [N번째 줄] 은 그 줄로 이동
+- 블록: 멈춘 블록(`RT.step` 이 기억한 `RT._cur`)에 경고 표시(`setWarningText`) · 기록 탭에 카드
+- 두 화면 모두 결과 칸 제목 옆 상태 칩 — 실행 중(경과) · 끝남(걸린 시간) · 오류(코드) · 정지 (파이보 IDE 와 같은 뜻)
+- 코드를 더하면 `docs/MANUAL.md` 오류 코드 표(한/영)도 고친다 — `release_check` 가 themaker 코드 · 블록 키 · 설명서 표 · `pyrunner.py` 번들 포함을 본다
 
 ## 화면 다듬기 (261119) — 모든 화면 공통 규칙
 

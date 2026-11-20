@@ -155,6 +155,20 @@
     }
     #output .err { color: #ff9a9a; }
     #output .sys { color: #8fd0a8; }
+    #output.has-error { box-shadow: inset 0 0 0 2px #e5484d; }
+    #output .el-err { white-space: normal; word-break: normal; }
+    /* 실행 상태 칩 — 실행 중(경과 시간) · 끝남(걸린 시간) · 오류(코드) · 정지 (파이보 IDE 와 같은 뜻) */
+    .runchip { margin-left: 10px; padding: 2px 10px; border-radius: 999px; font-size: .8rem; font-weight: 700;
+               font-family: Menlo, Consolas, ui-monospace, monospace; border: 1.5px solid currentColor; white-space: nowrap; }
+    .runchip[hidden] { display: none; }
+    .runchip.running { color: #1f6feb; animation: chipBlink 1.2s ease-in-out infinite; }
+    .runchip.done { color: #1a7f37; }
+    .runchip.error { color: #fff; background: #e5484d; border-color: #e5484d; }
+    .runchip.stopped { color: #6e7781; }
+    @keyframes chipBlink { 50% { opacity: .55; } }
+    @media (prefers-reduced-motion: reduce) { .runchip.running { animation: none; } }
+    .CodeMirror .el-errline { background: #ffe3e0; }
+    .CodeMirror .el-errgutter { color: #e5484d; font-weight: 700; }
     .hintline { margin: 0 12px 10px; color: var(--ink-2); font-size: .84rem; }
 
     /* ===== 예제/가이드 모달 ===== */
@@ -228,7 +242,7 @@
     <!-- 출력 -->
     <div class="panel out-panel" data-min="300">
       <div class="panel-head">
-        <div class="q"><span class="qnum">2</span><span class="qtext" id="txtOutHead">결과를 확인해요</span></div>
+        <div class="q"><span class="qnum">2</span><span class="qtext" id="txtOutHead">결과를 확인해요</span><span class="runchip" id="runChip" hidden></span></div>
         <div class="ph-tools">
           <button id="exampleButton">예제</button>
           <button id="guideButton">가이드</button>
@@ -290,6 +304,7 @@
   <script src="/lib/cm/matchbrackets.js"></script>
   <script src="/lib/cm/closebrackets.js"></script>
   <script src="/lib/cm/show-hint.js"></script>
+  <script src="/lib/errcodes.js"></script>
   <script>
     /* =============================== 한/영 사전 =============================== */
     const DICT = {
@@ -321,7 +336,7 @@
         waitYolo: "[모델 파일을 읽는 중이에요. 처음 한 번만 걸려요]",
         noWorks: "저장된 작품이 없어요.", started: "[실행 시작]",
         finished: "[끝났어요 · 코드 ", okEnd: "[끝났어요]", stopped: "[정지했어요]",
-        memEnd: "[프로그램이 갑자기 멈췄어요]",
+        memEnd: "[프로그램이 갑자기 멈췄어요]", errEnd: "[오류로 멈췄어요]", stErr: "오류", secUnit: "초",
         confirmReplace: "지금 코드가 지워져요. 예제를 불러올까요?",
       },
       en: {
@@ -352,7 +367,7 @@
         waitYolo: "[reading the model file - only the first time]",
         noWorks: "No saved works yet.", started: "[started]",
         finished: "[finished · exit ", okEnd: "[finished]", stopped: "[stopped]",
-        memEnd: "[the program crashed]",
+        memEnd: "[the program crashed]", errEnd: "[stopped by an error]", stErr: "error", secUnit: "s",
         confirmReplace: "This will replace your current code. Load the example?",
       },
     };
@@ -407,7 +422,7 @@ show(img, r)                # show the result (boxes are drawn)
     } catch (e) {}
     cm.setValue(startCode || localStorage.getItem("pycode-draft") || START_CODE);
 
-      cm.on("change", () => localStorage.setItem("pycode-draft", cm.getValue()));
+    cm.on("change", () => { localStorage.setItem("pycode-draft", cm.getValue()); clearErrLine(); });
 
     /* =============================== 실행/중지 =============================== */
     const out = document.getElementById("output");
@@ -426,9 +441,29 @@ show(img, r)                # show the result (boxes are drawn)
       const stEl = document.getElementById("runState");
       if (stEl) stEl.textContent = t(key);
       const running = key === "stRun";
+      paintChip(key);
       document.getElementById("runButton").disabled = running;
       document.body.classList.toggle("running", running);
       document.getElementById("runLabel").textContent = running ? t("running") : t("run");
+    }
+
+    let LAST_ERR = "";                   // 마지막 오류 코드 — 상태 칩에 쓴다
+    /* 결과 칸 제목 옆 상태 칩 — 실행 중 00:03 · 끝남 · 3초 · 오류 PY-NAME · 정지됨 */
+    let chipT0 = 0, chipTimer = null;
+    function paintChip(key) {
+      const c = document.getElementById("runChip");
+      if (!c) return;
+      clearInterval(chipTimer); chipTimer = null;
+      const mmss = s => String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+      const took = () => Math.max(1, Math.round((Date.now() - chipT0) / 1000));
+      c.hidden = key === "stReady";
+      if (key === "stRun") {
+        chipT0 = Date.now(); LAST_ERR = "";
+        const tick = () => { c.className = "runchip running"; c.textContent = t("stRun") + " " + mmss(Math.floor((Date.now() - chipT0) / 1000)); };
+        tick(); chipTimer = setInterval(tick, 1000);
+      } else if (key === "stDone") { c.className = "runchip done"; c.textContent = t("stDone") + " · " + took() + t("secUnit"); }
+      else if (key === "stErr") { c.className = "runchip error"; c.textContent = t("stErr") + (LAST_ERR ? " " + LAST_ERR : ""); }
+      else if (key === "stStop") { c.className = "runchip stopped"; c.textContent = t("stStop"); }
     }
 
     /* 소리·음성은 첫 호출에 모델을 여느라 시간이 걸린다 — 미리 알려 준다 */
@@ -442,6 +477,7 @@ show(img, r)                # show the result (boxes are drawn)
     async function run() {
       if (SID) return;
       out.textContent = ""; outPos = 0; lastSeq = 0;
+      out.classList.remove("has-error"); clearErrLine();
       document.getElementById("stageWrap").style.display = "none";
       print(t("started") + "\n", "sys");
       notePreload(cm.getValue());
@@ -494,6 +530,7 @@ show(img, r)                # show the result (boxes are drawn)
           SID = null;
           if (window.EL_WIN) { EL_WIN.useMedia("camera", false); EL_WIN.useMedia("mic", false); }
           if (j.data.stopped) { print("\n" + t("stopped") + "\n", "sys"); setState("stStop"); }
+          else if (j.data.error || isCrash(j.data.exit)) { showError(j.data.error, j.data.exit); setState("stErr"); }
           else { print("\n" + endMsg(j.data.exit) + "\n", "sys"); setState("stDone"); }
           /* 다른 창에 가 있는 동안 끝났으면 알린다 (lib/embed.js) */
           if (window.EL_WIN && EL_WIN.hidden)
@@ -503,6 +540,36 @@ show(img, r)                # show the result (boxes are drawn)
       } finally { polling = false; }
     }
 
+    /* 오류로 멈췄을 때 — Traceback 대신 오류 코드 · 쉬운 설명 · 몇 번째 줄 (lib/errcodes.js).
+       원래 Traceback 은 카드의 [원래 오류 보기] 안에 그대로 있다. */
+    let errMark = null;
+    function clearErrLine() {
+      if (errMark == null) return;
+      cm.removeLineClass(errMark, "background", "el-errline");
+      cm.removeLineClass(errMark, "gutter", "el-errgutter");
+      errMark = null;
+    }
+    function goLine(n) {
+      const ln = Math.max(0, Math.min(cm.lineCount() - 1, n - 1));
+      cm.focus(); cm.setCursor({ line: ln, ch: 0 }); cm.scrollIntoView({ line: ln, ch: 0 }, 80);
+    }
+    const isCrash = code => code === 3221225477 || code === 3221225725 || code === -1073741819 || code === -1073741571;
+    function showError(info, exit) {
+      const err = window.EL_ERR
+        ? EL_ERR.fromPython(Object.assign({ exit: exit }, info || {}), LANG)
+        : null;
+      out.classList.add("has-error");
+      if (!err) { print("\n" + ((info && info.raw) || endMsg(exit)) + "\n", "err"); return; }
+      print("\n" + t("errEnd") + "\n", "err");
+      out.appendChild(EL_ERR.card(err, LANG, goLine));
+      out.scrollTop = out.scrollHeight;
+      LAST_ERR = err.code;
+      if (err.line) {
+        clearErrLine();
+        errMark = cm.addLineClass(Math.max(0, err.line - 1), "background", "el-errline");
+        cm.addLineClass(errMark, "gutter", "el-errgutter");
+      }
+    }
     /* 윈도우 종료 코드는 그대로 보여주면 학생이 겁먹는다 — 뜻을 풀어 준다 */
     function endMsg(code) {
       if (code === 0) return t("okEnd");

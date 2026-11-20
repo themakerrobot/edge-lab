@@ -180,6 +180,16 @@
     .pane[hidden] { display: none; }
     #logBox { padding: 10px 12px; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6;
               color: #3a3a42; white-space: pre-wrap; max-height: 220px; overflow-y: auto; }
+    #logBox .el-err { white-space: normal; font-family: var(--font-ui); }
+    .runchip { margin-left: 10px; padding: 2px 10px; border-radius: 999px; font-size: .78rem; font-weight: 700;
+               font-family: var(--font-mono); border: 1.5px solid currentColor; white-space: nowrap; }
+    .runchip[hidden] { display: none; }
+    .runchip.running { color: #1f6feb; animation: chipBlink 1.2s ease-in-out infinite; }
+    .runchip.done { color: #1a7f37; }
+    .runchip.error { color: #fff; background: #e5484d; border-color: #e5484d; }
+    .runchip.stopped { color: #6e7781; }
+    @keyframes chipBlink { 50% { opacity: .55; } }
+    @media (prefers-reduced-motion: reduce) { .runchip.running { animation: none; } }
     #logBox:empty::before { content: "실행하면 진행 상황이 여기에 적혀요."; color: #8a8174; font-family: var(--font-ui); }
     html[lang="en"] #logBox:empty::before { content: "Run your blocks and progress shows up here."; }
     #varsBox { padding: 8px 12px; }
@@ -279,7 +289,7 @@
 
     <div class="stage-panel" data-min="360">
       <div class="panel-head">
-        <div class="q"><span class="qnum">2</span><span class="qtext" id="txtStageHead">결과를 확인해요</span></div>
+        <div class="q"><span class="qnum">2</span><span class="qtext" id="txtStageHead">결과를 확인해요</span><span class="runchip" id="runChip" hidden></span></div>
         <div class="stage-tools">
           <button id="exampleButton" class="btn-primary"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="lbl">예제</span></button>
           <button id="clearButton" class="btn-ghost"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg><span class="lbl">지우기</span></button>
@@ -697,7 +707,7 @@
       m_say: "말하기: ", m_show: "보여주기: ",
       m_needDetect: "먼저 인식 블록을 실행하세요.",
       m_noBlocks: "(블록이 없어요)", m_assembleFirst: "블록을 먼저 조립해 주세요.",
-      m_start: "실행 시작", m_done: "실행 완료", m_stopped: "정지했어요.", m_hiddenStop: "창을 내려서 멈췄어요.", m_error: "오류: ",
+      ch_run: "실행 중", ch_done: "끝남", ch_err: "오류", ch_stop: "정지됨", m_start: "실행 시작", m_done: "실행 완료", m_stopped: "정지했어요.", m_hiddenStop: "창을 내려서 멈췄어요.", m_error: "오류: ",
       m_loaded: "불러오기 완료: ", m_readFail: "파일을 읽을 수 없어요: ",
       newFile: "새 작품", savePrompt: "작품 이름을 정해 주세요",
       m_savedAs: "저장했어요: ", m_saveFail: "저장하지 못했어요: ",
@@ -1035,7 +1045,7 @@
       m_say: "say: ", m_show: "show: ",
       m_needDetect: "Run a detection block first.",
       m_noBlocks: "(no blocks yet)", m_assembleFirst: "Build some blocks first.",
-      m_start: "started", m_done: "finished", m_stopped: "stopped.", m_hiddenStop: "Stopped because the window was put away.", m_error: "error: ",
+      ch_run: "running", ch_done: "done", ch_err: "error", ch_stop: "stopped", m_start: "started", m_done: "finished", m_stopped: "stopped.", m_hiddenStop: "Stopped because the window was put away.", m_error: "error: ",
       m_loaded: "loaded: ", m_readFail: "Could not read the file: ",
       newFile: "new project", savePrompt: "Name this project",
       m_savedAs: "Saved: ", m_saveFail: "Could not save: ",
@@ -3756,15 +3766,15 @@ def texts_of(result):
      켜져 있다. 찍은 사진을 무대에 놓고, 실행이 끝나면 카메라를 끈다. */
   async function ensureCam() {
     if (cam.srcObject && cam.videoWidth) return;
-    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) throw t("m_noCam");
+    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) throw fail("m_noCam");
     if (!cam.srcObject) {
       try {
         cam.srcObject = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
-      } catch (e) { throw t("m_noCam"); }
+      } catch (e) { throw fail("m_noCam"); }
     }
     /* 첫 프레임이 올 때까지 — 안 기다리면 검은 사진이 찍힌다 */
     for (let i = 0; i < 40 && !cam.videoWidth; i++) await sleep(50);
-    if (!cam.videoWidth) throw t("m_camNotReady");
+    if (!cam.videoWidth) throw fail("m_camNotReady");
   }
   function stopCam() {
     const s = cam.srcObject;
@@ -3774,11 +3784,33 @@ def texts_of(result):
   }
   const LOG_MAX = 300;                     // 오래 도는 프로그램에서 기록이 끝없이 쌓이지 않게
   function log(msg) {
-    const lines = logBox.textContent ? logBox.textContent.split("\n") : [];
-    lines.push(String(msg));
-    if (lines.length > LOG_MAX) lines.splice(0, lines.length - LOG_MAX);
-    logBox.textContent = lines.join("\n");
+    const d = document.createElement("div");
+    d.textContent = String(msg);
+    logBox.appendChild(d);
+    while (logBox.childElementCount > LOG_MAX) logBox.removeChild(logBox.firstElementChild);
     logBox.scrollTop = logBox.scrollHeight;
+  }
+  /* 블록이 던지는 오류 — 화면 말 + 키. 키로 오류 코드(BK-…)를 고른다 (lib/errcodes.js) */
+  function fail(key, extra) {
+    const e = new Error(t(key) + (extra != null ? String(extra) : ""));
+    e.elKey = key;
+    return e;
+  }
+  /* 실행 상태 칩 — 실행 중 00:03 · 끝남 · 3초 · 오류 BK-CAM · 정지됨 (파이썬 화면 · 파이보 IDE 와 같은 뜻) */
+  let chipT0 = 0, chipTimer = null;
+  function paintChip(kind, code) {
+    const c = document.getElementById("runChip");
+    if (!c) return;
+    clearInterval(chipTimer); chipTimer = null;
+    const mmss = s => String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+    c.hidden = false;
+    if (kind === "running") {
+      chipT0 = Date.now();
+      const tick = () => { c.className = "runchip running"; c.textContent = t("ch_run") + " " + mmss(Math.floor((Date.now() - chipT0) / 1000)); };
+      tick(); chipTimer = setInterval(tick, 1000);
+    } else if (kind === "done") { c.className = "runchip done"; c.textContent = t("ch_done") + " · " + Math.max(1, Math.round((Date.now() - chipT0) / 1000)) + t("m_sec"); }
+    else if (kind === "error") { c.className = "runchip error"; c.textContent = t("ch_err") + (code ? " " + code : ""); }
+    else { c.className = "runchip stopped"; c.textContent = t("ch_stop"); }
   }
 
   /* ---------------- 업로드 사진 ---------------- */
@@ -3882,7 +3914,7 @@ def texts_of(result):
     });
   }
   async function post(path, imgURL, params) {
-    if (!imgURL) throw t("m_noImage");
+    if (!imgURL) throw fail("m_noImage");
     await RT.aiGate();                       // 최소 간격 + 정지 확인
     AI.lastImg = imgURL;
     AI.lastDim = await dims(imgURL);
@@ -3903,7 +3935,7 @@ def texts_of(result):
     }
     devIdle();
     const j = await res.json();
-    if (j.result !== "ok") throw t("m_aiError") + (j.data || t("m_fail"));
+    if (j.result !== "ok") throw fail("m_aiError", (j.data || t("m_fail")));
     RT.lastElapsed = j.elapsed_ms || 0;
     devReport(j.device, j.elapsed_ms || 0);   // 서버가 보고한 실제 실행 디바이스
     return j.data;
@@ -3998,11 +4030,11 @@ def texts_of(result):
       return url;
     },
     uploaded() {
-      if (!uploadedURL) throw t("m_needUpload");
+      if (!uploadedURL) throw fail("m_needUpload");
       return uploadedURL;
     },
     async detectFile(img, name) {
-      if (!name) throw t("m_noFile");
+      if (!name) throw fail("m_noFile");
       const d = await post("object/detect_file", img, { model: name });
       const objs = (d && d.object) || [];
       AI._setBoxes(img, objs.map(o => ({ box: o.box, label: o.name })), COLOR.custom);
@@ -4011,7 +4043,7 @@ def texts_of(result):
     /* ---- 결과 블록: 찾은 것을 같은 모양({name, score %, x, y, w, h, box, name_en})의 목록으로 ---- */
     async result(img, kind) {
       const ep = RES_EP[kind];
-      if (!ep) throw t("m_aiError") + kind;
+      if (!ep) throw fail("m_aiError", kind);
       const d = await post(ep, img, RES_PARAMS[kind]);
       const rows = RES.list(d, kind, false);
       AI._setBoxes(img, rows.filter(o => o.w > 0).map(o => ({ box: o.box, label: o.name })),
@@ -4019,18 +4051,18 @@ def texts_of(result):
       return rows;
     },
     async resultCustom(img, slug) {
-      if (!slug) throw t("m_noCustom");
+      if (!slug) throw fail("m_noCustom");
       return RES.list(await post("custom/predict", img, { model: slug }), "custom", true);
     },
     async resultFile(img, name) {
-      if (!name) throw t("m_noFile");
+      if (!name) throw fail("m_noFile");
       const rows = RES.list(await post("object/detect_file", img, { model: name }), "file", false);
       AI._setBoxes(img, rows.map(o => ({ box: o.box, label: o.name })), COLOR.custom);
       return rows;
     },
     async rag(db, q) {
       const text = String(q || "").trim();
-      if (!db) throw t("m_noDb");
+      if (!db) throw fail("m_noDb");
       if (!text) return "";
       await RT.aiGate();
       devBusy(DEVICE_OF["chat_ask"] || "GPU");
@@ -4038,7 +4070,7 @@ def texts_of(result):
         const r = await fetch("/chat/rag?" + new URLSearchParams({ db, prompt: text, lang: LANG }),
                               { method: "POST", signal: RT.abort ? RT.abort.signal : undefined });
         const j = await r.json();
-        if (j.result !== "ok") throw t("m_aiError") + (j.data || t("m_fail"));
+        if (j.result !== "ok") throw fail("m_aiError", (j.data || t("m_fail")));
         devReport(j.device, j.elapsed_ms || 0);
         return j.data.answer;
       } catch (e) {
@@ -4047,7 +4079,7 @@ def texts_of(result):
       } finally { devIdle(); }
     },
     async custom(img, slug) {
-      if (!slug) throw t("m_noCustom");
+      if (!slug) throw fail("m_noCustom");
       const d = await post("custom/predict", img, { model: slug });
       return (d && d.length) ? d[0].name : t("r_none");
     },
@@ -4101,7 +4133,7 @@ def texts_of(result):
     },
     async faceRegister(img, name) {
       const n = String(name == null ? "" : name).trim();
-      if (!n) throw t("m_aiError") + t("sh_whoAsk");
+      if (!n) throw fail("m_aiError", t("sh_whoAsk"));
       const d = await post("face/register", img, { name: n });
       AI._setBoxes(img, [{ box: d.box, label: d.name + " ✓" }], COLOR.face);
       return d.name;
@@ -4127,7 +4159,7 @@ def texts_of(result):
                               { method: "POST",
                                 signal: RT.abort ? RT.abort.signal : undefined });
         const j = await r.json();
-        if (j.result !== "ok") throw t("m_aiError") + (j.data || t("m_fail"));
+        if (j.result !== "ok") throw fail("m_aiError", (j.data || t("m_fail")));
         RT.lastElapsed = j.elapsed_ms || 0;
         devReport(j.device, j.elapsed_ms || 0);
         return j.data.answer;
@@ -4447,7 +4479,7 @@ def texts_of(result):
 
       /* ---- 인식 결과와 연계 ---- */
       async cropDetected(which) {
-        if (!AI._boxImg || !AI.lastBoxes || !AI.lastBoxes.length) throw t("m_noDetect");
+        if (!AI._boxImg || !AI.lastBoxes || !AI.lastBoxes.length) throw fail("m_noDetect");
         const i = which === "last" ? AI.lastBoxes.length - 1 : 0;
         const [x1, y1, x2, y2] = AI.lastBoxes[i].box;
         return ED.cropXY(AI._boxImg, x1, y1, Math.max(1, x2 - x1), Math.max(1, y2 - y1));
@@ -4496,6 +4528,7 @@ def texts_of(result):
     },
     async step(id) {
       if (RT.stopFlag) throw "STOP";
+      RT._cur = id;                             // 오류가 나면 이 블록에 표시한다
       ws.highlightBlock(id);
       if (!RT._fast) await sleep(30);           // 진행이 눈에 보이는 최소 템포 (계속 반복 안은 빠르게)
     },
@@ -4703,7 +4736,7 @@ def texts_of(result):
       try {
         stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       } catch (e) {
-        throw t("m_noMic");
+        throw fail("m_noMic");
       }
       try {
         const wav = await RT._record(stream, sec);
@@ -4712,7 +4745,7 @@ def texts_of(result):
         const r = await fetch("/speech/stt?lang=" + (LANG === "en" ? "en" : "ko"),
                               { method: "POST", body: fd });
         const j = await r.json();
-        if (j.result !== "ok") throw (j.data || t("m_sttFail"));
+        if (j.result !== "ok") { const e = fail("m_sttFail"); if (j.data) e.message = String(j.data); throw e; }
         const text = (j.data && j.data.text) || "";
         log(t("m_heard") + text);
         return text;
@@ -4883,7 +4916,7 @@ def texts_of(result):
     resetTimer() { RT._t0 = Date.now(); },
     record(name, v) {
       const vals = Array.isArray(v) ? v : [v];
-      if (vals.some(x => typeof x === "string" && x.startsWith("data:image"))) throw t("m_noImgInTable");
+      if (vals.some(x => typeof x === "string" && x.startsWith("data:image"))) throw fail("m_noImgInTable");
       RT._tables = RT._tables || {};
       (RT._tables[name] = RT._tables[name] || []).push([RT.timer()].concat(
         vals.map(x => (x && typeof x === "object") ? (x.name != null ? x.name : JSON.stringify(x)) : x)));
@@ -4899,12 +4932,12 @@ def texts_of(result):
       const r = await fetch("/blocks/table", { method: "POST", headers: { "Content-Type": "application/json" },
                                                body: JSON.stringify({ name: String(name), csv }) });
       const j = await r.json();
-      if (j.result !== "ok") throw t("m_saveFail") + j.data;
+      if (j.result !== "ok") throw fail("m_saveFail", j.data);
       log(t("m_savedCsv") + j.data.saved);
     },
     _memKey(k) { return "vapi-blk-mem:" + (BLOCK_NAME || "-") + ":" + k; },
     remember(k, v) {
-      if (typeof v === "string" && v.startsWith("data:image")) throw t("m_noImgInTable");
+      if (typeof v === "string" && v.startsWith("data:image")) throw fail("m_noImgInTable");
       try { localStorage.setItem(RT._memKey(k), JSON.stringify(v)); } catch (e) { /* 저장이 막혀 있으면 이번 실행에서만 */ }
       (RT._mem = RT._mem || {})[k] = v;
     },
@@ -5085,6 +5118,9 @@ def texts_of(result):
     document.getElementById("varsBox").style.display = "none";
     document.getElementById("varsCount").textContent = "";
     logBox.textContent = "";
+    RT._cur = null;
+    ws.getAllBlocks(false).forEach(b => { if (b.warning) b.setWarningText(null); });   // 지난 오류 표시를 지운다
+    paintChip("running");
     RT.clearStage();
     runButton.disabled = true;
     document.body.classList.add("running"); updateEmpty();
@@ -5098,11 +5134,21 @@ def texts_of(result):
       const fn = new AsyncFunction("AI", "RT", "ED", code);
       await fn(AI, RT, ED);
       log(t("m_done"));
+      paintChip("done");
       if (window.vapiStat) vapiStat("block_done");
     } catch (e) {
-      if (e === "STOP") { log(t("m_stopped")); if (window.vapiStat) vapiStat("block_stopped"); }
+      if (e === "STOP") { log(t("m_stopped")); paintChip("stopped"); if (window.vapiStat) vapiStat("block_stopped"); }
       else {
-        log(t("m_error") + e); console.error(e, "\n--- code ---\n" + code);
+        console.error(e, "\n--- code ---\n" + code);
+        const err = window.EL_ERR ? EL_ERR.fromBlocks(e, LANG) : null;
+        if (err) {
+          logBox.appendChild(EL_ERR.card(err, LANG));
+          logBox.scrollTop = logBox.scrollHeight;
+          const blk = RT._cur && ws.getBlockById(RT._cur);   // 멈춘 블록에 노란 표시 + 설명
+          if (blk) { blk.setWarningText(err.code + " · " + err.title + "\n" + err.hint); blk.select(); }
+          showTab("log");
+          paintChip("error", err.code);
+        } else { log(t("m_error") + e); paintChip("error"); }
         if (window.vapiStat) vapiStat("block_error");
       }
     } finally {
@@ -5328,6 +5374,7 @@ def texts_of(result):
   });
 
   </script>
+  <script src="/lib/errcodes.js"></script>
   <script src="/lib/usage.js" data-page="blocks"></script>
   <script src="/lib/icons.js"></script>
   <script src="/lib/shell.js"></script>

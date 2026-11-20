@@ -98,7 +98,7 @@ if exist "%TOOLS%launcher.py" if exist %SLUG%.ico (
 
 echo.
 echo === [6/8] copy sources and models ===
-for %%F in (main.py engines.py prompts.py paths.py hub.py mp_routes.py train_routes.py stats_routes.py code_routes.py speech_routes.py db_routes.py folderpick.py sysinfo.py themaker.py trash.py works_routes.py board.py board_routes.py face_routes.py facedb.py train_features.py modelfile.py brand.py brand.json appwin.py lab.py README.md) do (
+for %%F in (main.py engines.py prompts.py paths.py hub.py mp_routes.py train_routes.py stats_routes.py code_routes.py speech_routes.py db_routes.py folderpick.py sysinfo.py themaker.py trash.py works_routes.py board.py board_routes.py face_routes.py facedb.py train_features.py modelfile.py pyrunner.py brand.py brand.json appwin.py lab.py README.md) do (
   copy /y %%F %BUILD%\ >nul
   if errorlevel 1 (echo [ERROR] copy failed: %%F & exit /b 1)
 )
@@ -151,7 +151,7 @@ REM bundle launcher (ASCII only, CRLF via echo)
 
 echo.
 echo === [7/8] verify bundled python ===
-for %%F in (main.py engines.py prompts.py paths.py hub.py mp_routes.py train_routes.py stats_routes.py code_routes.py speech_routes.py db_routes.py folderpick.py sysinfo.py themaker.py trash.py works_routes.py board.py board_routes.py face_routes.py facedb.py train_features.py modelfile.py brand.py brand.json appwin.py lab.py lab.bat check.py smoke_test.py run.bat bundle_check.bat notebooks\00_start.ipynb notebooks\02_detect_raw.ipynb notebooks\en\00_start.ipynb) do (
+for %%F in (main.py engines.py prompts.py paths.py hub.py mp_routes.py train_routes.py stats_routes.py code_routes.py speech_routes.py db_routes.py folderpick.py sysinfo.py themaker.py trash.py works_routes.py board.py board_routes.py face_routes.py facedb.py train_features.py modelfile.py pyrunner.py brand.py brand.json appwin.py lab.py lab.bat check.py smoke_test.py run.bat bundle_check.bat notebooks\00_start.ipynb notebooks\02_detect_raw.ipynb notebooks\en\00_start.ipynb) do (
   if not exist %BUILD%\%%F (echo [ERROR] missing in bundle: %%F & exit /b 1)
 )
 REM 화면들 — os.html 이 셸(/)이다. 빠지면 첫 화면부터 안 뜬다. home.html 은 창 없이 쓰는 옛 런처(/home).

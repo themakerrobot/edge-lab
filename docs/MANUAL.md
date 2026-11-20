@@ -195,6 +195,59 @@ USB로 옮기려면 이 폴더를 통째로 복사하고, 다른 PC에서 설정
 
 ---
 
+## 오류 코드
+
+파이썬 · 블록이 오류로 멈추면 결과 칸 제목 옆 상태가 빨간 **오류 PY-NAME** 처럼 바뀌고, 결과 칸에 카드가 나옵니다.
+카드에는 **오류 코드 · 무슨 뜻인지 · 몇 번째 줄인지 · 해 볼 것** 이 있습니다. 파이썬은 그 줄이 빨갛게 표시되고
+[N번째 줄] 을 누르면 그 줄로 갑니다. 블록은 멈춘 블록에 노란 ⚠ 표시가 붙습니다.
+원래 오류 글(Traceback)은 카드의 **[원래 오류 보기]** 안에 그대로 있습니다.
+
+`PY-` 파이썬 문법 · 실행 · `TM-` themaker 명령 · `BK-` 블록
+
+| 코드 | 뜻 | 해 볼 것 |
+|---|---|---|
+| `PY-SYNTAX` | 문법이 맞지 않아요 | 괄호 ( ) · 따옴표 " " 짝이 맞는지, if · for · def 줄 끝에 콜론(:)이 있는지 봐요. |
+| `PY-INDENT` | 들여쓰기가 맞지 않아요 | if · for · def 다음 줄은 같은 칸만큼(보통 4칸) 안으로 들여써요. 탭과 띄어쓰기를 섞지 않아요. |
+| `PY-NAME` | 모르는 이름이에요 | 철자와 대문자 · 소문자를 확인해요. 변수는 쓰기 전에 먼저 만들어야 해요. 맨 위에 from themaker import * 가 있는지도 봐요. |
+| `PY-TYPE` | 값의 종류가 맞지 않아요 | 숫자와 글자를 바로 더할 수 없어요. str(숫자) · int(글자) 로 바꿔요. 함수에 넣는 값의 개수도 봐요. |
+| `PY-VALUE` | 쓸 수 없는 값이에요 | 넣은 값이 맞는 모양인지 봐요. 예: int("abc") 는 숫자로 바꿀 수 없어요. |
+| `PY-INDEX` | 목록의 범위를 넘었어요 | 목록은 0번부터 세요. 3개짜리 목록의 마지막은 [2] 예요. len(목록) 으로 개수를 확인해요. |
+| `PY-KEY` | 없는 항목이에요 | 사전에 그 이름의 항목이 없어요. print(결과) 로 어떤 항목이 있는지 먼저 봐요. |
+| `PY-ATTR` | 그런 기능이 없어요 | 점(.) 뒤에 쓴 이름을 확인해요. 값이 None 이면(아무것도 못 찾았을 때) 기능을 쓸 수 없어요. |
+| `PY-ZERO` | 0 으로 나눴어요 | 나누는 수가 0 이 아닌지 if 로 먼저 확인해요. |
+| `PY-IMPORT` | 불러올 수 없는 모듈이에요 | 이 컴퓨터에 없는 모듈이에요. 인터넷 없이 도는 프로그램이라 새로 설치할 수 없어요 — themaker · math · random · time 처럼 있는 것을 써요. |
+| `PY-FILE` | 파일을 찾을 수 없어요 | 파일 이름과 폴더를 확인해요. 파이썬은 작업 폴더의 pycode 에서 돌아요. |
+| `PY-INPUT` | input() 은 쓸 수 없어요 | 이 화면에서는 키보드로 입력을 받을 수 없어요. 값을 코드에 직접 적어요. |
+| `PY-LOOP` | 함수가 자기 자신을 너무 많이 불렀어요 | 멈추는 조건(if)이 있는지 봐요. |
+| `PY-MEMORY` | 메모리가 모자라요 | 큰 사진이나 아주 긴 목록을 너무 많이 만들지 않았는지 봐요. 다른 앱을 닫고 다시 해 봐요. |
+| `PY-ETC` | 프로그램이 멈췄어요 | 아래 [원래 오류 보기] 의 마지막 줄이 이유예요. |
+| `TM-SERVER` | AI 서버에 연결할 수 없어요 | 프로그램(run.bat)이 켜져 있는지 확인해요. 방금 켰다면 1~2분 기다려요. |
+| `TM-READY` | AI 를 준비하는 중이에요 | 처음 켤 때는 AI 를 올리느라 1~2분 걸려요. 조금 뒤에 다시 실행해요. |
+| `TM-CAM` | 웹캠을 쓸 수 없어요 | 다른 프로그램(화상회의 등)이 웹캠을 쓰고 있지 않은지 봐요. 웹캠이 없으면 load("사진.jpg") 로 사진 파일을 써요. |
+| `TM-IMAGE` | 사진이 아니에요 | camera() 나 load() 로 만든 사진을 넣어요. 파일이면 이름과 확장자(.jpg · .png)를 확인해요. |
+| `TM-ARG` | 쓸 수 없는 값을 넣었어요 | 오류 글에 쓸 수 있는 값이 적혀 있어요. [도움말] 에서 명령 쓰는 법을 봐요. |
+| `TM-AI` | AI 가 이 일을 하지 못했어요 | 사진이 너무 어둡거나 작지 않은지 봐요. 계속되면 [설정] → [점검 실행] 을 눌러 봐요. |
+| `TM-NONE` | 찾은 것이 없어요 | 결과가 비어 있는지 if 로 먼저 확인해요. 예: if r: … |
+| `TM-SOUND` | 소리를 낼 수 없어요 | 스피커가 연결돼 있는지, 윈도우 소리 설정의 기본 장치를 확인해요. |
+| `TM-VOICE` | 말을 알아듣지 못했어요 | 마이크 가까이에서 또박또박 말해요. [설정] → [마이크 시험] 으로 확인해요. |
+| `TM-BOARD` | 보드와 연결할 수 없어요 | USB 케이블과 포트 이름을 확인해요. 다른 프로그램이 같은 포트를 쓰고 있지 않은지도 봐요. |
+| `TM-FACE` | 얼굴 명단을 쓸 수 없어요 | 이름을 적었는지, 사진에 얼굴이 한 명만 보이는지 확인해요. |
+| `TM-DATA` | 자료를 쓸 수 없어요 | 자료 이름을 확인해요. [대화] 화면의 [자료 넣기] 에서 만든 자료를 써요. |
+| `TM-ETC` | themaker 가 멈췄어요 | 오류 글을 읽고 넣은 값을 확인해요. |
+| `BK-CAM` | 웹캠을 쓸 수 없어요 | 주소창 왼쪽의 카메라 아이콘에서 [허용] 을 눌러요. 웹캠이 없으면 무대의 [사진 올리기] 와 「업로드한 사진」 블록을 써요. |
+| `BK-MIC` | 마이크를 쓸 수 없어요 | 주소창 왼쪽에서 마이크를 [허용] 하고, [설정] → [마이크 시험] 으로 확인해요. |
+| `BK-IMAGE` | 사진이 없어요 | 사진 블록(웹캠에서 사진 찍기 · 업로드한 사진)을 AI 블록의 빈칸에 끼워요. |
+| `BK-ORDER` | 블록 순서가 맞지 않아요 | 결과를 쓰는 블록보다 인식 블록이 먼저 와야 해요. |
+| `BK-MODEL` | 모델을 고르지 않았어요 | 블록의 목록에서 모델을 골라요. [가르치기] 에서 저장한 AI 나 [설정] → [모델 폴더] 에 넣은 파일이 나와요. |
+| `BK-DATA` | 자료를 고르지 않았어요 | [대화] 화면의 [자료 넣기] 로 먼저 자료를 만들고 블록에서 골라요. |
+| `BK-TABLE` | 표에 넣을 수 없는 값이에요 | 표에는 숫자나 글자만 넣어요. 사진은 [사진 저장] 블록으로 따로 저장해요. |
+| `BK-AI` | AI 가 이 일을 하지 못했어요 | 사진이 너무 어둡거나 작지 않은지 봐요. 계속되면 [설정] → [점검 실행] 을 눌러 봐요. |
+| `BK-SERVER` | AI 서버에 연결할 수 없어요 | 프로그램(run.bat)이 켜져 있는지 확인해요. 방금 켰다면 1~2분 기다려요. |
+| `BK-BLOCK` | 블록 연결이 맞지 않아요 | 빈칸이 남은 블록이나 모양이 다른 값을 끼운 블록이 없는지 봐요. 노란 표시가 붙은 블록을 확인해요. |
+| `BK-ETC` | 실행이 멈췄어요 | 아래 [원래 오류 보기] 의 글이 이유예요. |
+
+---
+
 ## 잘 안 될 때
 
 | 증상 | 해 볼 것 |
@@ -405,6 +458,59 @@ Photos are not saved — only numbers taken from the face, in `face/facedb.json`
 | `stats` | Usage records · training results |
 
 To move it to a USB stick, copy the whole folder, then on another PC use **[Change]** in Settings to point at it.
+
+---
+
+## Error codes
+
+When Python or Blocks stops with an error, the status next to the result title turns into a red **error PY-NAME**,
+and a card appears in the result area with **the error code · what it means · which line · what to try**.
+In Python the line turns red, and pressing [line N] jumps to it. In Blocks the block that stopped gets a yellow ⚠ mark.
+The original error text (Traceback) is kept under **[Show the original error]** on the card.
+
+`PY-` Python syntax · runtime · `TM-` themaker commands · `BK-` Blocks
+
+| Code | Meaning | Try this |
+|---|---|---|
+| `PY-SYNTAX` | The code doesn't follow Python's rules | Check that ( ) and " " come in pairs, and that if / for / def lines end with a colon (:). |
+| `PY-INDENT` | The indentation is off | Lines under if / for / def move in by the same amount (usually 4 spaces). Don't mix tabs and spaces. |
+| `PY-NAME` | Python doesn't know this name | Check the spelling and upper/lower case. Make a variable before using it, and keep from themaker import * at the top. |
+| `PY-TYPE` | The kinds of values don't match | You can't add a number and text directly — use str(number) or int(text). Also check how many values the function takes. |
+| `PY-VALUE` | That value can't be used here | Check the value has the right form — e.g. int("abc") can't become a number. |
+| `PY-INDEX` | Past the end of the list | Lists count from 0 — the last of 3 items is [2]. Check the size with len(list). |
+| `PY-KEY` | That key isn't there | The dictionary has no item with that name. print(result) first to see which items it has. |
+| `PY-ATTR` | That value has no such feature | Check the name after the dot (.). A None value (nothing found) has no features. |
+| `PY-ZERO` | Divided by zero | Check with if that the number you divide by isn't 0. |
+| `PY-IMPORT` | That module can't be imported | It isn't on this computer, and this offline program can't install new ones — use what's there, like themaker, math, random, time. |
+| `PY-FILE` | File not found | Check the file name and folder. Python runs inside the pycode folder of your work folder. |
+| `PY-INPUT` | input() isn't supported | This screen can't read the keyboard. Write the value into the code instead. |
+| `PY-LOOP` | A function called itself too many times | Check there is a condition (if) that makes it stop. |
+| `PY-MEMORY` | Out of memory | Avoid making too many big photos or huge lists. Close other apps and try again. |
+| `PY-ETC` | The program stopped with an error | The last line under [Show the original error] tells you why. |
+| `TM-SERVER` | Can't reach the AI server | Make sure the program (run.bat) is running. If you just started it, wait 1–2 minutes. |
+| `TM-READY` | The AI is still getting ready | It takes 1–2 minutes to load the first time. Run it again in a moment. |
+| `TM-CAM` | The webcam can't be used | Check no other app (like a video call) is using it. Without a webcam, use a photo file with load("photo.jpg"). |
+| `TM-IMAGE` | That isn't a photo | Pass a photo made with camera() or load(). For a file, check its name and extension (.jpg / .png). |
+| `TM-ARG` | A value the command doesn't accept | The message lists the values you can use. See how to use the command in [Help]. |
+| `TM-AI` | The AI couldn't do this | Check the photo isn't too dark or small. If it keeps happening, press Settings → Run check. |
+| `TM-NONE` | Nothing was found | Check the result isn't empty with if first — e.g. if r: … |
+| `TM-SOUND` | Can't play sound | Check a speaker is connected and the default device in Windows sound settings. |
+| `TM-VOICE` | Couldn't understand the speech | Speak clearly close to the mic. Check it with Settings → Test microphone. |
+| `TM-BOARD` | Can't connect to the board | Check the USB cable and port name, and that no other app is using the port. |
+| `TM-FACE` | The face list can't be used | Check you typed a name and only one face is in the photo. |
+| `TM-DATA` | The material can't be used | Check the material's name. Use one made with [Add material] in Talk. |
+| `TM-ETC` | themaker stopped | Read the message and check the values you passed. |
+| `BK-CAM` | The webcam can't be used | Press Allow on the camera icon left of the address bar. Without a webcam, use [Upload photo] and the "uploaded photo" block. |
+| `BK-MIC` | The microphone can't be used | Allow the mic left of the address bar, and check it with Settings → Test microphone. |
+| `BK-IMAGE` | There's no photo | Snap a photo block (take a photo with the webcam / uploaded photo) into the AI block's slot. |
+| `BK-ORDER` | The blocks are in the wrong order | The recognition block has to come before the block that uses its result. |
+| `BK-MODEL` | No model picked | Pick a model in the block's list — AIs saved in Train, or files in Settings → Models folder. |
+| `BK-DATA` | No material picked | Make one with [Add material] in Talk first, then pick it in the block. |
+| `BK-TABLE` | That can't go in the table | Tables hold numbers or text only. Save photos separately with the save-photo block. |
+| `BK-AI` | The AI couldn't do this | Check the photo isn't too dark or small. If it keeps happening, press Settings → Run check. |
+| `BK-SERVER` | Can't reach the AI server | Make sure the program (run.bat) is running. If you just started it, wait 1–2 minutes. |
+| `BK-BLOCK` | The blocks don't fit together | Look for blocks with empty slots or a value of the wrong kind. Check the block marked in yellow. |
+| `BK-ETC` | The run stopped with an error | The text under [Show the original error] tells you why. |
 
 ---
 

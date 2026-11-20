@@ -171,6 +171,37 @@ def check_usage_names():
             fail("설정 → 사용 통계 이름표(pgName %s)에 없음: %s (화면에 키 그대로 나온다)" % (lang, k))
 
 
+def check_error_codes():
+    """오류 코드(view_project/lib/errcodes.js)가 쓰는 곳 · 설명서와 맞나.
+    themaker.py 의 TheMakerError(code=…) · 블록 화면의 fail("m_…") 키가 목록에 있고, 설명서 오류 코드 표(한/영)에 다 있나."""
+    js = read("view_project/lib/errcodes.js")
+    codes = set(re.findall(r'"((?:PY|TM|BK)-[A-Z]+)":\s*\{', js))
+    if not codes:
+        fail("view_project/lib/errcodes.js 에서 오류 코드를 찾지 못함")
+        return
+    for c in sorted(set(re.findall(r'(?:code|err)="(TM-[A-Z]+)"', read("themaker.py"))) - codes):
+        fail("themaker.py 가 쓰는 오류 코드가 errcodes.js 에 없음: " + c)
+    bk = dict(re.findall(r'(m_\w+):\s*"(BK-[A-Z]+)"', js))
+    for k in sorted(set(re.findall(r'fail\("(m_\w+)"', read("view_project/blocks.html"))) - set(bk)):
+        fail("블록 화면이 던지는 오류 키가 errcodes.js BK_KEY 에 없음: " + k)
+    for k, c in sorted(bk.items()):
+        if c not in codes:
+            fail("errcodes.js BK_KEY 가 없는 코드를 가리킴: %s → %s" % (k, c))
+    man = read("docs/MANUAL.md")
+    parts = man.split('<a name="edge-lab-user-guide"></a>')
+    for lang, part in zip(("ko", "en"), parts if len(parts) == 2 else (man, "")):
+        for c in sorted(codes):
+            if "`%s`" % c not in part:
+                fail("docs/MANUAL.md 오류 코드 표(%s)에 없음: %s" % (lang, c))
+    for page in ("view_project/code.html", "view_project/blocks.html"):
+        if "/lib/errcodes.js" not in read(page):
+            fail(page + " 가 lib/errcodes.js 를 읽지 않음")
+    if "pyrunner.py" in read("code_routes.py"):
+        bat = read("tools/make_bundle.bat")
+        if len(re.findall(r"\bpyrunner\.py\b", bat)) < 2:
+            fail("make_bundle.bat 복사 · 확인 목록에 pyrunner.py 가 없음 (파이썬 화면이 학생 코드를 이것으로 돌린다)")
+
+
 def check_assets(routes):
     for html in sorted(set(routes.values())):
         text = read("view_project/" + html)
@@ -444,6 +475,7 @@ def main():
     routes = check_pages()
     check_assets(routes)
     check_usage_names()
+    check_error_codes()
     check_models()
     nbm = check_notebook_models()
     check_packages(mods)
