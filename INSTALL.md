@@ -56,6 +56,7 @@ powershell -ExecutionPolicy Bypass -File setup_deploy.ps1
 
 - 처음 한 번: 저장소 **Settings → Secrets and variables → Actions** 에 `HF_TOKEN`(허깅페이스 **쓰기** 토큰)을 넣는다
 - 올리지 않고 만들고 시험만: Actions → bundle → Run workflow, `release` 를 비운다
+- 발행한 릴리즈를 고친 코드로 다시 만들기: Actions → bundle → Run workflow, `release` 에 태그(예 `v1.0.0`) · `retag` 켜기 — 태그를 그 코드로 옮기고 다시 만들어 올린다(릴리즈는 그대로)
 - GitHub 릴리즈는 파일 하나가 2GiB 까지라 VLM 이 든 배포판(5GB 남짓)을 못 올린다 — 그래서 zip 은 허깅페이스에 두고 릴리즈에는 링크만. 허깅페이스 공개 저장소는 로그인 없이 링크로 받고 이어받기가 된다
 - 같이 올라가는 것은 sha256 파일과 `release/latest.json`(가장 최근 버전 · 링크) 뿐이다. `fetch_models.py` 는 `release/` 를 받지 않는다 — 설치할 때 배포판 zip 까지 받지 않게
 - 큰 파일을 짧은 시간에 여러 번 올리면 허깅페이스가 막을 수 있다 — 릴리즈를 자주 다시 발행하지 않는다
