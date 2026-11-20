@@ -4,6 +4,9 @@
 
 **한국어** · [English](#edge-lab-english)
 
+> **[⬇ 다운로드 (최신 배포판)](https://github.com/themakerrobot/edge-lab/releases/latest)** — 압축을 풀고 `run.bat` 을 두 번 누르면 끝. 파이썬 · 모델이 다 들어 있어 설치도 인터넷도 필요 없습니다 (5GB 남짓).
+> 지난 버전은 [허깅페이스 release/](https://huggingface.co/leeyunjai/edge-lab/tree/main/release) 에 있습니다.
+
 사진을 찍어 AI에게 물어보고, 블록과 파이썬으로 AI를 부르는 프로그램을 만들고,
 내가 직접 AI를 가르쳐 봅니다. 설치가 끝나면 **인터넷을 끊어도 전부 그대로 동작**하고,
 찍은 사진과 만든 것은 이 PC 밖으로 나가지 않습니다.
@@ -134,6 +137,10 @@ AI를 메모리에 올리는 동안 진행 막대가 보이고, 그 사이 파�
 
 ## 설치 · 실행
 
+**배포판** — [최신 릴리즈](https://github.com/themakerrobot/edge-lab/releases/latest) 의 다운로드 링크로 zip 을 받아 압축을 풀고 `run.bat` 을 두 번 누릅니다. 설치가 필요 없고 인터넷 없는 교실 PC 에 USB 로 옮겨도 됩니다. 점검은 `bundle_check.bat`.
+
+**저장소에서 설치** (개발 · 수업 준비 PC)
+
 화면 하나하나 어디가 무엇을 하는 곳인지는 **[사용 설명서](docs/MANUAL.md)** 에 그림으로 있습니다.
 
 **설치는 `setup.bat` 더블클릭**으로 끝납니다 (venv · 패키지 · 모델 · 글꼴 · 점검까지). 자세한 것은 [INSTALL.md](INSTALL.md). 설치가 끝나면:
@@ -212,6 +219,9 @@ AI를 메모리에 올리는 동안 진행 막대가 보이고, 그 사이 파�
 **Hands-on AI that runs on your own computer, no internet**
 
 [한국어](#edge-lab) · **English**
+
+> **[⬇ Download (latest release)](https://github.com/themakerrobot/edge-lab/releases/latest)** — unzip and double-click `run.bat`. Python and the models are inside, so there is nothing to install and no internet needed (about 5 GB).
+> Older versions are in [Hugging Face release/](https://huggingface.co/leeyunjai/edge-lab/tree/main/release).
 
 Take a photo and ask the AI about it, build programs that call AI with blocks and Python,
 and train an AI of your own. Once installed, **everything keeps working with the internet unplugged**,
@@ -343,6 +353,10 @@ to point at it; your name, work and records all carry over.
 ---
 
 ## Install · Run
+
+**Ready-made bundle** — get the zip from the download link in the [latest release](https://github.com/themakerrobot/edge-lab/releases/latest), unzip it and double-click `run.bat`. Nothing to install, and you can carry it on a USB stick to a classroom PC with no internet. To check it, run `bundle_check.bat`.
+
+**Install from the repository** (development · class-prep PC)
 
 What each part of every screen does is spelled out with pictures in the **[User guide](docs/MANUAL.md#edge-lab-user-guide)**.
 
