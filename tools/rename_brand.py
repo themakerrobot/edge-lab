@@ -8,7 +8,7 @@
 이 도구가 하는 일은 셋이다.
   1) view_project/lib/brand.js 를 brand.json 에서 다시 만든다 (화면이 읽는 사본)
   2) 실행하면서 읽을 수 없는 글(README · INSTALL · 매뉴얼 · 노트북 · 설치 스크립트의 주소)에서
-     지난번 이름(tools/brand_applied.json)을 새 이름으로 바꾼다
+     지난번 이름 · 부제(tools/brand_applied.json)를 새 것으로 바꾼다
   3) 아이콘 파일(<slug>.ico) 이름을 바꾸고, 이번 이름을 tools/brand_applied.json 에 적는다
 
 바꾸지 않는 것 — 이름처럼 보이지만 파일 형식 표시라 바꾸면 저장해 둔 파일 · 모델과 어긋난다:
@@ -103,6 +103,9 @@ def rewrite(text, old, new):
         keep[tok] = p
         text = text.replace(p, tok)
     rep = []
+    # 부제 (README 첫머리 등) — 글 그대로 바꾼다
+    rep.append((re.escape(old["tagline"]), new["tagline"].replace("\\", "\\\\")))
+    rep.append((re.escape(old["tagline_en"]), new["tagline_en"].replace("\\", "\\\\")))
     # 저장소 주소 · 폴더
     rep.append((re.escape(old["repo_github"]), new["repo_github"]))
     rep.append((re.escape(old["repo_hf"]), new["repo_hf"]))

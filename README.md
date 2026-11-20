@@ -1,8 +1,8 @@
 # edge-lab
 
-**한국어** · [English](#edge-lab-english)
+**인터넷 없이 내 컴퓨터에서 하는 AI 실습**
 
-**인터넷 없이, 내 컴퓨터 안에서 도는 AI 학습 도구.**
+**한국어** · [English](#edge-lab-english)
 
 사진을 찍어 AI에게 물어보고, 블록과 파이썬으로 AI를 부르는 프로그램을 만들고,
 내가 직접 AI를 가르쳐 봅니다. 설치가 끝나면 **인터넷을 끊어도 전부 그대로 동작**하고,
@@ -209,9 +209,9 @@ AI를 메모리에 올리는 동안 진행 막대가 보이고, 그 사이 파�
 
 # edge-lab (English)
 
-[한국어](#edge-lab) · **English**
+**Hands-on AI that runs on your own computer, no internet**
 
-**An AI learning tool that runs inside your own computer — no internet.**
+[한국어](#edge-lab) · **English**
 
 Take a photo and ask the AI about it, build programs that call AI with blocks and Python,
 and train an AI of your own. Once installed, **everything keeps working with the internet unplugged**,
