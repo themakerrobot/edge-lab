@@ -3,6 +3,7 @@ name: hf-models
 # 허깅페이스 모델 저장소(brand.json 의 repo_hf)에 올린다. 올린 뒤 sha256 이 같은지 본다.
 #   readme  저장소 설명 — tools/hf/README.md → README.md (폴더 · 라이선스 표. 폴더를 바꾸면 같이 고친다)
 #   stt-sv  음성 인식 SenseVoice int8 — 원본 leeyunjai/themaker .model/stt (tools/fetch_stt.py 가 받는다) → stt-sv/
+#   release-prune  release/ 에서 latest.json 이 가리키는 배포판만 남기고 옛 zip · .sha256 을 지운다
 # 필요한 것: 저장소 Secret HF_TOKEN — 허깅페이스 쓰기 토큰. 손으로 돌리기: Actions → hf-models → Run workflow
 
 on:
@@ -11,7 +12,7 @@ on:
       what:
         description: "올릴 것"
         type: choice
-        options: [readme, stt-sv]
+        options: [readme, stt-sv, release-prune]
 
 permissions:
   contents: read
@@ -41,7 +42,23 @@ jobs:
           python - <<'PY'
           import hashlib, os, pathlib
           import brand
-          from huggingface_hub import CommitOperationAdd, HfApi
+          import json
+          from huggingface_hub import CommitOperationAdd, CommitOperationDelete, HfApi
+          api = HfApi()
+          if os.environ["WHAT"] == "release-prune":
+              keep = json.load(open(api.hf_hub_download(brand.REPO_HF, "release/latest.json", force_download=True)))["file"]
+              files = [f for f in api.list_repo_files(brand.REPO_HF) if f.startswith("release/")]
+              assert keep in files, "latest.json 의 배포판이 없어요: " + keep
+              old = [f for f in files if f.endswith((".zip", ".zip.sha256")) and f not in (keep, keep + ".sha256")]
+              print("남김", keep)
+              for f in old:
+                  print("지움", f)
+              if old:
+                  api.create_commit(repo_id=brand.REPO_HF, commit_message="release: 옛 배포판 지움 (%s 만 남김)" % keep,
+                                    operations=[CommitOperationDelete(path_in_repo=f) for f in old])
+              left = [f for f in api.list_repo_files(brand.REPO_HF) if f.startswith("release/")]
+              print("남은 것", left)
+              raise SystemExit(int(any(f in left for f in old) or keep not in left))
           if os.environ["WHAT"] == "readme":
               pairs = {"README.md": pathlib.Path("tools/hf/README.md")}
               msg = "README: 폴더 · 라이선스 표"
@@ -50,7 +67,6 @@ jobs:
               pairs = {"stt-sv/" + f: src / f for f in ("model.int8.onnx", "tokens.txt", "silero_vad.onnx", "LICENSE-SenseVoice.txt")}
               msg = "stt-sv: SenseVoice int8 (leeyunjai/themaker .model/stt)"
           sha = {k: hashlib.sha256(v.read_bytes()).hexdigest() for k, v in pairs.items()}
-          api = HfApi()
           api.create_commit(repo_id=brand.REPO_HF, commit_message=msg,
                             operations=[CommitOperationAdd(path_in_repo=k, path_or_fileobj=str(v)) for k, v in pairs.items()])
           bad = 0
