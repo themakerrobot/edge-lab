@@ -3,7 +3,7 @@
 #
 # 261104 부터 **로봇(파이보·PiBrain)과 같은 계산·같은 파일 형식**이다(로봇 연동 일원화).
 #   특징  teachlab/ (로봇 openpibo/modules/teachlab 과 같은 코드·같은 모델 파일)
-#         image   mobilenet_v3_small 1024 (L2)            — teachlab/models/mobilenet_v3_small_embedder.onnx, OpenVINO f32
+#         image   mobilenet_v3_small 1024 (L2)            — models/mediapipe/mobilenet_v3_small_embedder.onnx, OpenVINO f32
 #         pose    손 21점 world 좌표 63 (손목 원점·중지 MCP 길이)   — MediaPipe hand_landmarker
 #         hand2   두 손 126 (왼손 63 + 오른손 63, 없는 손은 0)
 #         face    표정 blendshape 52                       — MediaPipe face_landmarker
@@ -11,29 +11,24 @@
 #         body    전신 33점 world 좌표 99 (엉덩이 원점·몸통 길이)
 #         사진은 로봇처럼 짧은 변 240 으로 줄인 뒤 뽑는다(_stream_rgb — 로봇 vision_classify._as_stream_rgb 와 같다)
 #   저장  data/user/<slug>/model.zip 안에 로봇 형식 그대로:
-#         project.json · classifier.json · classifier.bin · labels.txt · samples.json (+ report.json)
-#         → [로봇으로 보내기] 가 이 파일들을 로봇 분류기(50010) POST /api/models 로 보낸다
+#         project.json · classifier.json · classifier.bin · labels.txt (+ report.json)
 #
 # 예전 모델(TF.js zip: model.json · weightsSpecs.json · weights.bin · kind.txt)도 계속 읽는다 —
 # 그 모델은 예전 특징(MobileNetV2 1280 · 화면 좌표 손 63 · easydetect 몸 22/34)으로 추론한다(_legacy_*).
 #
 # 모델 파일:
-#   teachlab/models/*                                       (리포에 들어 있다 — 로봇과 같은 파일)
+#   models/mediapipe/* (허깅페이스에서 받는다 — teachlab/__init__.py)
 #   models/backbone/mobilenetv2_feat.xml / .bin / .json     (예전 모델을 쓸 때만, HF 에서 배포)
 #   data/user/<slug>/model.zip + meta.json                  (학생이 만든 AI)
 #   data/project/<slug>.zip                                 (작업 중인 작품 — 사진 포함)
 import io
-import ipaddress
 import json
 import os
 import re
 import shutil
-import socket
 import threading
 import time
 import sysinfo                    # 이 컴퓨터 상태 (메모리·CPU)
-import urllib.error
-import urllib.request
 import uuid
 import zipfile
 from typing import List
@@ -75,7 +70,6 @@ MAX_ZIP = 128 * 1024 * 1024         # 업로드 zip 상한
 MAX_IMAGES = 600                    # zip 1회 처리 상한
 MAX_BATCH = 64                      # 배치 임베딩 1회 장수
 DEVICE_ORDER = ["NPU", "GPU", "CPU"]  # 예전 백본: 가벼운 모델이라 NPU 우선
-ROBOT_PORT = 50010                  # 로봇 분류기 서비스(파이보·PiBrain 같음)
 
 _lock = threading.Lock()
 _compiled = None                    # 사진 임베더(teachlab.embedder.ImageEmbedder) — main.py 상태표가 본다
@@ -373,7 +367,6 @@ class TeachHead:
                 self.report = json.loads(zf.read("report.json").decode("utf-8"))
             except Exception:
                 self.report = None
-        self.has_samples = "samples.json" in names
 
     def features(self, bgr):
         return _embed(bgr, self.kind)
@@ -390,7 +383,6 @@ class LegacyHead:
     """
     legacy = True
     project = None
-    has_samples = False
 
     def __init__(self, zf, names):
         for req in ("model.json", "weightsSpecs.json", "weights.bin", "labels.txt"):
@@ -694,7 +686,7 @@ async def custom_upload(request: Request, uploadFile: UploadFile = File(...),
             f.write(raw)
         meta = {"slug": s, "title": title.strip(), "labels": head.labels,
                 "classes": len(head.labels), "kind": head.kind, "dim": head.dim,
-                "format": "legacy" if head.legacy else "teachlab",   # teachlab = 로봇으로 보낼 수 있다
+                "format": "legacy" if head.legacy else "teachlab",   # legacy = 예전 TF.js 방식
                 "size": len(raw), "created": time.strftime("%Y-%m-%d %H:%M:%S"),
                 "report": head.report}
         with open(os.path.join(d, "meta.json"), "w", encoding="utf-8") as f:
@@ -911,105 +903,6 @@ async def custom_backbone(request: Request):
                                "scale": "1/255", "l2_normalize": True, "mirror": False},
                 "dims": DIM_OF}
     return _run("custom_backbone", fn)
-
-
-# ---------------------------------------------------------------- 로봇으로 보내기
-def _robot_host(host):
-    """로봇 주소 검사 — 같은 망(사설 IP·링크 로컬·.local)만 받는다. 'IP' 또는 'IP:포트'."""
-    host = (host or "").strip().replace("http://", "").replace("https://", "").strip("/")
-    if not host or not re.fullmatch(r"[0-9A-Za-z.\-]+(:\d{1,5})?", host):
-        raise SoftError("로봇 주소를 확인해 주세요 (예: 192.168.0.12)")
-    name, _, port = host.partition(":")
-    try:
-        addr = ipaddress.ip_address(socket.gethostbyname(name))
-    except (OSError, ValueError):
-        raise SoftError(f"로봇을 찾지 못했어요: {name}")
-    if not (addr.is_private or addr.is_link_local) or addr.is_loopback:
-        raise SoftError("같은 공유기(학교 망) 안의 로봇에만 보낼 수 있어요.")
-    return f"{addr}:{int(port) if port else ROBOT_PORT}"
-
-
-def _multipart(fields, files):
-    """urllib 로 보낼 multipart/form-data 본문(fields: {이름: 글}, files: {이름: (파일 이름, 바이트, 형식)})"""
-    b = "----edgelab" + uuid.uuid4().hex
-    out = io.BytesIO()
-    for k, v in fields.items():
-        out.write(f'--{b}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n'.encode("utf-8"))
-    for k, (fname, data, ctype) in files.items():
-        out.write(f'--{b}\r\nContent-Disposition: form-data; name="{k}"; filename="{fname}"\r\n'
-                  f'Content-Type: {ctype}\r\n\r\n'.encode("utf-8"))
-        out.write(data)
-        out.write(b"\r\n")
-    out.write(f"--{b}--\r\n".encode("utf-8"))
-    return out.getvalue(), "multipart/form-data; boundary=" + b
-
-
-@router.get("/custom/robot/ping", tags=["custom"], summary="로봇 분류기가 켜져 있는지")
-async def robot_ping(request: Request, host: str = Query(...)):
-    """로봇 분류기 서비스(50010)의 모델 목록을 물어본다. 로봇 IDE 에서 [분류기] 를 켜 두어야 답한다."""
-    def fn():
-        h = _robot_host(host)
-        try:
-            with urllib.request.urlopen(f"http://{h}/api/models", timeout=4) as r:
-                j = json.loads(r.read().decode("utf-8"))
-        except (urllib.error.URLError, OSError, ValueError):
-            raise SoftError("로봇이 답하지 않아요. 로봇 IDE 에서 [분류기] 를 켜 두었는지 확인해 주세요.")
-        return {"host": h, "models": [m.get("name") for m in j.get("models", [])]}
-    return _run("custom_robot_ping", fn, device="CPU")
-
-
-@router.post("/custom/robot/send", tags=["custom"], summary="저장한 AI 를 로봇으로 보내기")
-async def robot_send(request: Request, body: dict = Body(...)):
-    """저장한 모델(로봇 형식)을 로봇 분류기 POST /api/models 로 그대로 보낸다.
-
-    본문: {"slug": 저장한 AI, "host": "192.168.0.12", "name": 로봇에 저장할 이름(없으면 제목), "overwrite": false}
-    로봇에 같은 이름이 있으면 data.exists = true 로 돌려준다(화면이 덮어쓸지 묻는다).
-    """
-    def fn():
-        s = _slugify(body.get("slug", ""))
-        d = os.path.join(USER_DIR, s)
-        p = os.path.join(d, "model.zip")
-        if not os.path.exists(p):
-            raise SoftError(f"모델을 찾을 수 없습니다: {s}")
-        with open(p, "rb") as f:
-            zf = zipfile.ZipFile(io.BytesIO(f.read()))
-        names = set(zf.namelist())
-        if "classifier.json" not in names:
-            raise SoftError("예전 방식으로 만든 AI 라 로봇으로 보낼 수 없어요. 다시 가르쳐 저장해 주세요.")
-        title = s
-        try:
-            with open(os.path.join(d, "meta.json"), encoding="utf-8") as f:
-                title = json.load(f).get("title") or s
-        except Exception:
-            pass
-        name = (str(body.get("name") or title)).strip()[:40]
-        h = _robot_host(body.get("host", ""))
-        files = {
-            "project": ("project.json", zf.read("project.json"), "application/json"),
-            "classifier_json": ("classifier.json", zf.read("classifier.json"), "application/json"),
-            "classifier_bin": ("classifier.bin", zf.read("classifier.bin"), "application/octet-stream"),
-        }
-        if "samples.json" in names:
-            files["samples"] = ("samples.json", zf.read("samples.json"), "application/json")
-        data, ctype = _multipart({"name": name, "overwrite": "1" if body.get("overwrite") else "0"}, files)
-        req = urllib.request.Request(f"http://{h}/api/models", data=data, method="POST",
-                                     headers={"Content-Type": ctype})
-        try:
-            with urllib.request.urlopen(req, timeout=20) as r:
-                j = json.loads(r.read().decode("utf-8") or "{}")
-        except urllib.error.HTTPError as ex:
-            if ex.code == 409:
-                return {"host": h, "name": name, "exists": True}
-            try:
-                why = json.loads(ex.read().decode("utf-8")).get("error", "")
-            except Exception:
-                why = ""
-            raise SoftError(f"로봇이 받지 않았어요 ({ex.code} {why}).")
-        except (urllib.error.URLError, OSError):
-            raise SoftError("로봇이 답하지 않아요. 로봇 IDE 에서 [분류기] 를 켜 두었는지 확인해 주세요.")
-        saved = (j.get("model") or {}).get("name") or name
-        return {"host": h, "name": saved, "exists": False}
-    return _run("custom_robot_send", fn, device="CPU")
 
 
 @router.get("/custom/selftest", tags=["custom"], summary="수업 전 점검")

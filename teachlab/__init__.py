@@ -11,14 +11,16 @@
   modelfile.py   모델 파일을 바이트로 읽기                                  (로봇과 같은 파일)
   embedder.py    이미지 → 1024 (mobilenet_v3_small) — 로봇은 onnxruntime, 여기는 같은 ONNX 를 OpenVINO(f32)로
 
-models/ 의 파일도 로봇과 같은 파일이다(sha256 이 같아야 한다):
+모델 파일은 다른 모델처럼 허깅페이스(brand.json 의 repo_hf)의 mediapipe/ 에서 받는다 → models/mediapipe/
+(설치 setup_deploy.ps1 · 배포판 모두 tools/fetch_models.py). 로봇과 같은 파일이다(sha256 이 같다):
   mobilenet_v3_small_embedder.onnx   로봇 openpibo/modules/teachlab/ (tflite 를 tf2onnx 로 바꾼 것)
   hand_landmarker.task · face_landmarker.task · pose_landmarker_lite.task   로봇 classifier/static/models/
+  (face_landmarker.task 는 얼굴 거리·방향(mp_routes)이 쓰는 파일과 같은 파일이다)
 """
 import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-MODEL_DIR = os.path.join(HERE, 'models')
+MODEL_DIR = os.path.join(os.path.dirname(HERE), 'models', 'mediapipe')
 EMBEDDER_ONNX = os.path.join(MODEL_DIR, 'mobilenet_v3_small_embedder.onnx')
 LANDMARK_FILE = {
     'hand': os.path.join(MODEL_DIR, 'hand_landmarker.task'),

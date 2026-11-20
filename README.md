@@ -174,7 +174,7 @@ AI를 메모리에 올리는 동안 진행 막대가 보이고, 그 사이 파�
 | 배경 제거 · 화질 개선 | U2Net · SR-1032 | GPU |
 | 글자 인식 | easyocr (한/영) | CPU |
 | QR 인식 | OpenCV QRCodeDetector | CPU |
-| 가르치기 특징 | mobilenet_v3_small 1024d (OpenVINO f32) · MediaPipe 손 · 표정 · 자세 — 로봇과 같은 파일(`teachlab/`) | CPU |
+| 가르치기 특징 | mobilenet_v3_small 1024d (OpenVINO f32) · MediaPipe 손 · 표정 · 자세 — 로봇과 같은 파일(`models/mediapipe/`) | CPU |
 | 말을 글자로 | SenseVoiceSmall INT8 (파이보 · 파이브레인과 같은 파일) | CPU |
 | 글자를 말로 | Supertonic 3 | CPU |
 
@@ -193,7 +193,7 @@ AI를 메모리에 올리는 동안 진행 막대가 보이고, 그 사이 파�
 | easydetect (코드 · ed-m · pose-m 가중치) · MobileSAM — 사물 찾기 · 자세 · 영역 | Apache-2.0 |
 | 마스크 분류 `mask/mask.onnx` (MediaPipe mobilenet_v3_small 임베더 + 분류기) | Apache-2.0 |
 | OpenVINO / open_model_zoo 얼굴 모델 · 화질 개선(SR-1032) | Apache-2.0 |
-| MediaPipe (손 · 얼굴 · 자세 점, mobilenet_v3_small 임베더, YAMNet) · U2Net · easyocr · Depth Anything V2 Small · MobileNetV2(예전 가르치기 모델용) | Apache-2.0 |
+| MediaPipe (손 · 얼굴 · 자세 점, mobilenet_v3_small 임베더, YAMNet) · U2Net · easyocr · Depth Anything V2 Small · MobileNetV2(노트북 07 · 예전 가르치기 모델) | Apache-2.0 |
 | multilingual-e5-small (자료 찾기) · silero VAD (말 구간 찾기) | MIT |
 | SenseVoiceSmall (받아쓰기 모델 가중치, sherpa-onnx int8 변환본) | **FunASR Model License 1.1** (출처 · 저작자 표시와 모델 이름 유지 — 원문 `models/stt-sv/LICENSE-SenseVoice.txt`) |
 | sherpa-onnx (받아쓰기 실행) | Apache-2.0 |
@@ -391,7 +391,7 @@ Rules for changing the code are in [DEVELOP.md](DEVELOP.md).
 | Background removal · upscaling | U2Net · SR-1032 | GPU |
 | Text recognition | easyocr (KO/EN) | CPU |
 | QR recognition | OpenCV QRCodeDetector | CPU |
-| Features for Train | mobilenet_v3_small 1024d (OpenVINO f32) · MediaPipe hand · face · pose — same files as the robots (`teachlab/`) | CPU |
+| Features for Train | mobilenet_v3_small 1024d (OpenVINO f32) · MediaPipe hand · face · pose — same files as the robots (`models/mediapipe/`) | CPU |
 | Speech to text | SenseVoiceSmall INT8 (same files as Pibo · PiBrain) | CPU |
 | Text to speech | Supertonic 3 | CPU |
 
@@ -410,7 +410,7 @@ but **Gemma 3 (VLM) and Supertonic 3 (text to speech) have separate licenses wit
 | easydetect (code · ed-m · pose-m weights) · MobileSAM — objects · pose · segmentation | Apache-2.0 |
 | Mask classifier `mask/mask.onnx` (MediaPipe mobilenet_v3_small embedder + classifier) | Apache-2.0 |
 | OpenVINO / open_model_zoo face models · upscaling (SR-1032) | Apache-2.0 |
-| MediaPipe (hand · face · pose points, mobilenet_v3_small embedder, YAMNet) · U2Net · easyocr · Depth Anything V2 Small · MobileNetV2 (old Train models only) | Apache-2.0 |
+| MediaPipe (hand · face · pose points, mobilenet_v3_small embedder, YAMNet) · U2Net · easyocr · Depth Anything V2 Small · MobileNetV2 (notebook 07 · old Train models) | Apache-2.0 |
 | multilingual-e5-small (document search) · silero VAD (speech segments) | MIT |
 | SenseVoiceSmall (speech-to-text weights, sherpa-onnx int8 export) | **FunASR Model License 1.1** (keep source · author attribution and the model name — full text `models/stt-sv/LICENSE-SenseVoice.txt`) |
 | sherpa-onnx (speech-to-text runtime) | Apache-2.0 |

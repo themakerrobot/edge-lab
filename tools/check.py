@@ -100,19 +100,20 @@ for rel in ["easydetect/ed-m/ed-m.onnx", "easydetect/pose/pose-m.onnx",
         fails += 1
         print("FAIL models/" + rel, "|", str(e)[:200])
 
-# 가르치기 특징 — 리포 안 teachlab/models (로봇과 같은 파일). 임베더는 OpenVINO 로 열리는지까지 본다
-for rel in ["mobilenet_v3_small_embedder.onnx", "hand_landmarker.task", "face_landmarker.task", "pose_landmarker_lite.task"]:
-    f = pathlib.Path("teachlab/models") / rel
+# 가르치기 특징 — models/mediapipe (teachlab 이 읽는다). 임베더는 OpenVINO 로 열리는지까지 본다
+for rel in ["mediapipe/mobilenet_v3_small_embedder.onnx", "mediapipe/hand_landmarker.task",
+            "mediapipe/face_landmarker.task", "mediapipe/pose_landmarker_lite.task"]:
+    f = pathlib.Path("models") / rel
     if not f.exists():
         fails += 1
-        print("FAIL teachlab/models/" + rel, "| 파일 없음 (git 으로 받은 폴더가 맞는지 확인)")
+        print("FAIL models/" + rel, "| 파일 없음 — 가르치기를 쓸 수 없습니다. tools\\fetch_models.py 로 받으세요")
         continue
     if f.suffix == ".onnx":
         try:
             core.read_model(f)
         except Exception as e:
             fails += 1
-            print("FAIL teachlab/models/" + rel, "|", str(e)[:200])
+            print("FAIL models/" + rel, "|", str(e)[:200])
 
 # 읽어 주기(Supertonic int8)는 OpenVINO 로 읽는 모델이 아니라 파일이 다 있는지만 본다
 tts_need = ["duration_predictor.onnx", "text_encoder.onnx", "vector_estimator.onnx",

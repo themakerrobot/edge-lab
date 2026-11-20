@@ -415,12 +415,6 @@
             사진은 들어 있지 않아서 이어서 학습할 수는 없어요 — 그건 아래 6번이에요.
           </div>
           <div class="saved" id="savedList"></div>
-          <div id="robotRow" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:10px;">
-            <b id="txtRobotT">로봇으로 보내기</b>
-            <input type="text" id="robotHost" placeholder="192.168.0.12" style="width:130px;">
-            <button class="btn sm" id="robotPing"><span id="txtRobotPing">연결 확인</span></button>
-            <span class="hint" id="robotMsg"></span>
-          </div>
         </div>
 
         <!-- 7 : 작품 저장 / 이어서 하기 -->
@@ -464,8 +458,7 @@
    *               사진 1024 · 손 63 · 표정 52 · 상반신 75 · 전신 99
    *   학습      : 브라우저 TF.js — 로봇 분류기(teach-lab trainer.js)와 같은 머리
    *               Dense 64 relu -> Dropout .2 -> Dense N softmax, adam 0.001, 반복 40, 묶음 16
-   *   저장      : /custom/upload  — 로봇 형식(project.json · classifier.json · classifier.bin · labels.txt · samples.json)
-   *   보내기    : /custom/robot/send — 저장한 AI 를 로봇 분류기(50010)로 (같은 망 안에서만)
+   *   저장      : /custom/upload  — project.json · classifier.json · classifier.bin · labels.txt (+ report.json)
    * 예전(TF.js zip) 모델은 서버에서 계속 쓸 수 있지만, 여기로 다시 불러오지는 않는다(특징이 달라졌다).
    **********************************************************************/
   const DIM_OF = { image: 1024, pose: 63, hand2: 126, face: 52, body_up: 75, body: 99 };
@@ -536,7 +529,7 @@
       q1hint: "이름을 정하고, 오른쪽 2번에서 사진을 모아요. 클래스는 2개 이상이어야 학습할 수 있어요.",
       q2hint: "클래스마다 30장쯤 모으면 좋아요",
       q2count: "사진 %1장 · 클래스 %2개 (클래스마다 30장쯤 모으면 좋아요)",
-      noBackbone: "특징 추출 모델(teachlab/models)이 없어요. 서버 관리자에게 문의하세요.",
+      noBackbone: "특징 추출 모델(models/mediapipe)이 없어요. 서버 관리자에게 문의하세요.",
       errShot: "사진을 넣지 못했어요 — %1",
       q2guide: "모을 클래스를 먼저 고르고, [연속 촬영]을 <b>누르고 있는 동안</b> 사진이 계속 찍혀요.",
       q2upload: "사진 파일이나 압축파일(zip)로도 넣을 수 있어요. 클래스 카드의 버튼을 눌러 주세요.",
@@ -579,17 +572,9 @@
       aServer: "서버 오류: ",
       aReset: "지금까지 모은 사진과 클래스를 모두 지울까요?",
       restored: "이전에 만들던 내용을 불러왔어요.",
-      oldModel: "예전 방식으로 만든 AI 예요. [체험하기]·[블록]·[파이썬]에서는 그대로 쓸 수 있지만, 여기서 다시 확인하거나 로봇으로 보내려면 다시 가르쳐 주세요.",
-      oldProject: "예전 방식으로 모은 작품이라 클래스 이름만 가져왔어요. 사진을 다시 모아 주세요 (로봇과 같은 방식으로 바뀌었어요).",
-      oldDraft: "예전 방식으로 모은 사진은 다시 모아야 해요 (로봇과 같은 방식으로 바뀌었어요). 클래스 이름만 남겼어요.",
-      robotT: "로봇으로 보내기", robotPing: "연결 확인", modelRobot: "로봇으로",
-      robotNeedHost: "로봇 주소를 적어 주세요 (로봇 화면에 나오는 IP, 예: 192.168.0.12).",
-      robotOk: "로봇과 연결됐어요. 로봇에 있는 AI %1개.",
-      robotSending: "로봇으로 보내는 중…",
-      robotSent: "로봇에 ‘%1’ 로 보냈어요. 로봇 블록 [분류기 모델 불러오기] 에서 이 이름을 쓰세요.",
-      robotExists: "로봇에 ‘%1’ 이(가) 이미 있어요. 덮어쓸까요?",
-      robotOld: "예전 방식 AI 는 로봇으로 보낼 수 없어요. 다시 가르쳐 저장해 주세요.",
-      robotHint: "로봇 IDE 에서 [분류기] 를 켜 두고, 같은 공유기에 연결된 상태에서 보내요.",
+      oldModel: "예전 방식으로 만든 AI 예요. [체험하기]·[블록]·[파이썬]에서는 그대로 쓸 수 있지만, 여기서 다시 확인하려면 다시 가르쳐 주세요.",
+      oldProject: "예전 방식으로 모은 작품이라 클래스 이름만 가져왔어요. 사진을 다시 모아 주세요 (특징 뽑는 방식이 바뀌었어요).",
+      oldDraft: "예전 방식으로 모은 사진은 다시 모아야 해요 (특징 뽑는 방식이 바뀌었어요). 클래스 이름만 남겼어요.",
     },
     en: {
       titleTag: "Train",
@@ -643,7 +628,7 @@
       q1hint: "Name each class, then collect photos in step 2 on the right. You need at least 2 classes.",
       q2hint: "About 30 photos per class works well",
       q2count: "%1 photos · %2 classes (about 30 per class works well)",
-      noBackbone: "The feature model (teachlab/models) is missing. Ask your administrator.",
+      noBackbone: "The feature model (models/mediapipe) is missing. Ask your administrator.",
       errShot: "Could not add the photo — %1",
       q2guide: "Pick a class first, then <b>hold</b> [Burst capture] to keep taking photos.",
       q2upload: "You can also add image files or a zip. Use the buttons on each class card.",
@@ -686,17 +671,9 @@
       aServer: "Server error: ",
       aReset: "Delete every class and photo collected so far?",
       restored: "Restored what you were working on.",
-      oldModel: "This AI was made the old way. You can still use it in [Use]·[Blocks]·[Python], but to check it here or send it to a robot, please train it again.",
-      oldProject: "This work was collected the old way, so only the class names were loaded. Please collect the photos again (it now works the same way as the robot).",
-      oldDraft: "Photos collected the old way need to be collected again (it now works the same way as the robot). Only the class names were kept.",
-      robotT: "Send to robot", robotPing: "Check connection", modelRobot: "To robot",
-      robotNeedHost: "Enter the robot's address (the IP on the robot screen, e.g. 192.168.0.12).",
-      robotOk: "Connected to the robot. AIs on the robot: %1.",
-      robotSending: "Sending to the robot…",
-      robotSent: "Sent to the robot as ‘%1’. Use this name in the robot block [load classifier model].",
-      robotExists: "The robot already has ‘%1’. Overwrite it?",
-      robotOld: "An AI made the old way cannot be sent to a robot. Please train it again and save.",
-      robotHint: "Turn on [Classifier] in the robot IDE, and stay on the same Wi-Fi.",
+      oldModel: "This AI was made the old way. You can still use it in [Use]·[Blocks]·[Python], but to check it here, please train it again.",
+      oldProject: "This work was collected the old way, so only the class names were loaded. Please collect the photos again (the way features are made has changed).",
+      oldDraft: "Photos collected the old way need to be collected again (the way features are made has changed). Only the class names were kept.",
     },
   };
   const t = (k, ...a) => {
@@ -1802,18 +1779,6 @@
     return { type: "landmark", source: src, variant: v, name: "mediapipe/" + src + "_landmarker",
              file: file, dim: DIM_OF[kind], normalize: norm, mirror: false };
   }
-  /* 로봇 [이어서 배우기] 용 — 로봇 분류기 samples.json 과 같은 모양. 로봇은 종류마다 200장까지라 뒤쪽 200장만 */
-  const ROBOT_MAX_SAMPLES = 200;
-  function samplesJson() {
-    const dim = FEAT_DIM();
-    return JSON.stringify({ dim: dim, classes: CLASSES.filter(c => trainedLabels.includes(c.name)).map(c => {
-      const feats = c.feats.slice(-ROBOT_MAX_SAMPLES);
-      const thumbs = c.thumbs.slice(0, c.feats.length).slice(-ROBOT_MAX_SAMPLES);
-      const flat = new Float32Array(feats.length * dim);
-      feats.forEach((f, i) => flat.set(f, i * dim));
-      return { name: c.name, count: feats.length, vecs: b64(flat), thumbs: thumbs };
-    }) });
-  }
   /* 모델 파일들을 zip 안에 넣는다(prefix: 작품 파일 안이면 "model/") */
   async function putModel(zip, prefix) {
     const head = await serializeHead();
@@ -1829,9 +1794,6 @@
     zip.file(prefix + "classifier.bin", new Uint8Array(head.bin.buffer));
     zip.file(prefix + "labels.txt", trainedLabels.join("\n") + "\n");
     if (REPORT) zip.file(prefix + "report.json", JSON.stringify(REPORT));
-    // 모델 파일(로봇으로 보내는 것)에만 — 작품 파일은 classN/features.bin 에 이미 있다
-    if (!prefix && CLASSES.some(c => trainedLabels.includes(c.name) && c.feats.length))
-      zip.file("samples.json", samplesJson());
   }
   /* 모델 폴더 zip 에서 머리를 되살린다. 예전(TF.js) 모델이면 null */
   async function readModel(zip, prefix) {
@@ -1947,53 +1909,11 @@
         loadSaved();
       });
       el.appendChild(open); el.appendChild(py);
-      /* 로봇으로 — 로봇 형식(지금 방식)으로 저장한 것만 */
-      if (m.format === "teachlab") {
-        const rb = document.createElement("button");
-        rb.className = "btn sm"; rb.textContent = t("modelRobot");
-        rb.addEventListener("click", () => sendToRobot(m.slug, m.title));
-        el.appendChild(rb);
-      }
       el.appendChild(b);
       $("savedList").appendChild(el);
     });
   }
   loadSaved();
-
-  /* ---------------- 로봇으로 보내기 (같은 망 안에서만, 인증 없음) ---------------- */
-  const ROBOT_KEY = "vapiRobotHost";
-  try { $("robotHost").value = localStorage.getItem(ROBOT_KEY) || ""; } catch (e) {}
-  function robotHost() {
-    const h = $("robotHost").value.trim();
-    if (!h) { $("robotMsg").textContent = t("robotNeedHost"); $("robotHost").focus(); return ""; }
-    try { localStorage.setItem(ROBOT_KEY, h); } catch (e) {}
-    return h;
-  }
-  $("robotPing").addEventListener("click", async () => {
-    const h = robotHost(); if (!h) return;
-    $("robotMsg").textContent = "…";
-    try {
-      const j = await (await fetch("/custom/robot/ping?host=" + encodeURIComponent(h))).json();
-      $("robotMsg").textContent = j.result === "ok" ? t("robotOk", j.data.models.length) : j.data;
-    } catch (e) { $("robotMsg").textContent = t("aServer") + cleanErr(e); }
-  });
-  async function sendToRobot(slug, title, overwrite) {
-    const h = robotHost(); if (!h) return;
-    $("robotMsg").textContent = t("robotSending");
-    try {
-      const j = await (await fetch("/custom/robot/send", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug: slug, host: h, name: title || slug, overwrite: !!overwrite }),
-      })).json();
-      if (j.result !== "ok") { $("robotMsg").textContent = j.data; return; }
-      if (j.data.exists) {
-        if (confirm(t("robotExists", j.data.name))) return sendToRobot(slug, title, true);
-        $("robotMsg").textContent = ""; return;
-      }
-      $("robotMsg").textContent = t("robotSent", j.data.name);
-      if (window.vapiStat) vapiStat("model_to_robot");
-    } catch (e) { $("robotMsg").textContent = t("aServer") + cleanErr(e); }
-  }
 
   /* AI 눈 — 같은 "가르치기" 를 작은 CNN 으로, 속을 들여다보며 한다 (/eye). 가르치기의 짝 앱이라 여기서 바로 건너간다 */
   document.getElementById("eyeLink").addEventListener("click", () => {
@@ -2196,8 +2116,6 @@
     set("txtProjSave", t("projSave2")); set("txtProjFile", t("projFile"));
     set("txtProjDown", t("projDown")); set("txtProjListT", t("projListT"));
     html("txtQ5Hint", t("q5hint")); html("txtQ7Hint", t("q7hintFull"));
-    set("txtRobotT", t("robotT")); set("txtRobotPing", t("robotPing"));
-    $("robotMsg").textContent = t("robotHint");
     set("langButton", t("langBtn"));
     set("txtQ1", t("q1")); set("txtQ2", t("q2")); set("txtQ3", t("q3"));
     set("txtQ4", t("q4")); set("txtQ5", t("q5"));

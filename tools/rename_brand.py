@@ -33,7 +33,7 @@ PROTECT = ["edge-lab-sound", "edge-lab-drive", "edge-lab-story", 'app: "edge-lab
 SKIP_FILES = {"tools/score_check.py", "tools/brand_applied.json", "brand.json", "tools/rename_brand.py",
               "brand.py", "view_project/lib/brand.js"}
 SKIP_DIRS = ("models/", "view_project/blockly/", "view_project/lib/swagger/", "view_project/lib/cm/",
-             "view_project/fonts/", "view_project/assets/", "teachlab/models/")
+             "view_project/fonts/", "view_project/assets/")
 TEXT_EXT = (".md", ".py", ".js", ".html", ".css", ".bat", ".ps1", ".sh", ".ipynb", ".txt", ".json", ".spec")
 HANGUL = re.compile(r"[가-힣]")
 

@@ -193,7 +193,7 @@ Remove-Item conv.py, depth-v2s.xml, depth-v2s.bin
 ## HF 모델 저장소 다시 만들기
 배포·개발 PC 는 모두 HF 에서 받아 쓴다. 이 절은 **모델을 새로 만들어 HF 에 올릴 때만** 쓴다 (30~50분).
 나머지는 전부 원본 저장소에서 받아 오므로 HF 저장소가 비어도 다시 만들 수 있다 — 다만 **변환 PC 는 인터넷이 필요하다**.
-사물 찾기 · 자세 · 영역(easydetect, `leeyunjai/easydetect`) · 마스크(`mask/mask.onnx`) · 읽어 주기(`tts-int8/`, Supertonic int8)는 이 스크립트가 만들지 않는다 — 있는 파일을 그대로 쓴다.
+사물 찾기 · 자세 · 영역(easydetect, `leeyunjai/easydetect`) · 마스크(`mask/mask.onnx`) · 읽어 주기(`tts-int8/`, Supertonic int8) · 가르치기 특징(`mediapipe/` 의 `hand_landmarker.task` · `pose_landmarker_lite.task` · `mobilenet_v3_small_embedder.onnx`, 로봇과 같은 파일)은 이 스크립트가 만들지 않는다 — 있는 파일을 그대로 쓴다.
 음성 인식(`stt-sv/`)은 원본 `leeyunjai/themaker` 에서 받아 온다(`tools/fetch_stt.py`).
 VLM(gemma3)·깊이 지도는 요구 버전이 달라 전용 venv 에서 따로 변환한다 (위 두 절).
 ```
