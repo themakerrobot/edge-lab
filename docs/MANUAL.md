@@ -91,7 +91,7 @@ show(img, r)                   # 박스가 그려진 채로 보기
 |---|---|
 | **1** | 구별할 종류(클래스) — 예: 가위 · 바위 · 보 |
 | **2** | 클래스 추가 — 2개 이상이어야 학습할 수 있어요 |
-| **3** | 무엇으로 배울지 — 사진 · 손모양 · 표정 · 상반신 · 전신 |
+| **3** | 무엇으로 배울지 — 사진 · 손모양 · 두 손 · 표정 · 상반신 · 전신 |
 | **4** | 웹캠 화면 ([웹캠 켜기] 를 눌러야 켜져요) |
 | **5** | **연속 촬영** — 누르고 있는 동안 계속 찍혀요 (클래스마다 30장쯤) |
 | **6** | **학습 시작** |
@@ -275,7 +275,7 @@ show(img, r)                   # see it with boxes drawn
 |---|---|
 | **1** | The classes to tell apart — e.g. rock · paper · scissors |
 | **2** | Add a class — you need at least 2 to train |
-| **3** | What it learns from — photo · hand shape · expression · upper body · full body |
+| **3** | What it learns from — photo · hand shape · two hands · expression · upper body · full body |
 | **4** | Webcam view (press [Webcam on] to start it) |
 | **5** | **Burst capture** — keeps shooting while held down (about 30 per class) |
 | **6** | **Start training** |

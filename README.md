@@ -65,12 +65,11 @@ speak("안녕하세요")                     # 말하기
 ### 가르치기 — 내가 직접 AI를 가르쳐요
 
 구별할 종류를 만들고(예: 가위·바위·보), 웹캠으로 예시 사진을 모아 학습시키면 바로 시험해 볼 수 있습니다.
-사진 대신 **손 모양 · 표정 · 상반신 · 전신**으로도 배웁니다.
+사진 대신 **손 모양 · 두 손 · 표정 · 상반신 · 전신**으로도 배웁니다.
 
 얼마나 잘 배웠는지 정확도와 학습 곡선으로 보여 주고, 틀린 사진도 함께 보여 줍니다.
 만든 AI를 저장하면 **체험하기 · 블록 · 파이썬에서 그대로 불러 씁니다.**
-특징 계산과 저장 형식이 로봇(파이보 · PiBrain)과 같아서, [로봇으로 보내기] 로 같은 공유기에 있는 로봇에 보내면
-로봇에서도 같은 답을 냅니다(로봇 IDE 에서 [분류기] 를 켜 둘 것).
+학습은 이 컴퓨터 안에서만 하고, 찍은 사진은 밖으로 나가지 않습니다.
 
 ![가르치기](docs/img/train.png)
 
@@ -284,12 +283,11 @@ speak("Hello")                        # say it out loud
 
 Make the classes to tell apart (rock, paper, scissors, say), collect example photos with the webcam,
 train, and test it immediately. Instead of photos it can also learn from
-**hand shape · facial expression · upper body · full body**.
+**hand shape · two hands · facial expression · upper body · full body**.
 
 It shows how well it learned with accuracy and a learning curve, and shows you the ones it got wrong.
 Save your AI and **use it from Try it, Blocks and Python.**
-Features and the file format are the same as on the robots (piBo · PiBrain), so [Send to robot] puts it on a robot
-on the same Wi-Fi and it gives the same answers there (turn on [Classifier] in the robot IDE).
+Training happens only on this computer, and your photos never leave it.
 
 ![Train](docs/img/en/train.png)
 
