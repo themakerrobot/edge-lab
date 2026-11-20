@@ -215,4 +215,5 @@ for /f %%S in ('powershell -NoProfile -Command "[math]::Round((Get-Item ''%ZIP%'
 echo.
 echo DONE: %ZIP%  (%SIZEMB% MB)
 echo   target PC: extract -^> run.bat (double-click)   check: bundle_check.bat   coding lab: lab.bat
+echo   upload to Hugging Face release/: "%PY_LOCAL%" tools\upload_release.py %ZIP%
 endlocal

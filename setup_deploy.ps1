@@ -61,7 +61,7 @@ Write-Host "=== [3/5] models from HF ===" -ForegroundColor Cyan
 # CLI 로 `--exclude` 를 여러 번 넘기면 PowerShell 을 거치며 플래그가 사라지고
 # 패턴이 "받을 파일 이름"으로 먹힌다 — 실제로 README.md 한 개만 받고 끝났다.
 # 파이썬 목록으로 넘기면 인자 파싱을 아예 거치지 않아 그럴 일이 없다.
-& $PY -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='leeyunjai/edge-lab', local_dir='models', ignore_patterns=['models.7z','org/*','yolo/*','tts/*','stt/*','object/*','README.md','*/README.md'])"
+& $PY -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='leeyunjai/edge-lab', local_dir='models', ignore_patterns=['models.7z','org/*','yolo/*','tts/*','stt/*','object/*','release/*','README.md','*/README.md'])"
 if ($LASTEXITCODE -ne 0) { throw "model download failed (check token / network)" }
 # 음성 인식: SenseVoice int8 (파이보 · 파이브레인과 같은 파일, 허깅페이스 leeyunjai/themaker) → models/stt-sv
 # stt/ (예전 Whisper) 는 받지 않는다 — 필요하면 그 폴더를 손으로 넣고 VAPI_STT=whisper 로 고른다

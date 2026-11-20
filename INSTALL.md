@@ -44,6 +44,20 @@ powershell -ExecutionPolicy Bypass -File setup_deploy.ps1
 - 이미 설치한 PC 는 `setup.bat` 을 한 번 더 돌리면 JupyterLab 만 더 깔린다.
 - 우분투: 소리는 `sudo apt install libportaudio2`, NPU 는 Intel `linux-npu-driver`, 내장 GPU 는 Intel compute-runtime 이 따로 필요하다.
 
+## 배포판 만들고 올리기
+
+```
+tools\make_bundle.bat 1.0.0                 배포판 만들기 → dist\edge-lab-1.0.0.zip (파이썬 · 패키지 · 모델 포함, 압축 풀고 run.bat)
+venv\Scripts\python tools\upload_release.py   허깅페이스에 올리기 (dist\ 의 가장 새 zip)
+```
+
+- 만든 **번들 zip 하나만** 허깅페이스 `leeyunjai/edge-lab` 의 `release/` 에 올린다(저장소 이름은 `brand.json` 의 `repo_hf`). 같이 올라가는 것은 sha256 파일과 `release/latest.json`(가장 최근 버전 · 링크) 뿐이다
+- GitHub 릴리즈는 파일 하나가 2GiB 까지라 VLM 이 든 배포판(5GB 남짓)을 못 올린다. 허깅페이스 공개 저장소는 그런 제한이 없고 로그인 없이 링크로 받는다(이어받기 된다)
+- 처음 한 번 `venv\Scripts\hf auth login` 으로 **쓰기** 토큰을 넣는다(또는 환경변수 `HF_TOKEN`). `--dry-run` 을 붙이면 올리지 않고 할 일만 보인다
+- 다 올리면 받는 링크와 sha256, GitHub 릴리즈 노트에 붙일 글을 찍어 준다
+- `setup_deploy.ps1` 은 `release/` 를 받지 않는다 — 설치할 때 배포판 zip 까지 받지 않게
+- 시험 빌드는 올리지 않는다 — 큰 파일을 짧은 시간에 여러 번 올리면 허깅페이스가 막을 수 있다
+
 ## 패키지 버전
 | 파일 | 내용 |
 |---|---|
