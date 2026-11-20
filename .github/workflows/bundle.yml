@@ -9,6 +9,7 @@ name: bundle
 # GitHub 릴리즈는 파일 하나가 2GiB 까지라 zip(VLM 포함 5GB 남짓)은 허깅페이스에 둔다.
 # 필요한 것: 저장소 Secret HF_TOKEN — 허깅페이스 쓰기 토큰 (Settings → Secrets and variables → Actions)
 # 손으로 돌리기: Actions → bundle → Run workflow. release 를 비우면 만들고 시험만 한다(올리지 않는다).
+#   retag 를 켜면 그 릴리즈 태그를 이번에 만든 코드(고른 브랜치의 끝)로 옮긴다 — 태그와 배포판이 같은 코드가 되게.
 
 on:
   release:
@@ -19,6 +20,10 @@ on:
         description: "이 릴리즈 태그(예 v1.0.0)로 만들어 허깅페이스에 올리고 노트에 링크. 비우면 만들고 시험만"
         type: string
         default: ""
+      retag:
+        description: "릴리즈 태그를 이번에 만드는 코드로 옮긴다 (release 를 적었을 때만)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write          # 릴리즈 노트에 링크를 적는다
@@ -43,6 +48,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.release.tag_name || github.ref }}
+
+      - name: 태그를 이 코드로 옮기기 (retag)
+        if: github.event_name == 'workflow_dispatch' && inputs.retag && inputs.release != ''
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $true
+          git tag -f $env:TAG HEAD
+          git push -f origin "refs/tags/$env:TAG"
+          "태그 $env:TAG → $(git rev-parse --short HEAD)"
 
       - name: 디스크 — 모델 · 빌드 · zip 은 가장 넉넉한 드라이브에
         # 모델 4.6GB + 빌드 폴더 + zip 5GB 남짓 + 시험으로 푼 것 — 작업 드라이브 하나로는 빠듯할 수 있다
