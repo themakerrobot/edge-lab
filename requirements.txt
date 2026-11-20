@@ -19,7 +19,7 @@ sherpa-onnx-core==1.13.8
 # --- 모델 ---
 mediapipe
 easyocr
-easydetect          # 사물 찾기 · 자세 · 영역 (+ easydetect-lab 에서 학습한 .onnx 를 [모델 폴더]에)
+easydetect>=0.7.17  # 사물 찾기 · 자세 · 영역 (+ easydetect-lab 에서 학습한 .onnx 를 [모델 폴더]에)
 
 # --- 서버 ---
 fastapi
