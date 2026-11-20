@@ -9,7 +9,7 @@ rem 이 파일이 tools\ 안에 있으면 프로젝트 루트로 올라간다 (�
 cd /d "%~dp0"
 if not exist main.py if exist "..\main.py" cd ..
 set "ROOT=%CD%\"
-if not exist main.py (echo [FAIL] main.py 를 찾을 수 없습니다 & pause & exit /b 1)
+if not exist main.py (echo [FAIL] main.py 를 찾을 수 없습니다 & (if not defined CI pause) & exit /b 1)
 
 if exist "python\python.exe" (
   rem 배포 번들 — 동봉된 파이썬
@@ -24,6 +24,8 @@ if exist "python\python.exe" (
 set HF_HUB_OFFLINE=1
 set TRANSFORMERS_OFFLINE=1
 set VAPI_NO_BROWSER=1
+rem 서버 출력을 파일로 돌리면 파이썬이 PC 기본 인코딩으로 쓴다 — 한글 · 기호에서 멈추지 않게 UTF-8 로
+set PYTHONUTF8=1
 
 echo.
 echo === [1/4] python / packages ===
@@ -37,14 +39,18 @@ if errorlevel 1 goto :fail
 
 echo.
 echo === [3/4] start server (model loading takes 1-2 min) ===
-start "bundle-check" /min cmd /c "%PY% main.py"
+rem 서버가 찍는 것은 bundle_check_server.log 에 남긴다 — 실패하면 아래에서 마지막 줄들을 보여 준다
+start "bundle-check" /min cmd /c "%PY% main.py > bundle_check_server.log 2>&1"
 
+rem 서버를 기다리는 최대 시간(초). GPU 없는 PC(CPU 로만 모델을 올림)는 BC_WAIT 를 늘린다
+if not defined BC_WAIT set BC_WAIT=300
 set /a WAIT=0
 :waitloop
-timeout /t 5 /nobreak >nul
+rem timeout 은 입력 창이 없는 곳(자동 시험 · 리다이렉트)에서 바로 끝나 버린다 — ping 으로 5초를 쉰다
+ping -n 6 127.0.0.1 >nul
 set /a WAIT+=5
 curl -s -m 3 http://localhost:57711/ready | findstr /c:"\"ready\":true" >nul && goto :ready
-if %WAIT% geq 300 (echo [FAIL] server did not start within 300s & goto :fail)
+if %WAIT% geq %BC_WAIT% (echo [FAIL] server did not start within %BC_WAIT%s & goto :fail)
 echo   loading models ... %WAIT%s
 goto :waitloop
 
@@ -71,12 +77,22 @@ if "%RESULT%"=="0" (
   echo ==========================================
   echo   FAILURES FOUND - see the list above
   echo ==========================================
+  call :serverlog
 )
-pause
+if not defined CI pause
 exit /b %RESULT%
 
 :fail
+taskkill /fi "windowtitle eq bundle-check*" /t /f >nul 2>&1
 echo.
 echo CHECK FAILED - see messages above.
-pause
+call :serverlog
+if not defined CI pause
 exit /b 1
+
+:serverlog
+if not exist bundle_check_server.log exit /b 0
+echo.
+echo --- server log (last 60 lines: bundle_check_server.log) ---
+powershell -NoProfile -Command "Get-Content -Encoding UTF8 -Tail 60 bundle_check_server.log"
+exit /b 0

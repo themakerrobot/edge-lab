@@ -38,9 +38,11 @@ jobs:
       TAG: ${{ github.event.release.tag_name || inputs.release }}
       PYTHONUTF8: "1"
     steps:
+      # 릴리즈 발행: 그 태그의 코드로. 손으로 돌리기: 고른 브랜치(main)의 코드로 만들어 release 이름으로 올린다
+      #   (태그 코드에 버그가 있어 다시 만들 때 — 태그를 옮기지 않고 고친 main 으로 다시 만든다)
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name || inputs.release || github.ref }}
+          ref: ${{ github.event.release.tag_name || github.ref }}
 
       - name: 디스크 — 모델 · 빌드 · zip 은 가장 넉넉한 드라이브에
         # 모델 4.6GB + 빌드 폴더 + zip 5GB 남짓 + 시험으로 푼 것 — 작업 드라이브 하나로는 빠듯할 수 있다
@@ -93,6 +95,12 @@ jobs:
           $line = "{0}  {1:N0} MB" -f $zip.Name, ($zip.Length / 1MB)
           $line
           "## 배포판`n``$line``" >> $env:GITHUB_STEP_SUMMARY
+          # 선생님이 누르는 파일이 다 들어갔나 — exe 는 make_bundle 에서 만들기 실패해도 경고만 내고 넘어간다
+          $list = (7z l -ba $zip.FullName) -join "`n"
+          foreach ($f in "$env:SLUG.exe", "run.bat", "lab.bat", "bundle_check.bat") {
+            if ($list -notmatch [regex]::Escape("$env:SLUG\$f")) { Write-Error "zip 안에 $f 가 없어요"; exit 1 }
+            "  있음: $f"
+          }
           # 시험할 자리를 비운다 — 빌드 폴더와 받은 모델은 이제 zip 안에 있다
           Remove-Item -Recurse -Force build\* , models\* -ErrorAction SilentlyContinue
 
@@ -107,9 +115,10 @@ jobs:
           $env:HTTP_PROXY = "http://127.0.0.1:9"
           $env:HTTPS_PROXY = "http://127.0.0.1:9"
           $env:NO_PROXY = "127.0.0.1,localhost"
+          $env:BC_WAIT = "900"          # 러너는 GPU · NPU 가 없어 모델을 CPU 로 올린다 — 서버를 15분까지 기다린다
           Push-Location $bundle
           $PSNativeCommandUseErrorActionPreference = $false
-          cmd /c "bundle_check.bat < nul"
+          cmd /c bundle_check.bat
           $rc = $LASTEXITCODE
           Pop-Location
           Remove-Item -Recurse -Force $where -ErrorAction SilentlyContinue

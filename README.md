@@ -4,7 +4,7 @@
 
 **한국어** · [English](#edge-lab-english)
 
-> **[⬇ 다운로드 (최신 배포판)](https://github.com/themakerrobot/edge-lab/releases/latest)** — 압축을 풀고 `run.bat` 을 두 번 누르면 끝. 파이썬 · 모델이 다 들어 있어 설치도 인터넷도 필요 없습니다 (5GB 남짓).
+> **[⬇ 다운로드 (최신 배포판)](https://github.com/themakerrobot/edge-lab/releases/latest)** — 압축을 풀고 `edge-lab.exe`(또는 `run.bat`)를 두 번 누르면 끝. 코딩 실습(JupyterLab)은 `lab.bat`. 파이썬 · 모델이 다 들어 있어 설치도 인터넷도 필요 없습니다 (5GB 남짓).
 > 지난 버전은 [허깅페이스 release/](https://huggingface.co/leeyunjai/edge-lab/tree/main/release) 에 있습니다.
 
 사진을 찍어 AI에게 물어보고, 블록과 파이썬으로 AI를 부르는 프로그램을 만들고,
@@ -137,7 +137,7 @@ AI를 메모리에 올리는 동안 진행 막대가 보이고, 그 사이 파�
 
 ## 설치 · 실행
 
-**배포판** — [최신 릴리즈](https://github.com/themakerrobot/edge-lab/releases/latest) 의 다운로드 링크로 zip 을 받아 압축을 풀고 `run.bat` 을 두 번 누릅니다. 설치가 필요 없고 인터넷 없는 교실 PC 에 USB 로 옮겨도 됩니다. 점검은 `bundle_check.bat`.
+**배포판** — [최신 릴리즈](https://github.com/themakerrobot/edge-lab/releases/latest) 의 다운로드 링크로 zip 을 받아 압축을 풀고 `edge-lab.exe`(또는 `run.bat`)를 두 번 누릅니다. 코딩 실습은 `lab.bat`, 점검은 `bundle_check.bat`. 설치가 필요 없고 인터넷 없는 교실 PC 에 USB 로 옮겨도 됩니다.
 
 **저장소에서 설치** (개발 · 수업 준비 PC)
 
@@ -220,7 +220,7 @@ AI를 메모리에 올리는 동안 진행 막대가 보이고, 그 사이 파�
 
 [한국어](#edge-lab) · **English**
 
-> **[⬇ Download (latest release)](https://github.com/themakerrobot/edge-lab/releases/latest)** — unzip and double-click `run.bat`. Python and the models are inside, so there is nothing to install and no internet needed (about 5 GB).
+> **[⬇ Download (latest release)](https://github.com/themakerrobot/edge-lab/releases/latest)** — unzip and double-click `edge-lab.exe` (or `run.bat`). For the coding lab (JupyterLab), `lab.bat`. Python and the models are inside, so there is nothing to install and no internet needed (about 5 GB).
 > Older versions are in [Hugging Face release/](https://huggingface.co/leeyunjai/edge-lab/tree/main/release).
 
 Take a photo and ask the AI about it, build programs that call AI with blocks and Python,
@@ -354,7 +354,7 @@ to point at it; your name, work and records all carry over.
 
 ## Install · Run
 
-**Ready-made bundle** — get the zip from the download link in the [latest release](https://github.com/themakerrobot/edge-lab/releases/latest), unzip it and double-click `run.bat`. Nothing to install, and you can carry it on a USB stick to a classroom PC with no internet. To check it, run `bundle_check.bat`.
+**Ready-made bundle** — get the zip from the download link in the [latest release](https://github.com/themakerrobot/edge-lab/releases/latest), unzip it and double-click `edge-lab.exe` (or `run.bat`). The coding lab is `lab.bat`, and `bundle_check.bat` checks everything. Nothing to install, and you can carry it on a USB stick to a classroom PC with no internet.
 
 **Install from the repository** (development · class-prep PC)
 

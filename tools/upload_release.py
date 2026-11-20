@@ -104,7 +104,8 @@ def main():
 
     notes = ("**다운로드**: [%s](%s) (%.1f GB)  \n"
              "sha256: `%s`  \n"
-             "압축을 풀고 run.bat 을 두 번 누르면 됩니다. 점검은 bundle_check.bat\n") % (name, url, size / 1e9, digest)
+             "압축을 풀고 %s.exe(또는 run.bat)를 두 번 누르면 됩니다. 코딩 실습은 lab.bat, 점검은 bundle_check.bat\n"
+             ) % (name, url, size / 1e9, digest, brand.SLUG)
     print("\n다 올렸어요.")
     print("받는 링크  " + url)
     print("\nGitHub 릴리즈 노트에 붙일 글:\n\n" + notes)
