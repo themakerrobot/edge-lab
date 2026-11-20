@@ -211,7 +211,8 @@ tar -a -c -f %ZIP% -C build %SLUG%
 if errorlevel 1 (echo [ERROR] compress failed & exit /b 1)
 
 REM cmd set /a is 32-bit; use PowerShell for multi-GB sizes
-for /f %%S in ('powershell -NoProfile -Command "[math]::Round((Get-Item ''%ZIP%'').Length/1MB)"') do set SIZEMB=%%S
+REM   (for /f 의 작은따옴표 안에서는 '' 로 따옴표를 못 쓴다 - usebackq 로 명령을 ` 로 감싼다)
+for /f "usebackq" %%S in (`powershell -NoProfile -Command "[math]::Round((Get-Item '%ZIP%').Length/1MB)"`) do set SIZEMB=%%S
 echo.
 echo DONE: %ZIP%  (%SIZEMB% MB)
 echo   target PC: extract -^> run.bat (double-click)   check: bundle_check.bat   coding lab: lab.bat
