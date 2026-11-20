@@ -20,6 +20,7 @@ from fastapi import APIRouter, Body, Query, Request
 router = APIRouter()
 
 from paths import STATS_DIR  # noqa: E402
+from i18n import t as _t                        # noqa: E402  서버 글 한/영 (i18n.py)
 STATS_PATH = os.path.join(STATS_DIR, "usage.json")
 FLUSH_EVERY = 20          # 이만큼 쌓이면 저장
 FLUSH_SECONDS = 15        # 또는 이만큼 지나면 저장
@@ -184,7 +185,7 @@ async def stats_summary(request: Request):
 async def stats_reset(request: Request, confirm: str = Query("")):
     global _S
     if confirm != "yes":
-        return {"type": "stats_reset", "result": "fail", "data": "confirm=yes 가 필요합니다"}
+        return {"type": "stats_reset", "result": "fail", "data": _t("confirm=yes 가 필요해요", "confirm=yes is required")}
     with _lock:
         _S = _empty()
         _flush(force=True)

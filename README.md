@@ -157,6 +157,16 @@ AI를 메모리에 올리는 동안 진행 막대가 보이고, 그 사이 파�
 
 탐색기에서 `run.bat` 을 더블클릭해도 됩니다. 브라우저가 자동으로 열립니다.
 
+**우분투** — 배포판은 윈도우용만 있습니다. 우분투는 저장소를 받아 명령으로 설치합니다.
+
+```
+sudo apt install -y python3-venv libportaudio2
+bash setup_deploy.sh
+./run.sh
+```
+
+자세한 것은 [INSTALL.md](INSTALL.md#우분투).
+
 **코딩 실습** — `lab.bat` (우분투 `./lab.sh`) 을 실행하면 JupyterLab 이 열립니다. `notebooks\` 의 노트북 12개로
 래퍼 없이 OpenVINO · numpy · OpenCV 를 직접 씁니다 (사물 찾기 직접 추론, 얼굴 분석, 나만의 분류기, RAG, VLM, 음성, 보드 시리얼 …).
 노트북마다 개념 설명 → 실습 → 자주 나는 오류 → 정리 → **미니 프로젝트**(얼굴 모자이크 카메라, 사람 수 세기, 명함 스캐너, 가위바위보, 문서 Q&A 봇, 음성 비서 …) 순서입니다.
@@ -379,6 +389,16 @@ What each part of every screen does is spelled out with pictures in the **[User 
 ```
 
 Double-clicking `run.bat` in Explorer works too. The browser opens by itself.
+
+**Ubuntu** — the ready-made bundle is Windows only. On Ubuntu, clone the repository and install with commands.
+
+```
+sudo apt install -y python3-venv libportaudio2
+bash setup_deploy.sh
+./run.sh
+```
+
+Details are in [INSTALL.md](INSTALL.md#우분투).
 
 **Coding lab** — run `lab.bat` (Ubuntu: `./lab.sh`) to open JupyterLab. The 12 notebooks in `notebooks\` use
 OpenVINO · numpy · OpenCV directly, no wrapper (raw object detection, face analysis, your own classifier, RAG, VLM, speech, serial board …).

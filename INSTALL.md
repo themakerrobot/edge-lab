@@ -33,6 +33,22 @@ powershell -ExecutionPolicy Bypass -File setup_deploy.ps1
 끝나면 `.\run.bat` 으로 실행한다 (PowerShell 은 `.\` 이 필요하다. cmd 나 더블클릭은 그냥 된다).
 이후 사용법은 README.
 
+### 우분투
+배포판(압축 풀고 바로 실행)은 윈도우용만 만든다. 우분투는 저장소를 받아 명령으로 깐다 (24.04 · 파이썬 3.12 에서 확인).
+```
+sudo apt install -y python3-venv libportaudio2
+git clone https://github.com/themakerrobot/edge-lab.git
+cd edge-lab
+bash setup_deploy.sh
+./run.sh            # 실행 (윈도우 run.bat)
+./lab.sh            # 코딩 실습 (윈도우 lab.bat)
+```
+`setup_deploy.sh` 가 venv → 패키지 → 모델 → 글꼴 → 점검(`tools/check.py`)까지 한다. 시스템 패키지가 없으면 설치 명령을 보여 주고 멈춘다.
+- 패키지는 `requirements.lock.txt`(윈도우 · 파이썬 3.13 기준 고정)에서 윈도우 전용(`pywinpty` · `pywin32`)만 빼고 깐다. 파이썬 버전이 달라 고정 버전이 안 깔리면 `requirements.txt`(범위)로 다시 깐다.
+- 화면 창은 Chrome · Chromium · Edge 가 있으면 전용 창, 없으면 기본 브라우저로 연다.
+- 화면(DISPLAY)이 없는 곳(SSH 등)에서 돌리면 점검의 opencv 창 항목은 건너뛴다.
+- private 저장소면 `HF_TOKEN=hf_xxxx bash setup_deploy.sh`.
+
 ### 코딩 실습 (JupyterLab)
 `setup` 이 JupyterLab 까지 설치한다(`requirements.lock.txt`). 배포 번들(`tools\make_bundle.bat`)에도 들어간다.
 - 실행: `lab.bat` 더블클릭 (우분투: `./lab.sh`). 전용 창이 열리고, 창을 닫으면 JupyterLab 도 꺼진다.

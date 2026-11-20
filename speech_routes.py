@@ -30,6 +30,7 @@ import threading
 import numpy as np
 from fastapi import APIRouter, Body, File, UploadFile, Query
 from fastapi.responses import Response
+from i18n import t as _t                        # noqa: E402  서버 글 한/영 (i18n.py)
 
 router = APIRouter()
 
@@ -147,7 +148,7 @@ def _read_wav(raw):
     elif width == 1:
         a = (np.frombuffer(frames, dtype=np.uint8).astype(np.float32) - 128.0) / 128.0
     else:
-        raise ValueError("지원하지 않는 WAV 형식이에요 (%d bit)" % (width * 8))
+        raise ValueError(_t("지원하지 않는 WAV 형식이에요 (%d bit)", "Unsupported WAV format (%d bit)") % (width * 8))
     if ch > 1:
         a = a.reshape(-1, ch).mean(axis=1)          # 모노로 합친다
     if sr != TARGET_SR and len(a) > 1:              # 선형 보간 리샘플
@@ -170,18 +171,18 @@ def speech_stt(uploadFile: UploadFile = File(...),
     t0 = time.perf_counter()
     pipe = _load()
     if pipe is None:
-        return _fail("stt", _err or "STT 를 쓸 수 없어요.", t0)
+        return _fail("stt", _err or _t("STT 를 쓸 수 없어요.", "Speech recognition (STT) isn't available."), t0)
     try:
         audio = _read_wav(uploadFile.file.read())
     except Exception as ex:
-        return _fail("stt", "소리 파일을 읽을 수 없어요 (WAV 만 됩니다): %s" % ex, t0, _dev)
+        return _fail("stt", _t("소리 파일을 읽을 수 없어요 (WAV 만 됩니다): %s", "Can't read the sound file (WAV only): %s") % ex, t0, _dev)
     if audio.size < TARGET_SR // 5:
-        return _fail("stt", "녹음이 너무 짧아요.", t0, _dev)
+        return _fail("stt", _t("녹음이 너무 짧아요.", "The recording is too short."), t0, _dev)
     try:
         text = pipe.transcribe(audio)
         return _ok("stt", {"text": text, "lang": lang, "engine": STT_ENGINE}, t0, _dev)
     except Exception as ex:
-        return _fail("stt", "음성 인식 실패: %s" % ex, t0, _dev)
+        return _fail("stt", _t("음성 인식 실패: %s", "Speech recognition failed: %s") % ex, t0, _dev)
 
 
 # ================================================================= TTS
@@ -381,7 +382,7 @@ def speech_tts(text: str = Body(..., embed=True),
                steps: int = Body(8, embed=True)):
     text = (text or "").strip()
     if not text:
-        return {"result": "fail", "data": "읽을 글이 없어요."}
+        return {"result": "fail", "data": _t("읽을 글이 없어요.", "There is no text to read.")}
     if len(text) > 1000:
         text = text[:1000]
     if voice not in VOICES:
@@ -393,11 +394,11 @@ def speech_tts(text: str = Body(..., embed=True),
 
     tts = _load_tts()
     if tts is None:
-        return {"result": "fail", "data": _tts_err or "TTS 를 쓸 수 없어요."}
+        return {"result": "fail", "data": _tts_err or _t("TTS 를 쓸 수 없어요.", "Text-to-speech (TTS) isn't available.")}
     try:
         wav = tts.say(text, lang=lang, voice=voice, steps=steps, speed=speed)
     except Exception as ex:
-        return {"result": "fail", "data": "소리를 만들지 못했어요: %s" % ex}
+        return {"result": "fail", "data": _t("소리를 만들지 못했어요: %s", "Couldn't make the sound: %s") % ex}
     return Response(content=_wav_bytes(np.asarray(wav, dtype=np.float32).reshape(-1),
                                        tts.sr),
                     media_type="audio/wav",

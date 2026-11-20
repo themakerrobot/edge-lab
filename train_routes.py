@@ -47,6 +47,7 @@ BACKBONE_XML = "models/backbone/mobilenetv2_feat.xml"     # 예전 모델 전용
 from paths import (USER_DIR, PROJECT_DIR, PYCODE_DIR, REPORTS_PATH,   # noqa: E402
                    TMP_DIR)
 import trash                                                        # noqa: E402  (지운 AI·작품은 휴지통으로)
+from i18n import t as _t                        # noqa: E402  서버 글 한/영 (i18n.py)
 IMAGE_DIR = TMP_DIR + os.sep
 
 # 가르치기 종류(화면의 kind) → teach-lab (source, variant). 로봇 project.json 의 source/variant 와 같은 값
@@ -130,12 +131,12 @@ def _detect(kind, rgb):
         return ex.detect(rgb)
 
 
-NOT_SEEN = {
-    "pose": "손이 보이지 않아요. 손을 화면 안에 보여 주세요.",
-    "hand2": "손이 보이지 않아요. 손을 화면 안에 보여 주세요.",
-    "face": "얼굴이 보이지 않아요. 얼굴을 화면 안에 보여 주세요.",
-    "body_up": "사람이 보이지 않아요. 몸을 화면 안에 보여 주세요.",
-    "body": "사람이 보이지 않아요. 온몸이 보이게 뒤로 물러서 주세요.",
+NOT_SEEN = {                         # (한글, English) — _t(*NOT_SEEN[kind]) 로 요청의 말을 고른다
+    "pose": ("손이 보이지 않아요. 손을 화면 안에 보여 주세요.", "No hand in view. Show your hand inside the picture."),
+    "hand2": ("손이 보이지 않아요. 손을 화면 안에 보여 주세요.", "No hand in view. Show your hands inside the picture."),
+    "face": ("얼굴이 보이지 않아요. 얼굴을 화면 안에 보여 주세요.", "No face in view. Show your face inside the picture."),
+    "body_up": ("사람이 보이지 않아요. 몸을 화면 안에 보여 주세요.", "No person in view. Keep your body inside the picture."),
+    "body": ("사람이 보이지 않아요. 온몸이 보이게 뒤로 물러서 주세요.", "No person in view. Step back so your whole body shows."),
 }
 
 
@@ -150,7 +151,7 @@ def _embed(bgr, kind="image"):
     with _ext_lock:
         vec = ex.vector(rgb)
     if vec is None:
-        raise SoftError(NOT_SEEN[kind])
+        raise SoftError(_t(*NOT_SEEN[kind]))
     return vec
 
 
@@ -162,7 +163,7 @@ def _legacy_load():
         return
     import openvino as ov
     if not os.path.exists(BACKBONE_XML):
-        raise RuntimeError(f"예전 모델용 백본이 없습니다: {BACKBONE_XML} (예전 모델은 다시 가르쳐 주세요)")
+        raise RuntimeError(_t(f"예전 모델용 특징 모델이 없어요: {BACKBONE_XML} (예전 모델은 다시 가르쳐 주세요)", f"The feature model for old AIs is missing: {BACKBONE_XML} (train old AIs again)"))
     L["core"] = ov.Core()
     model = L["core"].read_model(BACKBONE_XML)
     avail = L["core"].available_devices
@@ -179,7 +180,7 @@ def _legacy_load():
             last = ex
             print(f"[custom] {dev} compile failed: {ex}")
     if L["compiled"] is None:
-        raise RuntimeError(f"백본을 컴파일할 수 없습니다: {last}")
+        raise RuntimeError(_t(f"특징 모델을 열 수 없어요: {last}", f"Can't open the feature model: {last}"))
     L["out"] = L["compiled"].output(0)
     print(f"[custom] (legacy) mobilenetv2_feat loaded ({L['device']}, dim=1280)")
 
@@ -228,7 +229,7 @@ def _legacy_embed_pose(bgr):
     """예전 손 특징 — 화면 좌표 21점, 손목 원점·최대 거리로 나눔(63)."""
     hand = _hand_landmarks(bgr)
     if hand is None:
-        raise SoftError(NOT_SEEN["pose"])
+        raise SoftError(_t(*NOT_SEEN["pose"]))
     pts = hand["px"].copy()
     pts -= pts[0]
     scale = float(np.linalg.norm(pts, axis=1).max())
@@ -245,7 +246,7 @@ def _body_keypoints(bgr):
     """가장 크게 잡힌 사람 한 명의 관절 17개 [(x, y, conf)]. 없으면 None (예전 모델용)."""
     eng = hub.engines(required=False)
     if eng is None:
-        raise SoftError("AI를 준비하는 중이에요. 조금만 기다려 주세요.")
+        raise SoftError(_t("AI를 준비하는 중이에요. 조금만 기다려 주세요.", "The AI is still getting ready. Please wait a moment."))
     r = eng.object.pose(bgr)[0]
     if r.keypoints is None or r.boxes is None or len(r.boxes) == 0:
         return None
@@ -259,11 +260,11 @@ def _body_keypoints(bgr):
 def _legacy_embed_body(bgr, full):
     kp = _body_keypoints(bgr)
     if kp is None:
-        raise SoftError(NOT_SEEN["body" if full else "body_up"])
+        raise SoftError(_t(*NOT_SEEN["body" if full else "body_up"]))
     need = [5, 6, 11, 12] if full else [5, 6]
     if any(kp[i][2] < KP_CONF for i in need):
-        raise SoftError("전신이 다 보이지 않아요. 뒤로 조금 물러서 주세요." if full
-                        else "어깨가 보이지 않아요. 몸을 화면 안에 보여 주세요.")
+        raise SoftError(_t("전신이 다 보이지 않아요. 뒤로 조금 물러서 주세요.", "The whole body isn't visible. Step back a little.") if full
+                        else _t("어깨가 보이지 않아요. 몸을 화면 안에 보여 주세요.", "The shoulders aren't visible. Keep your body inside the picture."))
     mid = lambda a, b: ((kp[a][0] + kp[b][0]) / 2, (kp[a][1] + kp[b][1]) / 2)
     sh = mid(5, 6)
     if full:
@@ -276,7 +277,7 @@ def _legacy_embed_body(bgr, full):
         scale = float(np.hypot(kp[5][0] - kp[6][0], kp[5][1] - kp[6][1]))
         idx = range(LEGACY_UPPER_N)
     if scale < 1e-3:
-        raise SoftError("사람이 너무 작게 보여요. 조금 앞으로 와 주세요.")
+        raise SoftError(_t("사람이 너무 작게 보여요. 조금 앞으로 와 주세요.", "The person looks too small. Come a little closer."))
     out = []
     for i in idx:
         x, y, c = kp[i]
@@ -346,7 +347,7 @@ class TeachHead:
         from train_features import Classifier
         for req in ("project.json", "classifier.json", "classifier.bin"):
             if req not in names:
-                raise ValueError(f"zip에 {req} 이(가) 없습니다")
+                raise ValueError(_t(f"압축파일에 {req} 이(가) 없어요", f"{req} is missing from the zip"))
         self.project = json.loads(zf.read("project.json").decode("utf-8"))
         spec = json.loads(zf.read("classifier.json").decode("utf-8"))
         self.clf = Classifier(spec, zf.read("classifier.bin"))
@@ -355,10 +356,10 @@ class TeachHead:
         var = self.project.get("variant")
         self.kind = KIND_OF.get((src, var if src != "image" else None))
         if self.kind is None:
-            raise ValueError(f"이 특징은 아직 쓸 수 없어요: {src}/{var}")
+            raise ValueError(_t(f"이 특징은 아직 쓸 수 없어요: {src}/{var}", f"This feature type isn't supported yet: {src}/{var}"))
         self.dim = self.clf.input_dim
         if self.dim != DIM_OF[self.kind]:
-            raise ValueError(f"입력 차원 불일치: {self.dim} (기대 {DIM_OF[self.kind]})")
+            raise ValueError(_t(f"특징 개수가 맞지 않아요: {self.dim} (기대 {DIM_OF[self.kind]})", f"Feature size mismatch: {self.dim} (expected {DIM_OF[self.kind]})"))
         self.report = None
         if "report.json" in names:
             try:
@@ -385,7 +386,7 @@ class LegacyHead:
     def __init__(self, zf, names):
         for req in ("model.json", "weightsSpecs.json", "weights.bin", "labels.txt"):
             if req not in names:
-                raise ValueError(f"zip에 {req} 이(가) 없습니다")
+                raise ValueError(_t(f"압축파일에 {req} 이(가) 없어요", f"{req} is missing from the zip"))
         specs = json.loads(zf.read("weightsSpecs.json").decode("utf-8"))
         buf = zf.read("weights.bin")
         self.labels = [s.strip() for s in
@@ -412,14 +413,14 @@ class LegacyHead:
         mats = [t for t in tensors if t.ndim == 2]
         vecs = [t for t in tensors if t.ndim == 1]
         if len(mats) != 2 or len(vecs) != 2:
-            raise ValueError("예상과 다른 가중치 구성입니다 (Dense 2단이 아님)")
+            raise ValueError(_t("모델 구성이 예상과 달라요 (Dense 2단이 아님)", "Unexpected model layout (not 2 Dense layers)"))
         self.W1, self.W2 = mats
         self.b1, self.b2 = vecs
         self.dim = int(self.W1.shape[0])
         if self.dim != LEGACY_DIM[self.kind]:
-            raise ValueError(f"입력 차원 불일치: {self.dim} (기대 {LEGACY_DIM[self.kind]})")
+            raise ValueError(_t(f"특징 개수가 맞지 않아요: {self.dim} (기대 {LEGACY_DIM[self.kind]})", f"Feature size mismatch: {self.dim} (expected {LEGACY_DIM[self.kind]})"))
         if self.W2.shape[1] != len(self.labels):
-            raise ValueError(f"클래스 수 불일치: 가중치 {self.W2.shape[1]} / labels {len(self.labels)}")
+            raise ValueError(_t(f"클래스 수가 맞지 않아요: 가중치 {self.W2.shape[1]} / labels {len(self.labels)}", f"Class count mismatch: weights {self.W2.shape[1]} / labels {len(self.labels)}"))
 
     def features(self, bgr):
         return _legacy_embed(bgr, self.kind)
@@ -463,7 +464,7 @@ def _head(slug):
         return h
     p = os.path.join(USER_DIR, slug, "model.zip")
     if not os.path.exists(p):
-        raise ValueError(f"모델을 찾을 수 없습니다: {slug}")
+        raise ValueError(_t(f"모델을 찾을 수 없어요: {slug}", f"Model not found: {slug}"))
     with open(p, "rb") as f:
         h = Head(f.read())
     with _lock:
@@ -474,15 +475,15 @@ def _head(slug):
 def _zip_images(raw):
     """업로드된 zip 에서 이미지 파일 이름 목록과 zipfile 객체를 돌려준다."""
     if len(raw) > MAX_ZIP:
-        raise ValueError(f"압축파일이 너무 큽니다 ({len(raw) // 1048576}MB)")
+        raise ValueError(_t(f"압축파일이 너무 커요 ({len(raw) // 1048576}MB)", f"The zip is too big ({len(raw) // 1048576}MB)"))
     zf = zipfile.ZipFile(io.BytesIO(raw))
     exts = (".png", ".jpg", ".jpeg", ".bmp", ".webp")
     names = [n for n in sorted(zf.namelist())
              if n.lower().endswith(exts) and not n.startswith("__MACOSX")]
     if not names:
-        raise ValueError("압축파일에 이미지가 없습니다")
+        raise ValueError(_t("압축파일에 사진이 없어요", "There are no images in the zip"))
     if len(names) > MAX_IMAGES:
-        raise ValueError(f"이미지가 너무 많습니다 ({len(names)} / 최대 {MAX_IMAGES})")
+        raise ValueError(_t(f"사진이 너무 많아요 ({len(names)} / 최대 {MAX_IMAGES})", f"Too many images ({len(names)} / max {MAX_IMAGES})"))
     return zf, names
 
 
@@ -673,7 +674,7 @@ async def custom_upload(request: Request, uploadFile: UploadFile = File(...),
 
     def fn():
         if len(raw) > MAX_ZIP:
-            raise ValueError("모델 파일이 너무 큽니다")
+            raise ValueError(_t("모델 파일이 너무 커요", "The model file is too big"))
         head = Head(raw)                                  # 검증 겸 파싱
         base = _slugify(slug or title)
         os.makedirs(USER_DIR, exist_ok=True)
@@ -718,7 +719,7 @@ async def custom_model_file(request: Request, slug: str):
     p = os.path.join(USER_DIR, _slugify(slug), "model.zip")
     if not os.path.exists(p):
         return {"type": "custom_model_file", "result": "fail",
-                "data": f"모델을 찾을 수 없습니다: {slug}", "elapsed_ms": 0}
+                "data": _t(f"모델을 찾을 수 없어요: {slug}", f"Model not found: {slug}"), "elapsed_ms": 0}
     return FileResponse(p, media_type="application/zip",
                         filename=_slugify(slug) + ".zip")
 
@@ -729,7 +730,7 @@ async def custom_delete(request: Request, slug: str):
         s = _slugify(slug)
         d = os.path.join(USER_DIR, s)
         if not os.path.isdir(d):
-            raise ValueError(f"모델을 찾을 수 없습니다: {slug}")
+            raise ValueError(_t(f"모델을 찾을 수 없어요: {slug}", f"Model not found: {slug}"))
         title = s
         try:
             with open(os.path.join(d, "meta.json"), encoding="utf-8") as f:
@@ -752,7 +753,7 @@ async def project_save(request: Request, uploadFile: UploadFile = File(...),
 
     def fn():
         if len(raw) > MAX_ZIP:
-            raise ValueError("작품 파일이 너무 큽니다")
+            raise ValueError(_t("작품 파일이 너무 커요", "The project file is too big"))
         zipfile.ZipFile(io.BytesIO(raw))                  # 열리는지만 확인
         os.makedirs(PROJECT_DIR, exist_ok=True)
         base = _slugify(slug or title)
@@ -789,7 +790,7 @@ async def project_get(request: Request, slug: str):
     p = os.path.join(PROJECT_DIR, _slugify(slug) + ".zip")
     if not os.path.exists(p):
         return {"type": "project_get", "result": "fail",
-                "data": f"작품을 찾을 수 없습니다: {slug}", "elapsed_ms": 0}
+                "data": _t(f"작품을 찾을 수 없어요: {slug}", f"Project not found: {slug}"), "elapsed_ms": 0}
     return FileResponse(p, media_type="application/zip",
                         filename=_slugify(slug) + ".zip")
 
@@ -800,7 +801,7 @@ async def project_delete(request: Request, slug: str):
         s = _slugify(slug)
         files = [os.path.join(PROJECT_DIR, s + ext) for ext in (".zip", ".json")]
         if not any(os.path.exists(p) for p in files):
-            raise ValueError(f"작품을 찾을 수 없습니다: {slug}")
+            raise ValueError(_t(f"작품을 찾을 수 없어요: {slug}", f"Project not found: {slug}"))
         title = s
         try:
             with open(files[1], encoding="utf-8") as f:
@@ -819,7 +820,7 @@ async def report_add(request: Request, body: dict = Body(...)):
     def fn():
         rep = body.get("report") or {}
         if not isinstance(rep.get("classes"), list):
-            raise ValueError("report.classes 가 필요합니다")
+            raise ValueError(_t("report.classes 가 필요해요", "report.classes is required"))
         item = {"title": str(body.get("title", ""))[:60], "report": rep,
                 "at": time.strftime("%Y-%m-%d %H:%M:%S")}
         os.makedirs(os.path.dirname(REPORTS_PATH), exist_ok=True)
@@ -854,7 +855,7 @@ async def custom_clear_all(request: Request,
                            confirm: str = Query("", description="'yes' 를 보내야 실행")):
     def fn():
         if confirm != "yes":
-            raise ValueError("confirm=yes 가 필요합니다")
+            raise ValueError(_t("confirm=yes 가 필요해요", "confirm=yes is required"))
         # data/ 안의 작업 파일만 지운다 — models/(AI 모델)은 건드리지 않는다
         n = 0
         for root in (USER_DIR, PROJECT_DIR, PYCODE_DIR):

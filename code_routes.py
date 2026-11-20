@@ -32,6 +32,7 @@ router = APIRouter()
 ROOT = Path(__file__).resolve().parent
 from paths import PYCODE_DIR, BLOCKS_DIR       # noqa: E402
 import trash                                     # noqa: E402  (지운 작품은 휴지통으로)
+from i18n import t as _t                        # noqa: E402  서버 글 한/영 (i18n.py)
 WORK_DIR = Path(PYCODE_DIR)                    # 저장한 작품
 RUN_DIR = WORK_DIR / ".run"                    # 실행용 임시 파일
 MAX_OUTPUT = 200_000                           # 세션당 출력 버퍼 상한(문자)
@@ -101,7 +102,7 @@ def pycode_run(code: str = Body(..., embed=True), lang: str = "ko"):
     with _lock:
         running = sum(1 for s in _sessions.values() if not s["done"])
     if running >= MAX_SESSIONS:
-        return _fail("실행 중인 코드가 너무 많아요. 먼저 정지해 주세요.")
+        return _fail(_t("실행 중인 코드가 너무 많아요. 먼저 정지해 주세요.", "Too many programs are running. Stop one first."))
 
     RUN_DIR.mkdir(parents=True, exist_ok=True)
     sid = uuid.uuid4().hex[:12]
@@ -198,7 +199,7 @@ def pycode_frame(sid: str = Query(...), caption: str = Query(""),
     """학생 코드의 show() 가 그린 그림을 받아 둔다. 화면은 폴링하며 가져간다."""
     raw = uploadFile.file.read()
     if len(raw) > 8_000_000:
-        return _fail("그림이 너무 커요.")
+        return _fail(_t("그림이 너무 커요.", "The picture is too big."))
     with _lock:
         s = _sessions.get(sid)
         if s is None:
@@ -272,7 +273,7 @@ def blocks_table(name: str = Body(...), csv: str = Body(...)):
     그래서 파이썬 · 주피터에서 그 이름 그대로 연다. 같은 이름이면 덮어쓴다."""
     data = csv.encode("utf-8-sig") if not csv.startswith("\ufeff") else csv.encode("utf-8")
     if len(data) > TABLE_MAX:
-        return _fail("표가 너무 커요 (5MB 까지)")
+        return _fail(_t("표가 너무 커요 (5MB 까지)", "The table is too big (up to 5MB)"))
     WORK_DIR.mkdir(parents=True, exist_ok=True)
     p = WORK_DIR / (_safe(name) + ".csv")
     p.write_bytes(data)

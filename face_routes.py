@@ -25,11 +25,12 @@ import facedb as FDB
 import hub
 import paths
 from paths import TMP_DIR
+from i18n import t as _t                        # noqa: E402  서버 글 한/영 (i18n.py)
 
 router = APIRouter()
 INFO_ALL = ("age", "gender", "emotion", "dir", "dist", "mask")
-NO_MODEL = ("얼굴 구분 모델이 없어요 — setup 을 다시 돌려 주세요 "
-            "(models/face/face-reidentification-retail-0095.xml)")
+NO_MODEL = ("얼굴 구분 모델이 없어요 — 설치를 다시 돌려 주세요 (models/face/face-reidentification-retail-0095.xml)",
+            "The face ID model is missing — run the setup again (models/face/face-reidentification-retail-0095.xml)")
 
 
 def db_path():
@@ -66,7 +67,7 @@ def _read_upload(upload):
         if os.path.exists(path):
             os.remove(path)
     if img is None:
-        raise ValueError("사진을 읽을 수 없어요 / invalid image")
+        raise ValueError(_t("사진을 읽을 수 없어요", "Can't read the photo"))
     return img
 
 
@@ -141,11 +142,11 @@ async def face_register(request: Request, uploadFile: UploadFile = File(...), na
     try:
         eng = hub.engines()
         if eng.face.reid is None:
-            return _fail(NO_MODEL, t0, "face_register")
+            return _fail(_t(*NO_MODEL), t0, "face_register")
         bgr = _read_upload(uploadFile)
         faces = eng.face.detect.predict(bgr)
         if not faces:
-            return _fail("얼굴을 찾지 못했어요 — 얼굴이 잘 보이게 해 주세요 / No face found", t0, "face_register")
+            return _fail(_t("얼굴을 찾지 못했어요 — 얼굴이 잘 보이게 해 주세요", "No face found — make the face clearly visible"), t0, "face_register")
         f = max(faces, key=lambda it: (it["box"][2] - it["box"][0]) * (it["box"][3] - it["box"][1]))
         res = DB.add(name, _embed(eng, bgr, f["box"]))
         res["box"] = f["box"]
@@ -198,7 +199,7 @@ async def face_db_file_load(uploadFile: UploadFile = File(...)):
     try:
         raw = uploadFile.file.read(5 * 1024 * 1024 + 1)
         if len(raw) > 5 * 1024 * 1024:
-            return _fail("파일이 너무 커요 (5MB 까지)")
+            return _fail(_t("파일이 너무 커요 (5MB 까지)", "The file is too big (up to 5MB)"))
         DB.replace(raw)
         return _ok(DB.summary())
     except FDB.FaceDBError as ex:

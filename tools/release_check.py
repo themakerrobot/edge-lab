@@ -171,6 +171,48 @@ def check_usage_names():
             fail("설정 → 사용 통계 이름표(pgName %s)에 없음: %s (화면에 키 그대로 나온다)" % (lang, k))
 
 
+SERVER_MSG_FILES = ("main.py", "face_routes.py", "db_routes.py", "speech_routes.py", "board_routes.py", "board.py",
+                    "train_routes.py", "code_routes.py", "mp_routes.py", "works_routes.py", "stats_routes.py",
+                    "engines.py", "facedb.py")
+SERVER_MSG_CALLS = ("_fail", "SoftError", "ValueError", "RuntimeError", "FileNotFoundError", "BoardError",
+                    "FaceDBError", "JSONResponse", "HTTPException")
+
+
+def hangul_outside_t(path, calls):
+    """calls(이름) 호출 안 · "result": "fail" 이 든 문장 안에서 _t(...) 밖에 쓴 한글 글이 있는 줄 번호들."""
+    import io
+    import tokenize
+    strtypes = {tokenize.STRING} | ({tokenize.FSTRING_MIDDLE} if hasattr(tokenize, "FSTRING_MIDDLE") else set())
+    toks = list(tokenize.generate_tokens(io.StringIO(read(path)).readline))
+    bad, stmt = [], []
+
+    def scan(st):
+        trig = any(t.type == tokenize.NAME and t.string in calls and i + 1 < len(st) and st[i + 1].string == "("
+                   for i, t in enumerate(st)) or any(t.type == tokenize.STRING and t.string in ('"fail"', "'fail'") for t in st)
+        if not trig:
+            return
+        depth, in_t = 0, []
+        for i, t in enumerate(st):
+            if t.type == tokenize.OP and t.string in "([{":
+                depth += 1
+                if i and st[i - 1].string == "_t":
+                    in_t.append(depth)
+            elif t.type == tokenize.OP and t.string in ")]}":
+                if in_t and in_t[-1] == depth:
+                    in_t.pop()
+                depth -= 1
+            elif t.type in strtypes and not in_t and re.search("[가-힣]", t.string):
+                bad.append(t.start[0])
+
+    for t in toks:
+        if t.type in (tokenize.NEWLINE, tokenize.ENDMARKER):
+            scan(stmt)
+            stmt = []
+        elif t.type not in (tokenize.COMMENT, tokenize.NL):
+            stmt.append(t)
+    return sorted(set(bad))
+
+
 def check_error_codes():
     """오류 코드(view_project/lib/errcodes.js)가 쓰는 곳 · 설명서와 맞나.
     themaker.py 의 TheMakerError(code=…) · 블록 화면의 fail("m_…") 키가 목록에 있고, 설명서 오류 코드 표(한/영)에 다 있나."""
@@ -193,33 +235,14 @@ def check_error_codes():
         for c in sorted(codes):
             if "`%s`" % c not in part:
                 fail("docs/MANUAL.md 오류 코드 표(%s)에 없음: %s" % (lang, c))
-    # themaker 오류 · 안내는 한/영 둘 다 — 한글 글을 _t("한글", "English") 없이 바로 쓰면 영어 화면에 한글이 나온다
-    import io
-    import tokenize
-    tm_src = read("themaker.py")
-    toks = list(tokenize.generate_tokens(io.StringIO(tm_src).readline))
-    i = 0
-    while i < len(toks):
-        t = toks[i]
-        if t.type == tokenize.NAME and t.string in ("TheMakerError", "print") and i + 1 < len(toks) and toks[i + 1].string == "(":
-            depth, j, in_t = 0, i + 1, []
-            while j < len(toks):
-                x = toks[j].string
-                if x in "([{":
-                    depth += 1
-                    if toks[j - 1].string == "_t":
-                        in_t.append(depth)
-                elif x in ")]}":
-                    if in_t and in_t[-1] == depth:
-                        in_t.pop()
-                    depth -= 1
-                    if depth == 0:
-                        break
-                elif toks[j].type == tokenize.STRING and not in_t and re.search("[가-힣]", x):
-                    fail("themaker.py:%d 한글 글을 _t(한글, English) 없이 씀 — 영어 화면에도 한글로 나온다" % toks[j].start[0])
-                j += 1
-            i = j
-        i += 1
+    # themaker · 서버 오류 글은 한/영 둘 다 — 한글을 _t("한글", "English") 없이 바로 쓰면 영어 화면에 한글이 나온다
+    for f, calls in (("themaker.py", ("TheMakerError", "print")),) + tuple((f, SERVER_MSG_CALLS) for f in SERVER_MSG_FILES):
+        if (ROOT / f).exists():
+            for ln in hangul_outside_t(f, calls):
+                fail("%s:%d 한글 글을 _t(한글, English) 없이 씀 — 영어 화면에도 한글로 나온다" % (f, ln))
+    for f in sorted((ROOT / "view_project").glob("*.html")):
+        if not re.search(r'<script src="/lib/brand.js"></script>\s*<script src="/lib/lang.js"></script>', f.read_text(encoding="utf-8")):
+            fail("view_project/%s 가 lib/brand.js 바로 뒤에 lib/lang.js 를 읽지 않음 (서버 글이 화면 언어로 안 온다)" % f.name)
     for page in ("view_project/code.html", "view_project/blocks.html"):
         if "/lib/errcodes.js" not in read(page):
             fail(page + " 가 lib/errcodes.js 를 읽지 않음")

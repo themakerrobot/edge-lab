@@ -20,6 +20,7 @@
 | `code_routes.py` | 파이썬 IDE API — 실행·정지·출력·작품 저장 |
 | `pyrunner.py` | 학생 파이썬 실행기 — 그대로 실행하고, 멈추면 예외 종류 · 줄 · 원래 Traceback 을 `run_xxx.err.json` 에 남긴다(→ `/pycode/output` 의 `error`) |
 | `speech_routes.py` | 음성 인식(STT)·음성 합성(TTS) API |
+| `i18n.py` | 서버 글의 말 — 요청마다 화면 언어(X-Lang · ?lang · 쿠키)를 기억하고 `t("한글", "English")` 로 그 말을 고른다. 화면은 `lib/lang.js`, themaker 는 `_LangHeader` 가 X-Lang 을 붙인다 |
 | `brand.py` · `brand.json` | 제품 이름 한 곳 — 화면 이름 · 한국어 이름 · 부제 · 파일 이름 · 작업 폴더 · 앱데이터 폴더 · 저장소 주소. 아래 "제품 이름" 절 |
 | `hub.py` | 실행 중인 main 모듈·엔진 찾기 (`import main` 은 금물 — main.py 가 다시 실행된다) |
 | `db_routes.py` | 내가 준 자료에서 찾아 답하기(RAG) — 자료 저장·검색·답변 |
@@ -32,8 +33,8 @@
 | `sysinfo.py` | 이 컴퓨터 상태(메모리 · CPU 사용률) |
 | `view_project/` | 프론트 6페이지 (`index` 체험하기 · `blocks` 블록 코딩 · `code` 파이썬 · `train` 가르치기 · `talk` 대화 · `options` 설정) |
 | `paths.py` | 폴더 규칙 — `models/`(AI 모델) / `data/`(작업 파일) 분리·자동 이전 |
-| `run.bat` | 실행 |
-| `setup_deploy.ps1` | 설치 — 패키지 + 모델 다운로드 |
+| `run.bat` · `run.sh` | 실행 (윈도우 · 우분투) |
+| `setup_deploy.ps1` · `setup_deploy.sh` | 설치 — 패키지 + 모델 다운로드 (윈도우 · 우분투) |
 | `requirements.txt` | 패키지 목록 (lock 파일이 있으면 그쪽 우선) |
 | `tools/release_check.py` | 배포 점검 — 서버 파일 · 화면 · 모델 · 패키지가 번들 목록 · 셸 · 설치 스크립트와 맞는지(서버 · 모델 없이). `make_bundle.bat` 와 schema 시험이 먼저 돌린다 |
 | `tools/schema_test/` | 모델 없이 응답 스키마 회귀 시험 — `tools\schema_test\run.bat` (가짜 엔진으로 서버를 띄워 엔드포인트·themaker 를 실제 호출) |

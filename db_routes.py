@@ -28,6 +28,7 @@ from fastapi import APIRouter, File, Form, Query, Request, UploadFile
 import hub
 from paths import DB_DIR
 import trash                 # 지운 자료는 휴지통으로
+from i18n import t as _t                        # noqa: E402  서버 글 한/영 (i18n.py)
 
 router = APIRouter()
 
@@ -150,7 +151,7 @@ def _path_of(slug):
 def _load(slug):
     p = _path_of(slug)
     if not p:
-        raise ValueError("자료를 찾을 수 없어요: %s" % slug)
+        raise ValueError(_t("자료를 찾을 수 없어요: %s", "Material not found: %s") % slug)
     with open(p, encoding="utf-8") as f:
         return json.load(f)
 
@@ -201,17 +202,17 @@ async def db_create(request: Request, title: str = Form(...), text: str = Form("
         try:
             body = (body + "\n" + uploadFile.file.read().decode("utf-8", "replace")).strip()
         except Exception as ex:
-            return _fail("파일을 읽지 못했어요: %s" % ex, t0)
+            return _fail(_t("파일을 읽지 못했어요: %s", "Couldn't read the file: %s") % ex, t0)
     body = body.strip()
     if not body:
-        return _fail("자료로 쓸 글을 넣어 주세요.", t0)
+        return _fail(_t("자료로 쓸 글을 넣어 주세요.", "Put in the text to use as material."), t0)
     if len(body) > MAX_TEXT:
-        return _fail("글이 너무 길어요 (%d자). %d자 아래로 줄여 주세요."
+        return _fail(_t("글이 너무 길어요 (%d자). %d자 아래로 줄여 주세요.", "The text is too long (%d characters). Keep it under %d.")
                      % (len(body), MAX_TEXT), t0)
 
     chunks = split_text(body)
     if not chunks:
-        return _fail("나눌 만한 글이 없어요.", t0)
+        return _fail(_t("나눌 만한 글이 없어요.", "There is no text to split."), t0)
     try:
         vecs = _eng().embed.encode(chunks, kind="passage")
     except Exception as ex:
@@ -259,7 +260,7 @@ async def db_get(request: Request, slug: str, limit: int = 20):
 async def db_delete(request: Request, slug: str):
     p = _path_of(slug)
     if not p:
-        return _fail("자료를 찾을 수 없어요: %s" % slug)
+        return _fail(_t("자료를 찾을 수 없어요: %s", "Material not found: %s") % slug)
     title = slug
     try:
         with open(p, encoding="utf-8") as f:
@@ -276,7 +277,7 @@ async def db_find(request: Request, db: str = Query(...), prompt: str = Query(..
                   top_k: int = TOP_K):
     t0 = time.perf_counter()
     if not prompt.strip():
-        return _fail("물어볼 말을 적어 주세요.", t0)
+        return _fail(_t("물어볼 말을 적어 주세요.", "Type what you want to ask."), t0)
     try:
         meta, hits = _search(db, prompt, top_k)
     except Exception as ex:
@@ -291,7 +292,7 @@ async def db_rag(request: Request, db: str = Query(...), prompt: str = Query(...
     import prompts as P
     t0 = time.perf_counter()
     if not prompt.strip():
-        return _fail("물어볼 말을 적어 주세요.", t0)
+        return _fail(_t("물어볼 말을 적어 주세요.", "Type what you want to ask."), t0)
     try:
         meta, hits = _search(db, prompt, top_k)
         lg = P.lang_of(prompt, lang)

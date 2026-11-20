@@ -25,6 +25,7 @@
 import collections
 import threading
 import time
+from i18n import t as _t                        # noqa: E402  서버 글 한/영 (i18n.py)
 
 try:
     import serial                      # pyserial
@@ -87,7 +88,7 @@ class Board:
     @staticmethod
     def ports():
         if serial is None:
-            raise BoardError("pyserial 이 설치되어 있지 않아요 (pip install pyserial).")
+            raise BoardError(_t("pyserial 이 설치되어 있지 않아요 (pip install pyserial).", "pyserial isn't installed (pip install pyserial)."))
         out = []
         for p in serial.tools.list_ports.comports():
             out.append({"device": p.device, "description": p.description or "",
@@ -96,15 +97,15 @@ class Board:
 
     def connect(self, port, baud=115200, eol="lf"):
         if serial is None:
-            raise BoardError("pyserial 이 설치되어 있지 않아요 (pip install pyserial).")
+            raise BoardError(_t("pyserial 이 설치되어 있지 않아요 (pip install pyserial).", "pyserial isn't installed (pip install pyserial)."))
         port = str(port or "").strip()
         if not port:
-            raise BoardError("포트를 골라 주세요.")
+            raise BoardError(_t("포트를 골라 주세요.", "Pick a port."))
         baud = int(baud)
         if baud not in BAUDS:
-            raise BoardError("속도는 %s 중에서 골라 주세요." % ", ".join(map(str, BAUDS)))
+            raise BoardError(_t("속도는 %s 중에서 골라 주세요.", "Pick a speed from %s.") % ", ".join(map(str, BAUDS)))
         if eol not in EOLS:
-            raise BoardError("줄 끝은 lf · crlf · cr · none 중 하나예요.")
+            raise BoardError(_t("줄 끝은 lf · crlf · cr · none 중 하나예요.", "Line ending must be lf, crlf, cr or none."))
         self.disconnect(quiet=True)
         try:
             # serial_for_url: "COM3" 같은 포트 이름도, 시험용 "loop://" 도 연다
@@ -117,8 +118,8 @@ class Board:
             ser.open()
         except Exception as ex:
             self.error = "열 수 없어요: %s" % ex
-            raise BoardError("%s 을(를) 열 수 없어요. 다른 프로그램(Arduino IDE 의 시리얼 모니터 등)이 "
-                             "쓰고 있지 않은지 확인해 주세요. (%s)" % (port, ex))
+            raise BoardError(_t("%s 을(를) 열 수 없어요. 다른 프로그램(Arduino IDE 의 시리얼 모니터 등)이 "
+                             "쓰고 있지 않은지 확인해 주세요. (%s)", "Can't open %s. Check no other program (like the Arduino IDE serial monitor) is using it. (%s)") % (port, ex))
         self._ser, self.port, self.baud, self.eol = ser, port, baud, eol
         self.error, self.lost = "", False
         self._stop.clear()
@@ -190,17 +191,17 @@ class Board:
     def send(self, text):
         ser = self._ser
         if ser is None:
-            raise BoardError("보드가 연결되어 있지 않아요. 보드 앱에서 먼저 연결해 주세요.")
+            raise BoardError(_t("보드가 연결되어 있지 않아요. 보드 앱에서 먼저 연결해 주세요.", "No board is connected. Connect it in the Board app first."))
         text = " ".join(str(text).splitlines()).strip()     # 한 번에 한 줄 — 줄바꿈은 명령을 둘로 나눈다
         if not text:
-            raise BoardError("보낼 글이 없어요.")
+            raise BoardError(_t("보낼 글이 없어요.", "There is nothing to send."))
         with self._wlock:
             try:
                 ser.write((text + EOLS[self.eol]).encode("utf-8"))
                 ser.flush()
             except Exception as ex:
                 self._lose(ser, ex)
-                raise BoardError("보내지 못했어요 — 보드 연결이 끊긴 것 같아요. (%s)" % ex)
+                raise BoardError(_t("보내지 못했어요 — 보드 연결이 끊긴 것 같아요. (%s)", "Couldn't send — the board seems disconnected. (%s)") % ex)
         return self._add("tx", text)
 
     def _next_rx(self, after, timeout, prefix="", skip=None):

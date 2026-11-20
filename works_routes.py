@@ -18,6 +18,7 @@ from fastapi import APIRouter, Body
 import trash
 from code_routes import BLOCK_DIR, WORK_DIR, _safe
 from paths import USER_DIR, PROJECT_DIR, DB_DIR
+from i18n import t as _t                        # noqa: E402  서버 글 한/영 (i18n.py)
 
 router = APIRouter()
 
@@ -34,7 +35,7 @@ def _retitle(path, to):
     """JSON 파일의 title 만 바꾼다 — 가르치기 작품·내 AI·대화 자료는 슬러그(파일 이름)를
     다른 곳이 참조하므로(블록의 AI 블록 등) 파일 이름은 그대로 두고 보이는 이름만 바꾼다."""
     if not os.path.isfile(path):
-        raise ValueError("그 작품을 찾을 수 없어요")
+        raise ValueError(_t("그 작품을 찾을 수 없어요", "That project can't be found"))
     with open(path, encoding="utf-8") as f:
         d = json.load(f)
     d["title"] = to
@@ -48,16 +49,16 @@ def _retitle(path, to):
 def works_rename(kind: str = Body(...), id: str = Body(...), to: str = Body(...)):
     to = str(to).strip()[:40]
     if not to:
-        return _fail("새 이름을 적어 주세요")
+        return _fail(_t("새 이름을 적어 주세요", "Type a new name"))
     try:
         if kind in ("blocks", "code"):
             folder, ext = (BLOCK_DIR, ".json") if kind == "blocks" else (WORK_DIR, ".py")
             src = folder / (_safe(id) + ext)
             dst = folder / (_safe(to) + ext)
             if not src.exists():
-                return _fail("그 작품을 찾을 수 없어요")
+                return _fail(_t("그 작품을 찾을 수 없어요", "That project can't be found"))
             if dst.exists() and dst != src:
-                return _fail("같은 이름의 작품이 있어요")
+                return _fail(_t("같은 이름의 작품이 있어요", "A project with that name already exists"))
             os.replace(src, dst)
             return _ok({"kind": kind, "name": dst.stem})
         if kind == "project":
@@ -67,7 +68,7 @@ def works_rename(kind: str = Body(...), id: str = Body(...), to: str = Body(...)
         elif kind == "db":
             _retitle(os.path.join(DB_DIR, os.path.basename(id) + ".json"), to)
         else:
-            return _fail("모르는 종류예요: %s" % kind)
+            return _fail(_t("모르는 종류예요: %s", "Unknown kind: %s") % kind)
         return _ok({"kind": kind, "id": id, "title": to})
     except Exception as ex:
         return _fail(ex)

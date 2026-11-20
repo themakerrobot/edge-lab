@@ -15,6 +15,7 @@ import os
 import threading
 
 import numpy as np
+from i18n import t as _t                        # noqa: E402  서버 글 한/영 (i18n.py)
 
 DB_FORMAT = "openpibo-facedb"
 DB_MODEL = "face-reidentification-retail-0095"
@@ -32,9 +33,9 @@ class FaceDBError(ValueError):
 def _clean_name(name):
     n = " ".join(str(name or "").split())[:MAX_NAME]
     if not n:
-        raise FaceDBError("이름을 적어 주세요 / Please type a name")
+        raise FaceDBError(_t("이름을 적어 주세요", "Please type a name"))
     if n == GUEST:
-        raise FaceDBError(f'"{GUEST}" 는 등록할 수 없는 이름이에요 (모르는 사람 표시용)')
+        raise FaceDBError(_t(f'"{GUEST}" 는 등록할 수 없는 이름이에요 (모르는 사람 표시용)', f'"{GUEST}" can\'t be registered (it marks unknown people)'))
     return n
 
 
@@ -44,27 +45,27 @@ def parse(raw):
         try:
             raw = raw.decode("utf-8")
         except UnicodeDecodeError:
-            raise FaceDBError("얼굴 정보 파일이 아니에요 (예전 pickle 파일은 열지 않아요 — 다시 등록해 주세요)")
+            raise FaceDBError(_t("얼굴 정보 파일이 아니에요 (예전 pickle 파일은 열지 않아요 — 다시 등록해 주세요)", "Not a face list file (old pickle files aren't opened — register again)"))
     data = raw
     if isinstance(raw, str):
         try:
             data = json.loads(raw)
         except ValueError:
-            raise FaceDBError("얼굴 정보 파일이 아니에요")
+            raise FaceDBError(_t("얼굴 정보 파일이 아니에요", "Not a face list file"))
     if not isinstance(data, dict) or data.get("format") != DB_FORMAT:
-        raise FaceDBError("얼굴 정보 파일이 아니에요 (format: openpibo-facedb 가 아님)")
+        raise FaceDBError(_t("얼굴 정보 파일이 아니에요 (format: openpibo-facedb 가 아님)", "Not a face list file (format is not openpibo-facedb)"))
     if data.get("model") != DB_MODEL:
-        raise FaceDBError(f"다른 모델로 만든 얼굴 파일이에요 ({data.get('model')}) — 다시 등록해 주세요")
+        raise FaceDBError(_t(f"다른 모델로 만든 얼굴 파일이에요 ({data.get('model')}) — 다시 등록해 주세요", f"This face file was made with another model ({data.get('model')}) — register again"))
     names, vectors = data.get("names", []), data.get("vectors", [])
     if not isinstance(names, list) or not isinstance(vectors, list) or len(names) != len(vectors):
-        raise FaceDBError("얼굴 정보 파일이 깨졌어요")
+        raise FaceDBError(_t("얼굴 정보 파일이 깨졌어요", "The face list file is broken"))
     if len(names) > MAX_ROWS:
-        raise FaceDBError(f"얼굴이 너무 많아요 ({len(names)}개, {MAX_ROWS}개까지)")
+        raise FaceDBError(_t(f"얼굴이 너무 많아요 ({len(names)}개, {MAX_ROWS}개까지)", f"Too many faces ({len(names)}, up to {MAX_ROWS})"))
     out_n, out_v = [], []
     for n, v in zip(names, vectors):
         a = np.asarray(v, np.float32).reshape(-1)
         if a.shape[0] != 256 or not np.all(np.isfinite(a)):
-            raise FaceDBError("얼굴 정보 파일이 깨졌어요 (숫자 256개가 아님)")
+            raise FaceDBError(_t("얼굴 정보 파일이 깨졌어요 (숫자 256개가 아님)", "The face list file is broken (not 256 numbers)"))
         out_n.append(str(n)[:MAX_NAME])
         out_v.append(a / (float(np.linalg.norm(a)) or 1.0))
     return out_n, out_v
@@ -114,7 +115,7 @@ class FaceDB:
         with self._lock:
             names, vectors = self._read()
             if len(names) >= MAX_ROWS:
-                raise FaceDBError(f"더 등록할 수 없어요 ({MAX_ROWS}개까지) — 안 쓰는 이름을 지워 주세요")
+                raise FaceDBError(_t(f"더 등록할 수 없어요 ({MAX_ROWS}개까지) — 안 쓰는 이름을 지워 주세요", f"Can't register more (up to {MAX_ROWS}) — delete names you don't use"))
             v = np.asarray(vec, np.float32).reshape(-1)
             names.append(name)
             vectors.append(v / (float(np.linalg.norm(v)) or 1.0))

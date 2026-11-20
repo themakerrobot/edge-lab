@@ -1,4 +1,6 @@
+import os
 import pathlib
+import sys
 import openvino as ov
 import openvino_tokenizers  # registers tokenizer custom ops (required for vlm xml)
 
@@ -147,14 +149,18 @@ else:
 # opencv 는 세 벌(python·contrib·headless)이 서로 다른 패키지의 의존성으로 함께 깔리고
 # 같은 cv2 를 덮어쓴다. headless 가 이기면 창을 못 띄워 파이썬 show(window=True) 가 죽는다.
 # 배포 번들은 venv 를 통째로 굳혀 나가므로 무관하고, 여기서 clone 후 새로 설치한 PC 만 걸린다.
-try:
-    import cv2
-    cv2.namedWindow("_check")
-    cv2.destroyAllWindows()
-except Exception as e:
-    fails += 1
-    print("FAIL opencv GUI |", str(e)[:120])
-    print("     고침: pip install --force-reinstall opencv-python  (GUI 있는 것을 마지막에 덮어쓴다)")
+# 리눅스에서 화면(DISPLAY)이 없으면 창을 열다 Qt 가 프로그램째 멈춰 버리므로(예외가 아니다) 이 점검만 건너뛴다.
+if sys.platform.startswith("linux") and not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")):
+    print("SKIP opencv GUI | 화면이 없는 곳에서 실행 — 바탕화면에서 다시 돌리면 점검합니다")
+else:
+    try:
+        import cv2
+        cv2.namedWindow("_check")
+        cv2.destroyAllWindows()
+    except Exception as e:
+        fails += 1
+        print("FAIL opencv GUI |", str(e)[:120])
+        print("     고침: pip install --force-reinstall opencv-python  (GUI 있는 것을 마지막에 덮어쓴다)")
 
 # 코딩 실습(lab.bat → JupyterLab) — 없으면 실습만 못 하고 서버는 그대로 돈다
 try:

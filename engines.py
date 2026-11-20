@@ -10,6 +10,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 import openvino as ov
+from i18n import t as _t                        # noqa: E402  서버 글 한/영 (i18n.py)
 
 MODELS = Path("models")
 core = ov.Core()
@@ -115,7 +116,7 @@ class EdModels:
         need = [ED_DET, ED_POSE] + ED_SAM
         miss = [str(p) for p in need if not p.exists()]
         if miss:
-            raise RuntimeError("easydetect 모델이 없어요 — setup 을 다시 돌려 주세요: " + ", ".join(miss))
+            raise RuntimeError(_t("easydetect 모델이 없어요 — setup 을 다시 돌려 주세요: ", "The easydetect models are missing — run the setup again: ") + ", ".join(miss))
         from easydetect import Detector
         self.model = Detector(str(ED_DET), device=device, verbose=False, backend="openvino")
         self.model.pose_model = str(ED_POSE)
@@ -263,7 +264,7 @@ class UserYolo:
         """이름 하나를 실제 경로로. 폴더 밖으로는 못 나간다."""
         base = os.path.basename(str(name or "").strip())
         if not base:
-            raise ValueError("모델 이름이 비었어요.")
+            raise ValueError(_t("모델 이름이 비었어요.", "The model name is empty."))
         d = self.folder()
         for c in ([base] if base.lower().endswith(self.EXTS) else []) + [base + e for e in self.EXTS]:
             full = os.path.join(d, c)
@@ -271,7 +272,7 @@ class UserYolo:
                 return full
         have = ", ".join(self.files()) or "(아직 없어요)"
         raise FileNotFoundError(
-            "모델 파일이 없어요: %s\n모델 폴더: %s\n지금 있는 것: %s" % (base, d, have))
+            _t("모델 파일이 없어요: %s\n모델 폴더: %s\n지금 있는 것: %s", "Model file not found: %s\nModels folder: %s\nWhat's there now: %s") % (base, d, have))
 
     @staticmethod
     def _onnx_meta(path):
@@ -307,8 +308,8 @@ class UserYolo:
             if m is None:                              # 처음 쓸 때만 올린다
                 meta = self._onnx_meta(full)
                 if not self._is_easydetect(full, meta):
-                    raise ValueError("easydetect-lab 에서 받은 .onnx 만 쓸 수 있어요: %s\n"
-                                     "(YOLO 모델은 더 이상 읽지 않아요 — easydetect-lab 에서 학습해 [Pibo 로 보내기] 로 받아 주세요)"
+                    raise ValueError(_t("easydetect-lab 에서 받은 .onnx 만 쓸 수 있어요: %s\n"
+                                     "(YOLO 모델은 더 이상 읽지 않아요 — easydetect-lab 에서 학습해 [Pibo 로 보내기] 로 받아 주세요)", "Only .onnx files from easydetect-lab can be used: %s\n(YOLO models are no longer read — train in easydetect-lab and get it with [Send to Pibo])")
                                      % os.path.basename(full))
                 from easydetect import Detector
                 try:
@@ -473,7 +474,7 @@ class MaskCls:
         meta = onnx_metadata(self.ONNX)
         self.classes = [str(c) for c in json.loads(meta.get("edge-lab.classes", '["with_mask", "without_mask"]'))]
         if not any(c.strip().lower() in self.MASK_NAMES for c in self.classes):
-            raise RuntimeError("마스크 모델의 종류 이름에 마스크 쪽이 없어요: %s" % self.classes)
+            raise RuntimeError(_t("마스크 모델의 종류 이름에 마스크 쪽이 없어요: %s", "The mask model has no mask class name: %s") % self.classes)
         self.compiled = core.compile_model(core.read_model(self.ONNX), device, {"INFERENCE_PRECISION_HINT": "f32"})
         self.lock = threading.Lock()
 
@@ -767,7 +768,7 @@ def find_vlm():
         return path
     have = [d.name for d in sorted(root.iterdir()) if d.is_dir()] if root.is_dir() else []
     if not have:
-        raise FileNotFoundError("models/vlm 에 모델이 없습니다.")
+        raise FileNotFoundError(_t("models/vlm 에 모델이 없어요.", "There is no model in models/vlm."))
     print("[engines] %s 가 없어 %s 를 씁니다 (있는 것: %s)"
           % (want, have[0], ", ".join(have)))
     return root / have[0]
@@ -848,8 +849,7 @@ class Embed:
             try:
                 d = MODELS / "embed/e5-small-int8"
                 if not (d / "openvino_model.xml").exists():
-                    raise RuntimeError("models/embed/e5-small-int8 가 없어요 "
-                                       "(setup_deploy.ps1 로 모델을 받으세요)")
+                    raise RuntimeError(_t("models/embed/e5-small-int8 가 없어요 (설치를 다시 돌려 모델을 받으세요)", "models/embed/e5-small-int8 is missing (run the setup again to download the models)"))
                 # 토크나이저 IR 은 openvino-tokenizers 확장이 있어야 열린다.
                 # (없으면 "Cannot create SpecialTokensSplit layer ... unsupported opset")
                 # 확장은 import 뒤에 만든 Core 에만 붙으므로 여기서 새로 만든다.
@@ -857,8 +857,8 @@ class Embed:
                     import openvino_tokenizers  # noqa: F401
                 except ImportError:
                     raise RuntimeError(
-                        "openvino-tokenizers 가 설치돼 있지 않아요. "
-                        "venv 에서 pip install \"openvino-tokenizers==2026.2.*\" 를 하세요")
+                        _t("openvino-tokenizers 가 설치돼 있지 않아요. "
+                        "venv 에서 pip install \"openvino-tokenizers==2026.2.*\" 를 하세요", "openvino-tokenizers isn't installed. In the venv run pip install \"openvino-tokenizers==2026.2.*\""))
                 tcore = ov.Core()                 # 확장이 붙은 새 Core
                 try:                              # 먼저 만들어 둔 core 에도 붙여 둔다
                     core.add_extension(str(openvino_tokenizers._ext_path))
@@ -876,7 +876,7 @@ class Embed:
         self.load()
         if self.model is None:                      # 긴 OpenVINO 오류를 그대로 띄우면 못 읽는다
             first = (self.err or "models/embed").split("\n")[0].strip()
-            raise RuntimeError("자료 찾기 모델을 열지 못했어요 — %s" % first[:140])
+            raise RuntimeError(_t("자료 찾기 모델을 열지 못했어요 — %s", "Couldn't open the search model — %s") % first[:140])
         items = [("%s: %s" % (kind, str(t).strip())) for t in texts]
         out = []
         with self.lock:

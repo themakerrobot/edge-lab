@@ -45,6 +45,8 @@ import prompts as P
 HOST = os.environ.get("VAPI_HOST", "127.0.0.1")
 PORT = int(os.environ.get("VAPI_PORT", "57711"))
 from paths import TMP_DIR, APPDATA_DIR   # noqa: E402  (폴더 규칙은 paths.py 한 곳에)
+import i18n                                     # noqa: E402
+from i18n import t as _t                        # noqa: E402  서버 글 한/영 (i18n.py)
 IMAGE_DIR = TMP_DIR + os.sep
 
 eng = None
@@ -284,7 +286,7 @@ async def _loading_guard(request: Request, call_next):
             and not path.startswith(ALLOW_WHILE_LOADING)):
         return JSONResponse(status_code=503, content={
             "type": "loading", "result": "fail",
-            "data": "AI를 준비하는 중이에요. 조금만 기다려 주세요.", "elapsed_ms": 0})
+            "data": _t("AI를 준비하는 중이에요. 조금만 기다려 주세요.", "The AI is still getting ready. Please wait a moment."), "elapsed_ms": 0})
     return await call_next(request)
 
 
@@ -315,6 +317,18 @@ async def _track_use(request: Request, call_next):
             u["n"] += 1
             u["last"] = time.time()
     return resp
+
+
+# 요청의 말(ko · en) — 서버 글을 화면 언어로 돌려주려고 (i18n.py). 화면(lib/embed.js)과 themaker 가 X-Lang 을 붙인다.
+# 맨 나중에 둔다 — 마지막에 단 미들웨어가 가장 바깥이라, 위의 로딩 막기 글도 이 말을 따른다.
+@app.middleware("http")
+async def _request_lang(request: Request, call_next):
+    tok = i18n.set_lang(request.query_params.get("lang") or request.headers.get("x-lang")
+                        or request.cookies.get("vapiLang") or "ko")
+    try:
+        return await call_next(request)
+    finally:
+        i18n.reset(tok)
 
 
 @app.get("/ready", tags=["system"], summary="모델 준비 상태 (로딩 화면용)")
@@ -581,7 +595,7 @@ async def chat_ask(request: Request, prompt: str = "", lang: str = "ko",
     t0 = time.perf_counter()
     q = (prompt or "").strip()
     if not q:
-        return {"type": name, "result": "fail", "data": "물어볼 말을 적어 주세요.",
+        return {"type": name, "result": "fail", "data": _t("물어볼 말을 적어 주세요.", "Type what you want to ask."),
                 "elapsed_ms": 0}
     try:
         past = (history or "").strip()
@@ -622,7 +636,7 @@ def gan_depth(path):
     """
     from engines import to_b64_jpg
     if eng.gan.depth is None:
-        raise ValueError("깊이 모델이 없어요 — models/gan/depth-v2s.xml 을 넣어 주세요")
+        raise ValueError(_t("깊이 모델이 없어요 — models/gan/depth-v2s.xml 을 넣어 주세요", "The depth model is missing — put models/gan/depth-v2s.xml in place"))
     return to_b64_jpg(eng.gan.depth.colorize(eng.gan.depth.raw(read_bgr(path))))
 
 
@@ -841,7 +855,7 @@ async def system_packages():
     try:
         from importlib.metadata import version, PackageNotFoundError
     except ImportError:                       # 아주 오래된 파이썬 대비
-        return {"result": "fail", "data": "버전을 읽을 수 없어요."}
+        return {"result": "fail", "data": _t("버전을 읽을 수 없어요.", "Can't read the version.")}
 
     pkgs = {}
     for name in KEY_PACKAGES:
@@ -890,7 +904,7 @@ def _work_path(rel: str):
     rel = str(rel or "").replace("\\", "/").lstrip("/")
     target = (root / rel).resolve()
     if target != root and root not in target.parents:
-        raise ValueError("작업폴더 밖은 열 수 없어요")
+        raise ValueError(_t("작업폴더 밖은 열 수 없어요", "Can't open anything outside the work folder"))
     return root, target
 
 
@@ -903,7 +917,7 @@ async def work_files(path: str = ""):
     if not d.exists():
         return {"result": "ok", "data": {"path": "", "items": []}}
     if d.is_file():
-        return JSONResponse({"result": "fail", "data": "폴더가 아니에요"}, status_code=400)
+        return JSONResponse({"result": "fail", "data": _t("폴더가 아니에요", "That isn't a folder")}, status_code=400)
     items = []
     for p in sorted(d.iterdir(), key=lambda x: (not x.is_dir(), x.name.lower())):
         if p.name.startswith("."):
@@ -932,11 +946,11 @@ async def work_file(path: str):
     except ValueError as ex:
         return JSONResponse({"result": "fail", "data": str(ex)}, status_code=400)
     if not f.is_file():
-        return JSONResponse({"result": "fail", "data": "그런 파일이 없어요"}, status_code=404)
+        return JSONResponse({"result": "fail", "data": _t("그런 파일이 없어요", "No such file")}, status_code=404)
     if f.suffix.lower() not in FILE_TEXT_EXT:
-        return JSONResponse({"result": "fail", "data": "글 파일만 열 수 있어요"}, status_code=400)
+        return JSONResponse({"result": "fail", "data": _t("글 파일만 열 수 있어요", "Only text files can be opened")}, status_code=400)
     if f.stat().st_size > FILE_MAX_READ:
-        return JSONResponse({"result": "fail", "data": "파일이 너무 커요"}, status_code=400)
+        return JSONResponse({"result": "fail", "data": _t("파일이 너무 커요", "The file is too big")}, status_code=400)
     return {"result": "ok",
             "data": {"path": path, "code": f.read_text(encoding="utf-8", errors="replace")}}
 
@@ -965,7 +979,7 @@ async def pick_folder():
                                              "작업 폴더를 고르세요 - 새 폴더도 만들 수 있어요")
     if why:
         print("[pick_folder] 창을 띄우지 못했어요:", why[:300])
-        return {"result": "fail", "data": "폴더 고르기 창을 띄우지 못했어요. " + why[:160]}
+        return {"result": "fail", "data": _t("폴더 고르기 창을 띄우지 못했어요. ", "Couldn't open the folder picker. ") + why[:160]}
     if not path:
         return {"result": "ok", "data": {"path": "", "canceled": True}}
     return {"result": "ok", "data": {"path": path, "canceled": False, "how": how}}
@@ -986,18 +1000,18 @@ async def pick_file(kind: str = Body("py", embed=True)):
     path, how, why = await run_in_threadpool(
         folderpick.choose_file, "작품을 고르세요", start)
     if why:
-        return {"result": "fail", "data": "파일 고르기 창을 띄우지 못했어요. " + why[:160]}
+        return {"result": "fail", "data": _t("파일 고르기 창을 띄우지 못했어요. ", "Couldn't open the file picker. ") + why[:160]}
     if not path:
         return {"result": "ok", "data": {"canceled": True}}
     if os.path.splitext(path)[1].lower() != want:
-        return {"result": "fail", "data": "%s 파일만 열 수 있어요" % want}
+        return {"result": "fail", "data": _t("%s 파일만 열 수 있어요", "Only %s files can be opened") % want}
     try:
         if os.path.getsize(path) > FILE_MAX_READ:
-            return {"result": "fail", "data": "파일이 너무 커요"}
+            return {"result": "fail", "data": _t("파일이 너무 커요", "The file is too big")}
         with open(path, encoding="utf-8", errors="replace") as f:
             text = f.read()
     except OSError as ex:
-        return {"result": "fail", "data": "파일을 읽지 못했어요: %s" % ex}
+        return {"result": "fail", "data": _t("파일을 읽지 못했어요: %s", "Couldn't read the file: %s") % ex}
     return {"result": "ok", "data": {"canceled": False, "how": how,
                                      "name": os.path.splitext(os.path.basename(path))[0],
                                      "text": text}}
@@ -1025,7 +1039,7 @@ async def set_workdir(path: str = Body(..., embed=True),
     import paths as _p
     if _p.summary()["fixed_by_env"]:
         return {"result": "fail",
-                "data": "VAPI_WORK 환경변수로 정해져 있어요. 그 값을 바꿔 주세요."}
+                "data": _t("VAPI_WORK 환경변수로 정해져 있어요. 그 값을 바꿔 주세요.", "It is set by the VAPI_WORK environment variable. Change that value.")}
     want = mode if mode in ("move", "open") else "auto"
     used = want if want != "auto" else ("open" if _p.has_work(os.path.abspath(path.strip()))
                                         else "move")
@@ -1131,7 +1145,7 @@ async def shutdown(request: Request):
     초안으로 적게 한 뒤 이것을 부른다."""
     host = request.client.host if request.client else ""
     if host not in ("127.0.0.1", "::1", "localhost"):
-        return JSONResponse({"result": "fail", "data": "이 컴퓨터에서만 끌 수 있어요."}, status_code=403)
+        return JSONResponse({"result": "fail", "data": _t("이 컴퓨터에서만 끌 수 있어요.", "It can only be shut down from this computer.")}, status_code=403)
 
     def later():
         time.sleep(0.8)                         # 응답이 브라우저에 닿을 여유
@@ -1152,7 +1166,7 @@ async def shutdown(request: Request):
             os._exit(0)
     import threading
     threading.Thread(target=later, daemon=True).start()
-    return {"result": "ok", "data": "끄는 중이에요."}
+    return {"result": "ok", "data": _t("끄는 중이에요.", "Shutting down.")}
 
 
 @app.post("/system/sound_settings", tags=["system"], summary="윈도우 소리 설정 열기")
@@ -1166,13 +1180,13 @@ async def open_sound_settings():
     import subprocess
     if os.name != "nt":
         return {"result": "fail",
-                "data": "윈도우에서만 열 수 있어요. 시스템 소리 설정을 직접 열어 주세요."}
+                "data": _t("윈도우에서만 열 수 있어요. 시스템 소리 설정을 직접 열어 주세요.", "Only on Windows. Open the system sound settings yourself.")}
     try:
         subprocess.Popen(["cmd", "/c", "start", "", "ms-settings:sound"],
                          creationflags=0x08000000)     # 창 안 띄우기
-        return {"result": "ok", "data": "윈도우 소리 설정을 열었어요."}
+        return {"result": "ok", "data": _t("윈도우 소리 설정을 열었어요.", "Opened the Windows sound settings.")}
     except Exception as ex:
-        return {"result": "fail", "data": "열지 못했어요: %s" % ex}
+        return {"result": "fail", "data": _t("열지 못했어요: %s", "Couldn't open it: %s") % ex}
 
 
 @app.post("/system/mic_settings", tags=["system"], summary="윈도우 마이크 설정 열기")
@@ -1185,13 +1199,13 @@ async def open_mic_settings():
     import subprocess
     if os.name != "nt":
         return {"result": "fail",
-                "data": "윈도우에서만 열 수 있어요. 시스템 마이크 설정을 직접 열어 주세요."}
+                "data": _t("윈도우에서만 열 수 있어요. 시스템 마이크 설정을 직접 열어 주세요.", "Only on Windows. Open the system microphone settings yourself.")}
     try:
         subprocess.Popen(["cmd", "/c", "start", "", "ms-settings:privacy-microphone"],
                          creationflags=0x08000000)
-        return {"result": "ok", "data": "윈도우 마이크 설정을 열었어요."}
+        return {"result": "ok", "data": _t("윈도우 마이크 설정을 열었어요.", "Opened the Windows microphone settings.")}
     except Exception as ex:
-        return {"result": "fail", "data": "열지 못했어요: %s" % ex}
+        return {"result": "fail", "data": _t("열지 못했어요: %s", "Couldn't open it: %s") % ex}
 
 
 

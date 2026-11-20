@@ -16,6 +16,7 @@ ask·read 는 기다리는 동안 스레드 하나를 쓴다 — 그래서 async
 from fastapi import APIRouter, Body
 
 from board import BOARD, BoardError
+from i18n import t as _t                        # noqa: E402  서버 글 한/영 (i18n.py)
 
 router = APIRouter()
 
@@ -76,7 +77,7 @@ def board_ask(text: str = Body(..., embed=True), timeout: float = Body(1.0, embe
 def board_read(after: int = Body(-1, embed=True), timeout: float = Body(1.0, embed=True),
                prefix: str = Body("", embed=True)):
     if not BOARD.connected:
-        return _fail("보드가 연결되어 있지 않아요. 보드 앱에서 먼저 연결해 주세요.")
+        return _fail(_t("보드가 연결되어 있지 않아요. 보드 앱에서 먼저 연결해 주세요.", "No board is connected. Connect it in the Board app first."))
     return _ok(BOARD.read(after, timeout, prefix))
 
 

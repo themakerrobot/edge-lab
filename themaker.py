@@ -73,6 +73,21 @@ _ALIAS_KO = {
 }
 
 
+class _LangHeader(urllib.request.BaseHandler):
+    """서버로 가는 요청에 지금 언어(X-Lang)를 붙인다 — 서버가 오류 · 안내를 그 말로 돌려준다 (i18n.py)."""
+    handler_order = 100
+
+    def http_request(self, req):
+        if req.full_url.startswith(SERVER) and not req.has_header("X-lang"):
+            req.add_unredirected_header("X-Lang", LANG)
+        return req
+
+    https_request = http_request
+
+
+_opener = urllib.request.build_opener(_LangHeader)     # 학생 프로그램의 urllib 는 건드리지 않게 따로 둔다
+
+
 def _t(ko, en):
     """화면 언어(LANG)에 맞는 글 — 오류 · 안내를 파이보 · 파이브레인처럼 한/영으로 나눠 보인다."""
     return en if LANG == "en" else ko
@@ -102,7 +117,7 @@ def _post(url, data=None, files=None, timeout=120):
         SERVER + url, data=body,
         headers={"Content-Type": "multipart/form-data; boundary=" + boundary})
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:
+        with _opener.open(req, timeout=timeout) as r:
             return json.loads(r.read().decode("utf-8"))
     except urllib.error.URLError as ex:
         code = getattr(ex, "code", None)
@@ -120,7 +135,7 @@ def _post(url, data=None, files=None, timeout=120):
 def _get(url, timeout=30):
     """GET 요청 (목록 같은 것)."""
     try:
-        with urllib.request.urlopen(SERVER + url, timeout=timeout) as r:
+        with _opener.open(SERVER + url, timeout=timeout) as r:
             return json.loads(r.read().decode("utf-8"))
     except urllib.error.URLError as ex:
         raise TheMakerError(
@@ -131,7 +146,7 @@ def _delete(url, timeout=30):
     """DELETE 요청 (지우기)."""
     req = urllib.request.Request(SERVER + url, method="DELETE")
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:
+        with _opener.open(req, timeout=timeout) as r:
             return json.loads(r.read().decode("utf-8"))
     except urllib.error.URLError as ex:
         raise TheMakerError(
@@ -348,7 +363,7 @@ def my_models():
     이름을 그대로 vision("my:이름", img) 에 넣으면 된다.
     """
     try:
-        with urllib.request.urlopen(SERVER + "/custom/models", timeout=10) as r:
+        with _opener.open(SERVER + "/custom/models", timeout=10) as r:
             j = json.loads(r.read().decode("utf-8"))
         return [{"name": m.get("slug"), "title": m.get("title") or m.get("slug"),
                  "kind": _KIND_KO.get(m.get("kind"), m.get("kind")),
@@ -543,7 +558,7 @@ def speak(text, voice="F1", lang="ko", speed=1.0, wait=True, save_as=None):
     r = urllib.request.Request(SERVER + "/speech/tts", data=req,
                                headers={"Content-Type": "application/json"})
     try:
-        with urllib.request.urlopen(r, timeout=180) as resp:
+        with _opener.open(r, timeout=180) as resp:
             raw = resp.read()
             ctype = resp.headers.get("Content-Type", "")
     except urllib.error.URLError as ex:
@@ -627,7 +642,7 @@ def _post_json(url, body, timeout=30, err="TM-BOARD"):
     req = urllib.request.Request(SERVER + url, data=json.dumps(body).encode("utf-8"),
                                  headers={"Content-Type": "application/json"})
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:
+        with _opener.open(req, timeout=timeout) as r:
             j = json.loads(r.read().decode("utf-8"))
     except urllib.error.URLError as ex:
         raise TheMakerError(

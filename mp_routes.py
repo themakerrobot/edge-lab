@@ -23,6 +23,7 @@ router = APIRouter()
 MP_DIR = "models/mediapipe"
 CALIB_PATH = os.path.join(MP_DIR, "calib.json")
 from paths import TMP_DIR  # noqa: E402
+from i18n import t as _t                        # noqa: E402  서버 글 한/영 (i18n.py)
 IMAGE_DIR = TMP_DIR + os.sep
 IRIS_MM = 11.7                      # 사람 홍채 실지름(거의 일정)
 PROC_W = 640                        # 처리 해상도 고정 (f_px 일관성)
@@ -51,7 +52,7 @@ def _load():
     hpath = os.path.join(MP_DIR, "gesture_recognizer.task")
     for p in (fpath, hpath):
         if not os.path.exists(p):
-            raise RuntimeError(f"MediaPipe 모델이 없습니다: {p} (setup의 mediapipe 단계를 실행하세요)")
+            raise RuntimeError(_t(f"MediaPipe 모델이 없어요: {p} (설치를 다시 돌려 주세요)", f"The MediaPipe model is missing: {p} (run the setup again)"))
     # 경로가 아니라 바이트로 넘긴다(modelfile.read_model). MediaPipe C++ 는 경로를 시스템 코드 페이지로 다뤄서,
     # 한글 · 다른 나라 글자가 든 폴더(예: 바탕 화면)에 풀면 경로를 못 읽고 프로세스를 통째로 끝낸다
     # (get_runfiles_dir_helper: srcdir ... is not accessible) — 서버 전체가 죽는다. 배포판 자동 시험이 잡았다.
