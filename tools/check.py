@@ -60,7 +60,11 @@ if _reid.exists():
     try:
         _m = core.read_model(_reid)
         _ins, _out = list(_m.inputs[0].get_partial_shape()), _m.outputs[0].get_partial_shape()
-        if [d.get_length() for d in _ins] != [1, 3, 128, 128] or _out[-1].get_length() != 256:
+        _n = 1
+        for _d in _out:
+            _n *= _d.get_length()
+        # 출력 모양은 [1, 256, 1, 1] — 값이 256 개면 된다 (engines.FaceReid 가 한 줄로 편다)
+        if [d.get_length() for d in _ins] != [1, 3, 128, 128] or _n != 256:
             fails += 1
             print("FAIL", _reid, "| 입력 1x3x128x128 · 출력 256 이 아님 — 다른 모델 파일", _ins, _out)
     except Exception as e:

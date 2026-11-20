@@ -300,6 +300,17 @@ def check_brand():
             fail("번들 복사 · 확인 목록에 없음: " + need)
 
 
+# ------------------------------------------------------------------ 7) 한글 경로
+def check_unicode_paths():
+    """MediaPipe 에 모델 '경로' 를 넘기지 않는다 — 한글 폴더(바탕 화면)에 풀면 C++ 가 경로를 못 읽고
+    프로세스를 끝낸다(배포판 자동 시험이 잡았다). 파이썬으로 읽은 바이트(model_asset_buffer)를 넘긴다."""
+    files = [p for p in ROOT.glob("*.py")] + list(ROOT.glob("teachlab/*.py")) + list(ROOT.glob("notebooks/**/*.ipynb"))
+    for f in files:
+        if "model_asset_path" in f.read_text(encoding="utf-8", errors="replace"):
+            fail("MediaPipe 에 경로를 넘김(model_asset_path) — 한글 폴더에서 서버가 죽는다, "
+                 "model_asset_buffer=파일.read_bytes() 로: " + f.relative_to(ROOT).as_posix())
+
+
 def main():
     os.chdir(ROOT)
     mods = check_python()
@@ -308,6 +319,7 @@ def main():
     check_models()
     check_packages(mods)
     check_brand()
+    check_unicode_paths()
     print("배포 점검 — 서버 파일 %d 개 · 화면 %d 개 · 필수 모델 %d 개"
           % (len(mods), len(routes), len(need_models())))
     for w in dict.fromkeys(WARN):

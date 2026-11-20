@@ -52,10 +52,15 @@ def _load():
     for p in (fpath, hpath):
         if not os.path.exists(p):
             raise RuntimeError(f"MediaPipe 모델이 없습니다: {p} (setup의 mediapipe 단계를 실행하세요)")
+    # 경로가 아니라 바이트로 넘긴다(teachlab 과 같다). MediaPipe C++ 는 경로를 시스템 코드 페이지로 다뤄서,
+    # 한글 · 다른 나라 글자가 든 폴더(예: 바탕 화면)에 풀면 경로를 못 읽고 프로세스를 통째로 끝낸다
+    # (get_runfiles_dir_helper: srcdir ... is not accessible) — 서버 전체가 죽는다. 배포판 자동 시험이 잡았다.
+    from teachlab.modelfile import read_model
+    from pathlib import Path
     _face = vision.FaceLandmarker.create_from_options(vision.FaceLandmarkerOptions(
-        base_options=mp_python.BaseOptions(model_asset_path=fpath), num_faces=2))
+        base_options=mp_python.BaseOptions(model_asset_buffer=read_model(Path(fpath))), num_faces=2))
     _hand = vision.GestureRecognizer.create_from_options(vision.GestureRecognizerOptions(
-        base_options=mp_python.BaseOptions(model_asset_path=hpath), num_hands=2))
+        base_options=mp_python.BaseOptions(model_asset_buffer=read_model(Path(hpath))), num_hands=2))
     print("[mp] face_landmarker / gesture_recognizer loaded (CPU)")
 
 
