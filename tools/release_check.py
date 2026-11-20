@@ -193,6 +193,33 @@ def check_error_codes():
         for c in sorted(codes):
             if "`%s`" % c not in part:
                 fail("docs/MANUAL.md 오류 코드 표(%s)에 없음: %s" % (lang, c))
+    # themaker 오류 · 안내는 한/영 둘 다 — 한글 글을 _t("한글", "English") 없이 바로 쓰면 영어 화면에 한글이 나온다
+    import io
+    import tokenize
+    tm_src = read("themaker.py")
+    toks = list(tokenize.generate_tokens(io.StringIO(tm_src).readline))
+    i = 0
+    while i < len(toks):
+        t = toks[i]
+        if t.type == tokenize.NAME and t.string in ("TheMakerError", "print") and i + 1 < len(toks) and toks[i + 1].string == "(":
+            depth, j, in_t = 0, i + 1, []
+            while j < len(toks):
+                x = toks[j].string
+                if x in "([{":
+                    depth += 1
+                    if toks[j - 1].string == "_t":
+                        in_t.append(depth)
+                elif x in ")]}":
+                    if in_t and in_t[-1] == depth:
+                        in_t.pop()
+                    depth -= 1
+                    if depth == 0:
+                        break
+                elif toks[j].type == tokenize.STRING and not in_t and re.search("[가-힣]", x):
+                    fail("themaker.py:%d 한글 글을 _t(한글, English) 없이 씀 — 영어 화면에도 한글로 나온다" % toks[j].start[0])
+                j += 1
+            i = j
+        i += 1
     for page in ("view_project/code.html", "view_project/blocks.html"):
         if "/lib/errcodes.js" not in read(page):
             fail(page + " 가 lib/errcodes.js 를 읽지 않음")

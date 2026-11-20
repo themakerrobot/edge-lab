@@ -136,13 +136,13 @@
 | 접두 | 어디서 | 가르는 법 |
 |---|---|---|
 | `PY-` | 파이썬 문법 · 실행 | `pyrunner.py` 가 남긴 예외 종류(`NameError` → `PY-NAME`) · 윈도우 종료 코드(메모리) |
-| `TM-` | themaker 명령 | `TheMakerError(msg, code="TM-…")` — 새 `raise` 에는 반드시 code 를 단다 |
+| `TM-` | themaker 명령 | `TheMakerError(_t("한글", "English"), code="TM-…")` — 새 `raise` 에는 code 와 한/영 글(`_t`, 화면 언어 `THEMAKER_LANG` 를 따른다)을 단다. 안내 `print` 도 `_t` |
 | `BK-` | 블록 | 블록 화면이 `throw fail("m_…")` 로 던진 키(`BK_KEY`) · 자바스크립트 오류 종류(`BK-BLOCK`) · 서버 연결 실패 |
 
 - 파이썬: 서버는 종류 · 메시지 · 줄 · 그 줄 코드 · 원래 Traceback(실행기 · runpy 줄과 서버 경로는 뺀다)만 넘기고, 화면이 글을 만든다. 오류 줄은 편집기에 빨갛게, 카드의 [N번째 줄] 은 그 줄로 이동
 - 블록: 멈춘 블록(`RT.step` 이 기억한 `RT._cur`)에 경고 표시(`setWarningText`) · 기록 탭에 카드
 - 두 화면 모두 결과 칸 제목 옆 상태 칩 — 실행 중(경과) · 끝남(걸린 시간) · 오류(코드) · 정지 (파이보 IDE 와 같은 뜻)
-- 코드를 더하면 `docs/MANUAL.md` 오류 코드 표(한/영)도 고친다 — `release_check` 가 themaker 코드 · 블록 키 · 설명서 표 · `pyrunner.py` 번들 포함을 본다
+- 코드를 더하면 `docs/MANUAL.md` 오류 코드 표(한/영)도 고친다 — `release_check` 가 themaker 코드 · `_t` 없이 쓴 한글 · 블록 키 · 설명서 표 · `pyrunner.py` 번들 포함을 본다
 
 ## 화면 다듬기 (261119) — 모든 화면 공통 규칙
 

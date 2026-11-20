@@ -73,6 +73,11 @@ _ALIAS_KO = {
 }
 
 
+def _t(ko, en):
+    """화면 언어(LANG)에 맞는 글 — 오류 · 안내를 파이보 · 파이브레인처럼 한/영으로 나눠 보인다."""
+    return en if LANG == "en" else ko
+
+
 class TheMakerError(RuntimeError):
     """themaker 가 내는 오류. code 는 화면이 쉬운 설명을 고르는 열쇠다 (view_project/lib/errcodes.js 의 TM-…)."""
 
@@ -103,14 +108,13 @@ def _post(url, data=None, files=None, timeout=120):
         code = getattr(ex, "code", None)
         if code == 404:
             raise TheMakerError(
-                "그런 기능이 서버에 없어요: %s\n"
-                "엣지 랩 을 최신으로 올렸는지 확인해 주세요." % url, code="TM-SERVER")
+                _t("그런 기능이 서버에 없어요: %s\n프로그램을 최신으로 올렸는지 확인해 주세요.", "The server doesn't have that feature: %s\nCheck the program is up to date.") % url, code="TM-SERVER")
         if code == 503:
-            raise TheMakerError("AI 를 준비하는 중이에요. 조금만 기다렸다 다시 실행해 주세요.", code="TM-READY")
+            raise TheMakerError(_t("AI 를 준비하는 중이에요. 조금만 기다렸다 다시 실행해 주세요.", 'The AI is still getting ready. Wait a moment and run it again.'), code="TM-READY")
         if code:
-            raise TheMakerError("서버가 오류를 냈어요 (%s): %s" % (code, url), code="TM-SERVER")
+            raise TheMakerError(_t("서버가 오류를 냈어요 (%s): %s", 'The server returned an error (%s): %s') % (code, url), code="TM-SERVER")
         raise TheMakerError(
-            "엣지 랩 서버에 연결할 수 없어요. run.bat 이 켜져 있는지 확인하세요. (%s)" % ex, code="TM-SERVER")
+            _t("AI 서버에 연결할 수 없어요. run.bat 이 켜져 있는지 확인하세요. (%s)", "Can't reach the AI server. Check that run.bat is running. (%s)") % ex, code="TM-SERVER")
 
 
 def _get(url, timeout=30):
@@ -120,7 +124,7 @@ def _get(url, timeout=30):
             return json.loads(r.read().decode("utf-8"))
     except urllib.error.URLError as ex:
         raise TheMakerError(
-            "엣지 랩 서버에 연결할 수 없어요. run.bat 이 켜져 있는지 확인하세요. (%s)" % ex, code="TM-SERVER")
+            _t("AI 서버에 연결할 수 없어요. run.bat 이 켜져 있는지 확인하세요. (%s)", "Can't reach the AI server. Check that run.bat is running. (%s)") % ex, code="TM-SERVER")
 
 
 def _delete(url, timeout=30):
@@ -131,7 +135,7 @@ def _delete(url, timeout=30):
             return json.loads(r.read().decode("utf-8"))
     except urllib.error.URLError as ex:
         raise TheMakerError(
-            "엣지 랩 서버에 연결할 수 없어요. run.bat 이 켜져 있는지 확인하세요. (%s)" % ex, code="TM-SERVER")
+            _t("AI 서버에 연결할 수 없어요. run.bat 이 켜져 있는지 확인하세요. (%s)", "Can't reach the AI server. Check that run.bat is running. (%s)") % ex, code="TM-SERVER")
 
 
 def _b64_to_image(b64):
@@ -141,10 +145,10 @@ def _b64_to_image(b64):
     try:
         buf = np.frombuffer(base64.b64decode(raw), np.uint8)
     except Exception:
-        raise TheMakerError("이미지를 읽을 수 없어요.", code="TM-IMAGE")
+        raise TheMakerError(_t("이미지를 읽을 수 없어요.", "Can't read the image."), code="TM-IMAGE")
     img = cv2.imdecode(buf, cv2.IMREAD_UNCHANGED)
     if img is None:
-        raise TheMakerError("이미지를 읽을 수 없어요.", code="TM-IMAGE")
+        raise TheMakerError(_t("이미지를 읽을 수 없어요.", "Can't read the image."), code="TM-IMAGE")
     return img
 
 
@@ -162,14 +166,14 @@ def _to_jpg(image):
     if isinstance(image, str):
         img = cv2.imread(image)
         if img is None:
-            raise TheMakerError("이미지를 읽을 수 없어요: %s" % image, code="TM-IMAGE")
+            raise TheMakerError(_t("이미지를 읽을 수 없어요: %s", "Can't read the image: %s") % image, code="TM-IMAGE")
     elif isinstance(image, np.ndarray):
         img = image
     else:
-        raise TheMakerError("image 는 파일 경로나 camera() 결과여야 해요.", code="TM-IMAGE")
+        raise TheMakerError(_t("image 는 파일 경로나 camera() 결과여야 해요.", 'image must be a file path or what camera() returns.'), code="TM-IMAGE")
     ok, buf = cv2.imencode(".jpg", _flatten(img))
     if not ok:
-        raise TheMakerError("이미지 인코딩 실패", code="TM-IMAGE")
+        raise TheMakerError(_t("사진을 바꾸지 못했어요 (인코딩 실패)", "Couldn't encode the image."), code="TM-IMAGE")
     return buf.tobytes()
 
 
@@ -191,7 +195,7 @@ def _resolve_model(name):
         return hit
     if _model_map:
         raise TheMakerError(
-            "그런 이름의 모델이 없어요: %s\n가지고 있는 모델: %s"
+            _t("그런 이름의 모델이 없어요: %s\n가지고 있는 모델: %s", 'No model with that name: %s\nModels you have: %s')
             % (name, ", ".join(sorted(set(_model_map.values())))), code="TM-ARG")
     return name                    # 목록을 못 받아온 경우엔 그대로 시도
 
@@ -219,7 +223,7 @@ def vision(kind, image, prompt=None, **params):
         url, base = _API[kind]
         data = dict(base)
     else:
-        raise TheMakerError("모르는 기능이에요: %s\n가능한 기능: %s"
+        raise TheMakerError(_t("모르는 기능이에요: %s\n가능한 기능: %s", 'Unknown function: %s\nAvailable: %s')
                             % (kind, ", ".join(sorted(_API))), code="TM-ARG")
     if prompt is not None:
         data["prompt"] = prompt
@@ -232,7 +236,7 @@ def vision(kind, image, prompt=None, **params):
         url += ("&" if "?" in url else "?") + urllib.parse.urlencode(data)
     j = _post(url, files={"uploadFile": ("input.jpg", _to_jpg(image), "image/jpeg")})
     if j.get("result") != "ok":
-        raise TheMakerError("AI 실행 실패: %s" % j.get("data"), code="TM-AI")
+        raise TheMakerError(_t("AI 실행 실패: %s", 'The AI failed: %s') % j.get("data"), code="TM-AI")
     data = j.get("data")
     # 그림으로 오는 기능은 base64 글자 대신 이미지로 풀어 준다 (show·save 에 바로 넣게)
     if kind in ("bg_remove", "sr", "depth") and isinstance(data, str):
@@ -252,14 +256,14 @@ def chat(text, db=None, lang=None):
     """
     q = str(text).strip()
     if not q:
-        raise TheMakerError("물어볼 말을 적어 주세요.", code="TM-ARG")
+        raise TheMakerError(_t("물어볼 말을 적어 주세요.", 'Type what you want to ask.'), code="TM-ARG")
     args = {"prompt": q, "lang": lang or LANG}
     if db:
         args["db"] = str(db)
     url = ("/chat/rag?" if db else "/chat/ask?") + urllib.parse.urlencode(args)
     j = _post(url)
     if j.get("result") != "ok":
-        raise TheMakerError("AI 실행 실패: %s" % j.get("data"), code="TM-AI")
+        raise TheMakerError(_t("AI 실행 실패: %s", 'The AI failed: %s') % j.get("data"), code="TM-AI")
     return j["data"]["answer"]
 
 
@@ -270,10 +274,10 @@ def db_add(title, text):
     """
     body = str(text).strip()
     if not body:
-        raise TheMakerError("자료로 쓸 글을 넣어 주세요.", code="TM-DATA")
+        raise TheMakerError(_t("자료로 쓸 글을 넣어 주세요.", 'Put in the text to use as material.'), code="TM-DATA")
     j = _post("/chat/db", data={"title": str(title), "text": body})
     if j.get("result") != "ok":
-        raise TheMakerError("자료를 만들지 못했어요: %s" % j.get("data"), code="TM-DATA")
+        raise TheMakerError(_t("자료를 만들지 못했어요: %s", "Couldn't make the material: %s") % j.get("data"), code="TM-DATA")
     return j["data"]
 
 
@@ -290,10 +294,10 @@ def db_delete(db):
     """
     name = str(db).strip()
     if not name:
-        raise TheMakerError("지울 자료 이름을 적어 주세요.", code="TM-DATA")
+        raise TheMakerError(_t("지울 자료 이름을 적어 주세요.", 'Type the name of the material to delete.'), code="TM-DATA")
     j = _delete("/chat/db/" + urllib.parse.quote(name))
     if j.get("result") != "ok":
-        raise TheMakerError("지우지 못했어요: %s" % j.get("data"), code="TM-DATA")
+        raise TheMakerError(_t("지우지 못했어요: %s", "Couldn't delete it: %s") % j.get("data"), code="TM-DATA")
     return j["data"]
 
 
@@ -306,7 +310,7 @@ def db_find(db, question, top_k=4):
         {"db": str(db), "prompt": str(question), "top_k": int(top_k)})
     j = _post(url)
     if j.get("result") != "ok":
-        raise TheMakerError("찾지 못했어요: %s" % j.get("data"), code="TM-DATA")
+        raise TheMakerError(_t("찾지 못했어요: %s", "Couldn't search: %s") % j.get("data"), code="TM-DATA")
     return j["data"]["found"]
 
 
@@ -358,13 +362,13 @@ def camera(index=0):
     """웹캠에서 한 장 찍기 -> 이미지(numpy)."""
     cap = cv2.VideoCapture(index, cv2.CAP_DSHOW if os.name == "nt" else 0)
     if not cap.isOpened():
-        raise TheMakerError("웹캠을 열 수 없어요. 다른 프로그램이 쓰고 있지 않은지 확인하세요.", code="TM-CAM")
+        raise TheMakerError(_t("웹캠을 열 수 없어요. 다른 프로그램이 쓰고 있지 않은지 확인하세요.", "Can't open the webcam. Check no other program is using it."), code="TM-CAM")
     for _ in range(3):                      # 워밍업 프레임
         cap.read()
     ok, frame = cap.read()
     cap.release()
     if not ok:
-        raise TheMakerError("웹캠에서 사진을 가져오지 못했어요.", code="TM-CAM")
+        raise TheMakerError(_t("웹캠에서 사진을 가져오지 못했어요.", "Couldn't get a picture from the webcam."), code="TM-CAM")
     return frame
 
 
@@ -372,7 +376,7 @@ def load(path):
     """이미지 파일 열기 -> 이미지(numpy)."""
     img = cv2.imread(path)
     if img is None:
-        raise TheMakerError("이미지를 읽을 수 없어요: %s" % path, code="TM-IMAGE")
+        raise TheMakerError(_t("이미지를 읽을 수 없어요: %s", "Can't read the image: %s") % path, code="TM-IMAGE")
     return img
 
 
@@ -499,10 +503,10 @@ def listen(seconds=4, lang="ko"):
         import sounddevice as sd
     except ImportError:
         raise TheMakerError(
-            "마이크를 쓰려면 sounddevice 가 필요해요.\n"
-            "설치: pip install sounddevice", code="TM-VOICE")
+            _t("마이크를 쓰려면 sounddevice 가 필요해요.\n"
+            "설치: pip install sounddevice", 'The microphone needs sounddevice.\nInstall: pip install sounddevice'), code="TM-VOICE")
     sr = 16000
-    print("듣는 중... (%d초)" % seconds)
+    print(_t("듣는 중... (%d초)", 'Listening... (%d s)') % seconds)
     rec = sd.rec(int(seconds * sr), samplerate=sr, channels=1, dtype="float32")
     sd.wait()
     return wav_to_text(_wav_bytes(rec.reshape(-1), sr), lang=lang)
@@ -516,11 +520,11 @@ def wav_to_text(wav, lang="ko"):
     elif isinstance(wav, (bytes, bytearray)):
         raw = bytes(wav)
     else:
-        raise TheMakerError("wav 는 .wav 파일 경로이거나 WAV 데이터여야 해요.", code="TM-ARG")
+        raise TheMakerError(_t("wav 는 .wav 파일 경로이거나 WAV 데이터여야 해요.", 'wav must be a .wav file path or WAV data.'), code="TM-ARG")
     j = _post("/speech/stt?lang=" + urllib.parse.quote(lang),
               files={"uploadFile": ("a.wav", raw, "audio/wav")}, timeout=180)
     if j.get("result") != "ok":
-        raise TheMakerError("음성 인식 실패: %s" % j.get("data"), code="TM-VOICE")
+        raise TheMakerError(_t("음성 인식 실패: %s", 'Speech recognition failed: %s') % j.get("data"), code="TM-VOICE")
     return (j.get("data") or {}).get("text", "")
 
 
@@ -543,13 +547,13 @@ def speak(text, voice="F1", lang="ko", speed=1.0, wait=True, save_as=None):
             raw = resp.read()
             ctype = resp.headers.get("Content-Type", "")
     except urllib.error.URLError as ex:
-        raise TheMakerError("엣지 랩 서버에 연결할 수 없어요. (%s)" % ex, code="TM-SERVER")
+        raise TheMakerError(_t("AI 서버에 연결할 수 없어요. (%s)", "Can't reach the AI server. (%s)") % ex, code="TM-SERVER")
     if "audio" not in ctype:                       # 실패는 JSON 으로 온다
         try:
             msg = json.loads(raw.decode("utf-8")).get("data")
         except Exception:
             msg = raw[:200]
-        raise TheMakerError("소리를 만들지 못했어요: %s" % msg, code="TM-SOUND")
+        raise TheMakerError(_t("소리를 만들지 못했어요: %s", "Couldn't make the sound: %s") % msg, code="TM-SOUND")
 
     if save_as:
         with open(save_as, "wb") as f:
@@ -566,8 +570,8 @@ def _play_wav(raw, wait=True):
     try:
         import sounddevice as sd
     except ImportError:
-        raise TheMakerError("소리를 내려면 sounddevice 가 필요해요.\n"
-                            "설치: pip install sounddevice", code="TM-SOUND")
+        raise TheMakerError(_t("소리를 내려면 sounddevice 가 필요해요.\n"
+                            "설치: pip install sounddevice", 'Playing sound needs sounddevice.\nInstall: pip install sounddevice'), code="TM-SOUND")
     with wave.open(io.BytesIO(raw), "rb") as w:
         sr, ch = w.getframerate(), w.getnchannels()
         a = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16)
@@ -627,7 +631,7 @@ def _post_json(url, body, timeout=30, err="TM-BOARD"):
             j = json.loads(r.read().decode("utf-8"))
     except urllib.error.URLError as ex:
         raise TheMakerError(
-            "엣지 랩 서버에 연결할 수 없어요. run.bat 이 켜져 있는지 확인하세요. (%s)" % ex, code="TM-SERVER")
+            _t("AI 서버에 연결할 수 없어요. run.bat 이 켜져 있는지 확인하세요. (%s)", "Can't reach the AI server. Check that run.bat is running. (%s)") % ex, code="TM-SERVER")
     if j.get("result") != "ok":
         raise TheMakerError(str(j.get("data")), code=err)
     return j.get("data")
@@ -655,8 +659,8 @@ def board_connect(port=None, baud=115200, eol="lf"):
         ports = board_ports()
         likely = [p for p in ports if p.get("hint")] or ports
         if len(likely) != 1:
-            raise TheMakerError("포트를 골라 주세요: %s" % ", ".join(p["device"] for p in ports) if ports
-                                else "보드가 보이지 않아요. USB 케이블을 확인해 주세요.", code="TM-BOARD")
+            raise TheMakerError(_t("포트를 골라 주세요: %s", 'Pick a port: %s') % ", ".join(p["device"] for p in ports) if ports
+                                else _t("보드가 보이지 않아요. USB 케이블을 확인해 주세요.", 'No board found. Check the USB cable.'), code="TM-BOARD")
         port = likely[0]["device"]
     _post_json("/board/connect", {"port": port, "baud": int(baud), "eol": eol})
     return port
@@ -763,7 +767,7 @@ def _bgr(color):
         return (int(name[5:7], 16), int(name[3:5], 16), int(name[1:3], 16))
     if name in _COLORS:
         return _COLORS[name]
-    raise TheMakerError("모르는 색이에요: %s (쓸 수 있는 색: %s)"
+    raise TheMakerError(_t("모르는 색이에요: %s (쓸 수 있는 색: %s)", 'Unknown color: %s (you can use: %s)')
                         % (color, ", ".join(_COLORS)), code="TM-ARG")
 
 
@@ -771,7 +775,7 @@ def _spot(img, where):
     """아홉 칸 이름 -> 실제 좌표 (x, y)."""
     key = _P9_KO.get(str(where).strip(), str(where).strip().lower())
     if key not in _P9:
-        raise TheMakerError("모르는 자리예요: %s (tl tc tr ml mc mr bl bc br)" % where, code="TM-ARG")
+        raise TheMakerError(_t("모르는 자리예요: %s (tl tc tr ml mc mr bl bc br)", 'Unknown position: %s (tl tc tr ml mc mr bl bc br)') % where, code="TM-ARG")
     h, w = img.shape[:2]
     fx, fy = _P9[key]
     return int(w * fx), int(h * fy)
@@ -780,7 +784,7 @@ def _spot(img, where):
 def _img(image):
     """이미지가 맞는지 확인하고 복사본을 준다 (원본을 건드리지 않게)."""
     if not isinstance(image, np.ndarray) or image.ndim < 2:
-        raise TheMakerError("사진이 아니에요. camera() 나 load() 로 만든 사진을 넣어 주세요.", code="TM-IMAGE")
+        raise TheMakerError(_t("사진이 아니에요. camera() 나 load() 로 만든 사진을 넣어 주세요.", "That isn't a photo. Pass a photo made with camera() or load()."), code="TM-IMAGE")
     return _flatten(image).copy()
 
 
@@ -828,7 +832,7 @@ def flip(image, direction="h"):
         return cv2.flip(img, 1)
     if d in ("v", "세로", "위아래"):
         return cv2.flip(img, 0)
-    raise TheMakerError('h(좌우) 또는 v(위아래) 를 넣어 주세요.', code="TM-ARG")
+    raise TheMakerError(_t('h(좌우) 또는 v(위아래) 를 넣어 주세요.', 'Use h (left-right) or v (up-down).'), code="TM-ARG")
 
 
 # ---------------------------------------------------------------- 자르기
@@ -850,7 +854,7 @@ def crop_xy(image, x, y, width, height):
     x, y = max(0, int(x)), max(0, int(y))
     x2, y2 = min(w, x + max(1, int(width))), min(h, y + max(1, int(height)))
     if x2 <= x or y2 <= y:
-        raise TheMakerError("자를 수 없는 자리예요. 사진 크기는 %d x %d 예요." % (w, h), code="TM-ARG")
+        raise TheMakerError(_t("자를 수 없는 자리예요. 사진 크기는 %d x %d 예요.", "Can't crop there. The photo is %d x %d.") % (w, h), code="TM-ARG")
     return img[y:y2, x:x2].copy()
 
 
@@ -863,9 +867,9 @@ def crop_found(image, result, index=0):
     items = _boxes_of(result)
     boxes = [it["box"] for it in items if it.get("box")]
     if not boxes:
-        raise TheMakerError("찾은 것이 없어요.", code="TM-NONE")
+        raise TheMakerError(_t("찾은 것이 없어요.", 'Nothing was found.'), code="TM-NONE")
     if index >= len(boxes):
-        raise TheMakerError("%d 번째는 없어요. %d 개 찾았어요." % (index + 1, len(boxes)), code="TM-NONE")
+        raise TheMakerError(_t("%d 번째는 없어요. %d 개 찾았어요.", 'There is no number %d. Found %d.') % (index + 1, len(boxes)), code="TM-NONE")
     x1, y1, x2, y2 = [int(v) for v in boxes[index][:4]]
     return crop_xy(image, x1, y1, x2 - x1, y2 - y1)
 
@@ -888,7 +892,7 @@ def attach(image_a, image_b, direction="h"):
         a = cv2.resize(a, (w, int(a.shape[0] * w / a.shape[1])))
         b = cv2.resize(b, (w, int(b.shape[0] * w / b.shape[1])))
         return np.vstack([a, b])
-    raise TheMakerError('h(가로) 또는 v(세로) 를 넣어 주세요.', code="TM-ARG")
+    raise TheMakerError(_t('h(가로) 또는 v(세로) 를 넣어 주세요.', 'Use h (side by side) or v (top and bottom).'), code="TM-ARG")
 
 
 _SIZES = {"tiny": .15, "small": .25, "half": .5, "big": .75, "full": 1.0,
@@ -958,7 +962,7 @@ def adjust(image, what="bright", value=0):
         hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV).astype(np.float32)
         hsv[:, :, 1] = np.clip(hsv[:, :, 1] * (1.0 + v / 100.0), 0, 255)
         return cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR)
-    raise TheMakerError("bright(밝기) / contrast(대비) / saturate(채도) 중에서 골라 주세요.", code="TM-ARG")
+    raise TheMakerError(_t("bright(밝기) / contrast(대비) / saturate(채도) 중에서 골라 주세요.", 'Pick one of bright / contrast / saturate.'), code="TM-ARG")
 
 
 def img_filter(image, kind="gray"):
@@ -983,7 +987,7 @@ def img_filter(image, kind="gray"):
     if k in ("edge", "윤곽"):
         e = cv2.Canny(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY), 80, 180)
         return cv2.cvtColor(255 - e, cv2.COLOR_GRAY2BGR)
-    raise TheMakerError("gray sepia blur sharpen invert edge 중에서 골라 주세요.", code="TM-ARG")
+    raise TheMakerError(_t("gray sepia blur sharpen invert edge 중에서 골라 주세요.", 'Pick one of gray sepia blur sharpen invert edge.'), code="TM-ARG")
 
 
 # ---------------------------------------------------------------- 그리기
@@ -1119,7 +1123,7 @@ def size_of(image, what="w"):
         return int(img.shape[1])
     if w in ("h", "높이", "세로"):
         return int(img.shape[0])
-    raise TheMakerError("w(너비) 또는 h(높이) 를 넣어 주세요.", code="TM-ARG")
+    raise TheMakerError(_t("w(너비) 또는 h(높이) 를 넣어 주세요.", 'Use w (width) or h (height).'), code="TM-ARG")
 
 
 def color_at(image, where="mc"):
@@ -1221,14 +1225,14 @@ def speaker(which=None):
     try:
         import sounddevice as sd
     except ImportError:
-        raise TheMakerError("소리를 내려면 sounddevice 가 필요해요.\n"
-                            "설치: pip install sounddevice", code="TM-SOUND")
+        raise TheMakerError(_t("소리를 내려면 sounddevice 가 필요해요.\n"
+                            "설치: pip install sounddevice", 'Playing sound needs sounddevice.\nInstall: pip install sounddevice'), code="TM-SOUND")
     if which is None:
-        print("[스피커] 지금 쓰는 것:", _out_device())
+        print(_t("[스피커] 지금 쓰는 것:", '[speaker] now using:'), _out_device())
         for i, d in enumerate(sd.query_devices()):
             if d.get("max_output_channels", 0) > 0:
                 print("  %2d  %s" % (i, d.get("name", "")))
-        print("speaker(번호) 로 골라요.")
+        print(_t("speaker(번호) 로 골라요.", 'Pick one with speaker(number).'))
         return _out_device()
     _audio["dev"] = int(which) if str(which).isdigit() else which
     return _audio["dev"]
@@ -1238,8 +1242,8 @@ def _play(wave_f32, wait=True):
     try:
         import sounddevice as sd
     except ImportError:
-        raise TheMakerError("소리를 내려면 sounddevice 가 필요해요.\n"
-                            "설치: pip install sounddevice", code="TM-SOUND")
+        raise TheMakerError(_t("소리를 내려면 sounddevice 가 필요해요.\n"
+                            "설치: pip install sounddevice", 'Playing sound needs sounddevice.\nInstall: pip install sounddevice'), code="TM-SOUND")
     try:
         sd.play(wave_f32, _SR, device=_out_device())
     except Exception as ex:                     # 고른 장치가 안 되면 기본값으로 한 번 더
@@ -1248,8 +1252,8 @@ def _play(wave_f32, wait=True):
             sd.play(wave_f32, _SR)
         except Exception:
             raise TheMakerError(
-                "스피커로 소리를 낼 수 없어요 (%s)\n"
-                "speaker() 로 목록을 보고 speaker(번호) 로 골라 보세요." % ex, code="TM-SOUND")
+                _t("스피커로 소리를 낼 수 없어요 (%s)\n"
+                "speaker() 로 목록을 보고 speaker(번호) 로 골라 보세요.", "Can't play through the speaker (%s)\nSee the list with speaker() and pick one with speaker(number).") % ex, code="TM-SOUND")
     if wait:
         sd.wait()
 
@@ -1283,7 +1287,7 @@ def play_note(name="도", beats=1, tempo=120):
     key = str(name).strip().lower()
     key = key if key in _NOTES else str(name).strip()
     if key not in _NOTES:
-        raise TheMakerError("모르는 계이름이에요: %s (도 레 미 파 솔 라 시 높은도)" % name, code="TM-ARG")
+        raise TheMakerError(_t("모르는 계이름이에요: %s (도 레 미 파 솔 라 시 높은도)", 'Unknown note: %s (do re mi fa sol la ti high-do)') % name, code="TM-ARG")
     sec = float(beats) * 60.0 / max(20.0, float(tempo))
     _play(_wave(_NOTES[key], sec))
     return None
@@ -1301,7 +1305,7 @@ def beep(kind="ok"):
     elif k in ("buzz", "삐"):
         w = _wave(150, .3, "saw")
     else:
-        raise TheMakerError("ok error ding buzz 중에서 골라 주세요.", code="TM-ARG")
+        raise TheMakerError(_t("ok error ding buzz 중에서 골라 주세요.", 'Pick one of ok error ding buzz.'), code="TM-ARG")
     _play(w)
     return None
 
@@ -1330,9 +1334,9 @@ def play_melody(notes="도레미파솔", tempo=120):
     while parts and parts[-1] == "쉼":
         parts.pop()
     if skipped:
-        print("[play_melody] 모르는 글자는 건너뛰었어요:", "".join(skipped))
+        print(_t("[play_melody] 모르는 글자는 건너뛰었어요:", '[play_melody] skipped unknown letters:'), "".join(skipped))
     if not parts:
-        raise TheMakerError("계이름을 찾을 수 없어요. (도 레 미 파 솔 라 시 도2)", code="TM-ARG")
+        raise TheMakerError(_t("계이름을 찾을 수 없어요. (도 레 미 파 솔 라 시 도2)", 'No notes found. (do re mi fa sol la ti do2)'), code="TM-ARG")
     sec = 60.0 / max(20.0, float(tempo))
     _play(np.concatenate([_wave(_NOTES[p], sec) for p in parts]))
     return None
@@ -1496,7 +1500,7 @@ def pose_point(result, part="nose", who=1):
     """
     i = _pose_index(part)
     if i < 0:
-        raise TheMakerError("모르는 몸 점이에요: %s\n가능한 점: %s" % (part, ", ".join(_POSE_KO)), code="TM-ARG")
+        raise TheMakerError(_t("모르는 몸 점이에요: %s\n가능한 점: %s", 'Unknown body point: %s\nAvailable: %s') % (part, ", ".join(_POSE_KO)), code="TM-ARG")
     people = result if isinstance(result, list) else []
     who = int(who)
     if who < 1 or who > len(people):
@@ -1554,7 +1558,7 @@ def record(table, *values):
     row = [timer()]
     for v in values:
         if isinstance(v, np.ndarray):
-            raise TheMakerError("표에는 사진을 넣을 수 없어요 — 숫자나 글자를 넣어 주세요.", code="TM-ARG")
+            raise TheMakerError(_t("표에는 사진을 넣을 수 없어요 — 숫자나 글자를 넣어 주세요.", "A table can't hold photos — put in numbers or text."), code="TM-ARG")
         row.append(v)
     _TABLES.setdefault(str(table), []).append(row)
     return len(_TABLES[str(table)])
@@ -1596,7 +1600,7 @@ def _memory():
 def remember(key, value):
     """값을 기억한다 — 프로그램을 다시 실행해도 남는다 (숫자 · 글자 · 목록)."""
     if isinstance(value, np.ndarray):
-        raise TheMakerError("사진은 기억할 수 없어요 — save() 로 파일에 저장해 주세요.", code="TM-ARG")
+        raise TheMakerError(_t("사진은 기억할 수 없어요 — save() 로 파일에 저장해 주세요.", "Photos can't be remembered — save them to a file with save()."), code="TM-ARG")
     d = _memory()
     d[str(key)] = value
     with open(_MEMORY_FILE, "w", encoding="utf-8") as f:
@@ -1622,7 +1626,7 @@ def face_register(name, image):
     url = "/face/register?" + urllib.parse.urlencode({"name": str(name), "lang": LANG})
     j = _post(url, files={"uploadFile": ("face.jpg", _to_jpg(image), "image/jpeg")})
     if j.get("result") != "ok":
-        raise TheMakerError("얼굴 등록 실패: %s" % j.get("data"), code="TM-FACE")
+        raise TheMakerError(_t("얼굴 등록 실패: %s", 'Face registration failed: %s') % j.get("data"), code="TM-FACE")
     return j["data"]
 
 
@@ -1642,7 +1646,7 @@ def face_list():
     """등록한 이름과 횟수 목록 — [{"name": 이름, "count": 횟수}, ...]"""
     j = _get("/face/db")
     if j.get("result") != "ok":
-        raise TheMakerError("얼굴 명단을 읽지 못했어요: %s" % j.get("data"), code="TM-FACE")
+        raise TheMakerError(_t("얼굴 명단을 읽지 못했어요: %s", "Couldn't read the face list: %s") % j.get("data"), code="TM-FACE")
     return j["data"]["names"]
 
 
@@ -1662,7 +1666,7 @@ def face_save(path="facedb.json"):
     """명단을 파일로 저장한다 — 파이보 · 파이브레인에서 Face.load_db(이 파일) 로 연다. 저장한 경로를 돌려준다."""
     data = _get("/face/db/file")
     if data.get("result") == "fail":
-        raise TheMakerError("얼굴 명단을 저장하지 못했어요: %s" % data.get("data"), code="TM-FACE")
+        raise TheMakerError(_t("얼굴 명단을 저장하지 못했어요: %s", "Couldn't save the face list: %s") % data.get("data"), code="TM-FACE")
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False)
     return os.path.abspath(path)
@@ -1674,7 +1678,7 @@ def face_load(path):
         raw = f.read()
     j = _post("/face/db/file", files={"uploadFile": (os.path.basename(path), raw, "application/json")})
     if j.get("result") != "ok":
-        raise TheMakerError("얼굴 명단 파일을 열지 못했어요: %s" % j.get("data"), code="TM-FACE")
+        raise TheMakerError(_t("얼굴 명단 파일을 열지 못했어요: %s", "Couldn't open the face list file: %s") % j.get("data"), code="TM-FACE")
     return j["data"]["names"]
 
 
