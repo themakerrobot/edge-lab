@@ -25,10 +25,20 @@ NEED = [
     "gan/u2net.onnx",
     "gan/single-image-super-resolution-1032.xml",
     "gan/depth-v2s.xml",          # 깊이 지도 (상대 깊이 — 보여 주는 용도)
-    # backbone/mobilenetv2_feat.xml 은 예전(261104 전) 가르치기 모델을 쓸 때만 — 없어도 된다
     "mask/mask.onnx",                  # 마스크 분류 (임베더 + 분류기가 한 파일 — 아래에서 연다)
     "mediapipe/face_landmarker.task",  # 얼굴 거리·방향
     "mediapipe/gesture_recognizer.task",  # 손동작
+]
+
+# 코딩 실습(노트북)이 쓰는 모델 — 위 NEED 에 없는 것만. 없으면 그 노트북이 첫 칸에서 멈춘다
+# (tools/release_check.py 가 노트북을 읽어 여기 · 00_start 점검 목록과 맞는지 본다)
+NB_NEED = [
+    "backbone/mobilenetv2_feat.xml",                    # 07 내 분류기 (예전 가르치기 모델도 이것을 쓴다)
+    "code/easyocr/craft_mlt_25k.pth",                   # 05 글자 찾기
+    "code/easyocr/korean_g2.pth",                       # 05 글자 읽기
+    "embed/e5-small-int8/openvino_model.xml",           # 08 (대화 자료 찾기와 같은 파일)
+    "embed/e5-small-int8/openvino_tokenizer.xml",
+    "vlm/gemma3-4b-int4/openvino_language_model.xml",   # 08 · 09
 ]
 
 fails = 0
@@ -45,6 +55,11 @@ for rel in NEED:
     if not (pathlib.Path("models") / rel).exists():
         fails += 1
         print("FAIL models/" + rel, "| 파일 없음")
+
+for rel in NB_NEED:
+    if not (pathlib.Path("models") / rel).exists():
+        fails += 1
+        print("FAIL models/" + rel, "| 파일 없음 — 코딩 실습 노트북이 씁니다")
 
 for m in targets:
     size = m.stat().st_size

@@ -14,10 +14,14 @@ tools/make_bundle.bat 와 tools/schema_test/run.py 가 이것을 먼저 돌린�
   3) 화면이 부르는 /lib · /assets · /fonts · /blockly 파일이 실제로 있나, 번들 공용 파일 확인 목록이 있나
   4) 서버가 반드시 읽는 모델(tools/check.py NEED)이 설치 스크립트(setup.ps1 · setup.sh)와 배포 받기(setup_deploy.ps1)에 들어가나
   5) 파이썬 코드가 쓰는 바깥 패키지가 requirements.txt · requirements.lock.txt 에 다 있나
+  4-1) 코딩 실습 노트북이 부르는 모델(models/... 경로)이 받기 · 번들에서 빠지지 않고, tools/check.py 가 보고,
+     00_start 의 모델 점검 목록에 있나 · 한국어/영어 노트북이 같은 모델을 쓰나
   6) 제품 이름이 brand.json 한 곳에만 있나 — 코드에 이름을 직접 쓰면 FAIL, 문서 · lib/brand.js 가
      brand.json 과 맞는지(tools/rename_brand.py --check), 모든 화면이 lib/brand.js 를 먼저 읽는지
 """
 import ast
+import fnmatch
+import json
 import os
 import pathlib
 import re
@@ -181,7 +185,7 @@ MODEL_OPTIONAL = {
 
 def need_models():
     src = read("tools/check.py")
-    m = re.search(r"NEED\s*=\s*\[(.*?)\n\]", src, re.S)
+    m = re.search(r"^NEED\s*=\s*\[(.*?)\n\]", src, re.S | re.M)
     return re.findall(r'"([^"]+)"', m.group(1)) if m else []
 
 
@@ -218,6 +222,107 @@ def check_models():
                 continue
             if not any(n.endswith(name) for n in need):
                 WARN.append("%s 가 부르는 모델이 check.py NEED 에 없음(없어도 되는 것인지 확인): %s" % (py, lit))
+
+
+# ------------------------------------------------------------------ 4-1) 노트북이 쓰는 모델
+NB_ASSIGN = re.compile(r'^\s*([A-Z_][A-Z0-9_]*)\s*=\s*([A-Z_][A-Z0-9_]*)((?:\s*/\s*"[^"]+")+)')
+NB_REF = re.compile(r'\b([A-Z_][A-Z0-9_]*)((?:\s*/\s*"[^"]+")+)')
+
+
+def _nb_code(path):
+    nb = json.loads(path.read_text(encoding="utf-8"))
+    return "\n".join("".join(c["source"]) for c in nb["cells"] if c["cell_type"] == "code")
+
+
+def _nb_join(base, parts):
+    return "/".join(([base] if base else []) + re.findall(r'"([^"]+)"', parts))
+
+
+def nb_models(code):
+    """MODELS / "face" / "x.xml" · F = MODELS / "face" 다음 F / "x.xml" 를 따라 models/ 아래 경로를 모은다."""
+    var, out = {"MODELS": ""}, set()
+    for line in code.splitlines():
+        m = NB_ASSIGN.match(line)
+        if m and m.group(2) in var:
+            var[m.group(1)] = _nb_join(var[m.group(2)], m.group(3))
+        for r in NB_REF.finditer(line):
+            if r.group(1) in var:
+                out.add(_nb_join(var[r.group(1)], r.group(2)))
+    return out
+
+
+def nb_start_list(code):
+    """00_start 의 NEED = { "설명": "models 아래 경로", ... } 점검 목록."""
+    m = re.search(r"^NEED\s*=\s*\{(.*?)\n\}", code, re.S | re.M)
+    return re.findall(r'"[^"]+":\s*"([^"]+)"', m.group(1)) if m else None
+
+
+def check_notebook_models():
+    cp = read("tools/check.py")
+    fm = read("tools/fetch_models.py")
+    ign = re.search(r"IGNORE\s*=\s*\[([^\]]*)\]", fm)
+    ignore_top = {p[:-2] for p in re.findall(r'"([^"]+)"', ign.group(1) if ign else "") if p.endswith("/*")}
+    ed = re.search(r"EASYDETECT\s*=\s*\[([^\]]*)\]", fm)
+    ed_allow = re.findall(r'"([^"]+)"', ed.group(1)) if ed else []
+    removed = set(re.findall(r"rmdir /s /q %BUILD%\\models\\([\w.-]+)", read("tools/make_bundle.bat")))
+
+    def covered_by_check(rel):          # check.py 가 그 경로(또는 그 안의 파일)를 이름으로 보나
+        return re.search(r'(?:"|models/)' + re.escape(rel) + r'(?=["/])', cp) is not None
+
+    def fetched(rel):
+        top, _, rest = rel.partition("/")
+        if top == "easydetect":
+            return not rest or any(fnmatch.fnmatch(rest, a) or a.startswith(rest + "/") for a in ed_allow)
+        return top not in ignore_top
+
+    used = {}                            # 경로 → 쓰는 노트북들
+    starts = {}
+    for lang in ("", "en/"):
+        books = sorted((ROOT / "notebooks" / lang).glob("*.ipynb"))
+        if not books:
+            fail("notebooks/%s 에 노트북이 없음" % lang)
+        for b in books:
+            code = _nb_code(b)
+            name = lang + b.name
+            if b.name.startswith("00_"):
+                lst = nb_start_list(code)
+                if lst is None:
+                    fail("notebooks/%s 에서 모델 점검 목록(NEED = {...})을 찾지 못함" % name)
+                    continue
+                starts[lang] = lst
+                for rel in lst:
+                    used.setdefault(rel, []).append(name + " (점검 목록)")
+                continue
+            for rel in nb_models(code):
+                used.setdefault(rel, []).append(name)
+    # 한국어 · 영어가 같은 모델을 쓰나
+    by_book = {}
+    for rel, books in used.items():
+        for b in books:
+            by_book.setdefault(b, set()).add(rel)
+    for b, rels in by_book.items():
+        if b.startswith("en/"):
+            ko = by_book.get(b[3:], set())
+            if rels != ko:
+                fail("notebooks/%s 와 한국어판이 부르는 모델이 다름: %s" % (b, sorted(rels ^ ko)))
+    for rel, books in sorted(used.items()):
+        who = ", ".join(sorted(set(books)))
+        top = rel.split("/")[0]
+        if not fetched(rel):
+            fail("노트북이 쓰는 모델을 tools/fetch_models.py 가 받지 않음: models/%s (%s)" % (rel, who))
+        if top in removed:
+            fail("노트북이 쓰는 모델을 make_bundle.bat 이 번들에서 지움: models/%s (%s)" % (rel, who))
+        if not covered_by_check(rel):
+            fail("노트북이 쓰는 모델을 tools/check.py 가 보지 않음(NEED · NB_NEED): models/%s (%s)" % (rel, who))
+    # 00_start 점검 목록이 다른 노트북의 모델을 다 담나
+    for lang, lst in starts.items():
+        mine = lambda b: b.startswith("en/") == (lang == "en/") and not b.endswith("(점검 목록)")
+        for rel, books in sorted(used.items()):
+            if not any(mine(b) for b in books):
+                continue
+            if not any(l == rel or rel.startswith(l + "/") or l.startswith(rel + "/") for l in lst):
+                fail("notebooks/%s00_start.ipynb 모델 점검 목록에 없음: models/%s" % (lang, rel))
+    return len(used)
 
 
 # ------------------------------------------------------------------ 5) 바깥 패키지
@@ -317,11 +422,12 @@ def main():
     routes = check_pages()
     check_assets(routes)
     check_models()
+    nbm = check_notebook_models()
     check_packages(mods)
     check_brand()
     check_unicode_paths()
-    print("배포 점검 — 서버 파일 %d 개 · 화면 %d 개 · 필수 모델 %d 개"
-          % (len(mods), len(routes), len(need_models())))
+    print("배포 점검 — 서버 파일 %d 개 · 화면 %d 개 · 필수 모델 %d 개 · 노트북 모델 %d 개"
+          % (len(mods), len(routes), len(need_models()), nbm))
     for w in dict.fromkeys(WARN):
         print("  WARN  " + w)
     for f in FAIL:
