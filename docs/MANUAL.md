@@ -116,6 +116,26 @@ show(img, r)                   # 박스가 그려진 채로 보기
 
 ---
 
+## 얼굴 AI — 얼굴을 등록하고 AI 가 알아봐요
+
+![얼굴 AI](img/m-face.png)
+
+| | |
+|---|---|
+| **1** | 카메라 켜기 · 끄기 |
+| **2** | 카메라 화면 — 등록한 사람은 이름으로, 처음 보는 사람은 '모르는 사람'으로 |
+| **3** | 보여 줄 정보 고르기 — 나이 · 성별(AI 짐작) · 감정 · 방향 · 거리 · 마스크 |
+| **4** | 얼굴마다 나온 정보 — 누구인지 · 닮은 정도 · 고른 정보 |
+| **5** | 말하기 — 알아본 사람에게 적어 둔 말을 읽어 줘요 (`[이름]` 자리에 이름이 들어가요) |
+| **6** | 이름을 적고 지금 화면으로 등록 — 정면 · 조금 옆 · 웃는 얼굴로 3번쯤 하면 더 잘 알아봐요 |
+| **7** | 사진 파일로 등록 |
+| **8** | 등록한 사람 — 이름별로 지우기 |
+| **9** | 명단 저장하기 · 불러오기(`facedb.json`, 파이보 · 파이브레인과 같은 파일) · 모두 지우기 |
+
+사진은 저장하지 않아요. 얼굴에서 뽑은 숫자만 작업폴더의 `face/facedb.json` 에 둬요. 다른 사람 얼굴은 허락을 받고 등록해요.
+
+---
+
 ## 설정 — 수업 전 점검
 
 ![설정](img/m-options.png)
@@ -277,6 +297,26 @@ show(img, r)                   # see it with boxes drawn
 | **5** | Camera on — sends what it sees along with your question |
 | **6** | Read aloud — pick the voice and the tone |
 | **7** | Add notes — it answers from inside what you added |
+
+---
+
+## Face AI — register faces and let the AI recognise them
+
+![Face AI](img/m-face.png)
+
+| | |
+|---|---|
+| **1** | Camera on · off |
+| **2** | Camera view — registered people by name, new faces as 'Unknown' |
+| **3** | Pick what to show — age · gender (AI guess) · emotion · direction · distance · mask |
+| **4** | Info for each face — who · how close the match is · what you picked |
+| **5** | Speak — reads your sentence to the person it recognised (`[name]` becomes the name) |
+| **6** | Type a name and register from the camera — about 3 times (front · a little sideways · smiling) works best |
+| **7** | Register from a photo file |
+| **8** | Registered people — delete by name |
+| **9** | Save · load the list (`facedb.json`, the same file as Pibo · PiBrain) · delete all |
+
+Photos are not saved — only numbers taken from the face, in `face/facedb.json` in the work folder. Ask before registering someone else's face.
 
 ---
 

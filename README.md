@@ -93,6 +93,8 @@ speak("안녕하세요")                     # 말하기
 - **사진은 저장하지 않습니다.** 얼굴에서 뽑은 숫자(256개)만 이 컴퓨터의 `face/facedb.json` 에 두고, 이름별 · 전체 지우기가 있습니다. 다른 사람 얼굴은 허락을 받고 등록합니다.
 - 블록(누구인지 · 얼굴 등록)과 파이썬(`face_register` · `face_who` · `vision("who", img)` …)에서도 같은 명단을 씁니다.
 
+![얼굴 AI](docs/img/face.png)
+
 ### 설정 — 수업 전 점검
 
 **카메라 · 소리 · 마이크**가 되는지 한 번에 확인합니다. 마이크 시험은 3초 녹음해 그대로 되들려 주므로
@@ -309,6 +311,8 @@ Turn on **Speak** to have the recognised person greeted with your own sentence (
 - **Same model and same list file as Pibo · PiBrain.** The `facedb.json` from **[Save the list]** also opens on the robot with `Face.load_db()`, and a file the robot saved with `Face.save_db()` opens with **[Load a list]**.
 - **Photos are not saved** — only numbers taken from the face (256 of them) in `face/facedb.json` on this computer; delete by name or all at once. Ask before registering someone else's face.
 - Blocks (who is it · register a face) and Python (`face_register` · `face_who` · `vision("who", img)` …) use the same list.
+
+![Face AI](docs/img/en/face.png)
 
 ### Settings — check before class
 
