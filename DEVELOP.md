@@ -13,8 +13,9 @@
 | `mp_routes.py` | MediaPipe — 얼굴 거리·방향, 손 제스처, 얼굴 구분용 5점(`face_points`) |
 | `face_routes.py` | 얼굴 AI API — `/face/who`(누구인지 + 얼굴 정보) · `/face/register` · `/face/db` · 명단 파일 받기/열기 |
 | `facedb.py` | 얼굴 명단 — 파이보 `openpibo-facedb` JSON 형식 · 판정(오차도 0.4). 서버 · 가짜 엔진이 같이 쓴다 |
-| `train_routes.py` | 나만의 AI 학습 API — 특징 추출(5모드)·모델 저장·작품·성적표·[로봇으로 보내기] |
-| `teachlab/` | 가르치기 특징 계산 — 로봇(openpibo-os.pibo `openpibo/modules/teachlab`)과 같은 코드. 모델 파일은 허깅페이스 `mediapipe/` → `models/mediapipe/` |
+| `train_routes.py` | 나만의 AI 학습 API — 특징 추출(5모드)·모델 저장·작품·성적표 |
+| `train_features.py` | 가르치기 특징 계산(사진 1024 · 손 · 표정 · 몸) · 분류기 추론(numpy). 모델 파일은 `models/mediapipe/` |
+| `modelfile.py` | 모델 파일을 바이트로 읽기 — MediaPipe 에 경로를 넘기면 한글 폴더에서 서버가 죽는다 |
 | `stats_routes.py` | 사용 통계 수집 |
 | `code_routes.py` | 파이썬 IDE API — 실행·정지·출력·작품 저장 |
 | `speech_routes.py` | 음성 인식(STT)·음성 합성(TTS) API |
@@ -112,22 +113,20 @@
 모두 그 표를 따라간다.
 
 
-## 가르치기 = 로봇과 같은 계산 (261104)
+## 가르치기 — 특징 · 분류기
 
-edge-lab(PC)에서 가르친 AI 가 파이보 · PiBrain 에서 **같은 답**을 내도록, 특징 계산 · 머리(분류기) · 저장 형식을 로봇과 하나로 맞췄다.
+특징은 서버(`train_features.py`)가 뽑고, 머리(분류기)는 브라우저 TF.js 가 학습한다. 계산은 teach-lab(MIT)에서 옮겨 왔다 — 식을 바꾸면 전에 가르친 AI 가 엉뚱한 답을 낸다.
 
-| | 지금 | 기준(로봇) |
-|---|---|---|
-| 사진 | mobilenet_v3_small 1024 (L2) — `models/mediapipe/mobilenet_v3_small_embedder.onnx` 를 OpenVINO **f32** | 같은 ONNX 를 onnxruntime |
-| 손 · 두 손 · 표정 · 상반신 · 전신 | MediaPipe world 좌표 63 · 126 · blendshape 52 · 75 · 99 (`teachlab/landmarks.py`) | 같은 파일 |
-| 입력 크기 | 짧은 변 240 으로 줄인 뒤 뽑는다(`train_routes._stream_rgb`) | `vision_classify._as_stream_rgb` |
-| 머리 | Dense 64 relu → Dropout 0.2 → Dense N softmax, adam 0.001, 반복 40, 묶음 16 | teach-lab `trainer.js` |
-| 저장 | `model.zip` 안에 `project.json` · `classifier.json` · `classifier.bin` · `labels.txt` (+ `report.json`) | 로봇 `/home/pi/mymodel/<이름>/` |
+| | 계산 |
+|---|---|
+| 사진 | mobilenet_v3_small 1024 (L2) — `models/mediapipe/mobilenet_v3_small_embedder.onnx` 를 OpenVINO **f32** |
+| 손 · 두 손 · 표정 · 상반신 · 전신 | MediaPipe world 좌표 63 · 126 · blendshape 52 · 75 · 99 (`train_features.LandmarkExtractor`) |
+| 입력 크기 | 짧은 변 240 으로 줄인 뒤 뽑는다(`train_routes._stream_rgb`) |
+| 머리 | Dense 64 relu → Dropout 0.2 → Dense N softmax, adam 0.001, 반복 40, 묶음 16 |
+| 저장 | `model.zip` 안에 `project.json` · `classifier.json` · `classifier.bin` · `labels.txt` (+ `report.json`) |
 
-- **예전 모델(TF.js zip)** 은 서버에서 계속 추론한다(`LegacyHead` · `_legacy_*` — MobileNetV2 1280 · 화면 좌표 손 · easydetect 몸). 가르치기 화면으로 다시 불러오기는 안 된다(다시 가르치라고 안내). 예전 작품(v2 이하)은 클래스 이름만 가져온다
-- 확인(컨테이너, openvino 2024.5 · mediapipe 0.10.18): 같은 사진 17장에서 로봇 계산과 특징 차이 1.5e-6 이하(5종 모두), 브라우저로 학습 → 저장 → 로봇 `CustomClassifier` 의 답·확률이 `/custom/predict` 와 17/17 같음, 작품 저장·열기, 예전 모델 올리기·추론
-- **같은 점수 점검**: `tools/score_check.py`(로봇 `system/score_check.py` 와 같은 파일). `python tools\score_check.py run <저장한 AI 이름 또는 model.zip> <사진 폴더> --out pc.json` → 로봇·브라우저(`http://<로봇 IP>:50010/static/check.html`) 결과와 `python tools\score_check.py compare robot.json pc.json browser.json`. 로봇 vs PC 는 특징 차이 1e-5 안쪽이어야 한다
-- `models/mediapipe/` 의 네 파일(임베더 · 손 · 얼굴 · 자세)은 로봇과 **sha256 이 같다**. 허깅페이스에 올리는 것은 Actions `hf-models`(mediapipe)
+- **예전 모델(TF.js zip)** 은 서버에서 계속 추론한다(`LegacyHead` · `_legacy_*` — MobileNetV2 1280(`models/backbone`) · 화면 좌표 손 · easydetect 몸). 가르치기 화면으로 다시 불러오기는 안 된다(다시 가르치라고 안내). 예전 작품(v2 이하)은 클래스 이름만 가져온다
+- 모델 파일 넷(임베더 · 손 · 얼굴 · 자세)은 허깅페이스 `mediapipe/` → `models/mediapipe/`. 허깅페이스에 올리는 것은 Actions `hf-models`
 
 ## 화면 다듬기 (261119) — 모든 화면 공통 규칙
 
@@ -175,5 +174,5 @@ edge-lab(PC)에서 가르친 AI 가 파이보 · PiBrain 에서 **같은 답**�
 | 문서 · 노트북 · 설치 주소 | 실행 중에 읽을 수 없어 `tools/rename_brand.py` 가 지난 이름(`tools/brand_applied.json`)을 새 이름으로 바꾼다. 한글이 있는 줄은 `name_ko`(조사도 맞춘다), 없는 줄은 `name` |
 
 - 코드에 이름을 직접 쓰지 않는다 — `tools/release_check.py` 가 FAIL 로 잡는다
-- 그대로 두는 것: 저장 파일 형식 `edge-lab-sound` · `edge-lab-drive` · `edge-lab-story`, 가르친 AI 의 `app` 값, 마스크 모델 메타데이터 `edge-lab.classes`, 로봇과 같은 파일 `tools/score_check.py`
+- 그대로 두는 것: 저장 파일 형식 `edge-lab-sound` · `edge-lab-drive` · `edge-lab-story`, 가르친 AI 의 `app` 값, 마스크 모델 메타데이터 `edge-lab.classes`
 - 저장소 주소를 바꾸면 GitHub 저장소 이름 바꾸기 · HF 새 저장소 올리기는 사람이 한다

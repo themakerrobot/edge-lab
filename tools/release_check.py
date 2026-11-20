@@ -90,7 +90,7 @@ def check_python():
             fail("번들 복사 목록(make_bundle.bat [6/8])에 없음: " + f)
         if f not in verify:
             fail("번들 확인 목록(make_bundle.bat [7/8])에 없음: " + f)
-    # 패키지 폴더(teachlab 등)는 통째로 복사해야 한다
+    # 패키지 폴더(__init__.py 가 있는 폴더)는 통째로 복사해야 한다
     for d in sorted(p.name for p in ROOT.iterdir() if (p / "__init__.py").exists()):
         used = any(d in imports_of(ROOT / (m + ".py")) for m in mods)
         if used and not re.search(r"xcopy /e /i /q /y %s " % re.escape(d), bat):
@@ -350,10 +350,9 @@ def check_packages(mods):
 
 # ------------------------------------------------------------------ 6) 제품 이름
 # 이름처럼 보이지만 파일 형식 표시라 그대로 두는 것 (tools/rename_brand.py PROTECT 와 같다)
-BRAND_KEEP = ["edge-lab-sound", "edge-lab-drive", "edge-lab-story", 'app: "edge-lab"', "edge-lab.classes",
-              "----edgelab"]
+BRAND_KEEP = ["edge-lab-sound", "edge-lab-drive", "edge-lab-story", 'app: "edge-lab"', "edge-lab.classes"]
 BRAND_SKIP = {"brand.py", "brand.json", "tools/rename_brand.py", "tools/release_check.py",
-              "tools/score_check.py", "view_project/lib/brand.js"}
+              "view_project/lib/brand.js"}
 VENDOR = ("view_project/blockly/", "view_project/lib/swagger/", "view_project/lib/cm/", "models/")
 
 
@@ -409,7 +408,7 @@ def check_brand():
 def check_unicode_paths():
     """MediaPipe 에 모델 '경로' 를 넘기지 않는다 — 한글 폴더(바탕 화면)에 풀면 C++ 가 경로를 못 읽고
     프로세스를 끝낸다(배포판 자동 시험이 잡았다). 파이썬으로 읽은 바이트(model_asset_buffer)를 넘긴다."""
-    files = [p for p in ROOT.glob("*.py")] + list(ROOT.glob("teachlab/*.py")) + list(ROOT.glob("notebooks/**/*.ipynb"))
+    files = [p for p in ROOT.glob("*.py")] + list(ROOT.glob("notebooks/**/*.ipynb"))
     for f in files:
         if "model_asset_path" in f.read_text(encoding="utf-8", errors="replace"):
             fail("MediaPipe 에 경로를 넘김(model_asset_path) — 한글 폴더에서 서버가 죽는다, "

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""모델 파일 읽기 — 경로를 C++ 런타임에 넘기지 않는다."""
+"""모델 파일 읽기 — 경로를 C++ 런타임에 넘기지 않는다 (train_features · mp_routes 가 쓴다)."""
 
 from __future__ import annotations
 

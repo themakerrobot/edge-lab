@@ -100,7 +100,7 @@ for rel in ["easydetect/ed-m/ed-m.onnx", "easydetect/pose/pose-m.onnx",
         fails += 1
         print("FAIL models/" + rel, "|", str(e)[:200])
 
-# 가르치기 특징 — models/mediapipe (teachlab 이 읽는다). 임베더는 OpenVINO 로 열리는지까지 본다
+# 가르치기 특징 — models/mediapipe (train_features.py 가 읽는다). 임베더는 OpenVINO 로 열리는지까지 본다
 for rel in ["mediapipe/mobilenet_v3_small_embedder.onnx", "mediapipe/hand_landmarker.task",
             "mediapipe/face_landmarker.task", "mediapipe/pose_landmarker_lite.task"]:
     f = pathlib.Path("models") / rel

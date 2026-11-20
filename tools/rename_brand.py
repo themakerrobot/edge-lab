@@ -13,7 +13,7 @@
 
 바꾸지 않는 것 — 이름처럼 보이지만 파일 형식 표시라 바꾸면 저장해 둔 파일 · 모델과 어긋난다:
   edge-lab-sound · edge-lab-drive · edge-lab-story (저장 파일 형식), app: "edge-lab" (가르친 AI),
-  edge-lab.classes (마스크 모델 안의 메타데이터), tools/score_check.py (로봇과 같은 파일)
+  edge-lab.classes (마스크 모델 안의 메타데이터)
 """
 import json
 import os
@@ -28,9 +28,8 @@ import brand as BR  # noqa: E402
 APPLIED = os.path.join(ROOT, "tools", "brand_applied.json")
 JS = os.path.join(ROOT, "view_project", "lib", "brand.js")
 
-PROTECT = ["edge-lab-sound", "edge-lab-drive", "edge-lab-story", 'app: "edge-lab"', "edge-lab.classes",
-           "----edgelab"]
-SKIP_FILES = {"tools/score_check.py", "tools/brand_applied.json", "brand.json", "tools/rename_brand.py",
+PROTECT = ["edge-lab-sound", "edge-lab-drive", "edge-lab-story", 'app: "edge-lab"', "edge-lab.classes"]
+SKIP_FILES = {"tools/brand_applied.json", "brand.json", "tools/rename_brand.py",
               "brand.py", "view_project/lib/brand.js"}
 SKIP_DIRS = ("models/", "view_project/blockly/", "view_project/lib/swagger/", "view_project/lib/cm/",
              "view_project/fonts/", "view_project/assets/")

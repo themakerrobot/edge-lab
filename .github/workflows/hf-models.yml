@@ -1,23 +1,11 @@
 name: hf-models
 
-# 모델 파일을 허깅페이스 모델 저장소(brand.json 의 repo_hf)에 올린다. 설치 · 배포판은 모두 그 저장소에서 받는다.
-#   stt-sv     음성 인식 SenseVoice int8 — 원본 leeyunjai/themaker .model/stt (tools/fetch_stt.py 가 받는다) → stt-sv/
-#   mediapipe  가르치기 특징 모델(손 · 자세 · 사진 임베더) — 그 커밋의 teachlab/models/ → mediapipe/
-#              (얼굴 face_landmarker.task 는 mediapipe/ 에 이미 같은 파일이 있다)
-# 올린 뒤 허깅페이스의 sha256 이 올린 파일과 같은지 본다.
+# 음성 인식 모델(SenseVoice int8)을 허깅페이스 모델 저장소(brand.json 의 repo_hf)의 stt-sv/ 에 올린다.
+# 원본은 leeyunjai/themaker .model/stt (tools/fetch_stt.py 가 받는다). 올린 뒤 sha256 이 같은지 본다.
 # 필요한 것: 저장소 Secret HF_TOKEN — 허깅페이스 쓰기 토큰. 손으로 돌리기: Actions → hf-models → Run workflow
 
 on:
   workflow_dispatch:
-    inputs:
-      what:
-        description: "올릴 것"
-        type: choice
-        options: [stt-sv, mediapipe]
-      ref:
-        description: "mediapipe: teachlab/models 가 들어 있는 커밋 (비우면 고른 브랜치)"
-        type: string
-        default: ""
 
 permissions:
   contents: read
@@ -29,12 +17,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: 올릴 파일 꺼내기 (mediapipe — 그 커밋에서)
-        if: inputs.what == 'mediapipe' && inputs.ref != ''
-        run: |
-          git fetch --depth=1 origin "${{ inputs.ref }}"
-          git checkout FETCH_HEAD -- teachlab/models
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
@@ -42,39 +24,28 @@ jobs:
       - name: 받기
         run: |
           pip install "$(grep -E '^huggingface[-_]hub==' requirements.lock.txt || echo huggingface_hub)"
-          if [ "${{ inputs.what }}" = "stt-sv" ]; then python tools/fetch_stt.py; fi
+          python tools/fetch_stt.py
 
       - name: 올리기 · 확인
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          WHAT: ${{ inputs.what }}
         run: |
           test -n "$HF_TOKEN" || { echo "저장소 Secret HF_TOKEN 이 없어요"; exit 1; }
           python - <<'PY'
-          import hashlib, os, pathlib
+          import hashlib, pathlib
           import brand
           from huggingface_hub import CommitOperationAdd, HfApi
-          what = os.environ["WHAT"]
-          if what == "stt-sv":
-              src, dst = pathlib.Path("models/stt-sv"), "stt-sv"
-              files = ["model.int8.onnx", "tokens.txt", "silero_vad.onnx", "LICENSE-SenseVoice.txt"]
-              msg = "stt-sv: SenseVoice int8 (leeyunjai/themaker .model/stt)"
-          else:
-              src, dst = pathlib.Path("teachlab/models"), "mediapipe"
-              files = ["hand_landmarker.task", "pose_landmarker_lite.task", "mobilenet_v3_small_embedder.onnx"]
-              msg = "mediapipe: 가르치기 특징 모델 (손 · 자세 · 사진 임베더)"
+          src, dst = pathlib.Path("models/stt-sv"), "stt-sv"
+          files = ["model.int8.onnx", "tokens.txt", "silero_vad.onnx", "LICENSE-SenseVoice.txt"]
           sha = {f: hashlib.sha256((src / f).read_bytes()).hexdigest() for f in files}
           api = HfApi()
-          api.create_commit(repo_id=brand.REPO_HF, commit_message=msg, operations=[
-              CommitOperationAdd(path_in_repo=f"{dst}/{f}", path_or_fileobj=str(src / f)) for f in files])
-          info = {p.path: p for p in api.get_paths_info(brand.REPO_HF, [f"{dst}/{f}" for f in files])}
+          api.create_commit(repo_id=brand.REPO_HF, commit_message="stt-sv: SenseVoice int8 (leeyunjai/themaker .model/stt)",
+                            operations=[CommitOperationAdd(path_in_repo=f"{dst}/{f}", path_or_fileobj=str(src / f)) for f in files])
           bad = 0
-          for f in files:
-              p = info.get(f"{dst}/{f}")
-              got = (p.lfs.sha256 if p and p.lfs else
-                     hashlib.sha256(open(api.hf_hub_download(brand.REPO_HF, f"{dst}/{f}"), "rb").read()).hexdigest())
-              ok = got == sha[f]
-              bad += not ok
-              print(("OK  " if ok else "FAIL"), f"{dst}/{f}", sha[f])
+          for p in api.get_paths_info(brand.REPO_HF, [f"{dst}/{f}" for f in files]):
+              f = p.path.split("/", 1)[1]
+              got = p.lfs.sha256 if p.lfs else hashlib.sha256(open(api.hf_hub_download(brand.REPO_HF, p.path), "rb").read()).hexdigest()
+              bad += got != sha[f]
+              print("OK  " if got == sha[f] else "FAIL", p.path, sha[f])
           raise SystemExit(bad)
           PY

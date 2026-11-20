@@ -454,7 +454,7 @@
   "use strict";
   /**********************************************************************
    * 나만의 AI 만들기 (티처블 머신)
-   *   특징 추출 : 서버 teachlab (/custom/embed, /custom/embed_batch) — 로봇(파이보·PiBrain)과 같은 계산
+   *   특징 추출 : 서버 train_features.py (/custom/embed, /custom/embed_batch)
    *               사진 1024 · 손 63 · 표정 52 · 상반신 75 · 전신 99
    *   학습      : 브라우저 TF.js — 로봇 분류기(teach-lab trainer.js)와 같은 머리
    *               Dense 64 relu -> Dropout .2 -> Dense N softmax, adam 0.001, 반복 40, 묶음 16

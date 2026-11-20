@@ -2,7 +2,7 @@
 # "나만의 AI 만들기" 라우터 — 특징은 서버가 뽑고, 머리(분류기)는 브라우저 TF.js 가 학습한다
 #
 # 261104 부터 **로봇(파이보·PiBrain)과 같은 계산·같은 파일 형식**이다(로봇 연동 일원화).
-#   특징  teachlab/ (로봇 openpibo/modules/teachlab 과 같은 코드·같은 모델 파일)
+#   특징  train_features.py (teach-lab 에서 옮긴 계산 · 모델 파일은 models/mediapipe)
 #         image   mobilenet_v3_small 1024 (L2)            — models/mediapipe/mobilenet_v3_small_embedder.onnx, OpenVINO f32
 #         pose    손 21점 world 좌표 63 (손목 원점·중지 MCP 길이)   — MediaPipe hand_landmarker
 #         hand2   두 손 126 (왼손 63 + 오른손 63, 없는 손은 0)
@@ -17,7 +17,7 @@
 # 그 모델은 예전 특징(MobileNetV2 1280 · 화면 좌표 손 63 · easydetect 몸 22/34)으로 추론한다(_legacy_*).
 #
 # 모델 파일:
-#   models/mediapipe/* (허깅페이스에서 받는다 — teachlab/__init__.py)
+#   models/mediapipe/* (허깅페이스에서 받는다 — train_features.py)
 #   models/backbone/mobilenetv2_feat.xml / .bin / .json     (예전 모델을 쓸 때만, HF 에서 배포)
 #   data/user/<slug>/model.zip + meta.json                  (학생이 만든 AI)
 #   data/project/<slug>.zip                                 (작업 중인 작품 — 사진 포함)
@@ -37,7 +37,7 @@ import cv2
 import numpy as np
 
 import hub
-import teachlab
+import train_features
 from fastapi import APIRouter, Body, File, Form, Query, Request, UploadFile
 from fastapi.responses import FileResponse
 
@@ -72,7 +72,7 @@ MAX_BATCH = 64                      # 배치 임베딩 1회 장수
 DEVICE_ORDER = ["NPU", "GPU", "CPU"]  # 예전 백본: 가벼운 모델이라 NPU 우선
 
 _lock = threading.Lock()
-_compiled = None                    # 사진 임베더(teachlab.embedder.ImageEmbedder) — main.py 상태표가 본다
+_compiled = None                    # 사진 임베더(train_features.ImageEmbedder) — main.py 상태표가 본다
 _device = "CPU"                     # 임베더는 f32 로 맞추려고 CPU 에서 돈다
 _extractors = {}                    # (source, variant) -> LandmarkExtractor
 _ext_lock = threading.Lock()
@@ -107,8 +107,7 @@ def _load():
         return
     with _lock:
         if _compiled is None:
-            from teachlab.embedder import ImageEmbedder
-            _compiled = ImageEmbedder(teachlab.EMBEDDER_ONNX)
+            _compiled = train_features.ImageEmbedder(train_features.EMBEDDER_ONNX)
             print(f"[custom] mobilenet_v3_small embedder loaded (CPU f32, dim={_compiled.dim})")
 
 
@@ -118,8 +117,7 @@ def _extractor(kind):
     with _ext_lock:
         ex = _extractors.get(key)
         if ex is None:
-            from teachlab.landmarks import LandmarkExtractor
-            ex = LandmarkExtractor(source, teachlab.LANDMARK_FILE[source], variant)
+            ex = train_features.LandmarkExtractor(source, train_features.LANDMARK_FILE[source], variant)
             _extractors[key] = ex
             print(f"[custom] {source} landmarker loaded ({variant or '-'})")
         return ex
@@ -338,14 +336,14 @@ def _decode(raw):
 
 # ---------------------------------------------------------------- 헤드
 class TeachHead:
-    """로봇 형식 zip — project.json · classifier.json · classifier.bin · labels.txt (+ samples.json · report.json).
+    """지금 방식 zip — project.json · classifier.json · classifier.bin · labels.txt (+ report.json).
 
-    분류기는 로봇과 같은 teachlab.classifier.Classifier (Dense relu → Dense softmax, numpy).
+    분류기는 train_features.Classifier (Dense relu → Dense softmax, numpy).
     """
     legacy = False
 
     def __init__(self, zf, names):
-        from teachlab.classifier import Classifier
+        from train_features import Classifier
         for req in ("project.json", "classifier.json", "classifier.bin"):
             if req not in names:
                 raise ValueError(f"zip에 {req} 이(가) 없습니다")
@@ -686,7 +684,7 @@ async def custom_upload(request: Request, uploadFile: UploadFile = File(...),
             f.write(raw)
         meta = {"slug": s, "title": title.strip(), "labels": head.labels,
                 "classes": len(head.labels), "kind": head.kind, "dim": head.dim,
-                "format": "legacy" if head.legacy else "teachlab",   # legacy = 예전 TF.js 방식
+                "format": "legacy" if head.legacy else "teachlab",   # 저장 형식 이름(classifier.json 의 format) · legacy = 예전 TF.js 방식
                 "size": len(raw), "created": time.strftime("%Y-%m-%d %H:%M:%S"),
                 "report": head.report}
         with open(os.path.join(d, "meta.json"), "w", encoding="utf-8") as f:
@@ -898,7 +896,7 @@ async def custom_backbone(request: Request):
     def fn():
         _load()
         return {"dim": _compiled.dim, "input": [1, SIZE, SIZE, 3], "device": _device,
-                "model": "mediapipe/mobilenet_v3_small (teachlab, ONNX)",
+                "model": "mediapipe/mobilenet_v3_small (ONNX)",
                 "preprocess": {"stream_short_side": STREAM_SHORT_SIDE, "crop": "tm-crop-to",
                                "scale": "1/255", "l2_normalize": True, "mirror": False},
                 "dims": DIM_OF}

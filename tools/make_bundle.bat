@@ -98,7 +98,7 @@ if exist "%TOOLS%launcher.py" if exist %SLUG%.ico (
 
 echo.
 echo === [6/8] copy sources and models ===
-for %%F in (main.py engines.py prompts.py paths.py hub.py mp_routes.py train_routes.py stats_routes.py code_routes.py speech_routes.py db_routes.py folderpick.py sysinfo.py themaker.py trash.py works_routes.py board.py board_routes.py face_routes.py facedb.py brand.py brand.json appwin.py lab.py README.md) do (
+for %%F in (main.py engines.py prompts.py paths.py hub.py mp_routes.py train_routes.py stats_routes.py code_routes.py speech_routes.py db_routes.py folderpick.py sysinfo.py themaker.py trash.py works_routes.py board.py board_routes.py face_routes.py facedb.py train_features.py modelfile.py brand.py brand.json appwin.py lab.py README.md) do (
   copy /y %%F %BUILD%\ >nul
   if errorlevel 1 (echo [ERROR] copy failed: %%F & exit /b 1)
 )
@@ -116,10 +116,6 @@ xcopy /e /i /q /y notebooks %BUILD%\notebooks >nul
 if errorlevel 1 (echo [ERROR] notebooks copy failed & exit /b 1)
 if exist %BUILD%\notebooks\.ipynb_checkpoints rmdir /s /q %BUILD%\notebooks\.ipynb_checkpoints
 xcopy /e /i /q /y view_project %BUILD%\view_project >nul
-REM 가르치기 특징 계산 코드 - 모델 파일은 models\mediapipe (허깅페이스에서 받는다)
-xcopy /e /i /q /y teachlab %BUILD%\teachlab >nul
-if errorlevel 1 (echo [ERROR] teachlab copy failed & exit /b 1)
-if exist %BUILD%\teachlab\__pycache__ rmdir /s /q %BUILD%\teachlab\__pycache__
 echo   copying models\ (several GB, takes a few minutes) ...
 xcopy /e /i /q /y models %BUILD%\models >nul
 if errorlevel 1 (echo [ERROR] models copy failed & exit /b 1)
@@ -155,7 +151,7 @@ REM bundle launcher (ASCII only, CRLF via echo)
 
 echo.
 echo === [7/8] verify bundled python ===
-for %%F in (main.py engines.py prompts.py paths.py hub.py mp_routes.py train_routes.py stats_routes.py code_routes.py speech_routes.py db_routes.py folderpick.py sysinfo.py themaker.py trash.py works_routes.py board.py board_routes.py face_routes.py facedb.py brand.py brand.json appwin.py lab.py lab.bat check.py smoke_test.py run.bat bundle_check.bat notebooks\00_start.ipynb notebooks\02_detect_raw.ipynb notebooks\en\00_start.ipynb) do (
+for %%F in (main.py engines.py prompts.py paths.py hub.py mp_routes.py train_routes.py stats_routes.py code_routes.py speech_routes.py db_routes.py folderpick.py sysinfo.py themaker.py trash.py works_routes.py board.py board_routes.py face_routes.py facedb.py train_features.py modelfile.py brand.py brand.json appwin.py lab.py lab.bat check.py smoke_test.py run.bat bundle_check.bat notebooks\00_start.ipynb notebooks\02_detect_raw.ipynb notebooks\en\00_start.ipynb) do (
   if not exist %BUILD%\%%F (echo [ERROR] missing in bundle: %%F & exit /b 1)
 )
 REM 화면들 — os.html 이 셸(/)이다. 빠지면 첫 화면부터 안 뜬다. home.html 은 창 없이 쓰는 옛 런처(/home).
@@ -181,11 +177,10 @@ for %%D in (fonts assets) do (
   if not exist %BUILD%\view_project\%%D\ (echo [ERROR] missing in bundle: view_project\%%D\ & exit /b 1)
 )
 if not exist %BUILD%\view_project\fonts\fonts.css (echo [ERROR] missing in bundle: view_project\fonts\fonts.css & exit /b 1)
-REM 가르치기 특징 모델 - models\mediapipe (teachlab 이 읽는다)
+REM 가르치기 특징 모델 - models\mediapipe (train_features.py 가 읽는다)
 for %%F in (mobilenet_v3_small_embedder.onnx hand_landmarker.task face_landmarker.task pose_landmarker_lite.task) do (
   if not exist %BUILD%\models\mediapipe\%%F (echo [ERROR] missing in bundle: models\mediapipe\%%F - run tools\fetch_models.py & exit /b 1)
 )
-if exist %BUILD%\teachlab\models rmdir /s /q %BUILD%\teachlab\models
 %BUILD%\python\python.exe -c "import openvino,cv2,numpy,sherpa_onnx;print('  import OK  openvino',openvino.__version__.split('-')[0],'sherpa-onnx',sherpa_onnx.__version__)"
 if errorlevel 1 (echo [ERROR] import failed inside bundle & exit /b 1)
 %BUILD%\python\python.exe -c "import jupyterlab,ipykernel;print('  import OK  jupyterlab',jupyterlab.__version__)"
