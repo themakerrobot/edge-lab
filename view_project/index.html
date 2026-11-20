@@ -1121,15 +1121,17 @@
       const rectWidth = (x2 - x1) * scaleX;
       const rectHeight = (y2 - y1) * scaleY;
 
+      // 큰 사진은 화면에 줄여 보이므로 글씨 · 선도 사진 크기에 맞춰 키운다 (작은 사진은 그대로 16px · 2px)
+      const fs = Math.max(16, Math.round(ctx.canvas.width / 26));
       ctx.strokeStyle = color;
-      ctx.lineWidth = 2;
+      ctx.lineWidth = Math.max(2, Math.round(ctx.canvas.width / 260));
       ctx.strokeRect(rectX, rectY, rectWidth, rectHeight);
 
       if (text) {
-        ctx.font = "16px Pretendard, 'Malgun Gothic', sans-serif";
+        ctx.font = fs + "px Pretendard, 'Malgun Gothic', sans-serif";
         const textMetrics = ctx.measureText(text);
         const textWidth = textMetrics.width;
-        const textHeight = 16;
+        const textHeight = fs;
 
         ctx.fillStyle = color;
         ctx.fillRect(rectX, rectY - textHeight - 4, textWidth + 8, textHeight + 4);

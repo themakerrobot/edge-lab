@@ -686,7 +686,7 @@
 
       sh_question: "무엇이 보이나요?", sh_hello: "안녕!", sh_win: "이겼다!",
 
-      r_none: "없음", r_front: "정면", r_ageSuffix: "살", r_face: "얼굴",
+      r_none: "없음", r_front: "정면", r_ageSuffix: "살", r_face: "얼굴", sh_faceCount: "개의 얼굴이 보여요",
       m_noCam: "웹캠을 사용할 수 없어요 (사진 올리기로 진행 가능)",
       m_noImage: "사진이 없어요 (사진 블록을 연결하세요)",
       m_noCustom: "모델을 골라주세요 ([가르치기]에서 먼저 학습하세요)",
@@ -1024,7 +1024,7 @@
 
       sh_question: "What do you see?", sh_hello: "Hi!", sh_win: "I won!",
 
-      r_none: "none", r_front: "front", r_ageSuffix: "", r_face: "face",
+      r_none: "none", r_front: "front", r_ageSuffix: "", r_face: "face", sh_faceCount: " face(s) found",
       m_noCam: "No webcam available (you can still upload a photo)",
       m_noImage: "No photo (connect a photo block)",
       m_noCustom: "Pick a model first (train one in [Train])",
@@ -2826,7 +2826,7 @@ def texts_of(result):
           B("st_say", { inputs: { TEXT: { block: B("text_join", {
             extraState: { itemCount: 2 },
             inputs: { ADD0: { block: B("variables_get", { fields: { VAR: { name: "n" } } }) },
-                      ADD1: shadowTxt(t("r_face")) } }) } } }),
+                      ADD1: shadowTxt(t("sh_faceCount")) } }) } } }),
           B("st_boxes"),
         ]) ] } } },
 

@@ -155,6 +155,22 @@ MOUNTS = {"/lib/": "view_project/lib/", "/assets/": "view_project/assets/",
           "/fonts/": "view_project/fonts/", "/blockly/": "view_project/blockly/"}
 
 
+def check_usage_names():
+    """화면마다 사용 기록에 남기는 이름(usage.js data-page)이 설정 → 사용 통계의 이름표(pgName, 한/영)에 다 있나."""
+    keys = set()
+    for f in (ROOT / "view_project").glob("*.html"):
+        keys |= set(re.findall(r'usage\.js" data-page="([\w-]+)"', f.read_text(encoding="utf-8")))
+    opt = read("view_project/options.html")
+    blocks = re.findall(r"pgName:\s*\{(.*?)\}", opt, re.S)
+    if len(blocks) < 2:
+        fail("view_project/options.html 에서 pgName(한/영)을 찾지 못함")
+        return
+    for lang, blk in zip(("ko", "en"), blocks):
+        have = set(re.findall(r"([\w-]+)\s*:", blk))
+        for k in sorted(keys - have):
+            fail("설정 → 사용 통계 이름표(pgName %s)에 없음: %s (화면에 키 그대로 나온다)" % (lang, k))
+
+
 def check_assets(routes):
     for html in sorted(set(routes.values())):
         text = read("view_project/" + html)
@@ -427,6 +443,7 @@ def main():
     mods = check_python()
     routes = check_pages()
     check_assets(routes)
+    check_usage_names()
     check_models()
     nbm = check_notebook_models()
     check_packages(mods)

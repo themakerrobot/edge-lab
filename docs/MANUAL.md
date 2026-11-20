@@ -15,10 +15,15 @@
 
 | | |
 |---|---|
-| **1** | 어디서든 눌러 홈으로 |
-| **2** | 앱 아이콘 — 누르면 열려요 (체험하기 · 블록 · 파이썬 · 가르치기 · 대화 · 설정) |
-| **3** | API 문서 (선생님용) |
-| **4** | 한국어 ↔ English |
+| **1** | 로고 — 시작 메뉴 · 찾기 (`Ctrl+K`). 앱 · AI 기능 · 작품 · 설정을 글자로 찾아요 |
+| **2** | 자주 쓰는 앱 바로 가기 |
+| **3** | 앱 — AI · 개발 · 도구 묶음. 누르면 열리고, 오른쪽 위 **× 닫기**로 돌아와요 |
+| **4** | 위젯 — 내가 가르친 AI · 이 컴퓨터(어느 장치가 어떤 AI 를 돌리는지 · 메모리). [위젯 편집] 으로 넣고 빼요 |
+| **5** | 알림 |
+| **6** | AI 준비 상태 — 처음 켤 때 AI 를 올리는 동안은 준비 중으로 나와요 |
+| **7** | API 문서 (선생님용) |
+| **8** | 한국어 ↔ English |
+| **9** | 빠른 설정 — 이름 · 밝은 곳 모드 · 소리 · 마이크 시험 · 처음 안내 다시 보기 · 작업 폴더 · 목소리 · 바탕화면 · 선생님 모드 · 잠금 · 끄기 |
 
 ---
 
@@ -28,14 +33,20 @@
 
 | | |
 |---|---|
-| **1** | 어떤 AI로 알아볼지 고르기 (얼굴 · 사물 · 손 · 글자 · 사진 바꾸기 …) |
+| **1** | AI 고르기 — 얼굴 · 사물 · 손 · 글자 · 사진 바꾸기 … 16가지 |
 | **2** | 사진을 어디서 가져올지 — 이미지 파일 / 웹캠 / 스케치북 |
 | **3** | 라이브 — 켜면 웹캠을 보며 계속 알아봐요 |
 | **4** | **실행** — 스페이스바로도 돼요 |
 | **5** | 사진을 넣는 칸 (끌어놓기 또는 클릭) |
-| **6** | 결과 — 찾은 것에 박스가 그려져요 |
+| **6** | 결과 — 찾은 것에 상자와 이름이 그려져요 |
 | **7** | 파이보의 풀이 — 결과를 말로 설명해 줘요 |
-| **8** | 닫기 — 홈으로 돌아가요 |
+| **8** | 결과 이미지 저장 · 기록 지우기 |
+| **9** | 실행 기록 — 눌러서 다시 보기 |
+| **10** | 상세보기 — 결과 데이터(JSON). 파이썬에서 받는 값과 같아요 |
+| **11** | **?** — 이 화면 안내 다시 보기 (모든 앱 공통) |
+| **12** | 한국어 ↔ English |
+| **13** | AI — 이 컴퓨터 상태(CPU · GPU · NPU · 메모리) |
+| **14** | 닫기 — 홈으로 |
 
 ---
 
@@ -45,14 +56,16 @@
 
 | | |
 |---|---|
-| **1** | 블록 서랍 — 이미지 · AI 인식 · 소리 · AI 언어 · 이벤트 … |
+| **1** | 블록 서랍 — 논리 · 반복 · 변수 같은 기본 블록과 이미지 · AI 인식 · 소리 · AI 언어 · 이벤트 · 보드 블록 |
 | **2** | 블록을 끌어다 끼우는 곳 |
-| **3** | **실행 ▶** / 정지 |
-| **4** | 저장 · 불러오기 — 만든 작품은 `문서\Edge Lab\blocks` 에 |
-| **5** | 예제 — 만들어진 블록을 불러와 바로 돌려 봐요 |
-| **6** | 무대 — 찍은 사진과 결과가 여기 나와요 |
-| **7** | 진행 기록 — 무엇을 하고 있는지 한 줄씩 |
-| **8** | 파이썬 코드로 보기 — 내 블록이 파이썬으로 어떻게 되는지 |
+| **3** | 블록 단계 — 쉬움 · 기본 · 전체 |
+| **4** | 새로 만들기 · 저장 · 불러오기 — 작품은 `문서\Edge Lab\blocks` 에 |
+| **5** | **실행 ▶** / 정지 |
+| **6** | 예제 — 만들어진 블록을 불러와 바로 돌려 봐요 |
+| **7** | 무대 — 찍은 사진 · 결과 · 캐릭터가 여기 나와요 |
+| **8** | 사진 올리기 — 「업로드한 사진」 블록에서 써요 |
+| **9** | 기록 · 변수 · 파이썬 — 무엇을 했는지 한 줄씩, 변수 값, 내 블록이 파이썬으로 어떻게 되는지 |
+| **10** | 지우기 — 무대와 기록을 비워요 |
 
 > 카메라는 「사진 찍기」 블록이 돌 때만 켜지고, 실행이 끝나면 꺼집니다.
 
@@ -65,12 +78,14 @@
 | | |
 |---|---|
 | **1** | 코드를 쓰는 곳 — 자동완성은 `Ctrl+Space` |
-| **2** | **실행 ▶** (`Ctrl+Enter`) / 정지 (`Esc`) |
-| **3** | 저장 · 불러오기 — `문서\Edge Lab\pycode` 에 |
+| **2** | **실행 ▶** (`Ctrl+Enter`) — 도는 동안 정지 (`Esc`) 로 바뀌어요 |
+| **3** | 새로 만들기 · 저장 · 불러오기 — `문서\Edge Lab\pycode` 에 |
 | **4** | 예제 16종 |
 | **5** | 도움말 — 쓸 수 있는 명령 목록 |
 | **6** | `show()` 로 보낸 그림 |
 | **7** | `print()` 출력 |
+| **8** | 단축키 |
+| **9** | 지우기 — 출력과 그림을 비워요 |
 
 ```python
 from themaker import *
@@ -89,14 +104,16 @@ show(img, r)                   # 박스가 그려진 채로 보기
 
 | | |
 |---|---|
-| **1** | 구별할 종류(클래스) — 예: 가위 · 바위 · 보 |
+| **1** | 구별할 종류(클래스) — 이름을 정하고 사진을 모아요. 사진 넣기 · 압축파일 넣기도 돼요 |
 | **2** | 클래스 추가 — 2개 이상이어야 학습할 수 있어요 |
 | **3** | 무엇으로 배울지 — 사진 · 손모양 · 두 손 · 표정 · 상반신 · 전신 |
-| **4** | 웹캠 화면 ([웹캠 켜기] 를 눌러야 켜져요) |
+| **4** | 웹캠 화면 |
 | **5** | **연속 촬영** — 누르고 있는 동안 계속 찍혀요 (클래스마다 30장쯤) |
-| **6** | **학습 시작** |
-| **7** | 결과 — 정확도 · 학습 곡선 · 틀린 사진 |
-| **8** | 저장 — 체험하기 · 블록 · 파이썬에서 불러 쓸 수 있어요 |
+| **6** | **학습 시작** — 반복 학습 횟수 · 시험지 따로 두기를 정할 수 있어요 |
+| **7** | 학습 곡선 · 특징 지도 — 얼마나 맞히는지, AI 눈에 내 사진들이 어떻게 보이는지 |
+| **8** | 확인 — 지금 화면을 보고 맞혀 봐요. 처음 보는 사진으로 본 시험 결과도 나와요 |
+| **9** | 저장하기 — 체험하기 · 블록 · 파이썬에서 불러 써요 |
+| **10** | 하던 것을 그대로 보관 — 사진까지 함께 두고 다음 시간에 이어서 해요 |
 
 ---
 
@@ -111,8 +128,11 @@ show(img, r)                   # 박스가 그려진 채로 보기
 | **3** | 글로 물어보기 |
 | **4** | 보내기 |
 | **5** | 사진 켜기 — 지금 보이는 화면을 함께 보내요 |
-| **6** | 답을 읽어주기 — 목소리와 말투를 고를 수 있어요 |
-| **7** | 자료 넣기 — 넣어 둔 자료 안에서 찾아 답해요 |
+| **6** | 답을 읽어주기 — 목소리를 고르고 ▶ 로 미리 들어요 |
+| **7** | 말투 — 고르거나 직접 적어요 |
+| **8** | 앞말 기억 — "그럼 왜?" 처럼 이어서 물을 때 |
+| **9** | 자료 넣기 — 넣어 둔 자료 안에서 찾아 답해요 |
+| **10** | 새 대화 |
 
 ---
 
@@ -142,12 +162,17 @@ show(img, r)                   # 박스가 그려진 채로 보기
 
 | | |
 |---|---|
-| **1** | 점검 실행 — 모델 · 장치 · 저장 폴더를 한 번에 |
+| **1** | 점검 실행 — 특징 모델 · 손/표정 인식 · 메모리 · CPU · 저장 · 웹캠을 한 번에 |
 | **2** | 웹캠 확인 |
-| **3** | 소리 시험 |
+| **3** | 소리 시험 — 안 들리면 옆 단추로 윈도우 소리 설정을 열어요 |
 | **4** | 마이크 시험 — 3초 녹음해 그대로 들려줘요 |
-| **5** | 이름 — 결과물에 함께 남아요 |
-| **6** | 밝은 곳 모드 — 밝은 교실에서 화면이 잘 안 보일 때 |
+| **5** | 이름 — 만든 것에 함께 남아요 |
+| **6** | 작업 폴더 — 작품 · 가르친 AI · 기록이 모두 여기. USB 로 옮기려면 [바꾸기] |
+| **7** | 모델 폴더 — easydetect-lab 에서 학습한 `.onnx` 를 넣으면 블록 · 파이썬에 바로 나와요 |
+| **8** | 밝은 곳 모드 — 밝은 교실에서 화면이 잘 안 보일 때 |
+| **9** | 결과물 — 만든 AI · 저장된 작품. 새로고침 · 전체 내려받기 · 전체 초기화 |
+| **10** | 학습 결과 도표 — 학습할 때마다 정확도가 남아요. 도표 인쇄 |
+| **11** | 사용 통계 — 사용 시간 · AI 호출 · 화면별 사용 시간 |
 
 ---
 
@@ -158,8 +183,12 @@ show(img, r)                   # 박스가 그려진 채로 보기
 | 폴더 | 들어 있는 것 |
 |---|---|
 | `user` | 가르친 AI |
+| `project` | 가르치기에서 보관한 작품 (사진 포함) |
 | `blocks` · `pycode` | 블록 · 파이썬 작품 |
 | `db` | 대화에 넣은 자료 |
+| `face` | 얼굴 AI 명단 `facedb.json` (사진 없이 숫자만) |
+| `models` | easydetect-lab 에서 가져온 모델 |
+| `notebooks` | 코딩 실습 노트북 (lab.bat) |
 | `stats` | 사용 기록 · 학습 결과 |
 
 USB로 옮기려면 이 폴더를 통째로 복사하고, 다른 PC에서 설정의 **[바꾸기]** 로 그 폴더를 고릅니다.
@@ -199,10 +228,15 @@ The first launch takes 1-2 minutes while the AI loads.
 
 | | |
 |---|---|
-| **1** | Press from anywhere to go Home |
-| **2** | App icons — press to open (Try it · Blocks · Python · Train · Talk · Settings) |
-| **3** | API docs (for teachers) |
-| **4** | Korean ↔ English |
+| **1** | Logo — Start menu · search (`Ctrl+K`). Find apps, AI functions, work and settings by typing |
+| **2** | Shortcuts to the apps you use most |
+| **3** | Apps — grouped into AI · Develop · Tools. Press to open, **× Close** at the top right to come back |
+| **4** | Widgets — AI I trained · This computer (which device runs which AI · memory). Add or remove them with [Edit widgets] |
+| **5** | Notifications |
+| **6** | AI status — shows loading while the AI starts up the first time |
+| **7** | API docs (for teachers) |
+| **8** | Korean ↔ English |
+| **9** | Quick settings — name · bright room · sound · mic test · guided tour again · work folder · voice · wallpaper · teacher mode · lock · shut down |
 
 ---
 
@@ -212,14 +246,20 @@ The first launch takes 1-2 minutes while the AI loads.
 
 | | |
 |---|---|
-| **1** | Pick which AI to use (face · objects · hands · text · change the photo …) |
+| **1** | Pick an AI — face · objects · hands · text · change the photo … 16 kinds |
 | **2** | Where the photo comes from — image file / webcam / sketchpad |
 | **3** | Live — keeps recognizing straight from the webcam |
 | **4** | **Run** — the spacebar works too |
 | **5** | Drop a photo here (drag & drop, or click) |
-| **6** | Result — boxes are drawn on what it found |
+| **6** | Result — boxes and names are drawn on what it found |
 | **7** | Pibo says — explains the result in words |
-| **8** | Close — back to Home |
+| **8** | Save result image · clear history |
+| **9** | History — press one to see it again |
+| **10** | Details — the result data (JSON), the same values Python gets |
+| **11** | **?** — show this screen's guide again (in every app) |
+| **12** | Korean ↔ English |
+| **13** | AI — this computer's status (CPU · GPU · NPU · memory) |
+| **14** | Close — back to Home |
 
 ---
 
@@ -229,14 +269,16 @@ The first launch takes 1-2 minutes while the AI loads.
 
 | | |
 |---|---|
-| **1** | Block drawer — image · AI recognition · sound · AI language · events … |
+| **1** | Block drawer — basics like logic · loops · variables, plus image · AI vision · sound · AI language · events · board blocks |
 | **2** | Drag blocks here and snap them together |
-| **3** | **Run ▶** / Stop |
-| **4** | Save · Load — your work goes to `Documents\Edge Lab\blocks` |
-| **5** | Examples — load a ready-made program and run it |
-| **6** | Stage — the photo taken and the result show here |
-| **7** | Progress log — one line at a time |
-| **8** | See as Python code — what your blocks become |
+| **3** | Block level — Easy · Basic · All |
+| **4** | New · Save · Load — your work goes to `Documents\Edge Lab\blocks` |
+| **5** | **Run ▶** / Stop |
+| **6** | Examples — load a ready-made program and run it |
+| **7** | Stage — the photo taken, the result and characters show here |
+| **8** | Upload photo — used by the "uploaded photo" block |
+| **9** | Log · Variables · Python — one line per step, variable values, what your blocks become in Python |
+| **10** | Clear — empties the stage and the log |
 
 > The camera turns on only while the "take a photo" block runs, and turns off when the run ends.
 
@@ -249,12 +291,14 @@ The first launch takes 1-2 minutes while the AI loads.
 | | |
 |---|---|
 | **1** | Where you write code — autocomplete is `Ctrl+Space` |
-| **2** | **Run ▶** (`Ctrl+Enter`) / Stop (`Esc`) |
-| **3** | Save · Load — to `Documents\Edge Lab\pycode` |
+| **2** | **Run ▶** (`Ctrl+Enter`) — turns into Stop (`Esc`) while it runs |
+| **3** | New · Save · Load — to `Documents\Edge Lab\pycode` |
 | **4** | 16 examples |
 | **5** | Help — the commands you can use |
 | **6** | The picture sent by `show()` |
 | **7** | `print()` output |
+| **8** | Shortcuts |
+| **9** | Clear — empties the output and the picture |
 
 ```python
 from themaker import *
@@ -273,14 +317,16 @@ show(img, r)                   # see it with boxes drawn
 
 | | |
 |---|---|
-| **1** | The classes to tell apart — e.g. rock · paper · scissors |
+| **1** | The classes to tell apart — name them and collect photos. Add images or a zip too |
 | **2** | Add a class — you need at least 2 to train |
-| **3** | What it learns from — photo · hand shape · two hands · expression · upper body · full body |
-| **4** | Webcam view (press [Webcam on] to start it) |
+| **3** | What it learns from — photo · hand · two hands · face · upper body · full body |
+| **4** | Webcam view |
 | **5** | **Burst capture** — keeps shooting while held down (about 30 per class) |
-| **6** | **Start training** |
-| **7** | Results — accuracy · learning curve · the ones it got wrong |
-| **8** | Save — then use it from Try it, Blocks and Python |
+| **6** | **Start training** — set the epochs and whether to keep a test set |
+| **7** | Learning curve · feature map — how often it is right, and how your photos look to the AI |
+| **8** | Check — try it on what the camera sees now. The test-set result shows here too |
+| **9** | Save — then use it from Try it, Blocks and Python |
+| **10** | Keep everything as it is — photos included, to continue next time |
 
 ---
 
@@ -294,9 +340,12 @@ show(img, r)                   # see it with boxes drawn
 | **2** | Mic — press and speak |
 | **3** | Type your question |
 | **4** | Send |
-| **5** | Camera on — sends what it sees along with your question |
-| **6** | Read aloud — pick the voice and the tone |
-| **7** | Add notes — it answers from inside what you added |
+| **5** | Turn photo on — sends what the camera sees along with your question |
+| **6** | Read the answer aloud — pick a voice and preview it with ▶ |
+| **7** | Style — pick one or type your own |
+| **8** | Remember — for follow-ups like "why is that?" |
+| **9** | Add material — it answers from inside what you added |
+| **10** | New talk |
 
 ---
 
@@ -326,12 +375,17 @@ Photos are not saved — only numbers taken from the face, in `face/facedb.json`
 
 | | |
 |---|---|
-| **1** | Run check — models · devices · save folder, all at once |
+| **1** | Run check — feature model · hand/face tracking · memory · CPU · storage · webcam at once |
 | **2** | Check webcam |
-| **3** | Sound test |
-| **4** | Mic test — records 3 seconds and plays it straight back |
-| **5** | Name — stays with your work |
-| **6** | Bright room — when the screen is hard to read in a bright room |
+| **3** | Test sound — if silent, open the Windows sound settings next to it |
+| **4** | Test microphone — records 3 seconds and plays it straight back |
+| **5** | Name — stays with what you make |
+| **6** | Work folder — projects, trained AIs and records all live here. Use [Change] to move to a USB stick |
+| **7** | Models folder — drop `.onnx` files trained in easydetect-lab here and they appear in Blocks and Python |
+| **8** | Bright room — when the screen is hard to read in a bright room |
+| **9** | Saved results — trained AIs · saved work. Refresh · Download all · Clear all |
+| **10** | Training report — accuracy is kept every time you train. Print report |
+| **11** | Usage — time used · AI calls · time per page |
 
 ---
 
@@ -342,8 +396,12 @@ Photos are not saved — only numbers taken from the face, in `face/facedb.json`
 | Folder | What's in it |
 |---|---|
 | `user` | AI you trained |
+| `project` | Work kept from Train (photos included) |
 | `blocks` · `pycode` | Block and Python projects |
 | `db` | Notes added in Talk |
+| `face` | Face AI list `facedb.json` (numbers only, no photos) |
+| `models` | Models brought from easydetect-lab |
+| `notebooks` | Coding lab notebooks (lab.bat) |
 | `stats` | Usage records · training results |
 
 To move it to a USB stick, copy the whole folder, then on another PC use **[Change]** in Settings to point at it.

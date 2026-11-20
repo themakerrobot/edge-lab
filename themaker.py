@@ -405,6 +405,8 @@ def draw(image, result):
     """
     img = _flatten(image).copy()
     items = _boxes_of(result)
+    w = img.shape[1]
+    fs, lw = max(20, w // 30), max(2, w // 320)          # 큰 사진은 줄여 보이므로 글씨 · 선을 사진 크기에 맞춘다
     for it in items:
         if not isinstance(it, dict):
             continue
@@ -414,7 +416,7 @@ def draw(image, result):
         score = it.get("score") or it.get("conf")
         if box and len(box) == 4:
             x1, y1, x2, y2 = [int(v) for v in box]
-            cv2.rectangle(img, (x1, y1), (x2, y2), (255, 176, 46), 2)
+            cv2.rectangle(img, (x1, y1), (x2, y2), (255, 176, 46), lw)
             if isinstance(score, (int, float)):
                 pct = score * 100 if score <= 1 else score      # 0~1 또는 0~100 둘 다 지원
                 tag = "%s %.0f%%" % (name, pct)
@@ -422,10 +424,10 @@ def draw(image, result):
                 tag = str(name)
             # 한글이 섞이면 PIL 로 그린다 — cv2.putText 는 한글을 네모로 그린다
             if any("\uac00" <= ch <= "\ud7a3" for ch in tag):
-                img = _put_text(img, tag, x1, max(0, y1 - 24), 20, "orange", 0, center=False)
+                img = _put_text(img, tag, x1, max(0, y1 - fs - 4), fs, "orange", 0, center=False)
             else:
-                cv2.putText(img, tag, (x1, max(18, y1 - 6)),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 176, 46), 2)
+                cv2.putText(img, tag, (x1, max(fs, y1 - 6)),
+                            cv2.FONT_HERSHEY_SIMPLEX, fs / 33, (255, 176, 46), lw)
     return img
 
 
@@ -994,6 +996,9 @@ def _font(size):
     spots = [os.path.join(here, "view_project", "fonts", "NanumGothic.ttf"),
              r"C:\Windows\Fonts\malgun.ttf", r"C:\Windows\Fonts\gulim.ttc",
              "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
+             "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+             "/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc",
+             "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
              "/System/Library/Fonts/AppleSDGothicNeo.ttc"]
     for p in spots:
         if os.path.exists(p):

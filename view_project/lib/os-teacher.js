@@ -299,7 +299,7 @@
     var ready = fetch("/ready").then(function (r) { return r.json(); }).then(function (r) {
       rows.unshift({ key: "ai", ok: !!r.ready && !r.error, detail: r.error ? r.error : r.ready ? (r.loaded + "/" + r.total) : T("aiLoading").replace("{n}", r.loaded + "/" + r.total) });
     }).catch(function (e) { rows.unshift({ key: "ai", ok: false, detail: String(e) }); });
-    var self = fetch("/custom/selftest").then(function (r) { return r.json(); }).then(function (j) {
+    var self = fetch("/custom/selftest?lang=" + A.lang()).then(function (r) { return r.json(); }).then(function (j) {
       ((j && j.data && j.data.checks) || []).forEach(function (c) { rows.push(c); });
     }).catch(function () {});
     var cam = (navigator.mediaDevices && navigator.mediaDevices.getUserMedia

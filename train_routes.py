@@ -904,8 +904,10 @@ async def custom_backbone(request: Request):
 
 
 @router.get("/custom/selftest", tags=["custom"], summary="수업 전 점검")
-async def custom_selftest(request: Request):
+async def custom_selftest(request: Request, lang: str = Query("ko", description="ko | en — 설명 글의 말")):
     """수업 시작 전에 준비 상태를 한 번에 확인한다 (특징 모델·손/얼굴/자세·메모리·저장 폴더)."""
+    en = str(lang).lower().startswith("en")
+
     def fn():
         checks = []
 
@@ -942,12 +944,12 @@ async def custom_selftest(request: Request):
         mem = sysinfo._mem_info()
         if mem:
             add("memory", mem["total_gb"] >= 15.0,
-                "%s / %s GB 씀 (%s%%)" % (mem["used_gb"], mem["total_gb"], mem["percent"]))
+                ("%s / %s GB used (%s%%)" if en else "%s / %s GB 씀 (%s%%)") % (mem["used_gb"], mem["total_gb"], mem["percent"]))
         sysinfo._cpu_percent()                      # 첫 호출은 견줄 값이 없다(차분으로 구함)
         time.sleep(0.2)
         cpu = sysinfo._cpu_percent()
         if cpu is not None:
-            add("cpu", cpu < 80, "%s%% 사용 중" % cpu)
+            add("cpu", cpu < 80, ("%s%% in use" if en else "%s%% 사용 중") % cpu)
 
         # 4. 저장된 결과물
         n_models = len(os.listdir(USER_DIR)) if os.path.isdir(USER_DIR) else 0

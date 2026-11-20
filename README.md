@@ -99,6 +99,8 @@ speak("안녕하세요")                     # 말하기
 **카메라 · 소리 · 마이크**가 되는지 한 번에 확인합니다. 마이크 시험은 3초 녹음해 그대로 되들려 주므로
 마이크와 스피커가 함께 확인됩니다. 밝은 교실에서 화면이 잘 안 보이면 **밝은 곳 모드**를 켭니다.
 
+![설정](docs/img/options.png)
+
 ---
 
 ## 처음 켜면
@@ -122,10 +124,12 @@ AI를 메모리에 올리는 동안 진행 막대가 보이고, 그 사이 파�
 | 폴더 | 들어 있는 것 |
 |---|---|
 | `user` | 가르친 AI |
+| `project` | 가르치기에서 보관한 작품 (사진 포함) |
 | `blocks` | 블록 작품 |
 | `pycode` | 파이썬 작품 |
 | `db` | 대화에 넣은 자료 |
 | `stats` | 사용 기록 · 학습 결과 |
+| `models` | easydetect-lab 에서 가져온 모델 (설정 → 모델 폴더) |
 | `notebooks` | 코딩 실습 노트북 (lab.bat) |
 | `face` | 얼굴 AI 에서 등록한 얼굴 명단 `facedb.json` (사진 없이 숫자만) |
 
@@ -318,6 +322,8 @@ Confirm **camera · sound · microphone** all at once. The mic test records 3 se
 so mic and speaker are both verified together. If the screen is hard to read in a bright classroom,
 turn on **Bright room**.
 
+![Settings](docs/img/en/options.png)
+
 ---
 
 ## The first time you open it
@@ -340,10 +346,12 @@ just upload a photo instead. The camera turns on only at the moment a photo is t
 | Folder | What's in it |
 |---|---|
 | `user` | AI you trained |
+| `project` | Work kept from Train (photos included) |
 | `blocks` | Block projects |
 | `pycode` | Python projects |
 | `db` | Notes added in Talk |
 | `stats` | Usage records · training results |
+| `models` | Models brought from easydetect-lab (Settings → Models folder) |
 | `notebooks` | Coding lab notebooks (lab.bat) |
 | `face` | Face list registered in Face AI, `facedb.json` (numbers only, no photos) |
 

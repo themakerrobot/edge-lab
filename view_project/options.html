@@ -337,8 +337,11 @@
         edit_used: "사진 편집 사용",
         example_loaded: "예제 불러오기",
       },
-      pgName: { index: "체험하기", blocks: "블록 코딩", train: "가르치기",
-                code: "파이썬", options: "설정", etc: "기타" },
+      pgName: { index: "체험하기", home: "홈", blocks: "블록", code: "파이썬", train: "가르치기", talk: "대화",
+                face: "얼굴 AI", drive: "자동차 가르치기", eye: "AI 눈", word: "문장", signal: "AI 신호 놀이",
+                sound: "소리 가르치기", paint: "그림판", typing: "타자 연습", calc: "계산기", notes: "메모장",
+                piano: "피아노", diary: "일기", recorder: "녹음기", story: "이야기 극장", board: "보드",
+                works: "내 작품", tasks: "AI 작업 관리자", store: "앱 가게", options: "설정", etc: "기타" },
       notRun: "아직 점검하지 않았어요.", none: "아직 없어요.",
       sndTitle: "소리", sndTest: "소리 시험", sndOpen: "윈도우 소리 설정 열기",
       sndHint: "소리가 안 들리면 윈도우 기본 장치가 모니터로 잡혀 있을 수 있어요.",
@@ -375,7 +378,7 @@
       verHint: "문제가 생겼을 때 예전과 무엇이 달라졌는지 비교하는 데 씁니다.",
       verMissing: "설치 기록이 없어요 (setup 을 다시 돌리면 남습니다)",
       colTitle: "이름", colInfo: "내용", colWhen: "만든 때", colAct: "",
-      kBackbone: "특징 추출 모델", kPose: "손 인식(MediaPipe)", kStorage: "저장 현황",
+      kBackbone: "특징 추출 모델", kPose: "손 인식(MediaPipe)", kFace: "표정 인식(MediaPipe)", kStorage: "저장 현황",
       kMemory: "메모리", kCpu: "CPU", kCam: "웹캠",
       allOk: "모두 정상이에요. 수업을 시작해도 됩니다.",
       someBad: "문제가 있어요. 빨간 항목을 확인해 주세요.",
@@ -410,8 +413,11 @@
         edit_used: "Photo edits",
         example_loaded: "Examples loaded",
       },
-      pgName: { index: "Use", blocks: "Blocks", train: "Train",
-                code: "Python", options: "Settings", etc: "Other" },
+      pgName: { index: "Try it", home: "Home", blocks: "Blocks", code: "Python", train: "Train", talk: "Talk",
+                face: "Face AI", drive: "Teach a car", eye: "AI eye", word: "Words", signal: "AI signals",
+                sound: "Teach sounds", paint: "Paint", typing: "Typing", calc: "Calculator", notes: "Notes",
+                piano: "Piano", diary: "Diary", recorder: "Recorder", story: "Story theater", board: "Board",
+                works: "My work", tasks: "AI task manager", store: "App store", options: "Settings", etc: "Other" },
       notRun: "Not checked yet.", none: "Nothing yet.",
       sndTitle: "Sound", sndTest: "Test sound", sndOpen: "Open Windows sound settings",
       sndHint: "If you hear nothing, Windows may be sending sound to the monitor.",
@@ -448,7 +454,7 @@
       verHint: "Use this to compare what changed when something breaks.",
       verMissing: "No install record (run setup again to create one)",
       colTitle: "Name", colInfo: "Contents", colWhen: "Created", colAct: "",
-      kBackbone: "Feature model", kPose: "Hand tracking (MediaPipe)", kStorage: "Storage",
+      kBackbone: "Feature model", kPose: "Hand tracking (MediaPipe)", kFace: "Face expressions (MediaPipe)", kStorage: "Storage",
       kMemory: "Memory", kCpu: "CPU", kCam: "Webcam",
       allOk: "All good. You can start the class.", someBad: "Something is wrong. Check the red rows.",
       camOk: "Webcam opened.", camNo: "Can't open the webcam. Check the permission.",
@@ -736,6 +742,7 @@
   const KEY_NAME = k => {
     if (k === "backbone") return t("kBackbone");
     if (k === "pose") return t("kPose");
+    if (k === "face") return t("kFace");
     if (k === "storage") return t("kStorage");
     if (k === "memory") return t("kMemory");
     if (k === "cpu") return t("kCpu");
@@ -754,7 +761,7 @@
   $("runBtn").addEventListener("click", async () => {
     $("runBtn").disabled = true; $("txtRun").textContent = t("running");
     try {
-      const j = await (await fetch("/custom/selftest")).json();
+      const j = await (await fetch("/custom/selftest?lang=" + LANG)).json();
       if (j.result !== "ok") throw new Error(j.data);
       lastChecks = j.data.checks.slice();
       /* 웹캠은 브라우저에서만 확인할 수 있으므로 별도로 붙인다. */
